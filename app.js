@@ -8,6 +8,7 @@ const logger = require("morgan");
 const cors = require("cors");
 const helmet = require("helmet");
 const session = require("express-session");
+const message = require("./controllers/api/response");
 // const RedisStore = require("connect-redis").default;
 
 const indexRouter = require("./routes/index");
@@ -40,32 +41,29 @@ app.use(
       }
    })
 );
+
 app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use("/resources", express.static(path.join(__dirname, "resources")));
-
-app.set("views", path.join(__dirname, "components"));
-app.set("view engine", "ejs")
+app.set("view engine", undefined);
 
 app.use("/", indexRouter);
 
 // Catch 404 and forward to error handler
-app.use(function(request, result, next) {
-   next(createError(404));
+app.use(function (req, res) {
+   return message.sendError(res, 404, "NotFound", "The requested resource was not found");
 });
 
 // Error handler
-app.use(function(error, request, result) {
-   // Set locals, only providing error in development
-   result.locals.message = error.message;
-   result.locals.error = request.app.get("env") === "development" ? error : {};
-
-   // Render the error page
+app.use(function (error, req, res) {
    console.error(error);
-   result.status(error.status || 500);
 
-   return result.redirect("/");
+   // Set locals, only providing error in development environment
+   res.locals.message = error.message;
+   res.locals.error = req.app.get("env") === "development" ? error : {};
+
+   return message.sendError(res, error.status || 500, error.id || "UnknownError", error.message || "An unknown error occurred");
 });
 
 module.exports = app;

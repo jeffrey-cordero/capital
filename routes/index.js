@@ -1,12 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const message = require("../controllers/api/response");
 
 const registration = require("../controllers/authentication/register");
 
 router.get("/api", (request, result) => {
-   console.log(request);
-
-   result.render("index", { title: "Express" });
+   return message.sendSuccess(result, "API is working");
 });
 
 // Handle registration and login requests

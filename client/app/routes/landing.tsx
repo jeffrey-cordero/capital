@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Route } from '../+types/root';
 
-
 async function fetchData(): Promise<any> {
   const response = await fetch("http://localhost:8000/api");
 
@@ -24,9 +23,13 @@ export function meta({}: Route.MetaArgs) {
 export default function Landing() {
   const { data, isLoading, error } = useQuery({ queryKey: ["test"], queryFn: fetchData });
 
+
+
   if (isLoading) return <div>Loading...</div>;
 
-  if (error instanceof Error) return <div>Error: {error.message}</div>;
+  console.log(data, error);
+
+  // if (error instanceof Error) return <div>Error: {error.message}</div>;
 
   return (
     <div className="container mt-4">
