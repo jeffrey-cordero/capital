@@ -1,0 +1,76 @@
+services:
+  app:
+    image: node:alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ./.env:/app/.env
+    networks:
+      - capital_network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: sh -c "npm install && npm run dev"
+    container_name: capital_app
+
+  mysql: 
+    image: mysql
+    environment:
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_DATABASE: capital
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - capital_mysql_data:/capital/mysql_data
+      - ./database/startup.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - capital_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: capital_mysql
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - capital_network
+    volumes:
+      - capital_redis_data:/capital/redis_data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+    container_name: capital_redis
+
+networks:
+  capital_network:
+    driver: bridge
+
+volumes:
+  capital_mysql_data:
+  capital_redis_data:

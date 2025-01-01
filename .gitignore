@@ -1,0 +1,6 @@
+*.env
+*.env
+*.env.local
+*.env.staging
+node_modules
+.DS_Store
