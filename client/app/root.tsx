@@ -8,9 +8,12 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import store from './redux/store';
+import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './queryClient'; 
 import "./styles/app.scss"; 
+import { useEffect } from "react";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -34,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body suppressHydrationWarning = {true}>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -44,10 +47,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const preferredTheme: string | undefined = window.localStorage.getItem("theme") ?? undefined;
+    const prefersDarkMode: boolean = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme: "dark" | "light" = preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light";
+    console.log(theme)
+    document.body.className = theme;
+    store.dispatch({ type: "theme/setTheme", payload: theme });
+  });
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+      </QueryClientProvider>
+    </Provider>
   );
 }
 

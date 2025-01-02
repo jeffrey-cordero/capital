@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { useDispatch, useSelector } from "react-redux";
+import { toggleTheme } from "../redux/slices/theme";
 import type { Route } from '../+types/root';
 
-async function fetchData(): Promise<any> {
+async function fetchData(): Promise<Object> {
   const response = await fetch("http://localhost:8000/api");
 
   if (!response.ok) {
@@ -13,7 +15,7 @@ async function fetchData(): Promise<any> {
   }
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "Capital" },
     { name: "description", content: "Finance Tracker" },
@@ -21,15 +23,15 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Landing() {
+  // Redux
+  const dispatch = useDispatch();
+  const theme = useSelector((state: any) => state.theme.theme);
+
+  // React-Query
   const { data, isLoading, error } = useQuery({ queryKey: ["test"], queryFn: fetchData });
 
-
-
-  if (isLoading) return <div>Loading...</div>;
-
-  console.log(data, error);
-
-  // if (error instanceof Error) return <div>Error: {error.message}</div>;
+  //   isLoading&& return <div>Loading...</div>;
+  // error instanceof Error && return <div>Error: {error.message}</div>;
 
   return (
     <div className="container mt-4">
@@ -39,9 +41,11 @@ export default function Landing() {
           <p className="card-text">
             This is a simple React app styled with Bootstrap.
           </p>
-          <a href="#" className="btn btn-primary">
-            Learn More
-          </a>
+          <button 
+            onClick={() => dispatch(toggleTheme())} 
+            className="btn btn-primary">
+            Theme: { theme }
+          </button>
         </div>
       </div>
     </div>

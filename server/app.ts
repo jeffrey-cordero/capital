@@ -1,17 +1,16 @@
 require("dotenv").config();
 
-const createError = require("http-errors");
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const logger = require("morgan");
-const cors = require("cors");
-const helmet = require("helmet");
-const session = require("express-session");
-const message = require("./controllers/api/response");
+import express from "express";
+import path from "path";
+import cookieParser from "cookie-parser";
+import logger from "morgan";
+import cors from "cors";
+import helmet from "helmet";
+import session from "express-session";
+import { sendError, sendSuccess } from "./controllers/api/response";
 // const RedisStore = require("connect-redis").default;
 
-const indexRouter = require("./routes/index");
+import indexRouter from "./routes/index";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -21,9 +20,9 @@ app.use(cookieParser());
 // const redisClient = new Redis(process.env.REDIS_URL);
 
 app.use(session({
-//    store: new RedisStore({
-//       client:redisClient
-//    }),
+   // store: new RedisStore({
+   //    client:redisClient
+   // }),
    secret:process.env.SESSION_SECRET,
    resave:false,
    saveUninitialized:true,
