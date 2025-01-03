@@ -1,14 +1,10 @@
 import express from "express";
-const router = express.Router();
+const indexRouter = express.Router();
 import { sendSuccess } from "../controllers/api/response";
+import { Request, Response } from "express";
 
-import registration from "../controllers/authentication/register";
-
-router.get("/api", (request, result) => {
-   return sendSuccess(result, "API is working");
+indexRouter.get("/", (req: Request, res: Response) => {
+   return sendSuccess(res, "REST API is running", {});
 });
 
-// Handle registration and login requests
-router.post("/register", registration.register);
-
-module.exports = router;
+export default indexRouter;

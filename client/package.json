@@ -1,7 +1,7 @@
 {
   "name": "client",
   "private": true,
-  "module": "true",
+  "type": "module",
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
@@ -23,7 +23,6 @@
     "react-redux": "^9.2.0",
     "react-router": "^7.1.1",
     "react-router-dom": "^7.1.1",
-    "sass": "^1.32.13",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -41,6 +40,7 @@
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "postcss": "^8.4.49",
+    "sass": "1.77.6",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vite-tsconfig-paths": "^5.1.4"

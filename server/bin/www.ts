@@ -4,16 +4,16 @@
  * Module dependencies.
  */
 require('dotenv').config();
-const app = require('../app');
+import app from '../app';
 const debug = require('debug')('capital:server');
-const http = require('http');
+import http from 'http';
 
 /**
  * Get port from environment and store in Express.
  */
 
 
-const port = normalizePort(8000);
+const port = normalizePort(process.env.PORT || '8000');
 app.set('port', port);
 
 /**
@@ -40,7 +40,9 @@ const gracefulShutdown = () => {
   }
 
   shuttingDown = true;
+  console.log();
   console.log('Received kill signal, shutting down gracefully.');
+  console.log();
 
   // Close server and perform cleanup
   server.close(() => {
@@ -63,7 +65,7 @@ process.on('SIGINT', gracefulShutdown);
  * Normalize a port into a number, string, or false.
  */
 
-function normalizePort(val) {
+function normalizePort(val: string) {
   const port = parseInt(val, 10);
 
   if (isNaN(port)) {
@@ -83,7 +85,7 @@ function normalizePort(val) {
  * Event listener for HTTP server "error" event.
  */
 
-function onError(error) {
+function onError(error: any) {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -113,8 +115,11 @@ function onError(error) {
 
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
+  const bind = addr !== null && typeof addr === 'string'
     ? 'pipe ' + addr
-    : 'port ' + addr.port;
+    : addr !== null
+    ? 'port ' + addr.port
+    : 'unknown';
+
   debug('Listening on ' + bind);
 }

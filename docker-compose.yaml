@@ -1,18 +1,18 @@
 services:
-  app:
+  client:
     image: node:alpine
     working_dir: /app
     volumes:
-      - .:/app
-      - ./.env:/app/.env
+      - ./client:/app
+      - ./client/.env:/app/.env
     networks:
       - capital_network
     ports:
-      - "3000:3000"
+      - "5173:5173"
     depends_on:
-      - mysql
+      - server
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5173 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -22,8 +22,34 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "npm run dev"
-    container_name: capital_app
+    command: sh -c "npm install && npm run dev"
+    container_name: capital_client
+
+  server:
+    image: node:alpine
+    working_dir: /app
+    volumes:
+      - ./server:/app
+      - ./server/.env:/app/.env
+    networks:
+      - capital_network
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: sh -c "npm install && npm run dev"
+    container_name: capital_server
 
   mysql: 
     image: mysql
@@ -34,7 +60,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - capital_mysql_data:/capital/mysql_data
-      - ./database/startup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./server/database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - capital_network
     healthcheck:

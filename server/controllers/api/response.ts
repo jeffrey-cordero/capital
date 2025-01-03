@@ -1,15 +1,14 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 
-export function sendError(res: Response, code: number, id: string, message: string): Response {
-   return res.status(code).json({
+export function sendErrors(res: Response, code: number, errors: { [key: string]: string} ): void {
+   res.status(code).json({
       status: "Error",
-      id: id,
-      message: message
+      errors: errors
    });
 };
 
-export function sendSuccess(res: Response, message: string, data?: any): Response {
-   return res.status(200).json({
+export function sendSuccess(res: Response, message: string, data?: any): void {
+   res.status(200).json({
       status: "Success",
       message: message,
       data: data
