@@ -38,30 +38,15 @@ export class User {
     this.verified = verified;
   }
 
-  // Validate user data
-  validate(): { [key: string]: string } | null {
-    const fields = userSchema.safeParse({
-      username: this.username,
-      name: this.name,
-      password: this.password,
-      email: this.email,
-    });
+  // Find other users by their unique fields, which requires normalized parameters
+  static async findUserConstraints(
+    normalizedUsername: string,
+    normalizedEmail: string
+  ): Promise<User[]> {
+    const conflicts = "SELECT * FROM users WHERE LOWER(TRIM(username)) = ? OR LOWER(TRIM(email)) = ?";
+    const parameters = [normalizedUsername, normalizedEmail];
 
-    if (!fields.success) {
-      // Convert error object to single error messages per field
-      const errors = fields.error.flatten().fieldErrors;
-
-      const singleErrorMessages: Record<string, string> = Object.fromEntries(
-        Object.entries(errors).map(([field, errors]) => [
-          field,
-          errors?.[0] || "Unknown error",
-        ])
-      );
-
-      return singleErrorMessages;
-    }
-
-    return null;
+    return (await runQuery(conflicts, parameters)) as User[];
   }
 
   // Authenticate user by username and password
@@ -84,21 +69,31 @@ export class User {
       return null;
     }
   }
+  
+  // Validate user fields
+  validate(): { [key: string]: string } | null {
+    const fields = userSchema.safeParse(this);
 
-  // Find other users by unique fields
-  static async findUserConstraints(
-    username: string,
-    email: string
-  ): Promise<User[]> {
-    const conflicts = "SELECT * FROM users WHERE username = ? OR  email = ?;";
-    const parameters = [username, email];
+    if (!fields.success) {
+      // Convert error object to single error messages per field
+      const errors = fields.error.flatten().fieldErrors;
 
-    return (await runQuery(conflicts, parameters)) as User[];
+      const singleErrorMessages: Record<string, string> = Object.fromEntries(
+        Object.entries(errors).map(([field, errors]) => [
+          field,
+          errors?.[0] || "Unknown error",
+        ])
+      );
+
+      return singleErrorMessages;
+    }
+
+    return null;
   }
 
   // Create new user
   async create(): Promise<void> {
-    // Hash password before storing
+    // Normalize sensitive fields
     this.password = hash(this.password);
 
     const creation = "INSERT INTO users (username, name, password, email, verified) VALUES (?, ?, ?, ?, ?);";
@@ -109,13 +104,5 @@ export class User {
     // Set user id and remove hashed password
     this.id = user.insertId;
     this.password = "*".repeat(this.password.length);
-  }
-
-  // Update user data
-  async update(): Promise<void> {
-    // Implement database update...
-    console.log(
-      `Updating user: ${this.id}, Name: ${this.username}, Email: ${this.email}`
-    );
   }
 }

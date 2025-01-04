@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { sendErrors, sendSuccess } from "@/controllers/api/response";
@@ -9,7 +8,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
    try {
       const { username, name, password, confirmPassword, email } = req.body;
 
-      // Validate user data
+      // Validate user fields
       const user = new User(null, username?.trim(), name?.trim(), password, email?.trim(), false);
       const errors = user.validate();
 
@@ -24,16 +23,18 @@ const create = asyncHandler(async (req: Request, res: Response) => {
          });
       } else {
          // Validate user uniqueness
-         const conflicts = await User.findUserConstraints(username, email);
+         const normalizedUsername = username.toLowerCase().trim();
+         const normalizedEmail = email.toLowerCase().trim();
+         const conflicts = await User.findUserConstraints(normalizedUsername, normalizedEmail);
 
          if (conflicts.length > 0) {
             // User exists with same username or email
             const errors = conflicts.reduce((account, user) => {
-               if (user.username === username) {
+               if (user.username.toLowerCase().trim() === normalizedUsername) {
                   account.username = "Username already exists";
                }
 
-               if (user.email === email) {
+               if (user.email.toLowerCase().trim() === normalizedEmail) {
                   account.email = "Email already exists";
                }
 

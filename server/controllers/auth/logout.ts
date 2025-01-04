@@ -4,9 +4,11 @@ import { sendErrors, sendSuccess } from "@/controllers/api/response";
 
 const logout = asyncHandler(async (req: Request, res: Response) => {
   try {
-    // Clear the JWT token from the client and session
+    // Clear the JWT token and session cookies from the client
     res.clearCookie("token");
     res.clearCookie('connect.sid');
+
+    // Destroy the session
     req.session.destroy((error: any) => {
       if (error) {
         throw error;

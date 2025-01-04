@@ -3,7 +3,7 @@ import mysql from "mysql2";
 import util from "util";
 import cryptoJS from "crypto-js";
 
-export async function runQuery(query: string, parameters: any[]) {
+export async function runQuery(query: string, parameters: any[]): Promise<unknown> {
    // Initialize connection to database and submit query for potential results
    const connection = mysql.createConnection({
       host: process.env.HOST,
