@@ -3,10 +3,13 @@
 /**
  * Module dependencies.
  */
+
 require('dotenv').config();
-import app from '../app';
+require('module-alias/register');
+
 const debug = require('debug')('capital:server');
 import http from 'http';
+import { app } from '@/app';
 
 /**
  * Get port from environment and store in Express.

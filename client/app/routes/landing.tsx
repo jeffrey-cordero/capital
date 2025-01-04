@@ -5,10 +5,11 @@ import type { Route } from '../+types/root';
 import { Container, Image, Col } from 'react-bootstrap';
 
 import "../styles/landing.scss";
-import type { Ref } from 'react';
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 async function fetchData(): Promise<Object> {
-  const response = await fetch("http://localhost:8000/api");
+  const response = await fetch(`${SERVER_URL}/api`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch data");
@@ -81,7 +82,7 @@ export default function Landing() {
     <Container className="main">
       <Col className='image'>
           <Image 
-          src="http://localhost:8000/resources/landing/landing.jpg"
+          src={`${SERVER_URL}/resources/landing/landing.jpg`}
           alt="Landing Page Image"
           height={300}
         />
