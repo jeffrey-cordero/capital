@@ -1,25 +1,17 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCookies } from 'react-cookie'
 import { useRef } from "react";
 import { SERVER_URL } from "@/root";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import { Form, Button, Col, Row, Container, Image, InputGroup } from "react-bootstrap";
+import { Form, Button, Container, Image, InputGroup } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserSecret, faLock, faKey } from "@fortawesome/free-solid-svg-icons";
+import { faUserSecret, faKey } from "@fortawesome/free-solid-svg-icons";
+import { userSchema } from "@/zod/user/user";
 
-const userSchema = z.object({
-   username: z
-      .string()
-      .min(3, "Username must be at least 3 characters")
-      .max(30, "Username must be at most 30 characters"),
-   password: z
-      .string()
-      .min(8, "Password must be at least 8 characters long")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+const loginSchema = z.object({
+   username: userSchema.shape.username,
+   password: userSchema.shape.password
 });
 
 export default function Login() {
@@ -29,9 +21,8 @@ export default function Login() {
       setError,
       formState: { errors },
    } = useForm({
-      resolver: zodResolver(userSchema),
+      resolver: zodResolver(loginSchema),
    });
-   const [cookies, setCookie] = useCookies(['token']);
    const navigate = useNavigate();
    const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -48,6 +39,7 @@ export default function Login() {
                "Content-Type": "application/json",
             },
             body: JSON.stringify(credentials),
+            credentials: "include"
          });
 
          const parsed = await response.json();
@@ -55,9 +47,6 @@ export default function Login() {
          if (response.ok) {
             const token: string = parsed.data.token;
             console.log(token);
-
-            // JWT token is stored in a cookie
-            setCookie('token', token, { path: '/' });
 
             navigate("/home");
          } else {
@@ -106,7 +95,7 @@ export default function Login() {
                   <Form.Control
                      placeholder="Password"
                      aria-label="Password"
-                     autoComplete="password"
+                     autoComplete="current-password"
                      {...register("password")}
                      isInvalid={!!errors.password}
                   />

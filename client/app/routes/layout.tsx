@@ -1,9 +1,5 @@
-import Auth from '@/components/auth/status';
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import Router from '@/components/auth/router';
 
 export default function Layout() {
-  return (
-   <Auth home={false} />
-  );
+  return <Router home={false} />
 }

@@ -3,7 +3,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Sans&family=Oswald&family=Roboto:wght@400;500&display=swap");
 @import "./variables";
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -15,4 +16,24 @@ body {
   font-family: $font-family;
   background-color: white;
   color: var(--text-color);
+}
+
+div {
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+}
+
+button {
+  &.icon {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
 }

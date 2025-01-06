@@ -1,20 +1,27 @@
 import { SERVER_URL } from "@/root";
-import { Button } from "react-bootstrap";
+import { Container, Button } from "react-bootstrap";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
+import { logout } from "@/redux/slices/auth";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 export default function Home() {
+   const dispatch = useDispatch();
    const navigate = useNavigate();
 
-   const logout = async () => {
+   const endSession = async () => {
       try {
          const response = await fetch(`${SERVER_URL}/auth/logout`, {
             method: "POST",
             headers: {
                "Content-Type": "application/json",
             },
+            credentials: "include"
          });
 
          if (response.ok) {
+            dispatch(logout());
             navigate("/login");
          } else {
             console.error("Failed to logout");
@@ -24,11 +31,14 @@ export default function Home() {
       }
    }
    return (
-      <div>
+      <Container>
          <h1>
             Home
          </h1>
-         <Button onClick={logout}>Logout</Button>
-      </div>
+         <Button onClick={endSession} variant="danger" className="icon">
+            <FontAwesomeIcon icon={faRightFromBracket}/>
+            <span>Logout</span>
+         </Button>
+      </Container>
    )
 }

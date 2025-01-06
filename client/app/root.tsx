@@ -13,11 +13,6 @@ import store from '@/redux/store';
 import { Provider, useSelector } from 'react-redux';
 import { queryClient } from '@/query/queryClient'; 
 import { QueryClientProvider} from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route as ReactRouterRoute } from 'react-router-dom';
-import Status from "@/components/auth/status";
-import Home from "./routes/home";
-import Login from "./routes/auth/login";
-import Register from "./routes/auth/register";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

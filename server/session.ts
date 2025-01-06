@@ -12,7 +12,7 @@ declare module 'express-session' {
 
 function configureJWT(req: Request, res: Response, user: User): void {
    // JWT token generation
-   const secret: string = process.env.SESSION_SECRET ?? "";
+   const secret: string = process.env.SESSION_SECRET || "";
    const token = jwt.sign({ id: user.id, username: user.username }, secret, { expiresIn: "6h" });
 
    // JWT token configuration
@@ -35,7 +35,7 @@ function authenticateJWT(required: boolean) {
          return sendErrors(res, 403, "Access Denied: Token Not Required");
       } else if (required) {
          try {
-            const secret: string = process.env.SESSION_SECRET ?? "";
+            const secret: string = process.env.SESSION_SECRET || "";
    
             // Verify the JWT token
             const decoded = jwt.verify(token, secret);

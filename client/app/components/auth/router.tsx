@@ -1,5 +1,5 @@
 import Loading from '@/components/global/loading';
-import { validateToken } from '@/query/auth';
+import { fetchAuthentication } from '@/query/auth';
 import { authenticate } from '@/redux/slices/auth';
 import type { RootState } from '@/redux/store';
 import { useQuery } from '@tanstack/react-query';
@@ -7,17 +7,13 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Outlet, useNavigate } from 'react-router-dom';
 
-interface AuthProps {
-   home: boolean;
-}
-
-export default function Auth(props: AuthProps) {
-   const { home } = props;
-   const { data, isLoading, error, isError } = useQuery({ queryKey: ["auth"], queryFn: validateToken });
-   const isAuthenticated = useSelector((state: RootState) => state.auth.value);
-   const requiresRedirection: boolean = home && !isAuthenticated || !home && isAuthenticated;
-   const dispatch = useDispatch();
+export default function Router({ home }: { home: boolean }) {
+   // Helper component to handle authentication-related redirection for landing/ home layouts
+   const { data, isLoading, error, isError } = useQuery({ queryKey: ["auth"], queryFn: fetchAuthentication });
    const navigate = useNavigate();
+   const dispatch = useDispatch();
+   const authenticated: boolean = useSelector((state: RootState) => state.auth.value);
+   const redirection: boolean = home && !authenticated || !home && authenticated;
 
    useEffect(() => {
       // If the query is still loading, do nothing
@@ -32,17 +28,21 @@ export default function Auth(props: AuthProps) {
          // Unauthenticated
          dispatch(authenticate(false));
 
-         requiresRedirection && navigate(home ? '/login' : '/home');
+         redirection && navigate(home ? '/login' : '/home');
       } else {
          // Authenticated
          dispatch(authenticate(data));
+         redirection && navigate(home ? '/home' : '/login');
       }
    }, [dispatch, data, isError, isLoading]);
 
+   useEffect(() => {
+      redirection && navigate(home ? '/login' : '/home');
+   }, [redirection]);
 
    if (isLoading) {
       return <Loading />;
-   } else if (!requiresRedirection) {
+   } else if (!redirection) {
       return <Outlet />;
    } else {
       return null;
