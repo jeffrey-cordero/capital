@@ -1,11 +1,11 @@
-import cryptoJS from "crypto-js";
-import { hash, runQuery } from "@/database/query";
 import { z } from "zod";
+import { hash, runQuery } from "@/database/query";
 
 const userSchema = z.object({
   username: z
     .string()
-    .min(3, "Username must be at least 3 characters"),
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters"),
   name: z
     .string()
     .min(3, "Name must be at least 3 characters")

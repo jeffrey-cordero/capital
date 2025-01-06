@@ -1,7 +1,18 @@
 // Import Bootstrap SASS
 @import "bootstrap/scss/bootstrap";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Sans&family=Oswald&family=Roboto:wght@400;500&display=swap");
 @import "./variables";
 
-$primary_1: #a2b9bc;
-$primary_2: #b2ad7f;
-$primary_3: #878f99;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: visible;
+}
+
+body {
+  font-family: $font-family;
+  background-color: white;
+  color: var(--text-color);
+}

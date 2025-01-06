@@ -49,7 +49,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
             // Configure JWT token
             configureJWT(req, res, user);
 
-            return sendSuccess(res, 201, "Registration successful");
+            return sendSuccess(res, 201, "Registration successful", { token: req.session.token });
          }
       }
    } catch (error: any) {

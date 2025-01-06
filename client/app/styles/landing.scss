@@ -1,13 +1,14 @@
 @import "./variables";
 
-.main {
-  position: relative;
+.landing {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   margin: auto;
+  gap: 20px;
+  min-height: 100vh;
   text-align: center;
 }
 
@@ -17,63 +18,73 @@
   margin-right: auto;
 
   img {
-    max-height: 480px;
+    max-height: 380px;
     width: auto;
     max-width: 90%;
   }
 }
 
 .text {
-   display: flex;
-   flex-direction: column;
-   flex-wrap: wrap;
-   align-items: center;
-   justify-content: center;
-   width:80%;
-   gap:5px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
 
   h1 {
     font-size: clamp(3.5rem, 5vw, 4rem);
-    margin: auto;
+    margin: 0;
     width: 100%;
     white-space: nowrap;
   }
 
   p {
     font-size: clamp(0.9rem, 5vw, 1.1rem);
-    margin: auto;
+    margin: 0;
     max-width: 90%;
   }
 }
 
-button {
-  box-sizing: border-box;
-   cursor:pointer;
-   width: 9.5rem;
-   height: 3.5rem;
-   font-size: 1.3rem;
-   text-align: center;
-   color:white;
-   background-color: $primary-color;
-   font-weight: bolder;
+.buttons {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
 
-  .fade {
-     max-width: 50px;
-     max-height: 50px;
-     width: 50px;
-     height: 50px;
-     border-radius: 50%;
-     transform: scale(1);
-     transition-property: transform, height, width, border;
-     transition-duration: 0.9s;
-     transition-timing-function: ease-in-out;
-     animation-fill-mode: forwards;
-     z-index: 2000;
-
-     .overtaken {
+  button {
+    box-sizing: border-box;
+    cursor: pointer;
+    width: 9.5rem;
+    height: 3.5rem;
+    font-size: 1.3rem;
+    text-align: center;
+    color: white;
+    background-color: $primary-color;
+    font-weight: bolder;
+  
+    .fade {
+      max-width: 50px;
+      max-height: 50px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      transform: scale(1);
+      transition-property: transform, height, width, border;
+      transition-duration: 0.9s;
+      transition-timing-function: ease-in-out;
+      animation-fill-mode: forwards;
+      z-index: 2000;
+  
+      .overtaken {
         width: 100vw;
         height: 100vh;
         transform: scale(250);
-     }
+      }
+    }
   }
 }
+

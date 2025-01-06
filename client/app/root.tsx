@@ -1,19 +1,23 @@
+import "@/styles/app.scss"; 
 import {
   isRouteErrorResponse,
   Links,
   Meta,
+  Navigate,
   Outlet,
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
 import type { Route } from "./+types/root";
-import store from './redux/store';
-import { Provider } from 'react-redux';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './queryClient'; 
-import "./styles/app.scss"; 
-import { useEffect } from "react";
+import store from '@/redux/store';
+import { Provider, useSelector } from 'react-redux';
+import { queryClient } from '@/query/queryClient'; 
+import { QueryClientProvider} from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route as ReactRouterRoute } from 'react-router-dom';
+import Status from "@/components/auth/status";
+import Home from "./routes/home";
+import Login from "./routes/auth/login";
+import Register from "./routes/auth/register";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -27,6 +31,8 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   }
 ];
+
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -47,15 +53,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  useEffect(() => {
-    const preferredTheme: string | undefined = window.localStorage.getItem("theme") ?? undefined;
-    const prefersDarkMode: boolean = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme: "dark" | "light" = preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light";
-    console.log(theme)
-    document.body.className = theme;
-    store.dispatch({ type: "theme/setTheme", payload: theme });
-  });
-
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
