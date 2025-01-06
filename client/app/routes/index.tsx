@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Container, Image } from 'react-bootstrap';
 
 import "@/styles/landing.scss";
-import { useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRef } from 'react'
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -73,7 +71,7 @@ export default function Landing() {
           ref = { buttonRef}
           onClick={() => {
             navigate("/login")
-            // buttonRef.current && transitionToPage(buttonRef as any);
+            buttonRef.current && transitionToPage(buttonRef as any);
           }}
         >
           Log In

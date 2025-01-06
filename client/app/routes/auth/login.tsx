@@ -24,7 +24,6 @@ export default function Login() {
       resolver: zodResolver(loginSchema),
    });
    const navigate = useNavigate();
-   const buttonRef = useRef<HTMLButtonElement>(null);
 
    const onSubmit = async (data: any) => {
       const credentials = {
