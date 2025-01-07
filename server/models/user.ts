@@ -39,12 +39,9 @@ export class User {
   }
 
   // Find other users by their unique fields, which requires normalized parameters
-  static async findUserConstraints(
-    normalizedUsername: string,
-    normalizedEmail: string
-  ): Promise<User[]> {
-    const conflicts = "SELECT * FROM users WHERE LOWER(TRIM(username)) = ? OR LOWER(TRIM(email)) = ?";
-    const parameters = [normalizedUsername, normalizedEmail];
+  static async fetchExistingUsers(username: string, email: string): Promise<User[]> {
+    const conflicts = "SELECT * FROM users WHERE LOWER(TRIM(username)) = LOWER(TRIM(?)) OR LOWER(TRIM(email)) = LOWER(TRIM(?))";
+    const parameters = [username, email];
 
     return (await runQuery(conflicts, parameters)) as User[];
   }

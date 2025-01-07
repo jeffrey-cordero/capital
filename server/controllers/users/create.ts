@@ -25,7 +25,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
          // Validate user uniqueness
          const normalizedUsername = username.toLowerCase().trim();
          const normalizedEmail = email.toLowerCase().trim();
-         const conflicts = await User.findUserConstraints(normalizedUsername, normalizedEmail);
+         const conflicts = await User.fetchExistingUsers(normalizedUsername, normalizedEmail);
 
          if (conflicts.length > 0) {
             // User exists with same username or email

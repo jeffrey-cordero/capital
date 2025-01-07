@@ -1,12 +1,12 @@
-import { z } from "zod";
+import { faKey, faUserSecret } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
-import { SERVER_URL } from "@/root";
+import { Button, Container, Form, Image, InputGroup } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import { Form, Button, Container, Image, InputGroup } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserSecret, faKey } from "@fortawesome/free-solid-svg-icons";
+import { z } from "zod";
+
+import { SERVER_URL } from "@/root";
 import { userSchema } from "@/zod/user/user";
 
 const loginSchema = z.object({
@@ -19,23 +19,23 @@ export default function Login() {
       register,
       handleSubmit,
       setError,
-      formState: { errors },
+      formState: { errors }
    } = useForm({
-      resolver: zodResolver(loginSchema),
+      resolver: zodResolver(loginSchema)
    });
    const navigate = useNavigate();
 
-   const onSubmit = async (data: any) => {
+   const onSubmit = async(data: any) => {
       const credentials = {
          username: data.username.trim(),
-         password: data.password.trim(),
-      }
-      
+         password: data.password.trim()
+      };
+
       try {
          const response = await fetch(`${SERVER_URL}/auth/login`, {
             method: "POST",
             headers: {
-               "Content-Type": "application/json",
+               "Content-Type": "application/json"
             },
             body: JSON.stringify(credentials),
             credentials: "include"
@@ -55,7 +55,7 @@ export default function Login() {
                ([field, message]) => setError(field, { type: "server", message })
             );
 
-            console.log(errors)
+            console.log(errors);
          }
       } catch (error) {
          console.error(error);
@@ -63,46 +63,52 @@ export default function Login() {
    };
 
    return (
-      <Container className="landing">
-         <div className='image'>
+      <Container className = "landing">
+         <div className = "image">
             <Image
-               src={`${SERVER_URL}/resources/auth/login.jpg`}
-               alt="Login Page Image"
+               src = { `${SERVER_URL}/resources/auth/login.jpg` }
+               alt = "Login Page Image"
             />
          </div>
-         <div className="credentials">
-            <Form onSubmit={handleSubmit(onSubmit)} className="p-3">
-               <InputGroup className="mb-3">
+         <div className = "credentials">
+            <Form
+               onSubmit = { handleSubmit(onSubmit) }
+               className = "p-3"
+            >
+               <InputGroup className = "mb-3">
                   <InputGroup.Text>
-                     <FontAwesomeIcon icon={faUserSecret} />
+                     <FontAwesomeIcon icon = { faUserSecret } />
                   </InputGroup.Text>
                   <Form.Control
-                     placeholder="Username"
-                     aria-label="Username"
-                     autoComplete="username"
-                     {...register("username")}
-                     isInvalid={!!errors.username}
+                     placeholder = "Username"
+                     aria-label = "Username"
+                     autoComplete = "username"
+                     { ...register("username") }
+                     isInvalid = { !!errors.username }
                   />
-                  <Form.Control.Feedback type="invalid">
-                     {errors.username?.message?.toString()}
+                  <Form.Control.Feedback type = "invalid">
+                     { errors.username?.message?.toString() }
                   </Form.Control.Feedback>
                </InputGroup>
-               <InputGroup className="mb-3">
+               <InputGroup className = "mb-3">
                   <InputGroup.Text>
-                     <FontAwesomeIcon icon={faKey} />
+                     <FontAwesomeIcon icon = { faKey } />
                   </InputGroup.Text>
                   <Form.Control
-                     placeholder="Password"
-                     aria-label="Password"
-                     autoComplete="current-password"
-                     {...register("password")}
-                     isInvalid={!!errors.password}
+                     placeholder = "Password"
+                     aria-label = "Password"
+                     autoComplete = "current-password"
+                     { ...register("password") }
+                     isInvalid = { !!errors.password }
                   />
-                  <Form.Control.Feedback type="invalid">
-                     {errors.password?.message?.toString()}
+                  <Form.Control.Feedback type = "invalid">
+                     { errors.password?.message?.toString() }
                   </Form.Control.Feedback>
                </InputGroup>
-               <Button variant="primary" type="submit">
+               <Button
+                  variant = "primary"
+                  type = "submit"
+               >
                   Submit
                </Button>
             </Form>

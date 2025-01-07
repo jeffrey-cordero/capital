@@ -1,5 +1,5 @@
-import Router from '@/components/auth/router';
+import Router from "@/components/auth/router";
 
 export default function Layout() {
-  return <Router home={false} />
+   return <Router home = { false } />;
 }

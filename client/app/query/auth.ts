@@ -6,11 +6,11 @@ export async function fetchAuthentication(): Promise<boolean> {
       const response = await fetch(`${SERVER_URL}/auth`, {
          method: "GET",
          headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
          },
          credentials: "include"
       });
-      
+
       const parsed = await response.json();
 
       if (parsed.data.authenticated) {
@@ -20,7 +20,7 @@ export async function fetchAuthentication(): Promise<boolean> {
       }
    } catch (error) {
       console.error(error);
-      
+
       return false;
    }
 };
