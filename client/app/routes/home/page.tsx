@@ -37,9 +37,9 @@ export default function Home() {
             Home
          </h1>
          <Button
+            className = "icon"
             onClick = { endSession }
             variant = "danger"
-            className = "icon"
          >
             <FontAwesomeIcon icon = { faRightFromBracket }/>
             <span>Logout</span>

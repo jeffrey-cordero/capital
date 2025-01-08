@@ -1,33 +1,8 @@
 @import "./variables";
 
-.landing {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin: auto;
-  gap: 20px;
-  min-height: 100vh;
-  text-align: center;
-}
-
-.image {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-
-  img {
-    max-height: 380px;
-    width: auto;
-    max-width: 90%;
-  }
-}
-
 .text {
   display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
+  flex-flow: column wrap;
   align-items: center;
   justify-content: center;
   width: 80%;
@@ -37,6 +12,7 @@
     margin: 0;
     width: 100%;
     white-space: nowrap;
+    margin-bottom: 4px;
   }
 
   p {
@@ -48,43 +24,25 @@
 
 .buttons {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 8px;
   width: 100%;
 
   button {
-    box-sizing: border-box;
-    cursor: pointer;
-    width: 9.5rem;
-    height: 3.5rem;
-    font-size: 1.3rem;
-    text-align: center;
-    color: white;
-    background-color: $primary-color;
-    font-weight: bolder;
-  
-    .fade {
-      max-width: 50px;
-      max-height: 50px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      transform: scale(1);
-      transition-property: transform, height, width, border;
-      transition-duration: 0.9s;
-      transition-timing-function: ease-in-out;
-      animation-fill-mode: forwards;
-      z-index: 2000;
-  
-      .overtaken {
-        width: 100vw;
-        height: 100vh;
-        transform: scale(250);
-      }
+    width: 9rem;
+    height: 3.2rem;
+    font-size: 1.1rem;
+    margin: 0;
+
+    &#login{
+      background-color: #07EA3A;
     }
+   
+    &#register{
+      background-color: #08B0FF;
+   }
   }
 }
 

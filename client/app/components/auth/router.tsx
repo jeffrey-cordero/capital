@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import Loading from "@/components/global/loading";
-import { fetchAuthentication } from "@/query/auth";
+import { fetchAuthentication } from "@/lib/auth";
 import { authenticate } from "@/redux/slices/auth";
 import type { RootState } from "@/redux/store";
 
