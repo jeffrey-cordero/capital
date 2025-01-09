@@ -19,7 +19,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
          // Configure JWT token
          configureJWT(req, res, user);
 
-         return sendSuccess(res, 200, "Login successful");
+         return sendSuccess(res, 200, "Login successful", { token: req.session.token });
       }
    } catch (error: any) {
       console.error(error);

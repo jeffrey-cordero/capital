@@ -1,7 +1,117 @@
 // Import Bootstrap SASS
-@import "bootstrap/scss/bootstrap";
 @import "./variables";
+@import "bootstrap/scss/bootstrap";
 
-$primary_1: #a2b9bc;
-$primary_2: #b2ad7f;
-$primary_3: #878f99;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: visible;
+}
+
+body {
+  font-family: $font-family;
+  background-color: white;
+  color: var(--text-color);
+}
+
+div {
+  &.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: auto;
+    gap: 1.5rem;
+    min-height: 100vh;
+    text-align: center;
+  }
+
+  &.loading {
+    color: $primary;
+  }
+
+  &.image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 2rem;
+    font-weight: bold;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  
+    img {
+      max-height: 350px;
+      width: auto;
+      max-width: 90%;
+    }
+  }
+
+  &.form-floating {
+    z-index: 0;
+  }
+}
+
+button {
+  cursor: pointer;
+  box-sizing: border-box;
+  border:0;
+  border-radius: 7px;
+  font-weight: bold;
+  font-size:1rem;
+  height:2.6rem;
+  transition: all 0.5s ease;
+
+  &.primary {
+    background-color: $primary;
+    width: 100%;
+    margin: auto;
+    color:white;
+
+    &:hover {
+      opacity:0.9;
+      box-shadow: rgb(0 0 0 / 10%) 0 4px 6px -1px, rgb(0 0 0 / 6%) 0 2px 4px -1px;
+    }
+  }
+
+  &.danger {
+    background-color: red;
+  }
+
+  &.icon {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  &.circle {
+    max-width: 50px;
+    max-height: 50px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    transform: scale(1);
+    transition: transform 1.5s ease-in-out, border 1.5s ease-in-out;
+    animation-fill-mode: forwards;
+    z-index: 3;
+
+    &.cover {
+      opacity: 1;
+      width: 100vw;
+      height: 100vh;
+      transform: scale(250);
+    }
+  }
+}
+
+a {
+  color: $primary;
+  text-decoration: none;
+}

@@ -26,12 +26,20 @@ app.use(session({
    store: new redisStore({
       client: redisClient
    }),
-   secret: process.env.SESSION_SECRET ?? "",
+   secret: process.env.SESSION_SECRET || "",
    resave:false,
    saveUninitialized:true,
-   cookie: { secure: process.env.NODE_ENV === "production", httpOnly: true, maxAge: 1000 * 60 * 60 }
+   cookie: {
+      httpOnly: true,
+      sameSite: false,
+      maxAge: 1000 * 60 * 60,
+      secure: process.env.NODE_ENV === "production"
+  },
 }));
-app.use(cors());
+app.use(cors({
+   origin: process.env.CLIENT_URL || "http://localhost:3000",
+   credentials: true
+}));
 app.use(
    helmet.contentSecurityPolicy({
       directives: {

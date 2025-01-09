@@ -1,11 +1,12 @@
-import cryptoJS from "crypto-js";
-import { hash, runQuery } from "@/database/query";
 import { z } from "zod";
+import { hash, runQuery } from "@/database/query";
 
 const userSchema = z.object({
   username: z
     .string()
-    .min(3, "Username must be at least 3 characters"),
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username may only contain letters, numbers, and underscores"),
   name: z
     .string()
     .min(3, "Name must be at least 3 characters")
@@ -39,12 +40,9 @@ export class User {
   }
 
   // Find other users by their unique fields, which requires normalized parameters
-  static async findUserConstraints(
-    normalizedUsername: string,
-    normalizedEmail: string
-  ): Promise<User[]> {
-    const conflicts = "SELECT * FROM users WHERE LOWER(TRIM(username)) = ? OR LOWER(TRIM(email)) = ?";
-    const parameters = [normalizedUsername, normalizedEmail];
+  static async fetchExistingUsers(username: string, email: string): Promise<User[]> {
+    const conflicts = "SELECT * FROM users WHERE LOWER(TRIM(username)) = LOWER(TRIM(?)) OR LOWER(TRIM(email)) = LOWER(TRIM(?))";
+    const parameters = [username, email];
 
     return (await runQuery(conflicts, parameters)) as User[];
   }

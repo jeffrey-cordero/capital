@@ -4,7 +4,7 @@ export function sendErrors(res: Response, code: number, message:string, errors?:
    res.status(code).json({
       status: "Error",
       message: message,
-      errors: errors ?? {}
+      errors: errors || {}
    });
 };
 

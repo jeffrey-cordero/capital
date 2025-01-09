@@ -6,7 +6,7 @@ import { configureJWT } from "@/session";
 
 const create = asyncHandler(async (req: Request, res: Response) => {
    try {
-      const { username, name, password, confirmPassword, email } = req.body;
+      const { username, name, password, verifyPassword, email } = req.body;
 
       // Validate user fields
       const user = new User(null, username?.trim(), name?.trim(), password, email?.trim(), false);
@@ -15,17 +15,17 @@ const create = asyncHandler(async (req: Request, res: Response) => {
       if (errors !== null) {
          // Invalid user fields
          return sendErrors(res, 400, "Invalid user fields", errors);
-      } else if (password !== confirmPassword) {
+      } else if (password !== verifyPassword) {
          // Validate password match
          return sendErrors(res, 400, "Passwords do not match", {
             password: "Passwords do not match",
-            confirmPassword: "Passwords do not match"
+            verifyPassword: "Passwords do not match"
          });
       } else {
          // Validate user uniqueness
          const normalizedUsername = username.toLowerCase().trim();
          const normalizedEmail = email.toLowerCase().trim();
-         const conflicts = await User.findUserConstraints(normalizedUsername, normalizedEmail);
+         const conflicts = await User.fetchExistingUsers(normalizedUsername, normalizedEmail);
 
          if (conflicts.length > 0) {
             // User exists with same username or email
@@ -49,7 +49,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
             // Configure JWT token
             configureJWT(req, res, user);
 
-            return sendSuccess(res, 201, "Registration successful");
+            return sendSuccess(res, 201, "Registration successful", { token: req.session.token });
          }
       }
    } catch (error: any) {

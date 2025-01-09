@@ -8,11 +8,11 @@ services:
     networks:
       - capital_network
     ports:
-      - "5173:5173"
+      - "3000:3000"
     depends_on:
       - server
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5173 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
