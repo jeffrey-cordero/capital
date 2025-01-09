@@ -6,44 +6,48 @@ import { useNavigate } from "react-router";
 
 import { logout } from "@/redux/slices/auth";
 import { SERVER_URL } from "@/root";
+import { clearAuthentication } from "@/lib/auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+
+import NavigateButton from "@/components/global/navigate-button";
 
 export default function Home() {
    const dispatch = useDispatch();
-   const navigate = useNavigate();
+   const queryClient = useQueryClient();
 
-   const endSession = async() => {
-      try {
-         const response = await fetch(`${SERVER_URL}/auth/logout`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json"
-            },
-            credentials: "include"
-         });
+   const mutation = useMutation({
+      mutationFn: clearAuthentication,
+      onSuccess: () => {
+         // Update cached authentication status
+         queryClient.setQueriesData({ queryKey: "auth" }, false);
+         
+         // Update Redux store
+         dispatch(logout());
 
-         if (response.ok) {
-            dispatch(logout());
-            navigate("/login");
-         } else {
-            console.error("Failed to logout");
-         }
-      } catch (error) {
-         console.error(error);
-      }
-   };
+         // Navigate to the login page
+         window.location.reload();
+      },
+      onError: (error: any) => {
+        console.error(error);
+      },
+   });
+   
    return (
-      <Container>
+      <Container className="vh-100 d-flex flex-column justify-content-center align-items-center mb-3">
          <h1>
             Home
          </h1>
-         <Button
-            className = "icon"
-            onClick = { endSession }
-            variant = "danger"
+         <NavigateButton
+            navigate={ () => {
+               mutation.mutate();
+               window.location.reload();
+            }}
+            className = "icon primary danger"
          >
             <FontAwesomeIcon icon = { faRightFromBracket }/>
             <span>Logout</span>
-         </Button>
+         </NavigateButton>
       </Container>
    );
 }

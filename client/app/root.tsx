@@ -1,10 +1,9 @@
 import "@/styles/app.scss";
 
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
-import { client } from "@/client";
 import Error from "@/components/global/error";
 import store from "@/redux/store";
 
@@ -23,6 +22,7 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
+export const queryClient = new QueryClient();
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -49,7 +49,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
    return (
       <Provider store = { store }>
-         <QueryClientProvider client = { client }>
+         <QueryClientProvider client = { queryClient }>
             <Outlet />
          </QueryClientProvider>
       </Provider>

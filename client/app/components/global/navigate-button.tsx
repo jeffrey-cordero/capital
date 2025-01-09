@@ -12,7 +12,7 @@ function fetchDimensions(element: React.RefObject<HTMLButtonElement>, navigate: 
    const height = dimensions?.height || 0;
 
    if (width >= viewportWidth && height >= viewportHeight) {
-      setTimeout(() => navigate(), 50);
+      navigate();
    }
 }
 
@@ -38,17 +38,17 @@ function transitionToPage(element: React.RefObject<HTMLButtonElement>, navigate:
 
 interface NavigateButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>{
    navigate: () => void;
-   submission?: boolean;
+   disabled?: boolean;
 }
 
 export default function NavigateButton(props: NavigateButtonProps) {
-   const { navigate, submission, children, ...rest } = props;
+   const { navigate, disabled, children, ...rest } = props;
    const buttonRef = useRef<HTMLButtonElement>(null);
 
    return (
       <button
          { ...rest }
-         onClick = { () => submission !== false && buttonRef.current && transitionToPage(buttonRef as React.RefObject<HTMLButtonElement>, navigate) }
+         onClick = { () => disabled !== true && buttonRef.current && transitionToPage(buttonRef as React.RefObject<HTMLButtonElement>, navigate) }
          ref = { buttonRef }
       >
          { children }

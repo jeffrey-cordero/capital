@@ -24,3 +24,23 @@ export async function fetchAuthentication(): Promise<boolean> {
       return false;
    }
 };
+
+export async function clearAuthentication(): Promise<void> {
+   try {
+      const response = await fetch(`${SERVER_URL}/auth/logout`, {
+         method: "POST",
+         headers: {
+            "Content-Type": "application/json"
+         },
+         credentials: "include"
+      });
+
+      if (!response.ok) {
+         throw new Error("Failed to logout");
+      }
+   } catch (error) {
+      console.error(error);
+
+      throw error;
+   }
+};

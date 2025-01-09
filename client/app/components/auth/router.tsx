@@ -10,7 +10,13 @@ import type { RootState } from "@/redux/store";
 
 // Helper component to handle authentication-related redirection for landing/ home layouts
 export default function Router({ home }: { home: boolean }) {
-   const { data, isLoading, error, isError } = useQuery({ queryKey: ["auth"], queryFn: fetchAuthentication });
+   const { data, isLoading, error, isError } = useQuery({ 
+      queryKey: ["auth"], 
+      queryFn: fetchAuthentication,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000
+   });
+
    const authenticated: boolean = useSelector((state: RootState) => state.auth.value);
    const redirection: boolean = home && !authenticated || !home && authenticated;
    const navigate = useNavigate();

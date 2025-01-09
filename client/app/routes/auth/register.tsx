@@ -1,7 +1,234 @@
+import { faIdCard } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
+import { useForm } from "react-hook-form";
+
+import NavigateButton from "@/components/global/navigate-button";
+import { SERVER_URL } from "@/root";
+import { userSchema } from "@/zod/user";
+
+const registrationSchema = userSchema.extend({
+   verifyPassword: userSchema.shape.password
+});
+
 export default function Register() {
+   const [isNavigationButtonDisabled, setIsNavigationButtonDisabled] = useState(true);
+
+   const {
+      register,
+      handleSubmit,
+      setError,
+      formState: { errors }
+   } = useForm({
+      resolver: zodResolver(registrationSchema)
+   });
+
+   const onSubmit = async(data: any) => {
+      // Prevent multiple form submissions
+      if (!isNavigationButtonDisabled) return;
+
+      const registration = {
+         username: data.username.trim(),
+         name: data.name.trim(),
+         password: data.password.trim(),
+         verifyPassword: data.verifyPassword.trim(),
+         email: data.email.trim()
+      };
+
+      try {
+         const response = await fetch(`${SERVER_URL}/users`, {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json"
+            },
+            body: JSON.stringify(registration),
+            credentials: "include"
+         });
+
+         const parsed = await response.json();
+
+         if (response.ok) {
+            // Navigate to the home page
+            setIsNavigationButtonDisabled(false);
+
+            setTimeout(() => {
+               document.getElementById("register")?.click();
+            }, 500);
+         } else {
+            // Display server-side validation errors
+            const { errors }: { [key: string]: string } = parsed;
+
+            Object.entries(errors).forEach(
+               ([field, message]) => setError(field, { type: "server", message })
+            );
+         }
+      } catch (error) {
+         console.error(error);
+      }
+   };
+
    return (
-      <div>
-         Register
-      </div>
+      <Container>
+         <Row className = "vh-100 d-flex justify-content-center align-items-center mx-3">
+            <Col
+               lg = { 6 }
+               md = { 8 }
+               xs = { 12 }
+            >
+               <Card className = "border-5 border-primary border-top border-bottom-0 border-end-0 border-start-0 shadow-sm my-5">
+                  <Card.Body>
+                     <div className = "mb-3 mt-4">
+                        <div className = "image">
+                           <Image
+                              src = { `${SERVER_URL}/resources/auth/register.jpg` }
+                           />
+                           <p className = "fw-semibold">Please enter your personal details</p>
+                        </div>
+                        <Form
+                           className = "mb-3"
+                           onSubmit = { handleSubmit(onSubmit) }
+                        >
+                           <Form.Group className = "mb-3">
+                              <FloatingLabel
+                                 className = "mb-3"
+                                 label = "Username"
+                                 controlId = "username"
+                              >
+                                 <Form.Control
+                                    aria-label = "Username"
+                                    autoComplete = "username"
+                                    placeholder = "Username"
+                                    type = "text"
+                                    { ...register("username") }
+                                    isInvalid = { !!errors.username }
+                                 />
+                                 <Form.Control.Feedback
+                                    className = "mt-2"
+                                    type = "invalid"
+                                 >
+                                    { errors.username?.message?.toString() }
+                                 </Form.Control.Feedback>
+                              </FloatingLabel>
+                           </Form.Group>
+                           <Form.Group className = "mb-3">
+                              <FloatingLabel
+                                 className = "mb-3"
+                                 label = "Name"
+                                 controlId = "name"
+                              >
+                                 <Form.Control
+                                    aria-label = "Name"
+                                    autoComplete = "name"
+                                    placeholder = "Name"
+                                    type = "text"
+                                    { ...register("name") }
+                                    isInvalid = { !!errors.name }
+                                 />
+                                 <Form.Control.Feedback
+                                    className = "mt-2"
+                                    type = "invalid"
+                                 >
+                                    { errors.name?.message?.toString() }
+                                 </Form.Control.Feedback>
+                              </FloatingLabel>
+                           </Form.Group>
+                           <Form.Group className = "mb-3">
+                              <FloatingLabel
+                                 className = "mb-3"
+                                 label = "Password"
+                                 controlId = "password"
+                              >
+                                 <Form.Control
+                                    aria-label = "Password"
+                                    autoComplete = "new-password"
+                                    placeholder = "Password"
+                                    type = "password"
+                                    { ...register("password") }
+                                    isInvalid = { !!errors.password }
+                                 />
+                                 <Form.Control.Feedback
+                                    className = "mt-2"
+                                    type = "invalid"
+                                 >
+                                    { errors.password?.message?.toString() }
+                                 </Form.Control.Feedback>
+                              </FloatingLabel>
+                           </Form.Group>
+                           <Form.Group className = "mb-3">
+                              <FloatingLabel
+                                 className = "mb-3"
+                                 label = "Verify Password"
+                                 controlId = "verifyPassword"
+                              >
+                                 <Form.Control
+                                    aria-label = "Verify Password"
+                                    autoComplete = "new-password"
+                                    placeholder = "Verify Password"
+                                    type = "password"
+                                    { ...register("verifyPassword") }
+                                    isInvalid = { !!errors.verifyPassword }
+                                 />
+                                 <Form.Control.Feedback
+                                    className = "mt-2"
+                                    type = "invalid"
+                                 >
+                                    { errors.verifyPassword?.message?.toString() }
+                                 </Form.Control.Feedback>
+                              </FloatingLabel>
+                           </Form.Group>
+                           <Form.Group className = "mb-3">
+                              <FloatingLabel
+                                 className = "mb-3"
+                                 label = "Email"
+                                 controlId = "email"
+                              >
+                                 <Form.Control
+                                    aria-label = "Email"
+                                    autoComplete = "email"
+                                    placeholder = "Email"
+                                    type = "email"
+                                    { ...register("email") }
+                                    isInvalid = { !!errors.email }
+                                 />
+                                 <Form.Control.Feedback
+                                    className = "mt-2"
+                                    type = "invalid"
+                                 >
+                                    { errors.email?.message?.toString() }
+                                 </Form.Control.Feedback>
+                              </FloatingLabel>
+                           </Form.Group>
+                           <Form.Group className = "mb-3">
+                              <NavigateButton
+                                 className = "primary icon"
+                                 disabled = { isNavigationButtonDisabled }
+                                 id = "register"
+                                 navigate = { () => window.location.reload() }
+                                 type = "submit"
+                              >
+                                 <FontAwesomeIcon icon = { faIdCard } />
+                                 <span>Register</span>
+                              </NavigateButton>
+                           </Form.Group>
+                        </Form>
+                        <div className = "mt-3">
+                           <p className = "mb-0 text-center">
+                              Already have an account?{ " " }
+                              <a
+                                 className = "text-primary fw-bold"
+                                 href = "/login"
+                              >
+                                 Log In
+                              </a>
+                           </p>
+                        </div>
+                     </div>
+                  </Card.Body>
+               </Card>
+            </Col>
+         </Row>
+      </Container>
    );
 }
