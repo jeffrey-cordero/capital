@@ -2,6 +2,7 @@ require("dotenv").config();
 require('module-alias/register');
 
 import express from "express";
+import cron from "node-cron";
 import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
@@ -15,6 +16,7 @@ import usersRouter from "@/routes/users/users";
 import { session } from "@/session";
 import { sendErrors } from "@/controllers/api/response";
 import { Request, Response } from "express";
+import { Stocks } from "@/models/stocks";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -58,6 +60,20 @@ app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': tr
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
+
+// Schedule cron jobs, mainly for updating hourly stock data
+const initializeStocks = async () => {
+   // Insert stock data if it doesn't exist
+   if (await Stocks.fetchStocks() === null) {
+      // await Stocks.updateStocks();
+   }
+}
+
+initializeStocks();
+
+cron.schedule("0 * * * *", async () => {
+   await Stocks.updateStocks();
+});
 
 // Catch 404 and forward to error handler
 app.use(function (req: Request, res: Response) {
