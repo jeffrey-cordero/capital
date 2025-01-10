@@ -52,6 +52,12 @@ function authenticateJWT(required: boolean) {
             next();
          } catch (error) {
             console.error(error);
+
+            if (error instanceof jwt.TokenExpiredError) {
+               // Clear the expired token from the client
+               res.clearCookie("token");
+               res.clearCookie('connect.sid');
+            }
             
             // If the token is invalid, return 403 Forbidden
             return sendErrors(res, 403, "Access Denied: Invalid Token");

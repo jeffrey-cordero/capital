@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
 import { z } from "zod";
 
 import NavigateButton from "@/components/global/navigate-button";
@@ -93,8 +92,8 @@ export default function Login() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Username"
                                  controlId = "username"
+                                 label = "Username"
                               >
                                  <Form.Control
                                     aria-label = "Username"
@@ -115,8 +114,8 @@ export default function Login() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Password"
                                  controlId = "password"
+                                 label = "Password"
                               >
                                  <Form.Control
                                     aria-label = "Password"

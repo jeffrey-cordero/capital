@@ -93,8 +93,8 @@ export default function Register() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Username"
                                  controlId = "username"
+                                 label = "Username"
                               >
                                  <Form.Control
                                     aria-label = "Username"
@@ -115,8 +115,8 @@ export default function Register() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Name"
                                  controlId = "name"
+                                 label = "Name"
                               >
                                  <Form.Control
                                     aria-label = "Name"
@@ -137,8 +137,8 @@ export default function Register() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Password"
                                  controlId = "password"
+                                 label = "Password"
                               >
                                  <Form.Control
                                     aria-label = "Password"
@@ -159,8 +159,8 @@ export default function Register() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Verify Password"
                                  controlId = "verifyPassword"
+                                 label = "Verify Password"
                               >
                                  <Form.Control
                                     aria-label = "Verify Password"
@@ -181,8 +181,8 @@ export default function Register() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Email"
                                  controlId = "email"
+                                 label = "Email"
                               >
                                  <Form.Control
                                     aria-label = "Email"

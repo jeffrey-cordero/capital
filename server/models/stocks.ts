@@ -1,5 +1,6 @@
-import { runQuery } from "@/database/query";
 const fs = require("fs").promises;
+import { runQuery } from "@/database/query";
+import { redisClient } from "@/app";
 
 export class Stocks {
    time: Date;
@@ -11,40 +12,45 @@ export class Stocks {
    }
 
    static async fetchStocks(): Promise<Stocks | null> {
+      // Assumes stocks are not cached
       const search = "SELECT * FROM stocks;";
       const result = await runQuery(search, []) as Stocks[];
 
       if (result.length === 0) {
          return null;
       } else {
+         redisClient.set("stocks", JSON.stringify({ time: result[0].time, data: result[0].data }));
+
          return result[0];
       }
    }
 
    static async insertStocks(time: Date, data: Object): Promise<void> {
       try {
-         // Start a transaction to ensure data consistency
-         const startTransaction = "START TRANSACTION;";
-         await runQuery(startTransaction, []);
-       
-         // Delete all existing stock data
-         const deletion = "DELETE FROM stocks;";
-         await runQuery(deletion, []);
-       
+         // Start transaction
+         await runQuery("START TRANSACTION;", []);
+
+         // Delete existing stocks
+         await runQuery("DELETE FROM stocks;", []);
+
          // Insert new stock data
-         const insert = "INSERT INTO stocks (time, data) VALUES (?, ?);";
+         const insertQuery = "INSERT INTO stocks (time, data) VALUES (?, ?);";
          const parameters = [time, JSON.stringify(data)];
-         await runQuery(insert, parameters);
-       
+         await runQuery(insertQuery, parameters);
+
          // Commit the transaction
-         const commitTransaction = "COMMIT;";
-         await runQuery(commitTransaction, []);
+         await runQuery("COMMIT;", []);
        } catch (error) {
          // Rollback in case of an error
-         const rollbackTransaction = "ROLLBACK;";
-         await runQuery(rollbackTransaction, []);
+         try {
+            // Attempt rollback if the transaction has started
+            await runQuery("ROLLBACK;", []);
+         } catch (rollbackError) {
+            console.error("Rollback failed:", rollbackError);
+         }
+
          console.error("Transaction failed:", error);
-       }
+      }
    }
 
    static async updateStocks(): Promise<void> {
@@ -70,14 +76,23 @@ export class Stocks {
                stocks[symbol]= result["Time Series (Daily)"];
             }
          }  catch (error) {
-            console.log(error);
+            // Use backup data if API request fails
+            console.error(error);
             
             const jsonBackup = await fs.readFile("resources/home/stocks.json", "utf8");
             stocks = await JSON.parse(jsonBackup);
-            return;
+
+            break;
          }
       };
 
-      await Stocks.insertStocks(new Date(), stocks);
+      const time = new Date();
+      const data = JSON.stringify(stocks);
+
+      // Store in the database
+      await Stocks.insertStocks(time, data);
+      
+      // Store in the Redis cache
+      await redisClient.set("stocks", JSON.stringify({ time: time, data: data }));
    }
 }

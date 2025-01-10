@@ -13,10 +13,12 @@ import serveIndex from 'serve-index';
 import indexRouter from "@/routes/index";
 import authRouter from "@/routes/auth/auth";
 import usersRouter from "@/routes/users/users";
+import homeRouter from "@/routes/home/home";
 import { session } from "@/session";
 import { sendErrors } from "@/controllers/api/response";
 import { Request, Response } from "express";
 import { Stocks } from "@/models/stocks";
+import { Stories } from "@/models/stories";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -59,21 +61,22 @@ app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': tr
 
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
+app.use("/home", homeRouter);
 app.use("/users", usersRouter);
 
-// Schedule cron jobs, mainly for updating hourly stock data
-const initializeStocks = async () => {
-   // Insert stock data if it doesn't exist
-   if (await Stocks.fetchStocks() === null) {
-      // await Stocks.updateStocks();
-   }
-}
-
-initializeStocks();
-
+// Cron job to update stock and financial news data every hour
 cron.schedule("0 * * * *", async () => {
    await Stocks.updateStocks();
+   await Stories.fetchStories();
 });
+
+// Initialize Redis cache with stock and financial news data, if applicable
+const initializeRedisCache = async () => {
+   await Stocks.fetchStocks() === null && await Stocks.updateStocks();
+   await redisClient.get("stories") === null && await Stories.fetchStories();
+}
+
+initializeRedisCache();
 
 // Catch 404 and forward to error handler
 app.use(function (req: Request, res: Response) {

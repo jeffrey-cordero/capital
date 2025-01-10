@@ -1,16 +1,14 @@
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Container } from "react-bootstrap";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
-
-import { logout } from "@/redux/slices/auth";
-import { SERVER_URL } from "@/root";
-import { clearAuthentication } from "@/lib/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { Col, Container, Row } from "react-bootstrap";
+import { useDispatch } from "react-redux";
 
 import NavigateButton from "@/components/global/navigate-button";
+import { clearAuthentication } from "@/lib/auth";
+import { logout } from "@/redux/slices/auth";
+import Stories from "@/components/home/stories";
+import Chart from "@/components/home/chart";
 
 export default function Home() {
    const dispatch = useDispatch();
@@ -21,7 +19,7 @@ export default function Home() {
       onSuccess: () => {
          // Update cached authentication status
          queryClient.setQueriesData({ queryKey: "auth" }, false);
-         
+
          // Update Redux store
          dispatch(logout());
 
@@ -29,25 +27,41 @@ export default function Home() {
          window.location.reload();
       },
       onError: (error: any) => {
-        console.error(error);
-      },
+         console.error(error);
+      }
    });
-   
+
    return (
-      <Container className="vh-100 d-flex flex-column justify-content-center align-items-center mb-3">
-         <h1>
-            Home
-         </h1>
-         <NavigateButton
-            navigate={ () => {
-               mutation.mutate();
-               window.location.reload();
-            }}
-            className = "icon primary danger"
-         >
-            <FontAwesomeIcon icon = { faRightFromBracket }/>
-            <span>Logout</span>
-         </NavigateButton>
-      </Container>
+      <Container fluid className="vw-100 d-flex flex-column justify-content-center align-items-center mb-3">
+      <Row className="w-100">
+         {/* Main content on left side */}
+         <Col xs={12} md={8} className="vh-100">
+            <div className="d-flex flex-column justify-content-between align-items-center gap-3">
+               {/* main stuff goes here */}
+               <div>
+                  <Chart />
+               </div>
+               
+               <NavigateButton
+                  className="icon primary danger"
+                  navigate={() => {
+                     mutation.mutate();
+                     window.location.reload();
+                  }}
+               >
+                  <FontAwesomeIcon icon={faRightFromBracket} />
+                  <span>Logout</span>
+               </NavigateButton>
+            </div>
+         </Col>
+
+         {/* Stories on right side for large screens, takes its own row on smaller screens */}
+         <Col lg={12} xl={4}>
+            <div>
+               <Stories />
+            </div>
+         </Col>
+      </Row>
+   </Container>
    );
 }
