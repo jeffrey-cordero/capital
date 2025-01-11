@@ -60,7 +60,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - capital_mysql_data:/capital/mysql_data
-      - ./server/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./server/lib/database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - capital_network
     healthcheck:

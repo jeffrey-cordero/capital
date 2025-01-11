@@ -14,7 +14,7 @@ function parseXML (xml: string): Promise<Object> {
    });
 }
 
-export class Stories {
+export class StoriesModel {
    data: Object;
 
    constructor(data: Object) {

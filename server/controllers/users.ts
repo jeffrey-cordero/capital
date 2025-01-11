@@ -1,15 +1,16 @@
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
-import { sendErrors, sendSuccess } from "@/controllers/api/response";
-import { User } from "@/models/user";
-import { configureJWT } from "@/session";
+import { sendErrors, sendSuccess } from "@/server/lib/api/response";
+import { UserModel } from "@/server/models/user";
+import { configureJWT } from "@/server/session";
+import { User } from "@/types/user";
 
-const create = asyncHandler(async (req: Request, res: Response) => {
+export const createUser = asyncHandler(async (req: Request, res: Response) => {
    try {
-      const { username, name, password, verifyPassword, email } = req.body;
+      const { username, name, password, verifyPassword, email } = req.body as User;
 
       // Validate user fields
-      const user = new User(null, username?.trim(), name?.trim(), password, email?.trim(), false);
+      const user = new UserModel(null, username?.trim(), name?.trim(), password, email?.trim(), false);
       const errors = user.validate();
 
       if (errors !== null) {
@@ -25,7 +26,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
          // Validate user uniqueness
          const normalizedUsername = username.toLowerCase().trim();
          const normalizedEmail = email.toLowerCase().trim();
-         const conflicts = await User.fetchExistingUsers(normalizedUsername, normalizedEmail);
+         const conflicts = await UserModel.fetchExistingUsers(normalizedUsername, normalizedEmail);
 
          if (conflicts.length > 0) {
             // User exists with same username or email
@@ -39,7 +40,7 @@ const create = asyncHandler(async (req: Request, res: Response) => {
                }
 
                return account;
-            }, {} as { [key: string]: string });
+            }, {} as Record<string, string>);
 
             return sendErrors(res, 400, "Account conflicts", errors);
          } else {
@@ -59,5 +60,10 @@ const create = asyncHandler(async (req: Request, res: Response) => {
    }
 });
 
-export default create;
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+   return sendSuccess(res, 200, "Updating user awaits implementation");
+});
 
+export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+   return sendSuccess(res, 200, "Deleting user awaits implementation");
+});

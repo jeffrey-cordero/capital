@@ -5,9 +5,9 @@ import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 
-import NavigateButton from "@/components/global/navigate-button";
-import { SERVER_URL } from "@/root";
-import { userSchema } from "@/zod/user";
+import NavigateButton from "@/client/app/components/global/navigate-button";
+import { SERVER_URL } from "@/client/app/root";
+import { userSchema } from "@/types/user";
 
 const registrationSchema = userSchema.extend({
    verifyPassword: userSchema.shape.password
@@ -58,7 +58,7 @@ export default function Register() {
             }, 500);
          } else {
             // Display server-side validation errors
-            const { errors }: { [key: string]: string } = parsed;
+            const { errors }: Record<string, string> = parsed;
 
             Object.entries(errors).forEach(
                ([field, message]) => setError(field, { type: "server", message })

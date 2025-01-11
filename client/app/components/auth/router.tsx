@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
 
-import Loading from "@/components/global/loading";
+import Loading from "@/client/app/components/global/loading";
 import { fetchAuthentication } from "@/lib/auth";
 import { authenticate } from "@/redux/slices/auth";
 import type { RootState } from "@/redux/store";

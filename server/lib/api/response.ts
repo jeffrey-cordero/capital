@@ -1,6 +1,6 @@
 import { Response } from "express";
 
-export function sendErrors(res: Response, code: number, message:string, errors?: { [key: string]: string} ): void {
+export function sendErrors(res: Response, code: number, message:string, errors?: Record<string, string> ): void {
    res.status(code).json({
       status: "Error",
       message: message,

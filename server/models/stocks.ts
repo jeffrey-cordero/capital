@@ -1,8 +1,10 @@
 const fs = require("fs").promises;
-import { runQuery } from "@/database/query";
-import { redisClient } from "@/app";
+import { runQuery } from "@/server/lib/database/query";
+import { redisClient } from "@/server/app";
 
-export class Stocks {
+import { Stocks } from "@/types/stocks";
+
+export class StocksModel {
    time: Date;
    data: Object;
 
@@ -14,14 +16,14 @@ export class Stocks {
    static async fetchStocks(): Promise<Stocks | null> {
       // Assumes stocks are not cached
       const search = "SELECT * FROM stocks;";
-      const result = await runQuery(search, []) as Stocks[];
+      const result = await runQuery(search, []) as StocksModel[];
 
       if (result.length === 0) {
          return null;
       } else {
          redisClient.set("stocks", JSON.stringify({ time: result[0].time, data: result[0].data }));
 
-         return result[0];
+         return result[0].data as Stocks;
       }
    }
 
@@ -55,8 +57,8 @@ export class Stocks {
 
    static async updateStocks(): Promise<void> {
       // API request to fetch stock data
-      let stocks: { [key: string]: any } = {};
       const symbols = ["VT", "VTI", "SPY", "QQQ", "BITW"];
+      let stocks: Stocks = {};
    
       for (const symbol of symbols) {
          try {
@@ -90,7 +92,7 @@ export class Stocks {
       const data = JSON.stringify(stocks);
 
       // Store in the database
-      await Stocks.insertStocks(time, data);
+      await StocksModel.insertStocks(time, data);
       
       // Store in the Redis cache
       await redisClient.set("stocks", JSON.stringify({ time: time, data: data }));

@@ -4,7 +4,11 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-   resolve: { alias: { "@": "/app" } },
+   resolve: {
+      alias: {
+         "@": "."
+      }
+   },
    css: {
       postcss: {
          plugins: [autoprefixer]

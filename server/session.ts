@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import session from "express-session";
 import { NextFunction, Request, Response } from "express";
-import { sendErrors } from "@/controllers/api/response";
-import { User } from "@/models/user";
+import { sendErrors } from "@/server/lib/api/response";
+import { User } from "@/types/user";
 
 declare module 'express-session' {
    export interface SessionData {

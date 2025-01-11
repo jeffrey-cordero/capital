@@ -8,7 +8,15 @@
     "start": "npm --prefix client run start && npm --prefix server run start",
     "dev": "npm --prefix client run dev && npm --prefix server run dev"
   },
-  "keywords": ["Finance", "Tracker", "Stocks", "Management"],
+  "keywords": [
+    "Finance",
+    "Tracker",
+    "Stocks",
+    "Management"
+  ],
   "author": "Jeffrey Cordero",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
 }

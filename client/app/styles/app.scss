@@ -55,11 +55,11 @@ div {
   &.story {
     width: 20rem;
     margin:auto;
-    box-shadow: rgba(0, 0, 0, 0.04) 0px 3px 5px;
+    box-shadow: rgb(0 0 0 / 4%) 0 3px 5px;
 
     .story-image {
       aspect-ratio: 16/9;
-      box-shadow: var(--text-color) 0px 0px 3px;
+      box-shadow: var(--text-color) 0 0 3px;
       overflow: hidden;
      
       img {

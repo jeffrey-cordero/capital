@@ -1,6 +1,6 @@
 import { Image } from "react-bootstrap";
 
-import { SERVER_URL } from "@/root";
+import { SERVER_URL } from "@/client/app/root";
 
 export default function Error() {
    return (

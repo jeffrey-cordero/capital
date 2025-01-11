@@ -1,4 +1,4 @@
-import { SERVER_URL } from "@/root";
+import { SERVER_URL } from "@/client/app/root";
 
 export async function fetchAuthentication(): Promise<boolean> {
    try {

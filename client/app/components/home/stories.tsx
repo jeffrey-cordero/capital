@@ -1,10 +1,10 @@
-import { Card, Container, Image } from "react-bootstrap";
-
-import { SERVER_URL } from "@/root"
+import { faAt, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAt, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { Card, Container, Image } from "react-bootstrap";
+
+import { SERVER_URL } from "@/client/app/root";
 
 interface StoryProps {
    "author": string[];
@@ -15,7 +15,7 @@ interface StoryProps {
    "media:content": { $: { image: string; type: string; url: string } }[];
 }
 
-async function fetchStories(): Promise<{ channel: { item: Array<StoryProps> }[] }> {
+export async function fetchStories(): Promise<{ channel: { item: Array<StoryProps> }[] }> {
    try {
       const response = await fetch(`${SERVER_URL}/home/stories`, {
          method: "GET",
@@ -50,10 +50,9 @@ function timeSinceLastUpdate(date: string) {
    } else {
       const parts = [];
 
-      if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
-      if (hours > 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? 's' : ''}`);
-      if (minutes > 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? 's' : ''}`);
-
+      if (days > 0) parts.push(`${days} day${days > 1 ? "s" : ""}`);
+      if (hours > 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
+      if (minutes > 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
 
       return parts.join(", ") + " ago";
    }
@@ -67,40 +66,48 @@ function Story(props: StoryProps) {
    const image = props["media:content"][0].$.url;
 
    return (
-      <Card className="story">
-         <div className="story-image">
+      <Card className = "story">
+         <div className = "story-image">
             <Card.Img
-               variant="top"
-               src={imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg`}
-               onError={() => setIsResourceError(true)}
+               onError = { () => setIsResourceError(true) }
+               src = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
+               variant = "top"
             />
          </div>
          <Card.Body>
-            <Card.Title className="fw-semibold">
-               <a href={link[0]} target="_blank">
-                  {title}
+            <Card.Title className = "fw-semibold">
+               <a
+                  href = { link[0] }
+                  rel = "noreferrer"
+                  target = "_blank"
+               >
+                  { title }
                </a>
             </Card.Title>
-            <Card.Text className="fw-normal fs-6">
-               {description}
+            <Card.Text className = "fw-normal fs-6">
+               { description }
             </Card.Text>
          </Card.Body>
-         <Card.Footer className="d-flex flex-column justify-content-start align-items-start gap-1">
-            <div className="d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon={faAt} />
-               <small className="text-muted">
-                  {author[0]}
+         <Card.Footer className = "d-flex flex-column justify-content-start align-items-start gap-1">
+            <div className = "d-flex justify-content-start align-items-center gap-2">
+               <FontAwesomeIcon icon = { faAt } />
+               <small className = "text-muted">
+                  { author[0] }
                </small>
             </div>
-            <div className="d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon={faCalendarDays} />
-               <small className="text-muted">
-                  {`Last updated ${timeSinceLastUpdate(pubDate[0])}`}
+            <div className = "d-flex justify-content-start align-items-center gap-2">
+               <FontAwesomeIcon icon = { faCalendarDays } />
+               <small className = "text-muted">
+                  { `Last updated ${timeSinceLastUpdate(pubDate[0])}` }
                </small>
             </div>
          </Card.Footer>
       </Card>
    );
+}
+
+interface StoriesProps {
+   stories: Array<StoryProps>;
 }
 
 export default function Stories() {
@@ -112,21 +119,24 @@ export default function Stories() {
    });
 
    return (
-      !isLoading ? (
+      !isLoading && Object.keys(data as object).length > 0 ? (
          <Container>
-            <div className="image">
-               <Image src={`${SERVER_URL}/resources/home/stories.png`} alt="Stories" />
+            <div className = "image">
+               <Image
+                  alt = "Stories"
+                  src = { `${SERVER_URL}/resources/home/stories.png` }
+               />
             </div>
-            <div className="d-flex flex-column justify-content-center align-items-center gap-3">
+            <div className = "d-flex flex-column justify-content-center align-items-center gap-3">
                {
                   data?.channel[0].item.map(
                      (item: StoryProps, index: number) => {
                         return (
                            <Story
-                              {...item}
-                              key={index}
+                              { ...item }
+                              key = { index }
                            />
-                        )
+                        );
                      }
                   )
                }
@@ -135,5 +145,5 @@ export default function Stories() {
       ) : (
          null
       )
-   )
+   );
 }

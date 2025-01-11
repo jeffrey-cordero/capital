@@ -10,15 +10,15 @@ import cors from "cors";
 import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
-import indexRouter from "@/routes/index";
-import authRouter from "@/routes/auth/auth";
-import usersRouter from "@/routes/users/users";
-import homeRouter from "@/routes/home/home";
-import { session } from "@/session";
-import { sendErrors } from "@/controllers/api/response";
+import indexRouter from "@/server/routes/index";
+import authRouter from "@/server/routes/auth";
+import usersRouter from "@/server/routes/users";
+import homeRouter from "@/server/routes/home";
+import { session } from "@/server/session";
+import { sendErrors } from "@/server/lib/api/response";
 import { Request, Response } from "express";
-import { Stocks } from "@/models/stocks";
-import { Stories } from "@/models/stories";
+import { StocksModel } from "@/server/models/stocks";
+import { StoriesModel } from "@/server/models/stories";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -66,14 +66,14 @@ app.use("/users", usersRouter);
 
 // Cron job to update stock and financial news data every hour
 cron.schedule("0 * * * *", async () => {
-   await Stocks.updateStocks();
-   await Stories.fetchStories();
+   await StocksModel.updateStocks();
+   await StoriesModel.fetchStories();
 });
 
 // Initialize Redis cache with stock and financial news data, if applicable
 const initializeRedisCache = async () => {
-   await Stocks.fetchStocks() === null && await Stocks.updateStocks();
-   await redisClient.get("stories") === null && await Stories.fetchStories();
+   await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
+   await redisClient.get("stories") === null && await StoriesModel.fetchStories();
 }
 
 initializeRedisCache();

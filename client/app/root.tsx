@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
-import Error from "@/components/global/error";
-import store from "@/redux/store";
+import Error from "@/client/app/components/global/error";
+import store from "@/client/app/redux/store";
 
 import type { Route } from "./+types/root";
 
