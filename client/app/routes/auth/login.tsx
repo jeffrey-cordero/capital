@@ -1,15 +1,14 @@
 import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { userSchema } from "capital-types/user";
 import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
 import { z } from "zod";
 
 import NavigateButton from "@/components/global/navigate-button";
 import { SERVER_URL } from "@/root";
-import { userSchema } from "@/zod/user";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -58,7 +57,7 @@ export default function Login() {
             }, 500);
          } else {
             // Display server-side validation errors
-            const { errors }: { [key: string]: string } = parsed;
+            const { errors }: Record<string, string> = parsed;
 
             Object.entries(errors).forEach(
                ([field, message]) => setError(field, { type: "server", message })
@@ -93,8 +92,8 @@ export default function Login() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Username"
                                  controlId = "username"
+                                 label = "Username"
                               >
                                  <Form.Control
                                     aria-label = "Username"
@@ -115,8 +114,8 @@ export default function Login() {
                            <Form.Group className = "mb-3">
                               <FloatingLabel
                                  className = "mb-3"
-                                 label = "Password"
                                  controlId = "password"
+                                 label = "Password"
                               >
                                  <Form.Control
                                     aria-label = "Password"

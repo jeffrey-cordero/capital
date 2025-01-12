@@ -1,0 +1,10 @@
+{
+  "name": "capital-types",
+  "version": "1.0.0",
+  "author": "",
+  "license": "MIT",
+  "description": "Types and Schemas for Capital",
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

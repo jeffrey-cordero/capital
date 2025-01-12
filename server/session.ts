@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import session from "express-session";
 import { NextFunction, Request, Response } from "express";
-import { sendErrors } from "@/controllers/api/response";
-import { User } from "@/models/user";
+import { sendErrors } from "@/lib/api/response";
+
+import { User } from "capital-types/user"
 
 declare module 'express-session' {
    export interface SessionData {
@@ -52,6 +53,12 @@ function authenticateJWT(required: boolean) {
             next();
          } catch (error) {
             console.error(error);
+
+            if (error instanceof jwt.TokenExpiredError) {
+               // Clear the expired token from the client
+               res.clearCookie("token");
+               res.clearCookie('connect.sid');
+            }
             
             // If the token is invalid, return 403 Forbidden
             return sendErrors(res, 403, "Access Denied: Invalid Token");

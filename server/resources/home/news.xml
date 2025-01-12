@@ -1,0 +1,155 @@
+<rss xmlns:media="http://search.yahoo.com/mrss/"
+   xmlns:content="http://purl.org/rss/1.0/modules/content/"
+   xmlns:wsj="http://www.w3.org/1999/XSL/Transform" version="2.0">
+   <channel>
+      <title>MarketWatch.com - Top Stories</title>
+      <description>MarketWatch, a leading publisher of business and financial news, offers users
+         up-to-the minute news, investment tools, and subscription products.</description>
+      <link>http://www.marketwatch.com/</link>
+      <language>en-us</language>
+      <copyright>Copyright © Dow Jones &amp; Company, Inc. All rights reserved.</copyright>
+      <lastBuildDate>Fri, 10 Jan 2025 12:34:27 GMT</lastBuildDate>
+      <ttl>60</ttl>
+      <image>
+         <title>MarketWatch.com - Top Stories</title>
+         <url>https://www.marketwatch.com/rss/marketwatch.gif</url>
+         <link>http://www.marketwatch.com/</link>
+      </image>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003898967</guid>
+         <title>Are you making it in this economy, or just getting by? These two factors can
+            determine your status.</title>
+         <description>The last four years ushered in a divided economy that left some Americans
+            “clobbered” and others racing ahead. Two factors — homeownership and stock ownership —
+            determined the difference.</description>
+         <link>
+            https://www.marketwatch.com/story/are-you-making-it-in-this-economy-or-just-getting-by-these-two-factors-can-determine-your-status-2532a715?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:30:00 GMT</pubDate>
+         <author>Hannah Erin Lang</author>
+         <media:content url="https://images.mktw.net/im-39708022" medium="image" type="image/jpeg">
+            <media:credit>MarketWatch photo illustration/iStockphoto</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003860007</guid>
+         <title>‘I’ve never been happier’: I married a wonderful lady from Ukraine. I have two
+            successful kids. Do I put my wife on the deed to my home?</title>
+         <description>“We are now looking to downsize and move to another home and I’m wondering if
+            we should put the new property in joint names.”</description>
+         <link>
+            https://www.marketwatch.com/story/ive-never-been-happier-i-married-a-wonderful-lady-from-ukraine-i-have-two-successful-kids-do-i-put-my-wife-on-the-deed-to-my-home-3b5d8422?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:21:00 GMT</pubDate>
+         <author>Quentin Fottrell</author>
+         <media:content url="https://images.mktw.net/im-87875626" medium="image" type="image/jpeg"> </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003902568</guid>
+         <title>Constellation to buy Calpine for $16 billion in deal combining nuclear, natural gas</title>
+         <description>Constellation Energy — the electricity provider whose stock has doubled over
+            the last year on hopes it’ll help meet the voracious energy demand from artificial
+            intelligence — reached a $16 billion deal to buy Calpine.</description>
+         <link>
+            https://www.marketwatch.com/story/constellation-to-buy-calpine-for-16-billion-in-deal-combining-nuclear-natural-gas-15661250?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:14:00 GMT</pubDate>
+         <author>Steve Goldstein</author>
+         <media:content url="https://images.mktw.net/im-49525685" medium="image" type="image/jpeg">
+            <media:credit>Getty Images</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003902521</guid>
+         <title>Delta Air is betting on a strong 2025 driven by demand for premium travel</title>
+         <description>Delta Air Lines Inc.’s stock jumped 3.4% in premarket trade Friday, after the
+            carrier beat fourth-quarter profit and revenue estimates and forecast a strong 2025
+            driven by demand for premium travel.</description>
+         <link>
+            https://www.marketwatch.com/story/delta-airs-stock-jumps-3-4-after-earnings-beat-as-airline-forecasts-strong-2025-driven-by-premium-travel-b85df87f?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:01:00 GMT</pubDate>
+         <author>Ciara Linnane</author>
+         <media:content url="https://images.mktw.net/im-60569745" medium="image" type="image/jpeg">
+            <media:credit>Mario Tama/Getty Images</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003900739</guid>
+         <title>Wall Street gets off to a bumpy start to 2025. How investors can prepare for more
+            volatility ahead. </title>
+         <description>A sharp selloff in the world’s largest bond market sent shockwaves through the
+            U.S. financial markets this week, leaving investors to ponder if that choppiness will
+            persist throughout the new year.</description>
+         <link>
+            https://www.marketwatch.com/story/wall-street-gets-off-to-a-bumpy-start-to-2025-how-investors-can-prepare-for-more-volatility-ahead-b69bca66?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:00:00 GMT</pubDate>
+         <author>Isabel Wang</author>
+         <media:content url="https://images.mktw.net/im-608369" medium="image" type="image/jpeg">
+            <media:credit>MarketWatch photo illustration/iStockphoto</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003901162</guid>
+         <title>Elevated Treasury yields are weighing on bitcoin. Here’s a case for it dropping to
+            $90,000.</title>
+         <description>Bitcoin is on pace to record its third straight day of decline, as
+            macroeconomic headwinds weighed on the crypto after it hit a record high near $110,000
+            last month.</description>
+         <link>
+            https://www.marketwatch.com/story/elevated-treasury-yields-are-weighing-on-bitcoin-heres-a-case-for-it-dropping-to-90-000-e00ffc7c?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 12:00:00 GMT</pubDate>
+         <author>Frances Yue</author>
+         <media:content url="https://images.mktw.net/im-45743395" medium="image" type="image/jpeg">
+            <media:credit>ozan kose/Agence France-Presse/Getty Images</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003899193</guid>
+         <title>Jensen Huang crushed the quantum stocks, and now the so-called ‘Pharma Bro’ is going
+            for the kill</title>
+         <description>Martin Shkreli says he’s short the likes of Rigetti Computing as market
+            resembles the dotcom bubble</description>
+         <link>
+            https://www.marketwatch.com/story/jensen-huang-crushed-the-quantum-stocks-and-now-the-so-called-pharma-bro-is-going-for-the-kill-1368491e?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 11:46:00 GMT</pubDate>
+         <author>Jamie Chisholm</author>
+         <media:content url="https://images.mktw.net/im-57200491" medium="image" type="image/jpeg">
+            <media:credit>Getty Images/iStockphoto</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003899462</guid>
+         <title>Are Roth IRAs really better? Not necessarily.</title>
+         <description>Roths may be overrated for most investors, new research suggests.</description>
+         <link>
+            https://www.marketwatch.com/story/are-roth-iras-really-better-not-necessarily-e53ca7ac?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 11:41:00 GMT</pubDate>
+         <author>Brett Arends</author>
+         <media:content url="https://images.mktw.net/im-26105857" medium="image" type="image/jpeg">
+            <media:credit>Getty Images</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003900398</guid>
+         <title>Why Elon Musk had to drop his ‘DOGE’ pledge to cut $2 trillion from the federal
+            budget</title>
+         <description>We told you he would months ago, when he made the promise.</description>
+         <link>
+            https://www.marketwatch.com/story/why-elon-musk-had-to-drop-his-doge-pledge-to-cut-2-trillion-from-the-federal-budget-3c7abaa6?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 11:34:00 GMT</pubDate>
+         <author>Brett Arends</author>
+         <media:content url="https://images.mktw.net/im-35453024" medium="image" type="image/jpeg">
+            <media:credit>angela weiss/Agence France-Presse/Getty Images</media:credit>
+         </media:content>
+      </item>
+      <item>
+         <guid isPermaLink="false">WP-MKTW-0003900462</guid>
+         <title>How helpful is auto-enrollment in 401(k) plans?</title>
+         <description>Making saving easy remains essential</description>
+         <link>
+            https://www.marketwatch.com/story/how-helpful-is-auto-enrollment-in-401-k-plans-5e7859f2?mod=mw_rss_topstories</link>
+         <pubDate>Fri, 10 Jan 2025 11:32:00 GMT</pubDate>
+         <author>Alicia H. Munnell</author>
+         <media:content url="https://images.mktw.net/im-48302261" medium="image" type="image/jpeg">
+            <media:credit>Getty Images</media:credit>
+         </media:content>
+      </item>
+   </channel>
+</rss>

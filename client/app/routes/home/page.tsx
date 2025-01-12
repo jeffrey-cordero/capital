@@ -1,27 +1,78 @@
+import "@/styles/home.scss";
+
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Container } from "react-bootstrap";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import type { Feed } from "capital-types/news";
+import type { Stocks } from "capital-types/stocks";
+import { Col, Container, Row } from "react-bootstrap";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
 
+import Loading from "@/components/global/loading";
+import NavigateButton from "@/components/global/navigate-button";
+import News from "@/components/home/news";
+import MonthlyStocks from "@/components/home/stocks";
+import { clearAuthentication } from "@/lib/auth";
 import { logout } from "@/redux/slices/auth";
 import { SERVER_URL } from "@/root";
-import { clearAuthentication } from "@/lib/auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+async function fetchNews(): Promise<Feed> {
+   try {
+      const response = await fetch(`${SERVER_URL}/home/news`, {
+         method: "GET",
+         headers: {
+            "Content-Type": "application/json"
+         },
+         credentials: "include"
+      });
 
-import NavigateButton from "@/components/global/navigate-button";
+      const result = await response.json();
+
+      return result.data.news as Feed;
+   } catch (error) {
+      console.error(error);
+
+      return {} as Feed;
+   }
+}
+
+async function fetchStocks(): Promise<Stocks> {
+   try {
+      const response = await fetch(`${SERVER_URL}/home/stocks`, {
+         method: "GET",
+         headers: {
+            "Content-Type": "application/json"
+         },
+         credentials: "include"
+      });
+
+      const result = await response.json();
+
+      return JSON.parse(result.data.stocks);
+   } catch (error) {
+      console.error(error);
+
+      return {};
+   }
+}
 
 export default function Home() {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
+
+   const homeQueries = useQueries({
+      queries: [
+         { queryKey: ["stocks"], queryFn: fetchStocks, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 },
+         { queryKey: ["news"], queryFn: fetchNews, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 }
+      ]
+   });
 
    const mutation = useMutation({
       mutationFn: clearAuthentication,
       onSuccess: () => {
          // Update cached authentication status
          queryClient.setQueriesData({ queryKey: "auth" }, false);
-         
+
          // Update Redux store
          dispatch(logout());
 
@@ -29,25 +80,55 @@ export default function Home() {
          window.location.reload();
       },
       onError: (error: any) => {
-        console.error(error);
-      },
+         console.error(error);
+      }
    });
-   
+
+   const [stocks, news] = homeQueries;
+   const isLoading: boolean = stocks.isLoading || news.isLoading;
+
    return (
-      <Container className="vh-100 d-flex flex-column justify-content-center align-items-center mb-3">
-         <h1>
-            Home
-         </h1>
-         <NavigateButton
-            navigate={ () => {
-               mutation.mutate();
-               window.location.reload();
-            }}
-            className = "icon primary danger"
+      !isLoading ? (
+         <Container
+            className = "vw-100 d-flex flex-column justify-content-center align-items-center mb-3"
+            fluid = { true }
          >
-            <FontAwesomeIcon icon = { faRightFromBracket }/>
-            <span>Logout</span>
-         </NavigateButton>
-      </Container>
+            <Row className = "w-100">
+               <Col
+                  className = "vh-100"
+                  md = { 8 }
+                  xs = { 12 }
+               >
+                  <div className = "d-flex flex-column justify-content-between align-items-center gap-3">
+                     <MonthlyStocks
+                        stocks = { stocks.data as Stocks }
+                     />
+                     <NavigateButton
+                        className = "icon primary danger"
+                        navigate = {
+                           () => {
+                              mutation.mutate();
+                              window.location.reload();
+                           }
+                        }
+                     >
+                        <FontAwesomeIcon icon = { faRightFromBracket } />
+                        <span>Logout</span>
+                     </NavigateButton>
+                  </div>
+               </Col>
+               <Col
+                  lg = { 12 }
+                  xl = { 4 }
+               >
+                  <News
+                     news = { news.data as Feed }
+                  />
+               </Col>
+            </Row>
+         </Container>
+      ) : (
+         <Loading />
+      )
    );
 }

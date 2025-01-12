@@ -22,7 +22,6 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
-export const queryClient = new QueryClient();
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -45,6 +44,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </html>
    );
 }
+
+const queryClient = new QueryClient();
 
 export default function App() {
    return (

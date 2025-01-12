@@ -1,7 +1,7 @@
 require("dotenv").config();
-require('module-alias/register');
 
 import express from "express";
+import cron from "node-cron";
 import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
@@ -9,12 +9,14 @@ import cors from "cors";
 import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
-import indexRouter from "@/routes/index";
-import authRouter from "@/routes/auth/auth";
-import usersRouter from "@/routes/users/users";
+import indexRouter from "@/routers/indexRouter";
+import authRouter from "@/routers/authRouter";
+import usersRouter from "@/routers/usersRouter";
+import homeRouter from "@/routers/homeRouter";
 import { session } from "@/session";
-import { sendErrors } from "@/controllers/api/response";
+import { sendErrors } from "@/lib/api/response";
 import { Request, Response } from "express";
+import { StocksModel } from "@/models/stocksModel";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -57,7 +59,20 @@ app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': tr
 
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
+app.use("/home", homeRouter);
 app.use("/users", usersRouter);
+
+// Cron job to update stock data every hour
+cron.schedule("0 * * * *", async () => {
+   await StocksModel.updateStocks();
+});
+
+// Initialize Redis cache with stock data, if applicable
+const initializeRedisCache = async () => {
+   await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
+}
+
+initializeRedisCache();
 
 // Catch 404 and forward to error handler
 app.use(function (req: Request, res: Response) {
