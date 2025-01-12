@@ -2,12 +2,11 @@ import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema } from "capital-types/user";
-import { useState } from "react";
-import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
+import { Box, Paper, Typography, TextField, Button, Link, FormControl } from "@mui/material";
+import Grid from '@mui/material/Grid2';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import NavigateButton from "@/components/global/navigate-button";
 import { SERVER_URL } from "@/root";
 
 const loginSchema = z.object({
@@ -16,8 +15,6 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-   const [isNavigationButtonDisabled, setIsNavigationButtonDisabled] = useState(true);
-
    const {
       register,
       handleSubmit,
@@ -28,9 +25,6 @@ export default function Login() {
    });
 
    const onSubmit = async(data: any) => {
-      // Prevent multiple form submissions
-      if (!isNavigationButtonDisabled) return;
-
       const credentials = {
          username: data.username.trim(),
          password: data.password.trim()
@@ -49,11 +43,8 @@ export default function Login() {
          const parsed = await response.json();
 
          if (response.ok) {
-            // Navigate to the home page
-            setIsNavigationButtonDisabled(false);
-
             setTimeout(() => {
-               document.getElementById("login")?.click();
+               window.location.reload();
             }, 500);
          } else {
             // Display server-side validation errors
@@ -69,99 +60,77 @@ export default function Login() {
    };
 
    return (
-      <Container>
-         <Row className = "vh-100 d-flex justify-content-center align-items-center mx-3">
-            <Col
-               lg = { 6 }
-               md = { 8 }
-               xs = { 12 }
-            >
-               <Card className = "border-5 border-primary border-top border-bottom-0 border-end-0 border-start-0 shadow-sm my-5">
-                  <Card.Body>
-                     <div className = "mb-3 mt-4">
-                        <div className = "image">
-                           <Image
-                              src = { `${SERVER_URL}/resources/auth/login.jpg` }
-                           />
-                           <p className = "fw-semibold">Please enter your credentials</p>
-                        </div>
-                        <Form
-                           className = "mb-3"
-                           onSubmit = { handleSubmit(onSubmit) }
-                        >
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "username"
-                                 label = "Username"
-                              >
-                                 <Form.Control
-                                    aria-label = "Username"
-                                    autoComplete = "username"
-                                    placeholder = "Username"
-                                    type = "text"
-                                    { ...register("username") }
-                                    isInvalid = { !!errors.username }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.username?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "password"
-                                 label = "Password"
-                              >
-                                 <Form.Control
-                                    aria-label = "Password"
-                                    autoComplete = "current-password"
-                                    placeholder = "Password"
-                                    type = "password"
-                                    { ...register("password") }
-                                    isInvalid = { !!errors.password }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.password?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <NavigateButton
-                                 className = "primary icon"
-                                 disabled = { isNavigationButtonDisabled }
-                                 id = "login"
-                                 navigate = { () => window.location.reload() }
-                                 type = "submit"
-                              >
-                                 <FontAwesomeIcon icon = { faUnlockKeyhole } />
-                                 <span>Login</span>
-                              </NavigateButton>
-                           </Form.Group>
-                        </Form>
-                        <div className = "mt-3">
-                           <p className = "mb-0 text-center">
-                              Don&apos;t have an account?{ " " }
-                              <a
-                                 className = "text-primary fw-bold"
-                                 href = "/register"
-                              >
-                                 Sign Up
-                              </a>
-                           </p>
-                        </div>
-                     </div>
-                  </Card.Body>
-               </Card>
-            </Col>
-         </Row>
-      </Container>
+      <Box>
+      <Grid container justifyContent="center">
+        <Grid size={{ xs:10, md:8, lg:6}}>
+          <Paper elevation={3} sx={{ p: 4, mt: 5, borderTop: 5, borderTopColor: "primary.main" }} >
+            <Box className = "image">
+              <img
+                src={`${SERVER_URL}/resources/auth/login.jpg`}
+                alt="Login"
+              />
+              <Typography variant="subtitle1" fontWeight="bold">
+                Please enter your credentials
+              </Typography>
+            </Box>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Box>
+                <FormControl fullWidth>
+                  <TextField
+                     error={!!errors.username}
+                     helperText={errors.username?.message?.toString()}
+                     id="username"
+                     label="Username"
+                     type="username"
+                     placeholder="username"
+                     autoComplete="username"
+                     autoFocus
+                     required
+                     variant="outlined"
+                     color={!!errors.username ? 'error' : 'primary'}
+                     {...register("username")} 
+                  />
+               </FormControl>
+              </Box>
+               <Box>
+                  <FormControl fullWidth>
+                     <TextField
+                        error={!!errors.password}
+                        helperText={errors.password?.message?.toString()}
+                        id="password"
+                        label="Password"
+                        type="password"
+                        placeholder="password"
+                        autoComplete="current-password"
+                        autoFocus
+                        required
+                        variant="outlined"
+                        color={!!errors.password ? 'error' : 'primary'}
+                        {...register("password")} 
+                     />
+               </FormControl>
+              </Box>
+              <Box>
+                <Button
+                  fullWidth
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
+                >
+                  Login
+                </Button>
+              </Box>
+            </form>
+            <Typography variant="body2" align="center" sx={{ mt: 3 }}>
+              Don&apos;t have an account?{" "}
+              <Link href="/register" color="primary" fontWeight="bold">
+                Sign Up
+              </Link>
+            </Typography>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
    );
 }

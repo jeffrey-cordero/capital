@@ -5,8 +5,8 @@ import { userSchema } from "capital-types/user";
 import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
+import Button from "@mui/material/Button";
 
-import NavigateButton from "@/components/global/navigate-button";
 import { SERVER_URL } from "@/root";
 
 const registrationSchema = userSchema.extend({
@@ -201,16 +201,15 @@ export default function Register() {
                               </FloatingLabel>
                            </Form.Group>
                            <Form.Group className = "mb-3">
-                              <NavigateButton
+                              <Button
                                  className = "primary icon"
                                  disabled = { isNavigationButtonDisabled }
                                  id = "register"
-                                 navigate = { () => window.location.reload() }
                                  type = "submit"
                               >
                                  <FontAwesomeIcon icon = { faIdCard } />
                                  <span>Register</span>
-                              </NavigateButton>
+                              </Button>
                            </Form.Group>
                         </Form>
                         <div className = "mt-3">

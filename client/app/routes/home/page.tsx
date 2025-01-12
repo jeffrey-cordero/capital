@@ -1,5 +1,7 @@
 import "@/styles/home.scss";
 
+import Button from '@mui/material/Button';
+import Stack from "@mui/material/Stack";
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +11,6 @@ import { Col, Container, Row } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 
 import Loading from "@/components/global/loading";
-import NavigateButton from "@/components/global/navigate-button";
 import News from "@/components/home/news";
 import MonthlyStocks from "@/components/home/stocks";
 import { clearAuthentication } from "@/lib/auth";
@@ -103,18 +104,26 @@ export default function Home() {
                      <MonthlyStocks
                         stocks = { stocks.data as Stocks }
                      />
-                     <NavigateButton
+                     <Stack spacing={2} direction="row">
+                        <Button variant="text">Text</Button>
+                        <Button variant="contained" color="warning" className="icon">
+                           <FontAwesomeIcon icon = { faRightFromBracket } />
+                           <span>Logout</span>
+                        </Button>
+                        <Button variant="outlined">Outlined</Button>
+                     </Stack>
+                     <Button
                         className = "icon primary danger"
-                        navigate = {
+                        onClick = {
                            () => {
                               mutation.mutate();
                               window.location.reload();
                            }
                         }
+                        startIcon = { <FontAwesomeIcon icon = { faRightFromBracket } /> }
                      >
-                        <FontAwesomeIcon icon = { faRightFromBracket } />
-                        <span>Logout</span>
-                     </NavigateButton>
+                        Logout
+                     </Button>
                   </div>
                </Col>
                <Col

@@ -5,7 +5,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router";
 
-import NavigateButton from "@/components/global/navigate-button";
+import Button from '@mui/material/Button';
+import Stack from "@mui/material/Stack";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -31,24 +32,29 @@ export default function Landing() {
             <h1>Capital</h1>
             <p> A data-driven finance tracker created for the intelligent acquisition of capital.</p>
          </div>
-         <div className = "buttons">
-            <NavigateButton
-               className = "primary icon"
+         <Stack className = "buttons" direction = "row" flexWrap={"wrap"} spacing = { 1 }>
+            <Button
                id = "login"
-               navigate = { () => navigate("/login") }
+               color="success"
+               variant="contained"
+               className="btn-primary"
+               onClick={() => navigate("/login")}
+               startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
+               
             >
-               <FontAwesomeIcon icon = { faUnlockKeyhole } />
-               <span>Log In</span>
-            </NavigateButton>
-            <NavigateButton
-               className = "primary icon"
+               Log In
+            </Button>
+            <Button
                id = "register"
-               navigate = { () => navigate("/register") }
+               color="info"
+               variant="contained"
+               className="btn-primary"
+               onClick={() => navigate("/login")}
+               startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
             >
-               <FontAwesomeIcon icon = { faIdCard } />
-               <span>Register</span>
-            </NavigateButton>
-         </div>
+               Register
+            </Button>
+         </Stack>
       </Container>
    );
 }
