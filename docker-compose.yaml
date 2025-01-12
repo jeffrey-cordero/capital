@@ -5,6 +5,7 @@ services:
     volumes:
       - ./client:/app
       - ./client/.env:/app/.env
+      - ./types:/types
     networks:
       - capital_network
     ports:
@@ -31,6 +32,7 @@ services:
     volumes:
       - ./server:/app
       - ./server/.env:/app/.env
+      - ./types:/types
     networks:
       - capital_network
     ports:

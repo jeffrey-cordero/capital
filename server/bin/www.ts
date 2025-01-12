@@ -3,9 +3,7 @@
 /**
  * Module dependencies.
  */
-
-require('dotenv').config();
-require('module-alias/register');
+require("dotenv").config();
 
 const debug = require('debug')('capital:server');
 import http from 'http';

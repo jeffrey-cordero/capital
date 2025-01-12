@@ -6,7 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
    resolve: {
       alias: {
-         "@": "."
+         "@": "/app"
       }
    },
    css: {

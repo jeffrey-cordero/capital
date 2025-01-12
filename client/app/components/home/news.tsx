@@ -1,39 +1,10 @@
 import { faAt, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useQuery } from "@tanstack/react-query";
+import { type Feed, type Story } from "capital-types/news";
 import { useState } from "react";
 import { Card, Container, Image } from "react-bootstrap";
 
-import { SERVER_URL } from "@/client/app/root";
-
-interface StoryProps {
-   "author": string[];
-   "description": string[];
-   "link": string[];
-   "pubDate": string[];
-   "title": string[];
-   "media:content": { $: { image: string; type: string; url: string } }[];
-}
-
-export async function fetchStories(): Promise<{ channel: { item: Array<StoryProps> }[] }> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/stories`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return result.data.stories;
-   } catch (error) {
-      console.error(error);
-
-      return { channel: [] };
-   }
-}
+import { SERVER_URL } from "@/root";
 
 function timeSinceLastUpdate(date: string) {
    // Calculate the difference in milliseconds
@@ -60,7 +31,7 @@ function timeSinceLastUpdate(date: string) {
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 
-function Story(props: StoryProps) {
+function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
    const image = props["media:content"][0].$.url;
@@ -106,33 +77,28 @@ function Story(props: StoryProps) {
    );
 }
 
-interface StoriesProps {
-   stories: Array<StoryProps>;
+interface NewsProps {
+   news: Feed;
 }
 
-export default function Stories() {
-   const { data, isLoading } = useQuery({
-      queryKey: ["stories"],
-      queryFn: fetchStories,
-      staleTime: 60 * 60 * 1000,
-      gcTime: 60 * 60 * 1000
-   });
+export default function News(props: NewsProps) {
+   const { news } = props;
 
    return (
-      !isLoading && Object.keys(data as object).length > 0 ? (
+      Object.keys(news).length > 0 ? (
          <Container>
             <div className = "image">
                <Image
-                  alt = "Stories"
-                  src = { `${SERVER_URL}/resources/home/stories.png` }
+                  alt = "News"
+                  src = { `${SERVER_URL}/resources/home/news.png` }
                />
             </div>
             <div className = "d-flex flex-column justify-content-center align-items-center gap-3">
                {
-                  data?.channel[0].item.map(
-                     (item: StoryProps, index: number) => {
+                  news?.channel[0].item.map(
+                     (item: Story, index: number) => {
                         return (
-                           <Story
+                           <StoryItem
                               { ...item }
                               key = { index }
                            />

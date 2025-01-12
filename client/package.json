@@ -1,15 +1,16 @@
 {
-  "name": "client",
+  "name": "capital-client",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
-    "lint": "npx eslint . --fix --ignore-pattern '.react-router/' && npx stylelint npx stylelint 'app/styles/**/*.scss' --fix",
+    "lint": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' && npx stylelint npx stylelint 'app/styles/**/*.scss' --fix",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
+    "capital-types": "file:../types",
     "@babel/eslint-parser": "^7.25.9",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",

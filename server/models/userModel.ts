@@ -1,5 +1,5 @@
-import { hash, runQuery } from "@/server/lib/database/query";
-import { User, userSchema } from "@/types/user";
+import { hash, runQuery } from "@/lib/database/query";
+import { User, userSchema } from "capital-types/user"
 
 export class UserModel {
   id: number | null;
@@ -56,7 +56,7 @@ export class UserModel {
       const errors = fields.error.flatten().fieldErrors;
 
       const singleErrorMessages: Record<string, string> = Object.fromEntries(
-        Object.entries(errors).map(([field, errors]) => [
+        Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
           field,
           errors?.[0] || "Unknown error",
         ])

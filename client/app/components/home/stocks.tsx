@@ -1,10 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { type Prices, type Stocks } from "capital-types/stocks";
 import { CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
 import { Container, Image } from "react-bootstrap";
 import { Line } from "react-chartjs-2";
 
-import { SERVER_URL } from "@/client/app/root";
-import { type StockData, type Stocks } from "@/types/stocks";
+import { SERVER_URL } from "@/root";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -16,41 +15,21 @@ const legend: Record<string, string> = {
    "BITW":"Bitwise 10 Crypto Index Units Beneficial Interest"
 };
 
-export async function fetchStocks(): Promise<Record<string, any>> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/stocks`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return JSON.parse(result.data.stocks.data);
-   } catch (error) {
-      console.error(error);
-
-      return {};
-   }
-}
-
 interface StockProps {
    stock: string;
-   information: Record<string, StockData>;
+   prices: Prices;
 }
 
 function Stock(props: StockProps) {
-   const { stock, information } = props;
+   const { stock, prices } = props;
 
    const dates: string[] = [];
-   const prices: number[] = [];
-   const times = Object.keys(information).sort();
+   const values: number[] = [];
+   const times = Object.keys(prices).sort();
 
    for (let i = times.length - 30; i < times.length; i++) {
       dates.push(times[i].split(" ")[0]);
-      prices.push(parseFloat(information[stock][times[i]]["1. open"]));
+      values.push(parseFloat(prices[times[i]]["1. open"]));
    }
 
    const stockColor = prices[times.length - 1] < prices[times.length - 31] ? "red" : "#07EA3A";
@@ -61,7 +40,7 @@ function Stock(props: StockProps) {
          label: `${stock}: Monthly Prices`,
          borderColor: stockColor,
          backgroundColor: stockColor,
-         data: prices,
+         data: values,
          pointRadius: 5,
          pointBackgroundColor: stockColor,
          pointBorderColor: stockColor,
@@ -75,11 +54,10 @@ function Stock(props: StockProps) {
    };
 
    const options = {
-      responsive: true,
       plugins: {
          title: {
             display: true,
-            text: `${legend[stock]}: Monthly Prices`
+            text: `${legend[stock]}`
          }
       }
    };
@@ -92,22 +70,19 @@ function Stock(props: StockProps) {
    );
 }
 
-export default function MonthlyStocks() {
-   const { data, isLoading } = useQuery({
-      queryKey: ["stocks"],
-      queryFn: fetchStocks,
-      staleTime: 60 * 60 * 1000,
-      gcTime: 60 * 60 * 1000
-   });
+interface MonthlyStocksProps {
+   stocks: Stocks;
+}
 
-   const stocks = data as Stocks;
+export default function MonthlyStocks(props: MonthlyStocksProps) {
+   const { stocks } = props;
 
    return (
-      !isLoading && Object.keys(data as object).length > 0 ? (
+      Object.keys(stocks).length > 0 ? (
          <Container>
             <div className = "image">
                <Image
-                  alt = "Stories"
+                  alt = "Stocks"
                   src = { `${SERVER_URL}/resources/home/stocks.png` }
                />
             </div>
@@ -116,8 +91,8 @@ export default function MonthlyStocks() {
                   Object.keys(stocks).map((stock) => {
                      return (
                         <Stock
-                           information = { stocks[stock] }
                            key = { stock }
+                           prices = { stocks[stock] }
                            stock = { stock }
                         />
                      );

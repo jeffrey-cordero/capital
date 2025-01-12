@@ -1,5 +1,4 @@
 require("dotenv").config();
-require('module-alias/register');
 
 import express from "express";
 import cron from "node-cron";
@@ -10,15 +9,14 @@ import cors from "cors";
 import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
-import indexRouter from "@/server/routes/index";
-import authRouter from "@/server/routes/auth";
-import usersRouter from "@/server/routes/users";
-import homeRouter from "@/server/routes/home";
-import { session } from "@/server/session";
-import { sendErrors } from "@/server/lib/api/response";
+import indexRouter from "@/routers/indexRouter";
+import authRouter from "@/routers/authRouter";
+import usersRouter from "@/routers/usersRouter";
+import homeRouter from "@/routers/homeRouter";
+import { session } from "@/session";
+import { sendErrors } from "@/lib/api/response";
 import { Request, Response } from "express";
-import { StocksModel } from "@/server/models/stocks";
-import { StoriesModel } from "@/server/models/stories";
+import { StocksModel } from "@/models/stocksModel";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -64,16 +62,14 @@ app.use("/auth", authRouter);
 app.use("/home", homeRouter);
 app.use("/users", usersRouter);
 
-// Cron job to update stock and financial news data every hour
+// Cron job to update stock data every hour
 cron.schedule("0 * * * *", async () => {
    await StocksModel.updateStocks();
-   await StoriesModel.fetchStories();
 });
 
-// Initialize Redis cache with stock and financial news data, if applicable
+// Initialize Redis cache with stock data, if applicable
 const initializeRedisCache = async () => {
    await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
-   await redisClient.get("stories") === null && await StoriesModel.fetchStories();
 }
 
 initializeRedisCache();

@@ -1,9 +1,9 @@
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
-import { sendErrors, sendSuccess } from "@/server/lib/api/response";
-import { UserModel } from "@/server/models/user";
-import { configureJWT } from "@/server/session";
-import { User } from "@/types/user";
+import { sendErrors, sendSuccess } from "@/lib/api/response";
+import { UserModel } from "@/models/userModel";
+import { configureJWT } from "@/session";
+import { User } from "capital-types/user";
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
    try {

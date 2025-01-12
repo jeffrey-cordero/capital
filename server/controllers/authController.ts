@@ -2,9 +2,9 @@ import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
-import { sendErrors, sendSuccess } from "@/server/lib/api/response";
-import { UserModel } from "@/server/models/user";
-import { configureJWT } from "@/server/session";
+import { sendErrors, sendSuccess } from "@/lib/api/response";
+import { UserModel } from "@/models/userModel";
+import { configureJWT } from "@/session";
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
    try {

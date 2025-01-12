@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router";
 
-import NavigateButton from "@/client/app/components/global/navigate-button";
+import NavigateButton from "@/components/global/navigate-button";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 

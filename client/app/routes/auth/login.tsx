@@ -1,14 +1,14 @@
 import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { userSchema } from "capital-types/user";
 import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import NavigateButton from "@/client/app/components/global/navigate-button";
-import { SERVER_URL } from "@/client/app/root";
-import { userSchema } from "@/types/user";
+import NavigateButton from "@/components/global/navigate-button";
+import { SERVER_URL } from "@/root";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,

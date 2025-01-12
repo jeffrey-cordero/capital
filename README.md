@@ -1,1 +1,1 @@
-# capital-react
+# capital

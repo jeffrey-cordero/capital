@@ -1,6 +1,6 @@
 import express from "express";
-import { authenticateJWT } from "@/server/session";
-import { createUser, updateUser, deleteUser } from "@/server/controllers/users";
+import { authenticateJWT } from "@/session";
+import { createUser, updateUser, deleteUser } from "@/controllers/usersController";
 
 const usersRouter = express.Router();
 

@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
-import Error from "@/client/app/components/global/error";
-import store from "@/client/app/redux/store";
+import Error from "@/components/global/error";
+import store from "@/redux/store";
 
 import type { Route } from "./+types/root";
 
@@ -22,7 +22,6 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
-export const queryClient = new QueryClient();
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -45,6 +44,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </html>
    );
 }
+
+const queryClient = new QueryClient();
 
 export default function App() {
    return (

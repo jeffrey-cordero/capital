@@ -1,8 +1,8 @@
 const fs = require("fs").promises;
-import { runQuery } from "@/server/lib/database/query";
-import { redisClient } from "@/server/app";
+import { runQuery } from "@/lib/database/query";
+import { redisClient } from "@/app";
 
-import { Stocks } from "@/types/stocks";
+import { Stocks } from "capital-types/stocks";
 
 export class StocksModel {
    time: Date;
@@ -21,8 +21,6 @@ export class StocksModel {
       if (result.length === 0) {
          return null;
       } else {
-         redisClient.set("stocks", JSON.stringify({ time: result[0].time, data: result[0].data }));
-
          return result[0].data as Stocks;
       }
    }
@@ -95,6 +93,6 @@ export class StocksModel {
       await StocksModel.insertStocks(time, data);
       
       // Store in the Redis cache
-      await redisClient.set("stocks", JSON.stringify({ time: time, data: data }));
+      await redisClient.set("stocks", JSON.stringify(data));
    }
 }

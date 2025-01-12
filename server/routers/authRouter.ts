@@ -1,7 +1,7 @@
 import express from "express";
-import { authenticateJWT } from "@/server/session";
+import { authenticateJWT } from "@/session";
 
-import { login, logout, fetchAuthentication } from "@/server/controllers/auth";
+import { login, logout, fetchAuthentication } from "@/controllers/authController";
 
 const authRouter = express.Router();
 

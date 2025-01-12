@@ -1,19 +1,71 @@
+import "@/styles/home.scss";
+
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import type { Feed } from "capital-types/news";
+import type { Stocks } from "capital-types/stocks";
 import { Col, Container, Row } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 
-import Loading from "@/client/app/components/global/loading";
-import NavigateButton from "@/client/app/components/global/navigate-button";
-import MonthlyStocks, { fetchStocks } from "@/client/app/components/home/stocks";
-import Stories, { fetchStories } from "@/client/app/components/home/stories";
-import { clearAuthentication } from "@/client/app/lib/auth";
-import { logout } from "@/client/app/redux/slices/auth";
+import Loading from "@/components/global/loading";
+import NavigateButton from "@/components/global/navigate-button";
+import News from "@/components/home/news";
+import MonthlyStocks from "@/components/home/stocks";
+import { clearAuthentication } from "@/lib/auth";
+import { logout } from "@/redux/slices/auth";
+import { SERVER_URL } from "@/root";
+
+async function fetchNews(): Promise<Feed> {
+   try {
+      const response = await fetch(`${SERVER_URL}/home/news`, {
+         method: "GET",
+         headers: {
+            "Content-Type": "application/json"
+         },
+         credentials: "include"
+      });
+
+      const result = await response.json();
+
+      return result.data.news as Feed;
+   } catch (error) {
+      console.error(error);
+
+      return {} as Feed;
+   }
+}
+
+async function fetchStocks(): Promise<Stocks> {
+   try {
+      const response = await fetch(`${SERVER_URL}/home/stocks`, {
+         method: "GET",
+         headers: {
+            "Content-Type": "application/json"
+         },
+         credentials: "include"
+      });
+
+      const result = await response.json();
+
+      return JSON.parse(result.data.stocks);
+   } catch (error) {
+      console.error(error);
+
+      return {};
+   }
+}
 
 export default function Home() {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
+
+   const homeQueries = useQueries({
+      queries: [
+         { queryKey: ["stocks"], queryFn: fetchStocks, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 },
+         { queryKey: ["news"], queryFn: fetchNews, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 }
+      ]
+   });
 
    const mutation = useMutation({
       mutationFn: clearAuthentication,
@@ -32,12 +84,8 @@ export default function Home() {
       }
    });
 
-   const homeQueries = useQueries({
-      queries: [{ queryKey: ["stocks"], queryFn: fetchStocks }, { queryKey: ["stories"], queryFn: fetchStories }]
-   });
-
-   const [stocks, stories] = homeQueries;
-   const isLoading: boolean = stocks.isLoading || stories.isLoading;
+   const [stocks, news] = homeQueries;
+   const isLoading: boolean = stocks.isLoading || news.isLoading;
 
    return (
       !isLoading ? (
@@ -52,7 +100,9 @@ export default function Home() {
                   xs = { 12 }
                >
                   <div className = "d-flex flex-column justify-content-between align-items-center gap-3">
-                     <MonthlyStocks />
+                     <MonthlyStocks
+                        stocks = { stocks.data as Stocks }
+                     />
                      <NavigateButton
                         className = "icon primary danger"
                         navigate = {
@@ -71,7 +121,9 @@ export default function Home() {
                   lg = { 12 }
                   xl = { 4 }
                >
-                  <Stories />
+                  <News
+                     news = { news.data as Feed }
+                  />
                </Col>
             </Row>
          </Container>
