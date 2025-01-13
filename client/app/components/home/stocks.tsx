@@ -1,6 +1,6 @@
+import { Stack } from "@mui/material";
 import { type Prices, type Stocks } from "capital-types/stocks";
 import { CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
-import { Container, Image } from "react-bootstrap";
 import { Line } from "react-chartjs-2";
 
 import { SERVER_URL } from "@/root";
@@ -55,6 +55,8 @@ function Stock(props: StockProps) {
 
    const options = {
       plugins: {
+         responsive: true,
+         maintainAspectRatio: true,
          title: {
             display: true,
             text: `${legend[stock]}`
@@ -66,6 +68,7 @@ function Stock(props: StockProps) {
       <Line
          data = { data }
          options = { options }
+         style = { { maxWidth: "100%" } }
       />
    );
 }
@@ -79,14 +82,17 @@ export default function MonthlyStocks(props: MonthlyStocksProps) {
 
    return (
       Object.keys(stocks).length > 0 ? (
-         <Container>
+         <Stack direction = "column">
             <div className = "image">
-               <Image
+               <img
                   alt = "Stocks"
                   src = { `${SERVER_URL}/resources/home/stocks.png` }
                />
             </div>
-            <div className = "d-flex flex-column justify-content-center align-items-center gap-3">
+            <Stack
+               direction = "column"
+               gap = { 3 }
+            >
                {
                   Object.keys(stocks).map((stock) => {
                      return (
@@ -98,8 +104,8 @@ export default function MonthlyStocks(props: MonthlyStocksProps) {
                      );
                   })
                }
-            </div>
-         </Container>
+            </Stack>
+         </Stack>
       ) : (
          null
       )

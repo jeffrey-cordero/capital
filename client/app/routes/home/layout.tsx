@@ -1,5 +1,12 @@
+
 import Router from "@/components/auth/router";
+import Sidebar from "@/components/global/sidebar";
 
 export default function Layout() {
-   return <Router home = { true } />;
+   return (
+      <>
+         <Sidebar />
+         <Router home = { true } />
+      </>
+   )
 }

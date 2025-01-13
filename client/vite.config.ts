@@ -23,6 +23,6 @@ export default defineConfig({
       _global: ({})
    },
    optimizeDeps: {
-      include: ['@toolpad/core/react-router']
-    },
+      include: ["@toolpad/core/react-router"]
+   }
 });

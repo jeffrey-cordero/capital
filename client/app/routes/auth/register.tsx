@@ -1,11 +1,11 @@
 import { faIdCard } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Button from "@mui/material/Button";
 import { userSchema } from "capital-types/user";
 import { useState } from "react";
 import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
-import Button from "@mui/material/Button";
 
 import { SERVER_URL } from "@/root";
 

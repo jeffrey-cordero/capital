@@ -1,11 +1,13 @@
 import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Box, Button, FormControl, Link, Paper, Stack, TextField, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
-import { Box, Paper, Typography, TextField, Button, Link, FormControl } from "@mui/material";
-import Grid from '@mui/material/Grid2';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
+import Callout from "@/components/global/callout";
 
 import { SERVER_URL } from "@/root";
 
@@ -24,7 +26,7 @@ export default function Login() {
       resolver: zodResolver(loginSchema)
    });
 
-   const onSubmit = async(data: any) => {
+   const onSubmit = async (data: any) => {
       const credentials = {
          username: data.username.trim(),
          password: data.password.trim()
@@ -60,77 +62,91 @@ export default function Login() {
    };
 
    return (
-      <Box>
-      <Grid container justifyContent="center">
-        <Grid size={{ xs:10, md:8, lg:6}}>
-          <Paper elevation={3} sx={{ p: 4, mt: 5, borderTop: 5, borderTopColor: "primary.main" }} >
-            <Box className = "image">
-              <img
-                src={`${SERVER_URL}/resources/auth/login.jpg`}
-                alt="Login"
-              />
-              <Typography variant="subtitle1" fontWeight="bold">
-                Please enter your credentials
-              </Typography>
+      <Callout type="primary" sx={{ pt: 4 }}>
+         <Stack
+            direction="column"
+            spacing={3}
+         >
+            <Box className="image">
+               <img
+                  alt="Login"
+                  src={`${SERVER_URL}/resources/auth/login.jpg`}
+               />
+               <Typography
+                  fontWeight="bold"
+                  variant="body2"
+               >
+                  Please enter your credentials
+               </Typography>
             </Box>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <Box>
-                <FormControl fullWidth>
-                  <TextField
-                     error={!!errors.username}
-                     helperText={errors.username?.message?.toString()}
-                     id="username"
-                     label="Username"
-                     type="username"
-                     placeholder="username"
-                     autoComplete="username"
-                     autoFocus
-                     required
-                     variant="outlined"
-                     color={!!errors.username ? 'error' : 'primary'}
-                     {...register("username")} 
-                  />
-               </FormControl>
-              </Box>
-               <Box>
-                  <FormControl fullWidth>
-                     <TextField
-                        error={!!errors.password}
-                        helperText={errors.password?.message?.toString()}
-                        id="password"
-                        label="Password"
-                        type="password"
-                        placeholder="password"
-                        autoComplete="current-password"
-                        autoFocus
-                        required
-                        variant="outlined"
-                        color={!!errors.password ? 'error' : 'primary'}
-                        {...register("password")} 
-                     />
-               </FormControl>
-              </Box>
-              <Box>
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
-                >
-                  Login
-                </Button>
-              </Box>
+               <Stack direction="column" spacing={2}>
+                  <Box>
+                     <FormControl fullWidth={true}>
+                        <TextField
+                           autoComplete="username"
+                           autoFocus={true}
+                           color={errors.username ? "error" : "primary"}
+                           error={!!errors.username}
+                           helperText={errors.username?.message?.toString()}
+                           id="username"
+                           label="Username"
+                           placeholder="username"
+                           required={true}
+                           type="username"
+                           variant="outlined"
+                           {...register("username")}
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <FormControl fullWidth={true}>
+                        <TextField
+                           autoComplete="current-password"
+                           autoFocus={true}
+                           color={errors.password ? "error" : "primary"}
+                           error={!!errors.password}
+                           helperText={errors.password?.message?.toString()}
+                           id="password"
+                           label="Password"
+                           placeholder="password"
+                           required={true}
+                           type="password"
+                           variant="outlined"
+                           {...register("password")}
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <Button
+                        color="primary"
+                        fullWidth={true}
+                        startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
+                        type="submit"
+                        variant="contained"
+                     >
+                        Login
+                     </Button>
+                  </Box>
+               </Stack>
+               
             </form>
-            <Typography variant="body2" align="center" sx={{ mt: 3 }}>
-              Don&apos;t have an account?{" "}
-              <Link href="/register" color="primary" fontWeight="bold">
-                Sign Up
-              </Link>
+            <Typography
+               align="center"
+               sx={{ mt: 3 }}
+               variant="body2"
+            >
+               Don&apos;t have an account?{" "}
+               <Link
+                  color="primary"
+                  fontWeight="bold"
+                  href="/register"
+               >
+                  Sign Up
+               </Link>
             </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+         </Stack>
+
+      </Callout>
    );
 }

@@ -1,10 +1,12 @@
-import { faAt, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpRightFromSquare, faCaretDown, faShareFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
 import { useState } from "react";
-import { Card, Container, Image } from "react-bootstrap";
 
 import { SERVER_URL } from "@/root";
+
+const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 
 function timeSinceLastUpdate(date: string) {
    // Calculate the difference in milliseconds
@@ -21,64 +23,154 @@ function timeSinceLastUpdate(date: string) {
    } else {
       const parts = [];
 
-      if (days > 0) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-      if (hours > 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-      if (minutes > 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
+      if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
+      if (hours >= 1) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
+      if (minutes >= 1) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
 
       return parts.join(", ") + " ago";
    }
 }
 
-const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
+interface ExpandMoreProps extends IconButtonProps {
+  expand: boolean;
+}
+
+const ExpandMore = styled((props: ExpandMoreProps) => {
+   const { expand, ...other } = props;
+   return <IconButton { ...other } />;
+})(({ theme }) => ({
+   marginLeft: "auto",
+   transition: theme.transitions.create("transform", {
+      duration: theme.transitions.duration.shortest
+   }),
+   variants: [
+      {
+         props: ({ expand }) => !expand,
+         style: {
+            transform: "rotate(0deg)"
+         }
+      },
+      {
+         props: ({ expand }) => !!expand,
+         style: {
+            transform: "rotate(180deg)"
+         }
+      }
+   ]
+}));
 
 function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
-   const image = props["media:content"][0].$.url;
+   const [expanded, setExpanded] = useState(false);
+   const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
 
    return (
-      <Card className = "story">
-         <div className = "story-image">
-            <Card.Img
-               onError = { () => setIsResourceError(true) }
-               src = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
-               variant = "top"
-            />
-         </div>
-         <Card.Body>
-            <Card.Title className = "fw-semibold">
-               <a
-                  href = { link[0] }
-                  rel = "noreferrer"
-                  target = "_blank"
+      <Card sx = { { maxWidth: 345 } }>
+         <CardHeader
+            avatar = {
+               <Avatar
+                  aria-label = "recipe"
+                  sx = { { bgcolor: "primary" } }
                >
-                  { title }
-               </a>
-            </Card.Title>
-            <Card.Text className = "fw-normal fs-6">
-               { description }
-            </Card.Text>
-         </Card.Body>
-         <Card.Footer className = "d-flex flex-column justify-content-start align-items-start gap-1">
-            <div className = "d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon = { faAt } />
-               <small className = "text-muted">
-                  { author[0] }
-               </small>
-            </div>
-            <div className = "d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon = { faCalendarDays } />
-               <small className = "text-muted">
-                  { `Last updated ${timeSinceLastUpdate(pubDate[0])}` }
-               </small>
-            </div>
-         </Card.Footer>
+                  { author[0].charAt(0).toUpperCase() }
+               </Avatar>
+            }
+            title = {
+               <Stack spacing = { 0 }>
+                  <Typography variant = "subtitle2">
+                     { author }
+                  </Typography>
+                  <Typography variant = "subtitle2">
+                     { timeSinceLastUpdate(pubDate[0]) }
+                  </Typography>
+               </Stack>
+            }
+         />
+         <CardMedia
+            alt = "Story Image"
+            component = "img"
+            height = "200"
+            image = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
+            onError = { () => setIsResourceError(true) }
+         />
+         <CardContent>
+            <Typography
+               sx = {
+                  {
+                  // Clamps the title to 3 lines for card height consistency
+                     display: "-webkit-box",
+                     WebkitBoxOrient: "vertical",
+                     overflow: "hidden",
+                     WebkitLineClamp: 3,
+                     textOverflow: "ellipsis"
+                  }
+               }
+               variant = "body2"
+            >
+               { title[0] }
+            </Typography>
+         </CardContent>
+         <CardActions disableSpacing = { true }>
+            <IconButton
+               aria-label = "Read More"
+               href = { link[0] }
+               size = "small"
+               target = "_blank"
+            >
+               <FontAwesomeIcon
+                  className = "primary"
+                  icon = { faArrowUpRightFromSquare }
+               />
+            </IconButton>
+            <IconButton
+               aria-label = "Share"
+               onClick = {
+                  () => {
+                     navigator.share({
+                        title: title[0],
+                        text: description[0],
+                        url: link[0]
+                     });
+                  }
+               }
+               size = "small"
+            >
+               <FontAwesomeIcon
+                  className = "primary"
+                  icon = { faShareFromSquare }
+                  style = { { marginLeft: "1px" } }
+               />
+            </IconButton>
+            <ExpandMore
+               aria-expanded = { expanded }
+               aria-label = "show more"
+               expand = { expanded }
+               onClick = { () => setExpanded(!expanded) }
+            >
+               <FontAwesomeIcon icon = { faCaretDown } />
+            </ExpandMore>
+         </CardActions>
+         <Collapse
+            in = { expanded }
+            timeout = "auto"
+            unmountOnExit = { true }
+         >
+            <CardContent>
+               <Typography
+                  color = "textSecondary"
+                  variant = "body2"
+               >
+                  { description[0] }
+               </Typography>
+            </CardContent>
+         </Collapse>
       </Card>
    );
 }
 
 interface NewsProps {
-   news: Feed;
+  news: Feed;
 }
 
 export default function News(props: NewsProps) {
@@ -86,17 +178,22 @@ export default function News(props: NewsProps) {
 
    return (
       Object.keys(news).length > 0 ? (
-         <Container>
+         <Box>
             <div className = "image">
-               <Image
+               <img
                   alt = "News"
                   src = { `${SERVER_URL}/resources/home/news.png` }
                />
             </div>
-            <div className = "d-flex flex-column justify-content-center align-items-center gap-3">
+            <Stack
+               direction = { { xs: "row", lg: "column" } }
+               gap = { 3 }
+               sx = { { flexWrap: "wrap", justifyContent: "center", alignContent: "center" } }
+            >
                {
                   news?.channel[0].item.map(
                      (item: Story, index: number) => {
+
                         return (
                            <StoryItem
                               { ...item }
@@ -106,8 +203,8 @@ export default function News(props: NewsProps) {
                      }
                   )
                }
-            </div>
-         </Container>
+            </Stack>
+         </Box>
       ) : (
          null
       )

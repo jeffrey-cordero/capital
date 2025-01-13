@@ -57,6 +57,12 @@ div {
   }
 }
 
+svg {
+  &.primary {
+    color: $primary;
+  }
+}
+
 button {
   cursor: pointer;
   box-sizing: border-box;

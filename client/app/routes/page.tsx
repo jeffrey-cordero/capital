@@ -2,11 +2,10 @@ import "@/styles/landing.scss";
 
 import { faIdCard, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import { Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router";
-
-import Button from '@mui/material/Button';
-import Stack from "@mui/material/Stack";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -32,25 +31,30 @@ export default function Landing() {
             <h1>Capital</h1>
             <p> A data-driven finance tracker created for the intelligent acquisition of capital.</p>
          </div>
-         <Stack className = "buttons" direction = "row" flexWrap={"wrap"} spacing = { 1 }>
+         <Stack
+            className = "buttons"
+            direction = "row"
+            flexWrap = { "wrap" }
+            spacing = { 1 }
+         >
             <Button
+               className = "btn-primary"
+               color = "success"
                id = "login"
-               color="success"
-               variant="contained"
-               className="btn-primary"
-               onClick={() => navigate("/login")}
+               onClick = { () => navigate("/login") }
                startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
-               
+               variant = "contained"
+
             >
                Log In
             </Button>
             <Button
+               className = "btn-primary"
+               color = "info"
                id = "register"
-               color="info"
-               variant="contained"
-               className="btn-primary"
-               onClick={() => navigate("/login")}
+               onClick = { () => navigate("/login") }
                startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
+               variant = "contained"
             >
                Register
             </Button>

@@ -22,7 +22,7 @@ export type Story = {
    "link": string[];
    "pubDate": string[];
    "title": string[];
-   "media:content": { 
+   "media:content"?: { 
       $: { 
          image: string; 
          type: string; 

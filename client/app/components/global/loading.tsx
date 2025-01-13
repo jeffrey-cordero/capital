@@ -1,14 +1,9 @@
-import Spinner from "react-bootstrap/Spinner";
+import { CircularProgress } from "@mui/material";
 
 export default function Loading() {
    return (
       <div className = "main">
-         <Spinner
-            animation = "border"
-            className = "loading"
-         >
-            <span className = "visually-hidden">Loading...</span>
-         </Spinner>
+         <CircularProgress color = "primary" />
       </div>
    );
 }
