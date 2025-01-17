@@ -1,11 +1,13 @@
 import "@/styles/app.scss";
 
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import Error from "@/components/global/error";
 import store from "@/redux/store";
+import { theme } from "@/styles/theme";
 
 import type { Route } from "./+types/root";
 
@@ -26,6 +28,7 @@ export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function Layout({ children }: { children: React.ReactNode }) {
    return (
+
       <html lang = "en">
          <head>
             <meta charSet = "utf-8" />
@@ -36,11 +39,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Meta />
             <Links />
          </head>
-         <body suppressHydrationWarning = { true }>
-            { children }
-            <ScrollRestoration />
-            <Scripts />
-         </body>
+         <ThemeProvider theme = { theme }>
+            <body suppressHydrationWarning = { true }>
+               <CssBaseline />
+               { children }
+               <ScrollRestoration />
+               <Scripts />
+            </body>
+         </ThemeProvider>
       </html>
    );
 }

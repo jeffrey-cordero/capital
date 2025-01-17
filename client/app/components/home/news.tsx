@@ -66,7 +66,7 @@ function StoryItem(props: Story) {
    const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
 
    return (
-      <Card sx = { { maxWidth: 345 } }>
+      <Card sx = { { maxWidth: 345 } } elevation={2}>
          <CardHeader
             avatar = {
                <Avatar
@@ -98,7 +98,6 @@ function StoryItem(props: Story) {
             <Typography
                sx = {
                   {
-                  // Clamps the title to 3 lines for card height consistency
                      display: "-webkit-box",
                      WebkitBoxOrient: "vertical",
                      overflow: "hidden",

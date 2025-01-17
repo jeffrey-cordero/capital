@@ -2,9 +2,9 @@ import "@/styles/landing.scss";
 
 import { faIdCard, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Box, Container, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -22,38 +22,52 @@ export default function Landing() {
    return (
       <Container className = "main">
          <div className = "image">
-            <Image
+            <img
                alt = "Landing Page Image"
                src = { `${SERVER_URL}/resources/landing/landing.jpg` }
             />
          </div>
-         <div className = "text">
-            <h1>Capital</h1>
-            <p> A data-driven finance tracker created for the intelligent acquisition of capital.</p>
-         </div>
+         <Box>
+            <Typography
+               component = "h1"
+               sx = { { fontWeight: "bold", marginBottom: "10px" } }
+               variant = "h2"
+            >
+               Capital
+            </Typography>
+            <Typography
+               color = "textSecondary"
+               sx = { { margin: "0 auto", maxWidth: "90%" } }
+               variant = "body1"
+            >
+               A data-driven finance tracker created for the intelligent acquisition of capital.
+            </Typography>
+         </Box>
          <Stack
-            className = "buttons"
             direction = "row"
             flexWrap = { "wrap" }
-            spacing = { 1 }
+            gap = { 1 }
+            justifyContent = { "center" }
          >
             <Button
                className = "btn-primary"
                color = "success"
+               disableElevation = { true }
                id = "login"
                onClick = { () => navigate("/login") }
                startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
                variant = "contained"
-
             >
                Log In
             </Button>
             <Button
                className = "btn-primary"
                color = "info"
+               disableElevation = { true }
                id = "register"
                onClick = { () => navigate("/login") }
                startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
+               sx = { { backgroundColor: "primary.main" } }
                variant = "contained"
             >
                Register

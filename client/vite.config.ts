@@ -21,8 +21,5 @@ export default defineConfig({
    plugins: [reactRouter(), tsconfigPaths()],
    define: {
       _global: ({})
-   },
-   optimizeDeps: {
-      include: ["@toolpad/core/react-router"]
    }
 });

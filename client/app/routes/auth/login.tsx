@@ -1,14 +1,13 @@
 import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, FormControl, Link, Paper, Stack, TextField, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, TextField, Typography } from "@mui/material";
 import { userSchema } from "capital-types/user";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import Callout from "@/components/global/callout";
-
+import Password from "@/components/global/password";
 import { SERVER_URL } from "@/root";
 
 const loginSchema = z.object({
@@ -18,15 +17,15 @@ const loginSchema = z.object({
 
 export default function Login() {
    const {
-      register,
+      control,
       handleSubmit,
       setError,
-      formState: { errors }
+      formState: { isSubmitting, errors }
    } = useForm({
       resolver: zodResolver(loginSchema)
    });
 
-   const onSubmit = async (data: any) => {
+   const onSubmit = async(data: any) => {
       const credentials = {
          username: data.username.trim(),
          password: data.password.trim()
@@ -62,91 +61,85 @@ export default function Login() {
    };
 
    return (
-      <Callout type="primary" sx={{ pt: 4 }}>
+      <Callout
+         sx = { { pt: 4 } }
+         type = "primary"
+      >
          <Stack
-            direction="column"
-            spacing={3}
+            direction = "column"
+            spacing = { 3 }
          >
-            <Box className="image">
+            <Box className = "image">
                <img
-                  alt="Login"
-                  src={`${SERVER_URL}/resources/auth/login.jpg`}
+                  alt = "Login"
+                  src = { `${SERVER_URL}/resources/auth/login.jpg` }
                />
-               <Typography
-                  fontWeight="bold"
-                  variant="body2"
-               >
-                  Please enter your credentials
-               </Typography>
             </Box>
-            <form onSubmit={handleSubmit(onSubmit)}>
-               <Stack direction="column" spacing={2}>
-                  <Box>
-                     <FormControl fullWidth={true}>
-                        <TextField
-                           autoComplete="username"
-                           autoFocus={true}
-                           color={errors.username ? "error" : "primary"}
-                           error={!!errors.username}
-                           helperText={errors.username?.message?.toString()}
-                           id="username"
-                           label="Username"
-                           placeholder="username"
-                           required={true}
-                           type="username"
-                           variant="outlined"
-                           {...register("username")}
-                        />
-                     </FormControl>
-                  </Box>
-                  <Box>
-                     <FormControl fullWidth={true}>
-                        <TextField
-                           autoComplete="current-password"
-                           autoFocus={true}
-                           color={errors.password ? "error" : "primary"}
-                           error={!!errors.password}
-                           helperText={errors.password?.message?.toString()}
-                           id="password"
-                           label="Password"
-                           placeholder="password"
-                           required={true}
-                           type="password"
-                           variant="outlined"
-                           {...register("password")}
-                        />
-                     </FormControl>
-                  </Box>
-                  <Box>
-                     <Button
-                        color="primary"
-                        fullWidth={true}
-                        startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
-                        type="submit"
-                        variant="contained"
-                     >
-                        Login
-                     </Button>
-                  </Box>
+            <form onSubmit = { handleSubmit(onSubmit) }>
+               <Stack
+                  direction = "column"
+                  marginTop = { 2 }
+                  spacing = { 2 }
+               >
+                  <Controller
+                     control = { control }
+                     name = "username"
+                     render = {
+                        ({ field }) => (
+                           <FormControl error = { Boolean(errors.username) }>
+                              <InputLabel>Username</InputLabel>
+                              <OutlinedInput
+                                 { ...field }
+                                 label = "Username"
+                                 type = "username"
+                              />
+                              { errors.username ? <FormHelperText>{ errors.username?.message?.toString() }</FormHelperText> : null }
+                           </FormControl>
+                        )
+                     }
+                  />
+                  <Controller
+                     control = { control }
+                     name = "password"
+                     render = {
+                        ({ field }) => (
+                           <Password
+                              errors = { errors }
+                              field = { field }
+                           />
+                        )
+                     }
+                  />
+                  <Button
+                     color = "primary"
+                     fullWidth = { true }
+                     loading = { isSubmitting }
+                     loadingPosition = "start"
+                     startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
+                     type = "submit"
+                     variant = "contained"
+                  >
+                     Login
+                  </Button>
                </Stack>
-               
+
             </form>
             <Typography
-               align="center"
-               sx={{ mt: 3 }}
-               variant="body2"
+               align = "center"
+               sx = { { fontWeight: "bold" } }
+               variant = "body2"
             >
-               Don&apos;t have an account?{" "}
+               Don&apos;t have an account?{ " " }
                <Link
-                  color="primary"
-                  fontWeight="bold"
-                  href="/register"
+                  color = "primary"
+                  fontWeight = "bold"
+                  href = "/register"
+                  underline = "none"
                >
-                  Sign Up
+                  Register
                </Link>
             </Typography>
          </Stack>
-
       </Callout>
    );
 }

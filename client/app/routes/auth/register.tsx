@@ -1,12 +1,11 @@
 import { faIdCard } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Button from "@mui/material/Button";
+import { Box, Button, FormControl, Link, Stack, TextField, Typography } from "@mui/material";
 import { userSchema } from "capital-types/user";
-import { useState } from "react";
-import { Card, Col, Container, FloatingLabel, Form, Image, Row } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 
+import Callout from "@/components/global/callout";
 import { SERVER_URL } from "@/root";
 
 const registrationSchema = userSchema.extend({
@@ -14,21 +13,16 @@ const registrationSchema = userSchema.extend({
 });
 
 export default function Register() {
-   const [isNavigationButtonDisabled, setIsNavigationButtonDisabled] = useState(true);
-
    const {
       register,
       handleSubmit,
       setError,
-      formState: { errors }
+      formState: { isSubmitting, errors }
    } = useForm({
       resolver: zodResolver(registrationSchema)
    });
 
    const onSubmit = async(data: any) => {
-      // Prevent multiple form submissions
-      if (!isNavigationButtonDisabled) return;
-
       const registration = {
          username: data.username.trim(),
          name: data.name.trim(),
@@ -50,9 +44,6 @@ export default function Register() {
          const parsed = await response.json();
 
          if (response.ok) {
-            // Navigate to the home page
-            setIsNavigationButtonDisabled(false);
-
             setTimeout(() => {
                document.getElementById("register")?.click();
             }, 500);
@@ -70,164 +61,143 @@ export default function Register() {
    };
 
    return (
-      <Container>
-         <Row className = "vh-100 d-flex justify-content-center align-items-center mx-3">
-            <Col
-               lg = { 6 }
-               md = { 8 }
-               xs = { 12 }
+      <Callout
+         sx = { { pb: 2 } }
+         type = "primary"
+      >
+         <Stack
+            direction = "column"
+            spacing = { 3 }
+         >
+            <Box className = "image">
+               <img
+                  alt = "Login"
+                  src = { `${SERVER_URL}/resources/auth/register.jpg` }
+               />
+            </Box>
+            <form onSubmit = { handleSubmit(onSubmit) }>
+               <Stack
+                  direction = "column"
+                  marginTop = { 2 }
+                  spacing = { 2 }
+               >
+                  <Box>
+                     <FormControl fullWidth = { true }>
+                        <TextField
+                           autoComplete = "name"
+                           autoFocus = { true }
+                           color = { errors.name ? "error" : "primary" }
+                           error = { !!errors.name }
+                           helperText = { errors.name?.message?.toString() }
+                           id = "name"
+                           label = "Name"
+                           placeholder = "Name"
+                           required = { true }
+                           type = "text"
+                           variant = "outlined"
+                           { ...register("name") }
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <FormControl fullWidth = { true }>
+                        <TextField
+                           autoComplete = "none"
+                           color = { errors.username ? "error" : "primary" }
+                           error = { !!errors.username }
+                           helperText = { errors.username?.message?.toString() }
+                           id = "username"
+                           label = "Username"
+                           placeholder = "Username"
+                           required = { true }
+                           type = "text"
+                           variant = "outlined"
+                           { ...register("username") }
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <FormControl fullWidth = { true }>
+                        <TextField
+                           autoComplete = "new-password"
+                           color = { errors.password ? "error" : "primary" }
+                           error = { !!errors.password }
+                           helperText = { errors.password?.message?.toString() }
+                           id = "password"
+                           label = "Password"
+                           placeholder = "Password"
+                           required = { true }
+                           type = "password"
+                           variant = "outlined"
+                           { ...register("password") }
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <FormControl fullWidth = { true }>
+                        <TextField
+                           autoComplete = "new-password"
+                           color = { errors.password ? "error" : "primary" }
+                           error = { !!errors.password }
+                           helperText = { errors.password?.message?.toString() }
+                           id = "verifyPassword"
+                           label = "Verify Password"
+                           placeholder = "Verify Password"
+                           required = { true }
+                           type = "password"
+                           variant = "outlined"
+                           { ...register("verifyPassword") }
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <FormControl fullWidth = { true }>
+                        <TextField
+                           autoComplete = "email"
+                           color = { errors.email ? "error" : "primary" }
+                           error = { !!errors.email }
+                           helperText = { errors.email?.message?.toString() }
+                           id = "email"
+                           label = "Email"
+                           placeholder = "Email"
+                           required = { true }
+                           type = "email"
+                           variant = "outlined"
+                           { ...register("email") }
+                        />
+                     </FormControl>
+                  </Box>
+                  <Box>
+                     <Button
+                        color = "primary"
+                        fullWidth = { true }
+                        loading = { isSubmitting }
+                        loadingPosition = "start"
+                        startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
+                        type = "submit"
+                        variant = "contained"
+                     >
+                        Register
+                     </Button>
+                  </Box>
+               </Stack>
+            </form>
+            <Typography
+               align = "center"
+               sx = { { fontWeight: "bold" } }
+               variant = "body2"
             >
-               <Card className = "border-5 border-primary border-top border-bottom-0 border-end-0 border-start-0 shadow-sm my-5">
-                  <Card.Body>
-                     <div className = "mb-3 mt-4">
-                        <div className = "image">
-                           <Image
-                              src = { `${SERVER_URL}/resources/auth/register.jpg` }
-                           />
-                           <p className = "fw-semibold">Please enter your personal details</p>
-                        </div>
-                        <Form
-                           className = "mb-3"
-                           onSubmit = { handleSubmit(onSubmit) }
-                        >
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "username"
-                                 label = "Username"
-                              >
-                                 <Form.Control
-                                    aria-label = "Username"
-                                    autoComplete = "username"
-                                    placeholder = "Username"
-                                    type = "text"
-                                    { ...register("username") }
-                                    isInvalid = { !!errors.username }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.username?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "name"
-                                 label = "Name"
-                              >
-                                 <Form.Control
-                                    aria-label = "Name"
-                                    autoComplete = "name"
-                                    placeholder = "Name"
-                                    type = "text"
-                                    { ...register("name") }
-                                    isInvalid = { !!errors.name }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.name?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "password"
-                                 label = "Password"
-                              >
-                                 <Form.Control
-                                    aria-label = "Password"
-                                    autoComplete = "new-password"
-                                    placeholder = "Password"
-                                    type = "password"
-                                    { ...register("password") }
-                                    isInvalid = { !!errors.password }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.password?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "verifyPassword"
-                                 label = "Verify Password"
-                              >
-                                 <Form.Control
-                                    aria-label = "Verify Password"
-                                    autoComplete = "new-password"
-                                    placeholder = "Verify Password"
-                                    type = "password"
-                                    { ...register("verifyPassword") }
-                                    isInvalid = { !!errors.verifyPassword }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.verifyPassword?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <FloatingLabel
-                                 className = "mb-3"
-                                 controlId = "email"
-                                 label = "Email"
-                              >
-                                 <Form.Control
-                                    aria-label = "Email"
-                                    autoComplete = "email"
-                                    placeholder = "Email"
-                                    type = "email"
-                                    { ...register("email") }
-                                    isInvalid = { !!errors.email }
-                                 />
-                                 <Form.Control.Feedback
-                                    className = "mt-2"
-                                    type = "invalid"
-                                 >
-                                    { errors.email?.message?.toString() }
-                                 </Form.Control.Feedback>
-                              </FloatingLabel>
-                           </Form.Group>
-                           <Form.Group className = "mb-3">
-                              <Button
-                                 className = "primary icon"
-                                 disabled = { isNavigationButtonDisabled }
-                                 id = "register"
-                                 type = "submit"
-                              >
-                                 <FontAwesomeIcon icon = { faIdCard } />
-                                 <span>Register</span>
-                              </Button>
-                           </Form.Group>
-                        </Form>
-                        <div className = "mt-3">
-                           <p className = "mb-0 text-center">
-                              Already have an account?{ " " }
-                              <a
-                                 className = "text-primary fw-bold"
-                                 href = "/login"
-                              >
-                                 Log In
-                              </a>
-                           </p>
-                        </div>
-                     </div>
-                  </Card.Body>
-               </Card>
-            </Col>
-         </Row>
-      </Container>
+               Already have an account?{ " " }
+               <Link
+                  color = "primary"
+                  fontWeight = "bold"
+                  href = "/login"
+                  underline = "none"
+               >
+                  Log In
+               </Link>
+            </Typography>
+         </Stack>
+      </Callout>
    );
 }

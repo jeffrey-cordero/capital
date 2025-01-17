@@ -8,5 +8,5 @@ export default function Layout() {
          <Sidebar />
          <Router home = { true } />
       </>
-   )
+   );
 }

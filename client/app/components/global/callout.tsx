@@ -18,7 +18,7 @@ export default function Callout(props: CalloutProps) {
             container = { true }
             justifyContent = "center"
          >
-            <Grid size = { { xs:10, md:8, lg:6 } }>
+            <Grid size = { { xs:10, md: 6, lg: 4 } }>
                <Paper
                   elevation = { 2 }
                   sx = { { p: 4, mt: 5, borderTop: 5,  borderTopColor: type === "primary" ? "primary.main" : "error.main" } }

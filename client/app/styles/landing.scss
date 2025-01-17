@@ -1,39 +1,19 @@
 @import "./variables";
 
-.text {
-  display: flex;
-  flex-flow: column wrap;
-  align-items: center;
-  justify-content: center;
-  width: 80%;
-
-  h1 {
-    font-size: clamp(3.5rem, 5vw, 4rem);
-    margin: 0;
-    width: 100%;
-    white-space: nowrap;
-    margin-bottom: 4px;
-  }
-
-  p {
-    font-size: clamp(0.9rem, 5vw, 1.1rem);
-    margin: 0;
-    max-width: 90%;
-  }
+.main {
+  gap: 1rem;
 }
 
-.buttons {
-  button {
-    width: 9rem;
-    height: 3.1rem;
-    margin: 0;
-  
-    &#login{
-      background-color: #07EA3A;
-    }
-   
-    &#register{
-      background-color: #08B0FF;
-    }
+button {
+  width: 8.5rem;
+  height: 2.9rem;
+  margin: 0;
+
+  &#login{
+    background-color: #07EA3A;
+  }
+ 
+  &#register{
+    background-color: #08B0FF;
   }
 }

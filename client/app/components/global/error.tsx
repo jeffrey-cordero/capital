@@ -1,11 +1,11 @@
 
-import { SERVER_URL } from "@/root";
 import Callout from "@/components/global/callout";
+import { SERVER_URL } from "@/root";
 
 export default function Error() {
    return (
       <div className = "main">
-         <Callout type="error">
+         <Callout type = "error">
             <div className = "image">
                <img
                   alt = "Error Image"

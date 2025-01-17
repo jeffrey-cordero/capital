@@ -9,7 +9,6 @@ import { configureJWT } from "@/session";
 export const login = asyncHandler(async (req: Request, res: Response) => {
    try {
       const { username, password } = req.body;
-
       const user = await UserModel.authenticate(username, password);
 
       if (user === null) {
