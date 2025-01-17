@@ -2,13 +2,16 @@ import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, TextField, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import Callout from "@/components/global/callout";
-import Password from "@/components/global/password";
+import Logo from "@/components/global/logo";
+import Password from "@/components/auth/password";
 import { SERVER_URL } from "@/root";
+
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -25,7 +28,7 @@ export default function Login() {
       resolver: zodResolver(loginSchema)
    });
 
-   const onSubmit = async(data: any) => {
+   const onSubmit = async (data: any) => {
       const credentials = {
          username: data.username.trim(),
          password: data.password.trim()
@@ -62,62 +65,91 @@ export default function Login() {
 
    return (
       <Callout
-         sx = { { pt: 4 } }
-         type = "primary"
+         sx={{ pt: 4 }}
+         type="primary"
       >
          <Stack
-            direction = "column"
-            spacing = { 3 }
+            direction="column"
+            spacing={3}
          >
-            <Box className = "image">
+            <Grid
+               container
+               direction="column"
+               alignItems="center"
+               justifyContent="center"
+            >
+               <Grid>
+                  <Stack alignItems="center" justifyContent="center">
+                     <Logo />
+                     <Typography
+                        variant="h4"
+                        color="primary.main"
+                        fontWeight="bolder"
+                        marginBottom="5px"
+                     >
+                        Welcome Back!
+                     </Typography>
+                     <Typography
+                        variant="caption"
+                        fontSize="16px"
+                        textAlign="center"
+                        color="text.secondary"
+                     >
+                        Enter your credentials to continue
+                     </Typography>
+                  </Stack>
+               </Grid>
+            </Grid>
+            <Box className="image">
                <img
-                  alt = "Login"
-                  src = { `${SERVER_URL}/resources/auth/login.jpg` }
+                  alt="Login"
+                  src={`${SERVER_URL}/resources/auth/login.jpg`}
                />
             </Box>
-            <form onSubmit = { handleSubmit(onSubmit) }>
+            <form onSubmit={handleSubmit(onSubmit)}>
                <Stack
-                  direction = "column"
-                  marginTop = { 2 }
-                  spacing = { 2 }
+                  direction="column"
+
+                  spacing={2}
                >
                   <Controller
-                     control = { control }
-                     name = "username"
-                     render = {
+                     control={control}
+                     name="username"
+                     render={
                         ({ field }) => (
-                           <FormControl error = { Boolean(errors.username) }>
+                           <FormControl error={Boolean(errors.username)}>
                               <InputLabel>Username</InputLabel>
                               <OutlinedInput
-                                 { ...field }
-                                 label = "Username"
-                                 type = "username"
+                                 {...field}
+                                 label="Username"
+                                 type="username"
                               />
-                              { errors.username ? <FormHelperText>{ errors.username?.message?.toString() }</FormHelperText> : null }
+                              {errors.username ? <FormHelperText>{errors.username?.message?.toString()}</FormHelperText> : null}
                            </FormControl>
                         )
                      }
                   />
                   <Controller
-                     control = { control }
-                     name = "password"
-                     render = {
+                     control={control}
+                     name="password"
+                     render={
                         ({ field }) => (
                            <Password
-                              errors = { errors }
-                              field = { field }
+                              autoComplete="current-password"
+                              errors={errors}
+                              field={field}
                            />
                         )
                      }
                   />
                   <Button
-                     color = "primary"
-                     fullWidth = { true }
-                     loading = { isSubmitting }
-                     loadingPosition = "start"
-                     startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
-                     type = "submit"
-                     variant = "contained"
+                     color="primary"
+                     fullWidth={true}
+                     loading={isSubmitting}
+                     loadingPosition="start"
+                     startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
+                     type="submit"
+                     variant="contained"
                   >
                      Login
                   </Button>
@@ -125,16 +157,16 @@ export default function Login() {
 
             </form>
             <Typography
-               align = "center"
-               sx = { { fontWeight: "bold" } }
-               variant = "body2"
+               align="center"
+               sx={{ fontWeight: "bold" }}
+               variant="body2"
             >
-               Don&apos;t have an account?{ " " }
+               Don&apos;t have an account?{" "}
                <Link
-                  color = "primary"
-                  fontWeight = "bold"
-                  href = "/register"
-                  underline = "none"
+                  color="primary"
+                  fontWeight="bold"
+                  href="/register"
+                  underline="none"
                >
                   Register
                </Link>

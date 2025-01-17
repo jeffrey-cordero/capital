@@ -122,3 +122,15 @@ p {
     font-size: 0.9rem;
   }
 }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px $autofill-light inset !important;
+  background-color: $autofill-light;
+}
+
+.MuiInputBase-root:has(> input:-webkit-autofill) {
+  background-color: $autofill-light;
+}

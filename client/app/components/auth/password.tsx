@@ -1,17 +1,18 @@
+import clsx from "clsx";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FormControl, FormHelperText, InputLabel, OutlinedInput } from "@mui/material";
 import { useState } from "react";
-import type { FieldErrors, FieldValues } from "react-hook-form";
+import type { ControllerRenderProps, FieldErrors, FieldValues } from "react-hook-form";
 
 interface PasswordProps {
+   autoComplete: string;
    errors: FieldErrors<FieldValues>;
-   field: any;
-
+   field: ControllerRenderProps<FieldValues, string>;
 }
 
 export default function Password(props: PasswordProps) {
-   const { errors, field } = props;
+   const { autoComplete, errors, field } = props;
    const [showPassword, setShowPassword] = useState<boolean>(false);
 
    return (
@@ -21,12 +22,14 @@ export default function Password(props: PasswordProps) {
             { ...field }
             endAdornment = {
                <FontAwesomeIcon
+                  className={ clsx({ "primary": showPassword }) }
                   cursor = "pointer"
                   icon = { showPassword ? faEyeSlash : faEye }
                   onClick = { () => setShowPassword(!showPassword) }
                />
             }
             label = "Password"
+            autoComplete = { autoComplete }
             type = { showPassword ? "text" : "password" }
          />
          { errors.password ? <FormHelperText>{ errors.password?.message?.toString() }</FormHelperText> : null }
