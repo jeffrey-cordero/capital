@@ -1,7 +1,7 @@
-import { faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, TextField, Typography } from "@mui/material";
+import { Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
 import { Controller, useForm } from "react-hook-form";
@@ -9,9 +9,9 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import Logo from "@/components/global/logo";
-import Password from "@/components/auth/password";
 import { SERVER_URL } from "@/root";
-
+import { useState } from "react";
+import clsx from "clsx";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -27,6 +27,7 @@ export default function Login() {
    } = useForm({
       resolver: zodResolver(loginSchema)
    });
+   const [showPassword, setShowPassword] = useState<boolean>(false);
 
    const onSubmit = async (data: any) => {
       const credentials = {
@@ -44,15 +45,13 @@ export default function Login() {
             credentials: "include"
          });
 
-         const parsed = await response.json();
-
          if (response.ok) {
             setTimeout(() => {
                window.location.reload();
             }, 500);
          } else {
             // Display server-side validation errors
-            const { errors }: Record<string, string> = parsed;
+            const { errors }: Record<string, string> = await response.json();
 
             Object.entries(errors).forEach(
                ([field, message]) => setError(field, { type: "server", message })
@@ -64,114 +63,145 @@ export default function Login() {
    };
 
    return (
-      <Callout
-         sx={{ pt: 4 }}
-         type="primary"
-      >
-         <Stack
-            direction="column"
-            spacing={3}
+      <div className="center">
+         <Callout
+            sx={{ width: "100%" }}
+            type="primary"
          >
-            <Grid
-               container
+            <Stack
                direction="column"
-               alignItems="center"
-               justifyContent="center"
+               spacing={3}
             >
-               <Grid>
-                  <Stack alignItems="center" justifyContent="center">
-                     <Logo />
-                     <Typography
-                        variant="h4"
-                        color="primary.main"
-                        fontWeight="bolder"
-                        marginBottom="5px"
-                     >
-                        Welcome Back!
-                     </Typography>
-                     <Typography
-                        variant="caption"
-                        fontSize="16px"
-                        textAlign="center"
-                        color="text.secondary"
-                     >
-                        Enter your credentials to continue
-                     </Typography>
-                  </Stack>
-               </Grid>
-            </Grid>
-            <Box className="image">
-               <img
-                  alt="Login"
-                  src={`${SERVER_URL}/resources/auth/login.jpg`}
-               />
-            </Box>
-            <form onSubmit={handleSubmit(onSubmit)}>
-               <Stack
+               <Grid
+                  container
                   direction="column"
-
-                  spacing={2}
+                  alignItems="center"
+                  justifyContent="center"
                >
-                  <Controller
-                     control={control}
-                     name="username"
-                     render={
-                        ({ field }) => (
-                           <FormControl error={Boolean(errors.username)}>
-                              <InputLabel>Username</InputLabel>
-                              <OutlinedInput
-                                 {...field}
-                                 label="Username"
-                                 type="username"
-                              />
-                              {errors.username ? <FormHelperText>{errors.username?.message?.toString()}</FormHelperText> : null}
-                           </FormControl>
-                        )
-                     }
-                  />
-                  <Controller
-                     control={control}
-                     name="password"
-                     render={
-                        ({ field }) => (
-                           <Password
-                              autoComplete="current-password"
-                              errors={errors}
-                              field={field}
-                           />
-                        )
-                     }
-                  />
-                  <Button
-                     color="primary"
-                     fullWidth={true}
-                     loading={isSubmitting}
-                     loadingPosition="start"
-                     startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
-                     type="submit"
-                     variant="contained"
+                  <Grid>
+                     <Stack alignItems="center" justifyContent="center">
+                        <Logo />
+                        <Typography
+                           variant="h4"
+                           color="primary.main"
+                           fontWeight="bolder"
+                           marginBottom="5px"
+                        >
+                           Welcome Back
+                        </Typography>
+                        <Typography
+                           variant="caption"
+                           fontSize="16px"
+                           textAlign="center"
+                           color="text.secondary"
+                        >
+                           Enter your credentials to continue
+                        </Typography>
+                     </Stack>
+                  </Grid>
+               </Grid>
+               <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack
+                     direction="column"
+                     spacing={2}
                   >
-                     Login
-                  </Button>
-               </Stack>
-
-            </form>
-            <Typography
-               align="center"
-               sx={{ fontWeight: "bold" }}
-               variant="body2"
-            >
-               Don&apos;t have an account?{" "}
-               <Link
-                  color="primary"
-                  fontWeight="bold"
-                  href="/register"
-                  underline="none"
+                     <Controller
+                        control={control}
+                        name="username"
+                        render={
+                           ({ field }) => (
+                              <FormControl error = { Boolean(errors.username) }>
+                                 <InputLabel htmlFor="username">
+                                    Username
+                                 </InputLabel>
+                                 <OutlinedInput
+                                    { ...field }
+                                    id = "username"
+                                    label = "Username"
+                                    value={field.value || ""}
+                                    type = "text"
+                                    autoComplete = "username"
+                                    aria-label="Username"
+                                    autoFocus = { true}
+                                 />
+                                 { 
+                                    errors.username && (
+                                       <FormHelperText>
+                                          { errors.username?.message?.toString() }
+                                       </FormHelperText>
+                                    ) 
+                                 }
+                              </FormControl>
+                           )
+                        }
+                     />
+                     <Controller
+                        control={control}
+                        name="password"
+                        render={
+                           ({ field }) => (
+                              <FormControl error = { Boolean(errors.password) }>
+                                 <InputLabel htmlFor="password">
+                                    Password
+                                 </InputLabel>
+                                 <OutlinedInput
+                                    { ...field }
+                                    id = "password"
+                                    label = "Password"
+                                    value={field.value || ""}
+                                    type = { showPassword ? "text" : "password" }
+                                    autoComplete = "current-password"
+                                    aria-label="Password"
+                                    endAdornment = {
+                                       <FontAwesomeIcon
+                                          className={ clsx({ "primary": showPassword }) }
+                                          cursor = "pointer"
+                                          icon = { showPassword ? faEyeSlash : faEye }
+                                          onClick = { () => setShowPassword(!showPassword) }
+                                       />
+                                    }
+                                 />
+                                 { 
+                                    errors.password && (
+                                       <FormHelperText>
+                                          { errors.password?.message?.toString() }
+                                       </FormHelperText>
+                                    ) 
+                                 }
+                              </FormControl>
+                           )
+                        }
+                     />
+                     <Button
+                        color="primary"
+                        fullWidth={true}
+                        loading={isSubmitting}
+                        loadingPosition="start"
+                        startIcon={<FontAwesomeIcon icon={faUnlockKeyhole} />}
+                        type="submit"
+                        variant="contained"
+                     >
+                        Login
+                     </Button>
+                  </Stack>
+               </form>
+               <Typography
+                  align="center"
+                  sx={{ fontWeight: "bold", margin: "0" }}
+                  variant="body2"
                >
-                  Register
-               </Link>
-            </Typography>
-         </Stack>
-      </Callout>
+                  Don&apos;t have an account?{" "}
+                  <Link
+                     color="primary"
+                     fontWeight="bold"
+                     href="/register"
+                     underline="none"
+                  >
+                     Register
+                  </Link>
+               </Typography>
+            </Stack>
+         </Callout>
+      </div>
    );
 }

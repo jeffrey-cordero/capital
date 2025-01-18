@@ -20,8 +20,8 @@ export default function Callout(props: CalloutProps) {
          >
             <Grid size = { { xs:10, md: 6, lg: 4 } }>
                <Paper
-                  elevation = { 2 }
-                  sx = { { p: 4, mt: 5, borderTop: 5,  borderTopColor: type === "primary" ? "primary.main" : "error.main" } }
+                  elevation = { 4 }
+                  sx = { { p: 3, borderTop: 5,  borderTopColor: type === "primary" ? "primary.main" : "error.main" } }
                >
                   { children }
                </Paper>

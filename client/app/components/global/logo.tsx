@@ -1,7 +1,7 @@
 export default function Logo() {
    return (
       <svg 
-         xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" id="cryptocurrency-mobile-app" x="0" y="0" style={{ backgroundColor: "new 0 0 3000 3000" }} version="1.1" viewBox="0 0 3000 3000" width={150} height={150}>
+         xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" id="cryptocurrency-mobile-app" x="0" y="0" style={{ backgroundColor: "new 0 0 3000 3000" }} version="1.1" viewBox="0 0 3000 3000" width={140} height={140}>
          <path d="M2115.25,601.69l113.58,400.08c14.05,49.47,51.19,89.08,99.66,106.26l244.8,86.78
 	c95.2,33.75,135.08,146.65,82.21,232.71l-184.84,300.87c-32.99,53.7-31.09,121.83,4.85,173.61l77.61,111.82
 	c76.42,110.1-9.56,259.5-143.15,248.74l-815.01-65.67c-45.36-3.66-90.11,12.34-122.89,43.91L1143.89,2557

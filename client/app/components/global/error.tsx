@@ -1,10 +1,11 @@
 
 import Callout from "@/components/global/callout";
 import { SERVER_URL } from "@/root";
+import { Container } from "@mui/material";
 
 export default function Error() {
    return (
-      <div className = "main">
+      <Container className = "center">
          <Callout type = "error">
             <div className = "image">
                <img
@@ -14,6 +15,6 @@ export default function Error() {
                <p>Oops, Something went wrong. If the issue persists, please visit this <a href = "/">page</a>.</p>
             </div>
          </Callout>
-      </div>
+      </Container>
    );
 }

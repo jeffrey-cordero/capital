@@ -2,7 +2,7 @@ import "@/styles/landing.scss";
 
 import { faIdCard, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { useNavigate } from "react-router";
@@ -20,7 +20,7 @@ export default function Landing() {
    const navigate = useNavigate();
 
    return (
-      <Container className = "main">
+      <div className = "center">
          <div className = "image">
             <img
                alt = "Landing Page Image"
@@ -29,7 +29,6 @@ export default function Landing() {
          </div>
          <Box>
             <Typography
-               component = "h1"
                sx = { { fontWeight: "bold", marginBottom: "10px" } }
                variant = "h2"
             >
@@ -38,7 +37,7 @@ export default function Landing() {
             <Typography
                color = "textSecondary"
                sx = { { margin: "0 auto", maxWidth: "90%" } }
-               variant = "body1"
+               variant = "body2"
             >
                A data-driven finance tracker created for the intelligent acquisition of capital.
             </Typography>
@@ -73,6 +72,6 @@ export default function Landing() {
                Register
             </Button>
          </Stack>
-      </Container>
+      </div>
    );
 }
