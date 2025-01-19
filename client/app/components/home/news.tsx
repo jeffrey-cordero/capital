@@ -1,8 +1,8 @@
-import { faArrowUpRightFromSquare, faCaretDown, faShareFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpRightFromSquare, faCaretDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { SERVER_URL } from "@/root";
 
@@ -36,12 +36,15 @@ interface ExpandMoreProps extends IconButtonProps {
 }
 
 const ExpandMore = styled((props: ExpandMoreProps) => {
+   // eslint-disable-next-line
    const { expand, ...other } = props;
    return <IconButton { ...other } />;
 })(({ theme }) => ({
-   marginLeft: "auto",
+   margin: "0",
+   padding: "0 8px",
    transition: theme.transitions.create("transform", {
-      duration: theme.transitions.duration.shortest
+      duration: theme.transitions.duration.standard,
+      easing: theme.transitions.easing.easeInOut
    }),
    variants: [
       {
@@ -64,17 +67,17 @@ function StoryItem(props: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
    const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
-
+   
    return (
       <Card
          elevation = { 2 }
-         sx = { { maxWidth: 345 } }
+         sx = { { width: 345, borderRadius: 4 } }
       >
          <CardHeader
             avatar = {
                <Avatar
                   aria-label = "recipe"
-                  sx = { { bgcolor: "primary" } }
+                  sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
                   { author[0].charAt(0).toUpperCase() }
                </Avatar>
@@ -84,7 +87,7 @@ function StoryItem(props: Story) {
                   <Typography variant = "subtitle2">
                      { author }
                   </Typography>
-                  <Typography variant = "subtitle2">
+                  <Typography variant = "caption">
                      { timeSinceLastUpdate(pubDate[0]) }
                   </Typography>
                </Stack>
@@ -93,6 +96,7 @@ function StoryItem(props: Story) {
          <CardMedia
             alt = "Story Image"
             component = "img"
+            title="News"
             height = "200"
             image = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
             onError = { () => setIsResourceError(true) }
@@ -105,7 +109,9 @@ function StoryItem(props: Story) {
                      WebkitBoxOrient: "vertical",
                      overflow: "hidden",
                      WebkitLineClamp: 3,
-                     textOverflow: "ellipsis"
+                     textOverflow: "ellipsis",
+                     fontWeight: "medium",
+                     mr: 2
                   }
                }
                variant = "body2"
@@ -113,7 +119,7 @@ function StoryItem(props: Story) {
                { title[0] }
             </Typography>
          </CardContent>
-         <CardActions disableSpacing = { true }>
+         <CardActions sx={{justifyContent:"space-between", px: 1, pb: 1}}>
             <IconButton
                aria-label = "Read More"
                href = { link[0] }
@@ -123,25 +129,6 @@ function StoryItem(props: Story) {
                <FontAwesomeIcon
                   className = "primary"
                   icon = { faArrowUpRightFromSquare }
-               />
-            </IconButton>
-            <IconButton
-               aria-label = "Share"
-               onClick = {
-                  () => {
-                     navigator.share({
-                        title: title[0],
-                        text: description[0],
-                        url: link[0]
-                     });
-                  }
-               }
-               size = "small"
-            >
-               <FontAwesomeIcon
-                  className = "primary"
-                  icon = { faShareFromSquare }
-                  style = { { marginLeft: "1px" } }
                />
             </IconButton>
             <ExpandMore
@@ -158,7 +145,7 @@ function StoryItem(props: Story) {
             timeout = "auto"
             unmountOnExit = { true }
          >
-            <CardContent>
+            <CardContent sx={ { p: "0 15px" } }>
                <Typography
                   color = "textSecondary"
                   variant = "body2"
@@ -177,10 +164,11 @@ interface NewsProps {
 
 export default function News(props: NewsProps) {
    const { news } = props;
-
+   const containerRef = useRef<HTMLDivElement>(null);
+console.log(containerRef.current)
    return (
       Object.keys(news).length > 0 ? (
-         <Box>
+         <Box sx={{ overflow: 'hidden' }} ref={containerRef}>
             <div className = "image">
                <img
                   alt = "News"
@@ -190,17 +178,18 @@ export default function News(props: NewsProps) {
             <Stack
                direction = { { xs: "row", lg: "column" } }
                gap = { 3 }
-               sx = { { flexWrap: "wrap", justifyContent: "center", alignContent: "center" } }
+               sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center" } }
             >
                {
                   news?.channel[0].item.map(
                      (item: Story, index: number) => {
-
                         return (
-                           <StoryItem
-                              { ...item }
-                              key = { index }
-                           />
+                           <Slide in = { false } container= {containerRef.current} direction="down" timeout = {10000} key={`slide-${index}`}>  
+                              <StoryItem
+                                 { ...item }
+                                 key = { `story-${index}` }
+                              />
+                           </Slide>
                         );
                      }
                   )

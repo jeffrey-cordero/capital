@@ -7,13 +7,12 @@ import { userSchema } from "capital-types/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import Logo from "@/components/global/logo";
 import { addNotification } from "@/redux/slices/notifications";
-import type { RootState } from "@/redux/store";
 import { SERVER_URL } from "@/root";
 
 const loginSchema = z.object({
@@ -23,7 +22,6 @@ const loginSchema = z.object({
 
 export default function Login() {
    const dispatch = useDispatch();
-   const notifications = useSelector((state: RootState) => state.notifications.value);
 
    const {
       control,
@@ -41,11 +39,6 @@ export default function Login() {
          password: data.password.trim()
       };
 
-      dispatch(addNotification({
-         type: "success",
-         message: `Logging in... ${notifications.length}`
-      }));
-
       try {
          const response = await fetch(`${SERVER_URL}/auth/login`, {
             method: "POST",
@@ -60,6 +53,11 @@ export default function Login() {
             setTimeout(() => {
                window.location.reload();
             }, 500);
+         } else if (response.status >= 500) {
+            // Handle logging server-side errors
+            const error: string = (await response.json())?.errors?.system?.toString();
+
+            throw new Error(`${response.statusText}${error ? `: ${error}` : ""}`);
          } else {
             // Display server-side validation errors
             const { errors }: Record<string, string> = await response.json();
@@ -68,8 +66,13 @@ export default function Login() {
                ([field, message]) => setError(field, { type: "server", message })
             );
          }
-      } catch (error) {
+      } catch (error: any) {
          console.error(error);
+
+         dispatch(addNotification({
+            type: "error",
+            message: error?.message || "An error occurred"
+         }));
       }
    };
 

@@ -1,9 +1,8 @@
-import { Alert, Slide, Stack } from "@mui/material";
+import { Alert, Stack } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { Notification } from "@/redux/slices/notifications";
-import { removeNotification } from "@/redux/slices/notifications";
+import { removeNotification, type Notification } from "@/redux/slices/notifications";
 import type { RootState } from "@/redux/store";
 
 export default function Notifications() {
@@ -16,12 +15,6 @@ export default function Notifications() {
             {
                notifications.slice().reverse().map((notification, index) => (
                   <Snackbar
-                     TransitionComponent = {
-                        props => <Slide
-                           { ...props }
-                           direction = "down"
-                        />
-                     }
                      anchorOrigin = { { vertical: "top", horizontal: "center" } }
                      key = { index }
                      open = { true }
