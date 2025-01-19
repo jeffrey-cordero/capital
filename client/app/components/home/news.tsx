@@ -66,7 +66,10 @@ function StoryItem(props: Story) {
    const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
 
    return (
-      <Card sx = { { maxWidth: 345 } } elevation={2}>
+      <Card
+         elevation = { 2 }
+         sx = { { maxWidth: 345 } }
+      >
          <CardHeader
             avatar = {
                <Avatar

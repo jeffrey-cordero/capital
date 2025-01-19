@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import Error from "@/components/global/error";
+import Notifications from "@/components/global/notifications";
 import store from "@/redux/store";
 import { theme } from "@/styles/theme";
 
@@ -57,6 +58,7 @@ export default function App() {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
+            <Notifications />
             <Outlet />
          </QueryClientProvider>
       </Provider>

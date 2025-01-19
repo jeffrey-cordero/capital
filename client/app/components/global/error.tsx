@@ -1,7 +1,8 @@
 
+import { Container } from "@mui/material";
+
 import Callout from "@/components/global/callout";
 import { SERVER_URL } from "@/root";
-import { Container } from "@mui/material";
 
 export default function Error() {
    return (

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 const authSlice = createSlice({
    name: "auth",
@@ -12,9 +12,8 @@ const authSlice = createSlice({
       logout: (state) => {
          state.value = false;
       },
-      authenticate(state, action) {
-         const value: boolean = action.payload;
-         state.value = value;
+      authenticate(state, action: PayloadAction<boolean>) {
+         state.value = action.payload;
       }
    }
 });

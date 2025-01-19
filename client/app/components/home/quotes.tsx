@@ -24,13 +24,13 @@ function Quote(quote: { text: string, author: string }) {
             sx = { { fontStyle: "italic", mb:1 } }
             variant = "h6"
          >
-            "{ quote.text }"
+            "{ text }"
          </Typography>
          <Typography
             sx = { { fontWeight: "bold" } }
             variant = "subtitle1"
          >
-            - { quote.author }
+            - { author }
          </Typography>
       </Stack>
    );
