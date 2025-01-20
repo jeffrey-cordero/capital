@@ -1,10 +1,10 @@
 import { faArrowUpRightFromSquare, faCaretDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
-import { SERVER_URL } from "@/root";
+import { SERVER_URL } from "@/lib/server";
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 
@@ -67,10 +67,10 @@ function StoryItem(props: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
    const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
-   
+
    return (
       <Card
-         elevation = { 2 }
+         elevation = { 3 }
          sx = { { width: 345, borderRadius: 4 } }
       >
          <CardHeader
@@ -95,11 +95,11 @@ function StoryItem(props: Story) {
          />
          <CardMedia
             alt = "Story Image"
-            component = "img"
-            title="News"
-            height = "200"
+            component = "img" 
+            sx= {{ maxHeight: "200px", minHeight: "200px", height: "200px" }}
             image = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
             onError = { () => setIsResourceError(true) }
+            title = "News"
          />
          <CardContent>
             <Typography
@@ -119,7 +119,7 @@ function StoryItem(props: Story) {
                { title[0] }
             </Typography>
          </CardContent>
-         <CardActions sx={{justifyContent:"space-between", px: 1, pb: 1}}>
+         <CardActions sx = { { justifyContent:"space-between", px: 1, pb: 1 } }>
             <IconButton
                aria-label = "Read More"
                href = { link[0] }
@@ -145,7 +145,7 @@ function StoryItem(props: Story) {
             timeout = "auto"
             unmountOnExit = { true }
          >
-            <CardContent sx={ { p: "0 15px" } }>
+            <CardContent sx = { { p: "0 15px" } }>
                <Typography
                   color = "textSecondary"
                   variant = "body2"
@@ -165,26 +165,35 @@ interface NewsProps {
 export default function News(props: NewsProps) {
    const { news } = props;
    const containerRef = useRef<HTMLDivElement>(null);
-console.log(containerRef.current)
+
    return (
       Object.keys(news).length > 0 ? (
-         <Box sx={{ overflow: 'hidden' }} ref={containerRef}>
-            <div className = "image">
-               <img
-                  alt = "News"
-                  src = { `${SERVER_URL}/resources/home/news.png` }
-               />
-            </div>
+         <Box
+            ref = { containerRef }
+            sx = { { overflow: "hidden", textAlign: "center" } }
+            marginTop = { { xs: 4, lg: 0 } }
+         >
+            <Box
+               component="img"
+               src="news.svg"
+               alt="News"
+               sx={{ width: 250, height: "auto", mb: 4 }}
+            />
             <Stack
                direction = { { xs: "row", lg: "column" } }
-               gap = { 3 }
-               sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center" } }
+               sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" } }
             >
                {
                   news?.channel[0].item.map(
                      (item: Story, index: number) => {
                         return (
-                           <Slide in = { false } container= {containerRef.current} direction="down" timeout = {10000} key={`slide-${index}`}>  
+                           <Slide
+                              container = { containerRef.current }
+                              direction = "down"
+                              in = { false }
+                              key = { `slide-${index}` }
+                              timeout = { 10000 }
+                           >
                               <StoryItem
                                  { ...item }
                                  key = { `story-${index}` }

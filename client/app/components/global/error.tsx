@@ -1,20 +1,35 @@
 
-import { Container } from "@mui/material";
+import { Box, Container, Link, Typography } from "@mui/material";
 
 import Callout from "@/components/global/callout";
-import { SERVER_URL } from "@/root";
 
 export default function Error() {
    return (
-      <Container className = "center">
-         <Callout type = "error">
-            <div className = "image">
-               <img
-                  alt = "Error Image"
-                  src = { `${SERVER_URL}/resources/shared/error.jpg` }
-               />
-               <p>Oops, Something went wrong. If the issue persists, please visit this <a href = "/">page</a>.</p>
-            </div>
+      <Container className="center">
+         <Callout
+            sx={{ width: "100%" }}
+            type="error">
+            <Box
+               component="img"
+               src="error.svg"
+               alt="Error"
+               sx={{ width: 250, height: "auto" }}
+            />
+            <Typography
+               align="center"
+               sx={{ fontWeight: "bold", margin: "0", mb: 2 }}
+               variant="body2"
+            >
+               Oops, Something went wrong. If the issue persists, please visit this {" "}
+               <Link
+                  color="primary"
+                  fontWeight="bold"
+                  href="/"
+                  underline="none"
+               >
+                  page
+               </Link>
+            </Typography>
          </Callout>
       </Container>
    );

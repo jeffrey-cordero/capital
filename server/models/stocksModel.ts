@@ -66,20 +66,18 @@ export class StocksModel {
                   "x-rapidapi-host": "alpha-vantage.p.rapidapi.com",
                   "x-rapidapi-key": process.env.XRapidAPIKey || ""
                }
-            });
+            }).then(async (response) => await response.json());
 
-            const result = await response.json();
-   
-            if (!result["Meta Data"] ) {
+            if (!response["Meta Data"] ) {
                throw new Error("Invalid API format");
             } else {
-               stocks[symbol]= result["Time Series (Daily)"];
+               stocks[symbol]= response["Time Series (Daily)"];
             }
          }  catch (error) {
             // Use backup data if API request fails
             console.error(error);
             
-            const jsonBackup = await fs.readFile("resources/home/stocks.json", "utf8");
+            const jsonBackup = await fs.readFile("resources/stocks.json", "utf8");
             stocks = await JSON.parse(jsonBackup);
 
             break;

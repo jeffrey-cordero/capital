@@ -15,46 +15,15 @@ import Quotes from "@/components/home/quotes";
 import MonthlyStocks from "@/components/home/stocks";
 import { clearAuthentication } from "@/lib/auth";
 import { logout } from "@/redux/slices/auth";
-import { SERVER_URL } from "@/root";
+import { sendApiRequest } from "@/lib/server";
+
 
 async function fetchNews(): Promise<Feed> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/news`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return result.data.news as Feed;
-   } catch (error) {
-      console.error(error);
-
-      return {} as Feed;
-   }
+   return (await sendApiRequest("home/news", "GET", null))?.data.news as Feed;
 }
 
 async function fetchStocks(): Promise<Stocks> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/stocks`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return JSON.parse(result.data.stocks);
-   } catch (error) {
-      console.error(error);
-
-      return {};
-   }
+   return (await sendApiRequest("home/stocks", "GET", null))?.data.stocks as Stocks;
 }
 
 export default function Home() {
@@ -90,11 +59,11 @@ export default function Home() {
 
    return (
       !isLoading ? (
-         <Container>
+         <Container sx= {{ py: 6}}>
             <Grid
                columnSpacing = { 8 }
                container = { true }
-               sx = { { width: "100%", height: "100%", pb:6 } }
+               sx = { { width: "100%", height: "100%" } }
             >
                <Grid size = { { xs: 12, lg: 8 } }>
                   <Box
@@ -110,7 +79,7 @@ export default function Home() {
                         }
                      }
                   >
-                     <MonthlyStocks stocks = { stocks.data as Stocks } />
+                     <MonthlyStocks stocks = { JSON.parse(stocks.data as unknown as string ) } />
                      <Quotes />
                      <Grid
                         alignItems = "center"

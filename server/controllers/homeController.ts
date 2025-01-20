@@ -46,8 +46,8 @@ export const fetchNews = asyncHandler(async (req: Request, res: Response) => {
          return sendSuccess(res, 200, "Financial News", { news: JSON.parse(cache) as Feed });
       }
 
-      const response = await fetch("https://feeds.content.dowjones.io/public/rss/mw_topstories");
-      const data = await parseXML(await response.text());
+      const response = await fetch("https://feeds.content.dowjones.io/public/rss/mw_topstories").then(async (response) => await response.text());
+      const data = await parseXML(response);
       
       // Cache the results for 15 minutes
       await redisClient.setex("news", 15 * 60, JSON.stringify(data));
@@ -57,7 +57,7 @@ export const fetchNews = asyncHandler(async (req: Request, res: Response) => {
       // Use backup XML news file, but don't cache the results
       console.error(error);
          
-      const xmlBackup = await fs.readFile("resources/home/news.xml", "utf8");
+      const xmlBackup = await fs.readFile("resources/news.xml", "utf8");
       const data = await parseXML(xmlBackup);
 
       return sendSuccess(res, 200, "Backup Financial News", { news: data as Feed });

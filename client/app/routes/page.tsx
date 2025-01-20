@@ -1,77 +1,62 @@
-import "@/styles/landing.scss";
-
-import { faIdCard, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
+import { Box, Container, Link, Typography } from "@mui/material";
 import Stack from "@mui/material/Stack";
-import { useNavigate } from "react-router";
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function meta() {
    return [
       { title: "Capital" },
-      { name: "description", content: "Finance Tracker" }
+      { author: "Jeffrey Cordero", content: "Finance Tracker" }
    ];
 }
 
 export default function Landing() {
-   const navigate = useNavigate();
-
    return (
-      <div className = "center">
-         <div className = "image">
-            <img
-               alt = "Landing Page Image"
-               src = { `${SERVER_URL}/resources/landing/landing.jpg` }
-            />
-         </div>
-         <Box>
+      <Container className="center" sx={{ gap: 0 }}>
+         <Box
+            component="img"
+            src="logo.svg"
+            alt="Logo"
+            sx={{ width: 350, height: "auto", p: 0, m: 0 }}
+         />
+         <Box sx={{ mt: "-20px" }}>
             <Typography
-               sx = { { fontWeight: "bold", marginBottom: "10px" } }
-               variant = "h2"
+               sx={{ fontWeight: "bold", marginBottom: "10px" }}
+               variant="h1"
             >
                Capital
             </Typography>
             <Typography
-               color = "textSecondary"
-               sx = { { margin: "0 auto", maxWidth: "90%" } }
-               variant = "body2"
+               color="textSecondary"
+               sx={{ margin: "0 auto", fontWeight: "bold", maxWidth: "400px" }}
+               variant="body2"
             >
                A data-driven finance tracker created for the intelligent acquisition of capital.
             </Typography>
+            <Stack
+               direction="row"
+               sx={{ mt: 2, flexWrap: "wrap", justifyContent: "center", gap: "1rem" }}
+            >
+               <Link
+                  fontWeight="bold"
+                  href="/login"
+                  id="login"
+                  underline="none"
+                  variant="body1"
+               >
+                  Log In
+               </Link>
+               <Link
+                  className="secondary"
+                  color="primary"
+                  fontWeight="bold"
+                  href="/register"
+                  id="register"
+                  underline="none"
+                  variant="body1"
+               >
+                  Register
+               </Link>
+            </Stack>
          </Box>
-         <Stack
-            direction = "row"
-            flexWrap = { "wrap" }
-            gap = { 1 }
-            justifyContent = { "center" }
-         >
-            <Button
-               className = "btn-primary"
-               color = "success"
-               disableElevation = { true }
-               id = "login"
-               onClick = { () => navigate("/login") }
-               startIcon = { <FontAwesomeIcon icon = { faUnlockKeyhole } /> }
-               variant = "contained"
-            >
-               Log In
-            </Button>
-            <Button
-               className = "btn-primary"
-               color = "info"
-               disableElevation = { true }
-               id = "register"
-               onClick = { () => navigate("/login") }
-               startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
-               sx = { { backgroundColor: "primary.main" } }
-               variant = "contained"
-            >
-               Register
-            </Button>
-         </Stack>
-      </div>
+      </Container>
    );
 }

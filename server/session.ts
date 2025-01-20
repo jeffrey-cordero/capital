@@ -40,6 +40,11 @@ function authenticateJWT(required: boolean) {
    
             // Verify the JWT token
             const decoded = jwt.verify(token, secret);
+
+            // Refresh the token in the client if not present where token is stored in session
+            if (req.session.token && !req.cookies.token) {
+               res.cookie("token", req.session.token, { httpOnly: true });
+            }
    
             // Store JWT token in session for future requests (to prevent cache miss)
             if (required && !req.session.token) {

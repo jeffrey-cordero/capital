@@ -13,20 +13,18 @@ export default function Callout(props: CalloutProps) {
    const { type, children, sx } = props;
 
    return (
-      <Box sx = { sx }>
-         <Grid
-            container = { true }
-            justifyContent = "center"
-         >
-            <Grid size = { { xs:10, md: 6, lg: 4 } }>
-               <Paper
-                  elevation = { 4 }
-                  sx = { { p: 3, borderTop: 5,  borderTopColor: type === "primary" ? "primary.main" : "error.main" } }
-               >
-                  { children }
-               </Paper>
-            </Grid>
+      <Grid
+         container = { true }
+         sx = {{ justifyContent: "center", ...sx }}
+      >
+         <Grid size = { { xs:10, md: 6, lg: 4 } }>
+            <Paper
+               elevation = { 4 }
+               sx = { { p: 3, borderTop: 8,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px" } }
+            >
+               { children }
+            </Paper>
          </Grid>
-      </Box>
+         </Grid>
    );
 }

@@ -1,7 +1,7 @@
 import { faEye, faEyeSlash, faIdCard } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
+import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
 import clsx from "clsx";
@@ -9,14 +9,16 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import Callout from "@/components/global/callout";
-import Logo from "@/components/global/logo";
-import { SERVER_URL } from "@/root";
+import { sendApiRequest } from "@/lib/server";
+import { useDispatch } from "react-redux";
+import { addNotification } from "@/redux/slices/notifications";
 
 const registrationSchema = userSchema.extend({
    verifyPassword: userSchema.shape.password
 });
 
 export default function Register() {
+   const dispatch = useDispatch();
    const {
       control,
       handleSubmit,
@@ -37,31 +39,13 @@ export default function Register() {
          email: data.email.trim()
       };
 
-      try {
-         const response = await fetch(`${SERVER_URL}/users`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json"
-            },
-            body: JSON.stringify(registration),
-            credentials: "include"
-         });
+      const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
 
-         if (response.ok) {
-            setTimeout(() => {
-               document.getElementById("register")?.click();
-            }, 500);
-         } else {
-            // Display server-side validation errors
-            const { errors }: Record<string, string> = await response.json();
-
-            Object.entries(errors).forEach(
-               ([field, message]) => setError(field, { type: "server", message })
-            );
-         }
-      } catch (error) {
-         console.error(error);
-      }
+      response?.status === "Success" && dispatch(addNotification({
+         type: "success",
+         message: "Login",
+         href: "/home"
+      }));
    };
 
    return (
@@ -75,29 +59,31 @@ export default function Register() {
                spacing = { 3 }
             >
                <Grid
-                  alignItems = "center"
-                  container = { true }
-                  direction = "column"
-                  justifyContent = "center"
+                  container = {true}
+                  direction="column"
+                  sx = { { justifyContent: "center", alignItems: "center" } }
                >
                   <Grid>
                      <Stack
                         alignItems = "center"
                         justifyContent = "center"
                      >
-                        <Logo />
+                        <Box
+                           component="img"
+                           src="logo.svg"
+                           alt="Logo"
+                           sx={{ width: 250, height: "auto", p: 0, m: 0 }}
+                        />
                         <Typography
                            color = "primary.main"
-                           fontWeight = "bolder"
-                           marginBottom = "5px"
+                           sx = { { fontWeight: "bold", marginBottom: "10px" } }
                            variant = "h4"
                         >
                            Join Us Today
                         </Typography>
                         <Typography
                            color = "text.secondary"
-                           fontSize = "16px"
-                           textAlign = "center"
+                           sx = { { fontSize: "16px", textAlign: "center" } }
                            variant = "caption"
                         >
                            Enter your details to create an account and get started
@@ -128,6 +114,7 @@ export default function Register() {
                                     label = "Name"
                                     type = "text"
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.name && (
@@ -157,6 +144,7 @@ export default function Register() {
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.username && (
@@ -194,6 +182,7 @@ export default function Register() {
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.password && (
@@ -231,6 +220,7 @@ export default function Register() {
                                     label = "Verify Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.verifyPassword && (
@@ -260,6 +250,7 @@ export default function Register() {
                                     label = "Email"
                                     type = "email"
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.email && (
@@ -287,7 +278,7 @@ export default function Register() {
                </form>
                <Typography
                   align = "center"
-                  sx = { { fontWeight: "bold", margin: "0 0" } }
+                  sx = { { fontWeight: "bold" } }
                   variant = "body2"
                >
                   Already have an account?{ " " }

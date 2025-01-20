@@ -1,9 +1,7 @@
-import { Stack } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { type Prices, type Stocks } from "capital-types/stocks";
 import { CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
 import { Line } from "react-chartjs-2";
-
-import { SERVER_URL } from "@/root";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -83,12 +81,12 @@ export default function MonthlyStocks(props: MonthlyStocksProps) {
    return (
       Object.keys(stocks).length > 0 ? (
          <Stack direction = "column">
-            <div className = "image">
-               <img
-                  alt = "Stocks"
-                  src = { `${SERVER_URL}/resources/home/stocks.png` }
-               />
-            </div>
+            <Box
+               component="img"
+               src="stocks.svg"
+               alt="Stocks"
+               sx={{ width: 350, height: "auto", mb: 4 }}
+            />
             <Stack
                direction = "column"
                gap = { 3 }

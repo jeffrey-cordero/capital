@@ -1,7 +1,7 @@
 import { faEye, faEyeSlash, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
+import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
 import clsx from "clsx";
@@ -11,9 +11,7 @@ import { useDispatch } from "react-redux";
 import { z } from "zod";
 
 import Callout from "@/components/global/callout";
-import Logo from "@/components/global/logo";
-import { addNotification } from "@/redux/slices/notifications";
-import { SERVER_URL } from "@/root";
+import { sendApiRequest } from "@/lib/server";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -39,41 +37,11 @@ export default function Login() {
          password: data.password.trim()
       };
 
-      try {
-         const response = await fetch(`${SERVER_URL}/auth/login`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json"
-            },
-            body: JSON.stringify(credentials),
-            credentials: "include"
-         });
+      const response = await sendApiRequest("auth/login", "POST", credentials, dispatch, setError);
 
-         if (response.ok) {
-            setTimeout(() => {
-               window.location.reload();
-            }, 500);
-         } else if (response.status >= 500) {
-            // Handle logging server-side errors
-            const error: string = (await response.json())?.errors?.system?.toString();
-
-            throw new Error(`${response.statusText}${error ? `: ${error}` : ""}`);
-         } else {
-            // Display server-side validation errors
-            const { errors }: Record<string, string> = await response.json();
-
-            Object.entries(errors).forEach(
-               ([field, message]) => setError(field, { type: "server", message })
-            );
-         }
-      } catch (error: any) {
-         console.error(error);
-
-         dispatch(addNotification({
-            type: "error",
-            message: error?.message || "An error occurred"
-         }));
-      }
+      response?.status === "Success" && setTimeout(() => {
+         window.location.reload();
+      }, 500);
    };
 
    return (
@@ -87,29 +55,31 @@ export default function Login() {
                spacing = { 3 }
             >
                <Grid
-                  alignItems = "center"
-                  container = { true }
-                  direction = "column"
-                  justifyContent = "center"
+                  container = {true}
+                  direction="column"
+                  sx = { { justifyContent: "center", alignItems: "center" } }
                >
                   <Grid>
                      <Stack
                         alignItems = "center"
                         justifyContent = "center"
                      >
-                        <Logo />
+                        <Box
+                           component="img"
+                           src="logo.svg"
+                           alt="Logo"
+                           sx={{ width: 250, height: "auto", p: 0, m: 0 }}
+                        />
                         <Typography
                            color = "primary.main"
-                           fontWeight = "bolder"
-                           marginBottom = "5px"
+                           sx = { { fontWeight: "bold", marginBottom: "10px" } }
                            variant = "h4"
                         >
                            Welcome Back
                         </Typography>
                         <Typography
                            color = "text.secondary"
-                           fontSize = "16px"
-                           textAlign = "center"
+                           sx = { { fontSize: "16px", textAlign: "center" } }
                            variant = "caption"
                         >
                            Enter your credentials to continue
@@ -140,6 +110,7 @@ export default function Login() {
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.username && (
@@ -177,6 +148,7 @@ export default function Login() {
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
+                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.password && (
@@ -204,11 +176,12 @@ export default function Login() {
                </form>
                <Typography
                   align = "center"
-                  sx = { { fontWeight: "bold", margin: "0" } }
+                  sx = { { fontWeight: "bold" } }
                   variant = "body2"
                >
                   Don&apos;t have an account?{ " " }
                   <Link
+                     className="secondary"
                      color = "primary"
                      fontWeight = "bold"
                      href = "/register"

@@ -5,13 +5,16 @@ export const theme = responsiveFontSizes(
       palette: {
          mode: "light",
          primary: {
-            main: "#1A6DFD"
+            main: "#1A6DFD",
+         },
+         secondary: {
+            main: "#1DB954",
          }
       },
       components: {
          MuiButton: {
             styleOverrides: {
-               root: { borderRadius: "8px", textTransform: "none" },
+               root: { borderRadius: "12px", textTransform: "none" },
                sizeSmall: { padding: "6px 16px" },
                sizeMedium: { padding: "8px 20px" },
                sizeLarge: { padding: "11px 24px" },
@@ -22,7 +25,7 @@ export const theme = responsiveFontSizes(
          },
          MuiOutlinedInput: {
             styleOverrides: {
-               root: { borderRadius: "8px", fontSize: "0.95rem", borderColor: "primary.main" },
+               root: { borderRadius: "12px", fontSize: "0.95rem", borderColor: "primary.main" },
                input: {
                   fontSize: "0.95rem",
                   "&::placeholder": {

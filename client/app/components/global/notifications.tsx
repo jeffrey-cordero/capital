@@ -1,8 +1,8 @@
-import { Alert, Stack } from "@mui/material";
+import { Alert, Link, Stack } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { useDispatch, useSelector } from "react-redux";
 
-import { removeNotification, type Notification } from "@/redux/slices/notifications";
+import { type Notification, removeNotification } from "@/redux/slices/notifications";
 import type { RootState } from "@/redux/store";
 
 export default function Notifications() {
@@ -26,7 +26,20 @@ export default function Notifications() {
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold" } }
                         variant = "filled"
                      >
-                        { notification.message }
+                        {
+                           notification.href ? (
+                              <Link
+                                 className="snackbar"
+                                 color = "inherit"
+                                 href = { notification.href }
+                                 underline = "none" 
+                              >
+                                 { notification.message }
+                              </Link>
+                           ) : (
+                              notification.message
+                           )
+                        }
                      </Alert>
                   </Snackbar>
                ))

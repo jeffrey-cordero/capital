@@ -25,8 +25,6 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-
 export function Layout({ children }: { children: React.ReactNode }) {
    return (
 

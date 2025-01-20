@@ -1,6 +1,6 @@
-import { Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 
-import { SERVER_URL } from "@/root";
+import { SERVER_URL } from "@/lib/server";
 
 const quotes = [
    { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
@@ -37,15 +37,14 @@ function Quote(quote: { text: string, author: string }) {
 }
 
 export default function Quotes() {
-
    return (
       <Stack direction = "column">
-         <div className = "image">
-            <img
-               alt = "Stocks"
-               src = { `${SERVER_URL}/resources/home/quotes.png` }
-            />
-         </div>
+         <Box
+            component="img"
+            src="quotes.svg"
+            alt="Quotes"
+            sx={{ width: 250, height: "auto", mb: 4 }}
+         />
          <Stack
             direction = "column"
             gap = { 3 }
