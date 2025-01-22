@@ -1,6 +1,6 @@
 import { faArrowUpRightFromSquare, faCaretDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
@@ -32,13 +32,13 @@ function timeSinceLastUpdate(date: string) {
 }
 
 interface ExpandMoreProps extends IconButtonProps {
-  expand: boolean;
+   expand: boolean;
 }
 
 const ExpandMore = styled((props: ExpandMoreProps) => {
    // eslint-disable-next-line
    const { expand, ...other } = props;
-   return <IconButton { ...other } />;
+   return <IconButton {...other} />;
 })(({ theme }) => ({
    margin: "0",
    padding: "0 8px",
@@ -70,40 +70,40 @@ function StoryItem(props: Story) {
 
    return (
       <Card
-         elevation = { 3 }
-         sx = { { width: 345, borderRadius: 4 } }
+         elevation={2}
+         sx={{ width: 345, borderRadius: 4 }}
       >
          <CardHeader
-            avatar = {
+            avatar={
                <Avatar
-                  aria-label = "recipe"
-                  sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
+                  aria-label="recipe"
+                  sx={{ bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" }}
                >
-                  { author[0].charAt(0).toUpperCase() }
+                  {author[0].charAt(0).toUpperCase()}
                </Avatar>
             }
-            title = {
-               <Stack spacing = { 0 }>
-                  <Typography variant = "subtitle2">
-                     { author }
+            title={
+               <Stack spacing={0}>
+                  <Typography variant="subtitle2">
+                     {author}
                   </Typography>
-                  <Typography variant = "caption">
-                     { timeSinceLastUpdate(pubDate[0]) }
+                  <Typography variant="caption">
+                     {timeSinceLastUpdate(pubDate[0])}
                   </Typography>
                </Stack>
             }
          />
          <CardMedia
-            alt = "Story Image"
-            component = "img" 
-            sx= {{ maxHeight: "200px", minHeight: "200px", height: "200px" }}
-            image = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
-            onError = { () => setIsResourceError(true) }
-            title = "News"
+            alt="Story Image"
+            component="img"
+            sx={{ maxHeight: "200px", minHeight: "200px", height: "200px" }}
+            image={imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg`}
+            onError={() => setIsResourceError(true)}
+            title="News"
          />
          <CardContent>
             <Typography
-               sx = {
+               sx={
                   {
                      display: "-webkit-box",
                      WebkitBoxOrient: "vertical",
@@ -114,43 +114,43 @@ function StoryItem(props: Story) {
                      mr: 2
                   }
                }
-               variant = "body2"
+               variant="body2"
             >
-               { title[0] }
+               {title[0]}
             </Typography>
          </CardContent>
-         <CardActions sx = { { justifyContent:"space-between", px: 1, pb: 1 } }>
+         <CardActions sx={{ justifyContent: "space-between", px: 1, pb: 1 }}>
             <IconButton
-               aria-label = "Read More"
-               href = { link[0] }
-               size = "small"
-               target = "_blank"
+               aria-label="Read More"
+               href={link[0]}
+               size="small"
+               target="_blank"
             >
                <FontAwesomeIcon
-                  className = "primary"
-                  icon = { faArrowUpRightFromSquare }
+                  className="primary"
+                  icon={faArrowUpRightFromSquare}
                />
             </IconButton>
             <ExpandMore
-               aria-expanded = { expanded }
-               aria-label = "show more"
-               expand = { expanded }
-               onClick = { () => setExpanded(!expanded) }
+               aria-expanded={expanded}
+               aria-label="show more"
+               expand={expanded}
+               onClick={() => setExpanded(!expanded)}
             >
-               <FontAwesomeIcon icon = { faCaretDown } />
+               <FontAwesomeIcon icon={faCaretDown} />
             </ExpandMore>
          </CardActions>
          <Collapse
-            in = { expanded }
-            timeout = "auto"
-            unmountOnExit = { true }
+            in={expanded}
+            timeout="auto"
+            unmountOnExit={true}
          >
-            <CardContent sx = { { p: "0 15px" } }>
+            <CardContent sx={{ p: "0 15px" }}>
                <Typography
-                  color = "textSecondary"
-                  variant = "body2"
+                  color="textSecondary"
+                  variant="body2"
                >
-                  { description[0] }
+                  {description[0]}
                </Typography>
             </CardContent>
          </Collapse>
@@ -159,7 +159,7 @@ function StoryItem(props: Story) {
 }
 
 interface NewsProps {
-  news: Feed;
+   news: Feed;
 }
 
 export default function News(props: NewsProps) {
@@ -169,41 +169,39 @@ export default function News(props: NewsProps) {
    return (
       Object.keys(news).length > 0 ? (
          <Box
-            ref = { containerRef }
-            sx = { { overflow: "hidden", textAlign: "center" } }
-            marginTop = { { xs: 4, lg: 0 } }
+            ref={containerRef}
+            sx={{ textAlign: "center" }}
+            marginTop={{ xs: 4, lg: 0 }}
          >
-            <Box
-               component="img"
-               src="news.svg"
-               alt="News"
-               sx={{ width: 250, height: "auto", mb: 4 }}
-            />
-            <Stack
-               direction = { { xs: "row", lg: "column" } }
-               sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" } }
-            >
-               {
-                  news?.channel[0].item.map(
-                     (item: Story, index: number) => {
-                        return (
-                           <Slide
-                              container = { containerRef.current }
-                              direction = "down"
-                              in = { false }
-                              key = { `slide-${index}` }
-                              timeout = { 10000 }
-                           >
-                              <StoryItem
-                                 { ...item }
-                                 key = { `story-${index}` }
-                              />
-                           </Slide>
-                        );
-                     }
-                  )
-               }
-            </Stack>
+            <Fade in={true} timeout={1000} mountOnEnter unmountOnExit>
+               <Box>
+                  <Slide in={true} timeout={1000} direction="up" mountOnEnter unmountOnExit>
+                     <Stack
+                        direction={{ xs: "row", lg: "column" }}
+                        sx={{ flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" }}
+                     >
+                        <Box
+                           component="img"
+                           src="news.svg"
+                           alt="News"
+                           sx={{ width: 250, height: "auto" }}
+                        />
+                        {
+                           news?.channel[0].item.map(
+                              (item: Story, index: number) => {
+                                 return (
+                                    <StoryItem
+                                       {...item}
+                                       key={index}
+                                    />
+                                 );
+                              }
+                           )
+                        }
+                     </Stack>
+                  </Slide>
+               </Box>
+            </Fade>
          </Box>
       ) : (
          null

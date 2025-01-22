@@ -1,9 +1,6 @@
 import { Box, Stack } from "@mui/material";
 import { type Prices, type Stocks } from "capital-types/stocks";
-import { CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+import { LineChart, ResponsiveChartContainer } from '@mui/x-charts';
 
 const legend: Record<string, string> = {
    "VT":"Vanguard Total World Stock Index Fund ETF",
@@ -63,11 +60,18 @@ function Stock(props: StockProps) {
    };
 
    return (
-      <Line
-         data = { data }
-         options = { options }
-         style = { { maxWidth: "100%" } }
-      />
+      // <Line
+      //    data = { data }
+      //    options = { options }
+      //    style = { { maxWidth: "100%" } }
+      // />
+      // <ResponsiveChartContainer>
+      //    <LineChart
+      //       data = { data }
+      //       options = { options }
+      //    />
+      // </ResponsiveChartContainer>
+      <div></div>
    );
 }
 

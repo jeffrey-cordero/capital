@@ -51,7 +51,7 @@ export default function Register() {
    return (
       <div className = "center">
          <Callout
-            sx = { { width: "100%" } }
+            sx = { { width: "100%", my: 4 } }
             type = "primary"
          >
             <Stack
@@ -72,14 +72,14 @@ export default function Register() {
                            component="img"
                            src="logo.svg"
                            alt="Logo"
-                           sx={{ width: 250, height: "auto", p: 0, m: 0 }}
+                           sx={{ width: 150, height: "auto", p: 0, m: 0 }}
                         />
                         <Typography
                            color = "primary.main"
                            sx = { { fontWeight: "bold", marginBottom: "10px" } }
                            variant = "h4"
                         >
-                           Join Us Today
+                           Join Us
                         </Typography>
                         <Typography
                            color = "text.secondary"

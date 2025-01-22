@@ -68,7 +68,7 @@ export default function Login() {
                            component="img"
                            src="logo.svg"
                            alt="Logo"
-                           sx={{ width: 250, height: "auto", p: 0, m: 0 }}
+                           sx={{ width: 150, height: "auto", p: 0, m: 0 }}
                         />
                         <Typography
                            color = "primary.main"

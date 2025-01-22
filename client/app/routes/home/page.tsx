@@ -16,6 +16,7 @@ import MonthlyStocks from "@/components/home/stocks";
 import { clearAuthentication } from "@/lib/auth";
 import { logout } from "@/redux/slices/auth";
 import { sendApiRequest } from "@/lib/server";
+import MainGrid from "@/components/home/grid";
 
 
 async function fetchNews(): Promise<Feed> {
@@ -79,7 +80,8 @@ export default function Home() {
                         }
                      }
                   >
-                     <MonthlyStocks stocks = { JSON.parse(stocks.data as unknown as string ) } />
+                     {/* <MonthlyStocks stocks = { JSON.parse(stocks.data as unknown as string ) } /> */}
+                     <MainGrid />
                      <Quotes />
                      <Grid
                         alignItems = "center"
