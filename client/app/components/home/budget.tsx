@@ -56,7 +56,7 @@ export default function StatCard({
   const trendColors = {
     up:
       theme.palette.mode === 'light'
-        ? theme.palette.secondary.main
+        ? theme.palette.success.main
         : theme.palette.success.dark,
     down:
       theme.palette.mode === 'light'
@@ -69,7 +69,7 @@ export default function StatCard({
   };
 
   const labelColors = {
-    up: 'secondary' as const,
+    up: 'success' as const,
     down: 'error' as const,
     neutral: 'default' as const,
   };
@@ -98,7 +98,7 @@ export default function StatCard({
               </Typography>
               <Chip size="small" color={color} label={trendValues[trend]} />
             </Stack>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            <Typography variant="caption" sx={{ color: 'text.success' }}>
               {interval}
             </Typography>
           </Stack>

@@ -66,11 +66,11 @@ function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
-   const image = props["media:content"]?.[0].$.url || `${SERVER_URL}/resources/home/story.jpg}`;
+   const image = props["media:content"]?.[0].$.url || "/backup.svg";
 
    return (
       <Card
-         elevation={2}
+         elevation={3}
          sx={{ width: 345, borderRadius: 4 }}
       >
          <CardHeader
@@ -97,7 +97,7 @@ function StoryItem(props: Story) {
             alt="Story Image"
             component="img"
             sx={{ maxHeight: "200px", minHeight: "200px", height: "200px" }}
-            image={imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg`}
+            image={imageRegex.test(image) && !isResourceError ? image : "/backup.svg"}
             onError={() => setIsResourceError(true)}
             title="News"
          />
@@ -176,28 +176,30 @@ export default function News(props: NewsProps) {
             <Fade in={true} timeout={1000} mountOnEnter unmountOnExit>
                <Box>
                   <Slide in={true} timeout={1000} direction="up" mountOnEnter unmountOnExit>
-                     <Stack
-                        direction={{ xs: "row", lg: "column" }}
-                        sx={{ flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" }}
-                     >
+                     <Stack direction="column" spacing={3}>
                         <Box
                            component="img"
                            src="news.svg"
                            alt="News"
                            sx={{ width: 250, height: "auto" }}
                         />
-                        {
-                           news?.channel[0].item.map(
-                              (item: Story, index: number) => {
-                                 return (
-                                    <StoryItem
-                                       {...item}
-                                       key={index}
-                                    />
-                                 );
-                              }
-                           )
-                        }
+                        <Stack
+                           direction={{ xs: "row", lg: "column" }}
+                           sx={{ flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" }}
+                        >
+                           {
+                              news?.channel[0].item.map(
+                                 (item: Story, index: number) => {
+                                    return (
+                                       <StoryItem
+                                          {...item}
+                                          key={index}
+                                       />
+                                    );
+                                 }
+                              )
+                           }
+                        </Stack>
                      </Stack>
                   </Slide>
                </Box>

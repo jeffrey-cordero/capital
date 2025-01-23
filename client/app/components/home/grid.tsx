@@ -7,7 +7,7 @@ import { LineChart } from '@mui/x-charts/LineChart';
 
 import StatCard, { type StatCardProps } from "@/components/home/budget";
 import { CardContent, Fade, Slide, Typography } from '@mui/material';
-import { theme } from '@/styles/theme';
+import { theme } from '@/styles/mui/theme';
 
 const data: StatCardProps[] = [
    {
@@ -93,9 +93,9 @@ export default function MainGrid() {
                                     <Typography variant="h4" component="p">
                                        13,277
                                     </Typography>
-                                    <Chip size="small" color="secondary" label="+35%" />
+                                    <Chip size="small" color="success" label="+35%" />
                                  </Stack>
-                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                 <Typography variant="caption" sx={{ color: 'text.success' }}>
                                     Sessions per day for the last 30 days
                                  </Typography>
                               </Stack>
@@ -118,7 +118,7 @@ export default function MainGrid() {
                                        stack: 'total',
                                        area: true,
                                        stackOrder: 'ascending',
-                                       color: theme.palette.secondary.main,
+                                       color: theme.palette.success.main,
                                        data: [
                                           300, 900, 600, 1200, 1500, 1800, 2400, 2100, 2700, 3000, 1800, 3300
 

@@ -1,58 +1,18 @@
-import { createTheme, type Theme, responsiveFontSizes, svgIconClasses, iconButtonClasses } from "@mui/material";
-import { axisClasses, legendClasses, chartsGridClasses } from "@mui/x-charts";
+import { createTheme, responsiveFontSizes, svgIconClasses, iconButtonClasses } from "@mui/material";
 import { chipClasses } from '@mui/material/Chip';
-
-const gray = {
-  50: "hsl(220, 35%, 97%)",
-  100: "hsl(220, 30%, 94%)",
-  200: "hsl(220, 20%, 88%)",
-  300: "hsl(220, 20%, 80%)",
-  400: "hsl(220, 20%, 65%)",
-  500: "hsl(220, 20%, 42%)",
-  600: "hsl(220, 20%, 35%)",
-  700: "hsl(220, 20%, 25%)",
-  800: "hsl(220, 30%, 6%)",
-  900: "hsl(220, 35%, 3%)",
-};
-
-const red = {
-   50: 'hsl(0, 100%, 97%)',
-   100: 'hsl(0, 92%, 90%)',
-   200: 'hsl(0, 94%, 80%)',
-   300: 'hsl(0, 90%, 65%)',
-   400: 'hsl(0, 90%, 40%)',
-   500: 'hsl(0, 90%, 30%)',
-   600: 'hsl(0, 91%, 25%)',
-   700: 'hsl(0, 94%, 18%)',
-   800: 'hsl(0, 95%, 12%)',
-   900: 'hsl(0, 93%, 6%)',
- };
-
-const green = {
-   50: 'hsl(120, 80%, 98%)',
-   100: 'hsl(120, 75%, 94%)',
-   200: 'hsl(120, 75%, 87%)',
-   300: 'hsl(120, 61%, 77%)',
-   400: 'hsl(120, 44%, 53%)',
-   500: 'hsl(120, 59%, 30%)',
-   600: 'hsl(120, 70%, 25%)',
-   700: 'hsl(120, 75%, 16%)',
-   800: 'hsl(120, 84%, 10%)',
-   900: 'hsl(120, 87%, 6%)',
- };
+import { gray, red, green } from "@/styles/mui/colors";
+import { shadows } from "@/styles/mui/shadow";
+import { typography } from "@/styles/mui/typography";
+import { palette } from "@/styles/mui/palette";
+import { charts } from "./chart";
 
 export const theme = responsiveFontSizes(
   createTheme({
-    palette: {
-      mode: "light",
-      primary: {
-        main: "#1A6DFD",
-      },
-      secondary: {
-        main: "#1DB954",
-      },
-    },
+    palette,
+    typography,
+    shadows,
     components: {
+      ...charts,
       MuiButton: {
         styleOverrides: {
           root: { borderRadius: "12px", textTransform: "none" },
@@ -224,56 +184,6 @@ export const theme = responsiveFontSizes(
            },
          },
        },
-    },
-    typography: {
-      body1: { fontSize: "1rem", fontWeight: 400, lineHeight: 1.5 },
-      fontFamily:
-        '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
-      body2: { fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.57 },
-      button: { fontWeight: 500 },
-      caption: { fontSize: "0.75rem", fontWeight: 400, lineHeight: 1.66 },
-      subtitle1: { fontSize: "1rem", fontWeight: 500, lineHeight: 1.57 },
-      subtitle2: { fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.57 },
-      overline: {
-        fontSize: "0.75rem",
-        fontWeight: 500,
-        letterSpacing: "0.5px",
-        lineHeight: 2.5,
-        textTransform: "uppercase",
-      },
-      h1: { fontSize: "3.5rem", fontWeight: 500, lineHeight: 1.2 },
-      h2: { fontSize: "3rem", fontWeight: 500, lineHeight: 1.2 },
-      h3: { fontSize: "2.25rem", fontWeight: 500, lineHeight: 1.2 },
-      h4: { fontSize: "2rem", fontWeight: 500, lineHeight: 1.2 },
-      h5: { fontSize: "1.5rem", fontWeight: 500, lineHeight: 1.2 },
-      h6: { fontSize: "1.125rem", fontWeight: 500, lineHeight: 1.2 },
-    },
-    shadows: [
-      "none",
-      "0px 1px 2px rgba(0, 0, 0, 0.08)",
-      "0px 1px 5px rgba(0, 0, 0, 0.08)",
-      "0px 1px 8px rgba(0, 0, 0, 0.08)",
-      "0px 1px 10px rgba(0, 0, 0, 0.08)",
-      "0px 1px 14px rgba(0, 0, 0, 0.08)",
-      "0px 1px 18px rgba(0, 0, 0, 0.08)",
-      "0px 2px 16px rgba(0, 0, 0, 0.08)",
-      "0px 3px 14px rgba(0, 0, 0, 0.08)",
-      "0px 3px 16px rgba(0, 0, 0, 0.08)",
-      "0px 4px 18px rgba(0, 0, 0, 0.08)",
-      "0px 4px 20px rgba(0, 0, 0, 0.08)",
-      "0px 5px 22px rgba(0, 0, 0, 0.08)",
-      "0px 5px 24px rgba(0, 0, 0, 0.08)",
-      "0px 5px 26px rgba(0, 0, 0, 0.08)",
-      "0px 6px 28px rgba(0, 0, 0, 0.08)",
-      "0px 6px 30px rgba(0, 0, 0, 0.08)",
-      "0px 6px 32px rgba(0, 0, 0, 0.08)",
-      "0px 7px 34px rgba(0, 0, 0, 0.08)",
-      "0px 7px 36px rgba(0, 0, 0, 0.08)",
-      "0px 8px 38px rgba(0, 0, 0, 0.08)",
-      "0px 8px 40px rgba(0, 0, 0, 0.08)",
-      "0px 8px 42px rgba(0, 0, 0, 0.08)",
-      "0px 9px 44px rgba(0, 0, 0, 0.08)",
-      "0px 9px 46px rgba(0, 0, 0, 0.08)",
-    ],
+    }
   })
 );
