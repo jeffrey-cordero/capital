@@ -45,8 +45,8 @@ export default function Landing() {
                   Log In
                </Link>
                <Link
-                  className="secondary"
-                  color="primary"
+                  className="success"
+                  color="success"
                   fontWeight="bold"
                   href="/register"
                   id="register"

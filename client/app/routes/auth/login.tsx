@@ -181,8 +181,8 @@ export default function Login() {
                >
                   Don&apos;t have an account?{ " " }
                   <Link
-                     className="secondary"
-                     color = "primary"
+                     className="success"
+                     color = "success"
                      fontWeight = "bold"
                      href = "/register"
                      underline = "none"

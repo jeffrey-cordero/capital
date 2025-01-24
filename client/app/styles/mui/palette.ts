@@ -47,5 +47,3 @@ export const palette: PaletteOptions = {
     selected: `${alpha(gray[200], 0.3)}`,
   }
 };
-
-
