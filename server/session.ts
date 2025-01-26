@@ -14,7 +14,7 @@ declare module 'express-session' {
 function configureJWT(req: Request, res: Response, user: User): void {
    // JWT token generation
    const secret: string = process.env.SESSION_SECRET || "";
-   const token = jwt.sign({ id: user.id, username: user.username }, secret, { expiresIn: "6h" });
+   const token = jwt.sign({ id: user.id, username: user.username }, secret, { expiresIn: "24h" });
 
    // JWT token configuration
    res.cookie("token", token, { httpOnly: true });

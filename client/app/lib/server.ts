@@ -1,8 +1,7 @@
 import type { Dispatch } from "@reduxjs/toolkit";
-
-import { addNotification } from "@/redux/slices/notifications";
 import type { UseFormSetError } from "react-hook-form";
 
+import { addNotification } from "@/redux/slices/notifications";
 
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 

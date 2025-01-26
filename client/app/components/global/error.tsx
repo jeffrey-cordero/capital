@@ -5,27 +5,28 @@ import Callout from "@/components/global/callout";
 
 export default function Error() {
    return (
-      <Container className="center">
+      <Container className = "center">
          <Callout
-            sx={{ width: "100%" }}
-            type="error">
+            sx = { { width: "100%" } }
+            type = "error"
+         >
             <Box
-               component="img"
-               src="error.svg"
-               alt="Error"
-               sx={{ width: 250, height: "auto" }}
+               alt = "Error"
+               component = "img"
+               src = "error.svg"
+               sx = { { width: 250, height: "auto" } }
             />
             <Typography
-               align="center"
-               sx={{ fontWeight: "bold", margin: "0", mb: 2 }}
-               variant="body2"
+               align = "center"
+               sx = { { fontWeight: "bold", margin: "0", mb: 2 } }
+               variant = "body2"
             >
-               Oops, Something went wrong. If the issue persists, please visit this {" "}
+               Oops, Something went wrong. If the issue persists, please visit this { " " }
                <Link
-                  color="primary"
-                  fontWeight="bold"
-                  href="/"
-                  underline="none"
+                  color = "primary"
+                  fontWeight = "bold"
+                  href = "/"
+                  underline = "none"
                >
                   page
                </Link>

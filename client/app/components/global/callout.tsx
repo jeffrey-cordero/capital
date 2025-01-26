@@ -15,7 +15,7 @@ export default function Callout(props: CalloutProps) {
    return (
       <Grid
          container = { true }
-         sx = {{ justifyContent: "center", ...sx }}
+         sx = { { justifyContent: "center", ...sx } }
       >
          <Grid size = { { xs:10, md: 6, lg: 4 } }>
             <Paper
@@ -25,6 +25,6 @@ export default function Callout(props: CalloutProps) {
                { children }
             </Paper>
          </Grid>
-         </Grid>
+      </Grid>
    );
 }

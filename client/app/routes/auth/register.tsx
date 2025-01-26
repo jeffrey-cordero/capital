@@ -7,10 +7,10 @@ import { userSchema } from "capital-types/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
-import { useDispatch } from "react-redux";
 import { addNotification } from "@/redux/slices/notifications";
 
 const registrationSchema = userSchema.extend({
@@ -59,8 +59,8 @@ export default function Register() {
                spacing = { 3 }
             >
                <Grid
-                  container = {true}
-                  direction="column"
+                  container = { true }
+                  direction = "column"
                   sx = { { justifyContent: "center", alignItems: "center" } }
                >
                   <Grid>
@@ -69,14 +69,14 @@ export default function Register() {
                         justifyContent = "center"
                      >
                         <Box
-                           component="img"
-                           src="logo.svg"
-                           alt="Logo"
-                           sx={{ width: 150, height: "auto", p: 0, m: 0 }}
+                           alt = "Logo"
+                           component = "img"
+                           src = "logo.svg"
+                           sx = { { width: 150, height: "auto", p: 0, m: 0 } }
                         />
                         <Typography
                            color = "primary.main"
-                           sx = { { fontWeight: "bold", marginBottom: "10px" } }
+                           sx = { { fontWeight: "bold", marginBottom: "2px" } }
                            variant = "h4"
                         >
                            Join Us
@@ -110,11 +110,11 @@ export default function Register() {
                                     aria-label = "Name"
                                     autoComplete = "name"
                                     autoFocus = { true }
+                                    disabled = { isSubmitting }
                                     id = "name"
                                     label = "Name"
                                     type = "text"
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.name && (
@@ -140,11 +140,11 @@ export default function Register() {
                                     { ...field }
                                     aria-label = "Username"
                                     autoComplete = "none"
+                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.username && (
@@ -170,6 +170,7 @@ export default function Register() {
                                     { ...field }
                                     aria-label = "Password"
                                     autoComplete = "new-password"
+                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }
@@ -182,7 +183,6 @@ export default function Register() {
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.password && (
@@ -208,6 +208,7 @@ export default function Register() {
                                     { ...field }
                                     aria-label = "Verify Password"
                                     autoComplete = "new-password"
+                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showVerifyPassword }) }
@@ -220,7 +221,6 @@ export default function Register() {
                                     label = "Verify Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.verifyPassword && (
@@ -246,11 +246,11 @@ export default function Register() {
                                     { ...field }
                                     aria-label = "Email"
                                     autoComplete = "email"
+                                    disabled = { isSubmitting }
                                     id = "email"
                                     label = "Email"
                                     type = "email"
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.email && (

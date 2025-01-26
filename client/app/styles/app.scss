@@ -109,6 +109,12 @@ a {
       background-color: white;
     }
   }
+
+  &.news {
+    &::before {
+      background-color: transparent;
+    }
+  }
 }
 
 img {
@@ -117,14 +123,14 @@ img {
   margin: auto;
 }
 
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px $autofill-light inset !important;
-  background-color: $autofill-light;
-}
+// input:-webkit-autofill,
+// input:-webkit-autofill:hover,
+// input:-webkit-autofill:focus,
+// input:-webkit-autofill:active {
+//   -webkit-box-shadow: 0 0 0 30px $autofill-dark inset !important;
+//   background-color: $autofill-dark;
+// }
 
-.MuiInputBase-root:has(> input:-webkit-autofill) {
-  background-color: $autofill-light;
-}
+// .MuiInputBase-root:has(> input:-webkit-autofill) {
+//   background-color: $autofill-dark;
+// }

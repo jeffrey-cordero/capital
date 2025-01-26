@@ -1,22 +1,27 @@
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
 
 import Loading from "@/components/global/loading";
+import Notifications from "@/components/global/notifications";
+import { SideBar } from "@/components/global/sidebar";
 import { fetchAuthentication } from "@/lib/auth";
 import { authenticate } from "@/redux/slices/auth";
 import type { RootState } from "@/redux/store";
+import { theme } from "@/styles/mui/theme";
 
 // Helper component to handle authentication-related redirection for landing/ home layouts
 export default function Router({ home }: { home: boolean }) {
    const { data, isLoading, error, isError } = useQuery({
       queryKey: ["auth"],
       queryFn: fetchAuthentication,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000
+      staleTime: 24 * 60 * 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000
    });
 
+   const mode: "light" | "dark" = useSelector((state: RootState) => state.theme.value);
    const authenticated: boolean = useSelector((state: RootState) => state.auth.value);
    const redirection: boolean = home && !authenticated || !home && authenticated;
    const navigate = useNavigate();
@@ -48,6 +53,13 @@ export default function Router({ home }: { home: boolean }) {
    if (isLoading || redirection) {
       return <Loading />;
    } else {
-      return <Outlet />;
+      return (
+         <ThemeProvider theme = { theme(mode) }>
+            <CssBaseline />
+            <SideBar />
+            <Notifications />
+            <Outlet />
+         </ThemeProvider>
+      );
    }
 }

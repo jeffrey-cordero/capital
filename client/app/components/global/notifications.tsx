@@ -23,16 +23,15 @@ export default function Notifications() {
                      <Alert
                         onClose = { () => dispatch(removeNotification(index)) }
                         severity = { notification.type }
-                        sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold" } }
+                        sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }
                         variant = "filled"
                      >
                         {
                            notification.href ? (
                               <Link
-                                 className="snackbar"
-                                 color = "inherit"
+                                 className = "snackbar"
                                  href = { notification.href }
-                                 underline = "none" 
+                                 underline = "none"
                               >
                                  { notification.message }
                               </Link>

@@ -55,8 +55,8 @@ export default function Login() {
                spacing = { 3 }
             >
                <Grid
-                  container = {true}
-                  direction="column"
+                  container = { true }
+                  direction = "column"
                   sx = { { justifyContent: "center", alignItems: "center" } }
                >
                   <Grid>
@@ -65,14 +65,14 @@ export default function Login() {
                         justifyContent = "center"
                      >
                         <Box
-                           component="img"
-                           src="logo.svg"
-                           alt="Logo"
-                           sx={{ width: 150, height: "auto", p: 0, m: 0 }}
+                           alt = "Logo"
+                           component = "img"
+                           src = "logo.svg"
+                           sx = { { width: 150, height: "auto", p: 0, m: 0 } }
                         />
                         <Typography
                            color = "primary.main"
-                           sx = { { fontWeight: "bold", marginBottom: "10px" } }
+                           sx = { { fontWeight: "bold", marginBottom: "2px" } }
                            variant = "h4"
                         >
                            Welcome Back
@@ -106,11 +106,11 @@ export default function Login() {
                                     aria-label = "Username"
                                     autoComplete = "username"
                                     autoFocus = { true }
+                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.username && (
@@ -136,6 +136,7 @@ export default function Login() {
                                     { ...field }
                                     aria-label = "Password"
                                     autoComplete = "current-password"
+                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }
@@ -148,7 +149,6 @@ export default function Login() {
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
-                                    disabled = { isSubmitting }
                                  />
                                  {
                                     errors.password && (
@@ -181,7 +181,7 @@ export default function Login() {
                >
                   Don&apos;t have an account?{ " " }
                   <Link
-                     className="success"
+                     className = "success"
                      color = "success"
                      fontWeight = "bold"
                      href = "/register"

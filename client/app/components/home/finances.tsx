@@ -1,46 +1,45 @@
-import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid2';
-import Chip from '@mui/material/Chip';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import { LineChart } from '@mui/x-charts/LineChart';
+import { CardContent, Fade, Slide, Typography, useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid2";
+import Stack from "@mui/material/Stack";
+import { BarChart } from "@mui/x-charts";
+import { LineChart } from "@mui/x-charts/LineChart";
 
-import { StatCard, AreaGradient, type StatCardProps, getDaysInMonth } from "@/components/global/stat-card";
-import { CardContent, Fade, Slide, Typography, useTheme } from '@mui/material';
-import { theme } from '@/styles/mui/theme';
-import { BarChart } from '@mui/x-charts';
+import { AreaGradient, getDaysInMonth, StatCard, type StatCardProps } from "@/components/global/stat-card";
 
 const data: StatCardProps[] = [
    {
-      title: 'Income',
-      value: '100k',
-      interval: 'Last 30 days',
-      trend: 'up',
+      title: "Income",
+      value: "100k",
+      interval: "Last 30 days",
+      trend: "up",
       data: [
          200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340, 380,
-         360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
-      ],
+         360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920
+      ]
    },
    {
-      title: 'Expenses',
-      value: '325',
-      interval: 'Last 30 days',
-      trend: 'down',
+      title: "Expenses",
+      value: "325",
+      interval: "Last 30 days",
+      trend: "down",
       data: [
          1640, 1250, 970, 1130, 1050, 900, 720, 1080, 900, 450, 920, 820, 840, 600, 820,
-         780, 800, 760, 380, 740, 660, 620, 840, 500, 520, 480, 400, 360, 300, 220,
-      ],
+         780, 800, 760, 380, 740, 660, 620, 840, 500, 520, 480, 400, 360, 300, 220
+      ]
    },
    {
-      title: 'Net Worth',
-      value: '200k',
-      interval: 'Last 30 days',
-      trend: 'neutral',
+      title: "Net Worth",
+      value: "200k",
+      interval: "Last 30 days",
+      trend: "neutral",
       data: [
          500, 400, 510, 530, 520, 600, 530, 520, 510, 730, 520, 510, 530, 620, 510, 530,
-         520, 410, 530, 520, 610, 530, 520, 610, 530, 420, 510, 430, 520, 510,
-      ],
-   },
+         520, 410, 530, 520, 610, 530, 520, 610, 530, 420, 510, 430, 520, 510
+      ]
+   }
 ];
 
 function PageViewsBarChart() {
@@ -48,73 +47,96 @@ function PageViewsBarChart() {
    const colorPalette = [
       theme.palette.primary.dark,
       theme.palette.primary.main,
-      theme.palette.primary.light,
+      theme.palette.primary.light
    ];
 
    return (
-      <Card variant="outlined" sx={{ height: '100%', flexGrow: 1, textAlign: 'left' }}>
+      <Card
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
+         variant = "outlined"
+      >
          <CardContent>
-            <Typography component="h2" variant="subtitle2" gutterBottom>
+            <Typography
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
+            >
                Page views and downloads
             </Typography>
-            <Stack sx={{ justifyContent: 'space-between' }}>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
-                  direction="row"
-                  sx={{
-                     alignContent: { xs: 'center', sm: 'flex-start' },
-                     alignItems: 'center',
-                     gap: 1,
-                  }}
+                  direction = "row"
+                  sx = {
+                     {
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1
+                     }
+                  }
                >
-                  <Typography variant="h4" component="p">
+                  <Typography
+                     component = "p"
+                     variant = "h4"
+                  >
                      1.3M
                   </Typography>
-                  <Chip size="small" color="error" label="-8%" />
+                  <Chip
+                     color = "error"
+                     label = "-8%"
+                     size = "small"
+                  />
                </Stack>
-               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+               <Typography
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
+               >
                   Page views and downloads for the last 6 months
                </Typography>
             </Stack>
             <BarChart
-               borderRadius={8}
-               colors={colorPalette}
-               xAxis={
+               borderRadius = { 8 }
+               colors = { colorPalette }
+               grid = { { horizontal: true } }
+               height = { 250 }
+               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               series = {
                   [
                      {
-                        scaleType: 'band',
-                        categoryGapRatio: 0.5,
-                        data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                        id: "page-views",
+                        label: "Page views",
+                        data: [2234, 3872, 2998, 4125, 3357, 2789, 2998],
+                        stack: "A"
                      },
+                     {
+                        id: "downloads",
+                        label: "Downloads",
+                        data: [3098, 4215, 2384, 2101, 4752, 3593, 2384],
+                        stack: "A"
+                     },
+                     {
+                        id: "conversions",
+                        label: "Conversions",
+                        data: [4051, 2275, 3129, 4693, 3904, 2038, 2275],
+                        stack: "A"
+                     }
+                  ]
+               }
+               slotProps = {
+                  {
+                     legend: {
+                        hidden: true
+                     }
+                  }
+               }
+               xAxis = {
+                  [
+                     {
+                        scaleType: "band",
+                        categoryGapRatio: 0.5,
+                        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+                     }
                   ] as any
                }
-               series={[
-                  {
-                     id: 'page-views',
-                     label: 'Page views',
-                     data: [2234, 3872, 2998, 4125, 3357, 2789, 2998],
-                     stack: 'A',
-                  },
-                  {
-                     id: 'downloads',
-                     label: 'Downloads',
-                     data: [3098, 4215, 2384, 2101, 4752, 3593, 2384],
-                     stack: 'A',
-                  },
-                  {
-                     id: 'conversions',
-                     label: 'Conversions',
-                     data: [4051, 2275, 3129, 4693, 3904, 2038, 2275],
-                     stack: 'A',
-                  },
-               ]}
-               height={250}
-               margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
-               grid={{ horizontal: true }}
-               slotProps={{
-                  legend: {
-                     hidden: true,
-                  },
-               }}
             />
          </CardContent>
       </Card>
@@ -128,141 +150,192 @@ function SessionsChart() {
    const colorPalette = [
       theme.palette.primary.light,
       theme.palette.primary.main,
-      theme.palette.primary.dark,
+      theme.palette.primary.dark
    ];
 
    return (
-      <Card variant="outlined" sx={{ height: '100%', flexGrow: 1, textAlign: 'left' }}>
+      <Card
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
+         variant = "outlined"
+      >
          <CardContent>
-            <Typography component="h2" variant="subtitle2" gutterBottom>
+            <Typography
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
+            >
                Sessions
             </Typography>
-            <Stack sx={{ justifyContent: 'space-between' }}>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
-                  direction="row"
-                  sx={{
-                     alignContent: { xs: 'center', sm: 'flex-start' },
-                     alignItems: 'center',
-                     gap: 1,
-                  }}
+                  direction = "row"
+                  sx = {
+                     {
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1
+                     }
+                  }
                >
-                  <Typography variant="h4" component="p">
+                  <Typography
+                     component = "p"
+                     variant = "h4"
+                  >
                      13,277
                   </Typography>
-                  <Chip size="small" color="success" label="+35%" />
+                  <Chip
+                     color = "success"
+                     label = "+35%"
+                     size = "small"
+                  />
                </Stack>
-               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+               <Typography
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
+               >
                   Sessions per day for the last 30 days
                </Typography>
             </Stack>
             <LineChart
-               colors={colorPalette}
-               xAxis={[
+               colors = { colorPalette }
+               grid = { { horizontal: true } }
+               height = { 250 }
+               margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
+               series = {
+                  [
+                     {
+                        id: "direct",
+                        label: "Direct",
+                        showMark: false,
+                        curve: "linear",
+                        stack: "total",
+                        area: true,
+                        stackOrder: "ascending",
+                        data: [
+                           300, 900, 600, 1200, 1500, 1800, 2400, 2100, 2700, 3000, 1800, 3300,
+                           3600, 3900, 4200, 4500, 3900, 4800, 5100, 5400, 4800, 5700, 6000,
+                           6300, 6600, 6900, 7200, 7500, 7800, 8100
+                        ]
+                     },
+                     {
+                        id: "referral",
+                        label: "Referral",
+                        showMark: false,
+                        curve: "linear",
+                        stack: "total",
+                        area: true,
+                        stackOrder: "ascending",
+                        data: [
+                           500, 900, 700, 1400, 1100, 1700, 2300, 2000, 2600, 2900, 2300, 3200,
+                           3500, 3800, 4100, 4400, 2900, 4700, 5000, 5300, 5600, 5900, 6200,
+                           6500, 5600, 6800, 7100, 7400, 7700, 8000
+                        ]
+                     },
+                     {
+                        id: "organic",
+                        label: "Organic",
+                        showMark: false,
+                        curve: "linear",
+                        stack: "total",
+                        stackOrder: "ascending",
+                        data: [
+                           1000, 1500, 1200, 1700, 1300, 2000, 2400, 2200, 2600, 2800, 2500,
+                           3000, 3400, 3700, 3200, 3900, 4100, 3500, 4300, 4500, 4000, 4700,
+                           5000, 5200, 4800, 5400, 5600, 5900, 6100, 6300
+                        ],
+                        area: true
+                     }
+                  ]
+               }
+               slotProps = {
                   {
-                     scaleType: 'point',
-                     data,
-                     tickInterval: (index, i) => (i + 1) % 5 === 0,
-                  },
-               ]}
-               series={[
+                     legend: {
+                        hidden: true
+                     }
+                  }
+               }
+               sx = {
                   {
-                     id: 'direct',
-                     label: 'Direct',
-                     showMark: false,
-                     curve: 'linear',
-                     stack: 'total',
-                     area: true,
-                     stackOrder: 'ascending',
-                     data: [
-                        300, 900, 600, 1200, 1500, 1800, 2400, 2100, 2700, 3000, 1800, 3300,
-                        3600, 3900, 4200, 4500, 3900, 4800, 5100, 5400, 4800, 5700, 6000,
-                        6300, 6600, 6900, 7200, 7500, 7800, 8100,
-                     ],
-                  },
-                  {
-                     id: 'referral',
-                     label: 'Referral',
-                     showMark: false,
-                     curve: 'linear',
-                     stack: 'total',
-                     area: true,
-                     stackOrder: 'ascending',
-                     data: [
-                        500, 900, 700, 1400, 1100, 1700, 2300, 2000, 2600, 2900, 2300, 3200,
-                        3500, 3800, 4100, 4400, 2900, 4700, 5000, 5300, 5600, 5900, 6200,
-                        6500, 5600, 6800, 7100, 7400, 7700, 8000,
-                     ],
-                  },
-                  {
-                     id: 'organic',
-                     label: 'Organic',
-                     showMark: false,
-                     curve: 'linear',
-                     stack: 'total',
-                     stackOrder: 'ascending',
-                     data: [
-                        1000, 1500, 1200, 1700, 1300, 2000, 2400, 2200, 2600, 2800, 2500,
-                        3000, 3400, 3700, 3200, 3900, 4100, 3500, 4300, 4500, 4000, 4700,
-                        5000, 5200, 4800, 5400, 5600, 5900, 6100, 6300,
-                     ],
-                     area: true,
-                  },
-               ]}
-               height={250}
-               margin={{ left: 50, right: 20, top: 20, bottom: 20 }}
-               grid={{ horizontal: true }}
-               sx={{
-                  '& .MuiAreaElement-series-organic': {
-                     fill: "url('#organic')",
-                  },
-                  '& .MuiAreaElement-series-referral': {
-                     fill: "url('#referral')",
-                  },
-                  '& .MuiAreaElement-series-direct': {
-                     fill: "url('#direct')",
-                  },
-               }}
-               slotProps={{
-                  legend: {
-                     hidden: true,
-                  },
-               }}
+                     "& .MuiAreaElement-series-organic": {
+                        fill: "url('#organic')"
+                     },
+                     "& .MuiAreaElement-series-referral": {
+                        fill: "url('#referral')"
+                     },
+                     "& .MuiAreaElement-series-direct": {
+                        fill: "url('#direct')"
+                     }
+                  }
+               }
+               xAxis = {
+                  [
+                     {
+                        scaleType: "point",
+                        data,
+                        tickInterval: (index, i) => (i + 1) % 5 === 0
+                     }
+                  ]
+               }
             >
-               <AreaGradient color={theme.palette.primary.dark} id="organic" />
-               <AreaGradient color={theme.palette.primary.main} id="referral" />
-               <AreaGradient color={theme.palette.primary.light} id="direct" />
+               <AreaGradient
+                  color = { theme.palette.primary.dark }
+                  id = "organic"
+               />
+               <AreaGradient
+                  color = { theme.palette.primary.main }
+                  id = "referral"
+               />
+               <AreaGradient
+                  color = { theme.palette.primary.light }
+                  id = "direct"
+               />
             </LineChart>
          </CardContent>
       </Card>
    );
 }
 
-
 export default function Finances() {
    return (
-      <Box sx={{ width: '100%' }}>
-         <Fade in={true} timeout={1000} mountOnEnter unmountOnExit>
+      <Box id="finances" sx = { { width: "100%", mt: "-40px" } }>
+         <Fade
+            in = { true }
+            mountOnEnter = { true }
+            timeout = { 1000 }
+            unmountOnExit = { true }
+         >
             <Box>
-               <Slide in={true} timeout={1000} direction="down" mountOnEnter unmountOnExit>
+               <Slide
+                  direction = "down"
+                  in = { true }
+                  mountOnEnter = { true }
+                  timeout = { 1000 }
+                  unmountOnExit = { true }
+               >
                   <Stack
-                     direction="column"
-                     sx={{ justifyContent: "center", alignItems: "center", gap: 2 }}
+                     direction = "column"
+                     sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
                      <Box
-                        component="img"
-                        src="stocks.svg"
-                        alt="Stocks"
-                        sx={{ width: 350, height: "auto", mb: "3.5rem" }}
+                        alt = "Finances"
+                        component = "img"
+                        src = "finances.svg"
+                        sx = { { width: 300, height: "auto" } }
                      />
-                     {data.map((card, index) => (
-                        <Grid key={index} size={12}>
-                           <StatCard {...card} />
-                        </Grid>
-                     ))}
-                     <Grid size={12}>
+                     {
+                        data.map((card, index) => (
+                           <Grid
+                              key = { index }
+                              size = { 12 }
+                           >
+                              <StatCard { ...card } />
+                           </Grid>
+                        ))
+                     }
+                     <Grid size = { 12 }>
                         <SessionsChart />
                      </Grid>
-                     <Grid size={12}>
+                     <Grid size = { 12 }>
                         <PageViewsBarChart />
                      </Grid>
                   </Stack>

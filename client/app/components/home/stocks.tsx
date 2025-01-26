@@ -1,6 +1,6 @@
 import { Box, Stack } from "@mui/material";
+import { LineChart, ResponsiveChartContainer } from "@mui/x-charts";
 import { type Prices, type Stocks } from "capital-types/stocks";
-import { LineChart, ResponsiveChartContainer } from '@mui/x-charts';
 
 const legend: Record<string, string> = {
    "VT":"Vanguard Total World Stock Index Fund ETF",
@@ -86,10 +86,10 @@ export default function MonthlyStocks(props: MonthlyStocksProps) {
       Object.keys(stocks).length > 0 ? (
          <Stack direction = "column">
             <Box
-               component="img"
-               src="stocks.svg"
-               alt="Stocks"
-               sx={{ width: 350, height: "auto", mb: 4 }}
+               alt = "Stocks"
+               component = "img"
+               src = "stocks.svg"
+               sx = { { width: 350, height: "auto", mb: 4 } }
             />
             <Stack
                direction = "column"
