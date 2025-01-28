@@ -27,7 +27,8 @@ export const components: Components = {
             "&::placeholder": {
                fontSize: "0.85rem",
                color: "rgba(0, 0, 0, 0.6)"
-            }
+            },
+            borderRadius: "none"
          }
       }
    },

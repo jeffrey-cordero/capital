@@ -1,4 +1,4 @@
-import { faArrowUpRightFromSquare, faCaretDown, faLink } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpRightFromSquare, faCaretDown, faLink, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
@@ -81,30 +81,33 @@ function StoryItem(props: Story) {
                </Avatar>
             }
             title = {
-               <Stack direction="row" sx={{justifyContent: "space-between"}}>
-               <Stack spacing = { 0 }>
-                  <Typography variant = "subtitle2">
-                     { author }
-                  </Typography>
-                  <Typography variant = "caption">
-                     { timeSinceLastUpdate(pubDate[0]) }
-                  </Typography>
+               <Stack
+                  direction = "row"
+                  sx = { { justifyContent: "space-between" } }
+               >
+                  <Stack spacing = { 0 }>
+                     <Typography variant = "subtitle2">
+                        { author }
+                     </Typography>
+                     <Typography variant = "caption">
+                        { timeSinceLastUpdate(pubDate[0]) }
+                     </Typography>
+                  </Stack>
+                  <IconButton
+                     aria-label = "Read More"
+                     className = "news"
+                     href = { link[0] }
+                     size = "small"
+                     target = "_blank"
+                  >
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faUpRightFromSquare }
+                        style={{padding: "0 7px"}}
+                     />
+                  </IconButton>
                </Stack>
-               <IconButton
-               className = "news"
-               aria-label = "Read More"
-               href = { link[0] }
-               size = "small"
-               target = "_blank"
-               disableRipple={true}
-            >
-               <FontAwesomeIcon
-                  className = "primary"
-                  icon = { faLink }
-               />
-            </IconButton>
-               </Stack>
-               
+
             }
          />
          <Stack sx = { { textAlign:"center", justifyContent: "center", alignItems: "center" } }>
@@ -142,7 +145,7 @@ function StoryItem(props: Story) {
                expand = { expanded }
                onClick = { () => setExpanded(!expanded) }
             >
-               <FontAwesomeIcon icon = { faCaretDown } />
+               <FontAwesomeIcon icon = { faCaretDown } style={{padding: "0 5px"}} />
             </ExpandMore>
          </CardActions>
          <Collapse
@@ -174,7 +177,7 @@ export default function News(props: NewsProps) {
    return (
       Object.keys(news).length > 0 ? (
          <Box
-            id="news"
+            id = "news"
             marginTop = { { xs: 4, lg: 0 } }
             ref = { containerRef }
             sx = { { textAlign: "center" } }
@@ -195,13 +198,13 @@ export default function News(props: NewsProps) {
                   >
                      <Stack
                         direction = "column"
-                        spacing = { 3 }
+                        sx={{textAlign: "center", justifyContent: "center", alignItems: "center", gap: 3}}
                      >
                         <Box
                            alt = "News"
                            component = "img"
                            src = "news.svg"
-                           sx = { { width: 250, height: "auto", margin: "auto" } }
+                           sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
                         />
                         <Stack
                            direction = { { xs: "row", lg: "column" } }

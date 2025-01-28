@@ -12,14 +12,18 @@ export default function Landing() {
    return (
       <Container
          className = "center"
-         sx = { { gap: 0 } }
+         sx = { { gap: 0, px: 1 } }
       >
-         <Box
-            alt = "Logo"
-            component = "img"
-            src = "logo.svg"
-            sx = { { width: 350, height: "auto", p: 0, m: 0 } }
-         />
+         <div className = "floating-container">
+            <Box
+               alt = "Logo"
+               className = "floating-item"
+               component = "img"
+               src = "logo.svg"
+               sx = { { width: 300, height: "auto" } }
+            />
+         </div>
+
          <Box sx = { { mt: "-20px" } }>
             <Typography
                sx = { { fontWeight: "bold", marginBottom: "10px" } }
@@ -29,7 +33,7 @@ export default function Landing() {
             </Typography>
             <Typography
                color = "textSecondary"
-               sx = { { margin: "0 auto", fontWeight: "bold", maxWidth: "400px" } }
+               sx = { { margin: "0 auto", fontWeight: "bold", maxWidth: "400px", px: 2 } }
                variant = "body2"
             >
                A data-driven finance tracker created for the intelligent acquisition of capital.
@@ -43,7 +47,7 @@ export default function Landing() {
                   href = "/login"
                   id = "login"
                   underline = "none"
-                  variant = "body1"
+                  variant = "button"
                >
                   Log In
                </Link>
@@ -54,7 +58,7 @@ export default function Landing() {
                   href = "/register"
                   id = "register"
                   underline = "none"
-                  variant = "body1"
+                  variant = "button"
                >
                   Register
                </Link>

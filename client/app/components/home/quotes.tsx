@@ -1,7 +1,6 @@
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Grid2, Typography, Card, CardContent } from "@mui/material";
-
+import { Box, Card, CardContent, Grid2, Typography } from "@mui/material";
 
 const quotes = [
    { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
@@ -22,35 +21,41 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
 
    return (
       <Card
-         sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            textAlign: 'center',
-            padding: 3,
-            boxShadow: 3,
-            transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-            '&:hover': {
-               transform: 'scale(1.05)',
-               boxShadow: 6,
-               cursor: 'pointer'
-            },
-         }}
+         sx = {
+            {
+               height: "100%",
+               display: "flex",
+               flexDirection: "column",
+               justifyContent: "center",
+               textAlign: "center",
+               padding: 3,
+               boxShadow: 3,
+               transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+               "&:hover": {
+                  transform: "scale(1.05)",
+                  boxShadow: 6,
+                  cursor: "pointer"
+               }
+            }
+         }
       >
          <CardContent>
-            <FontAwesomeIcon icon={faLightbulb} color="gold" size="3x" />
+            <FontAwesomeIcon
+               color = "gold"
+               icon = { faLightbulb }
+               size = "3x"
+            />
             <Typography
-               sx={{ fontStyle: "italic", mt: 2, mb: 1 }}
-               variant="h6"
+               sx = { { fontStyle: "italic", mt: 2, mb: 1 } }
+               variant = "h6"
             >
-               "{text}"
+               "{ text }"
             </Typography>
             <Typography
-               sx={{ fontWeight: "bold" }}
-               variant="subtitle1"
+               sx = { { fontWeight: "bold" } }
+               variant = "subtitle1"
             >
-               - {author}
+               - { author }
             </Typography>
          </CardContent>
       </Card>
@@ -59,7 +64,10 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
 
 export default function QuotesGrid() {
    return (
-      <Box id="quotes" sx={{ padding: 4 }}>
+      <Box
+         id = "quotes"
+         sx = { { padding: 4 } }
+      >
          <Box
             alt = "Quotes"
             component = "img"
@@ -67,12 +75,20 @@ export default function QuotesGrid() {
             sx = { { width: 250, height: "auto", mb: 6 } }
          />
 
-         <Grid2 container spacing={3}>
-            {quotes.map((quote, index) => (
-               <Grid2 size={{ xs: 12  }} key={index}>
-                  <QuoteCard quote={quote} />
-               </Grid2>
-            ))}
+         <Grid2
+            container = { true }
+            spacing = { 3 }
+         >
+            {
+               quotes.map((quote, index) => (
+                  <Grid2
+                     key = { index }
+                     size = { { xs: 12  } }
+                  >
+                     <QuoteCard quote = { quote } />
+                  </Grid2>
+               ))
+            }
          </Grid2>
       </Box>
    );

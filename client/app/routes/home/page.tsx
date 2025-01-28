@@ -12,9 +12,7 @@ import Finances from "@/components/home/finances";
 import News from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
 import MonthlyStocks from "@/components/home/stocks";
-import { clearAuthentication } from "@/lib/auth";
 import { sendApiRequest } from "@/lib/server";
-import { logout } from "@/redux/slices/auth";
 
 async function fetchNews(): Promise<Feed> {
    return (await sendApiRequest("home/news", "GET", null))?.data.news as Feed;
@@ -37,7 +35,10 @@ export default function Home() {
 
    return (
       !isLoading ? (
-         <Box sx = { { margin: "auto", py: 6 }} width= {{xs: "95%", sm: "90%", md: "85%", lg: "80%", xl: "75%"}}>
+         <Box
+            sx = { { margin: "auto", py: 6 } }
+            width = { { xs: "95%", sm: "90%", md: "85%", lg: "80%", xl: "75%" } }
+         >
             <Grid
                columnSpacing = { 8 }
                container = { true }

@@ -297,7 +297,10 @@ function SessionsChart() {
 
 export default function Finances() {
    return (
-      <Box id="finances" sx = { { width: "100%", mt: "-40px" } }>
+      <Box
+         id = "finances"
+         sx = { { width: "100%", mt: "-20px" } }
+      >
          <Fade
             in = { true }
             mountOnEnter = { true }

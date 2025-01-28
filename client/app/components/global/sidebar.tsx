@@ -1,25 +1,24 @@
-import { faBank, faBarsStaggered, faChartLine, faHome, faIdCard, faMoon, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faSun, faUnlockKeyhole, type IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faBank, faBarsStaggered, faChartLine, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconButton, Stack, Typography } from "@mui/material";
+import { IconButton, Stack, Typography, Switch } from "@mui/material";
 import Box from "@mui/material/Box";
 import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
-import { useTheme } from "@mui/material/styles";
-import { alpha } from "@mui/material/styles";
+import { useTheme, alpha, styled } from "@mui/material/styles";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
-import { toggle } from "@/redux/slices/theme";
-import type { RootState } from "@/redux/store";
-import { logout } from "@/redux/slices/auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { clearAuthentication } from "@/lib/auth";
+import { logout } from "@/redux/slices/auth";
+import { toggleTheme } from "@/redux/slices/theme";
+import type { RootState } from "@/redux/store";
 
 const landing = [{
    path: "/",
-   title: "Landing",
+   title: "Home",
    icon: faPlaneArrival
 }, {
    path: "/login",
@@ -28,7 +27,7 @@ const landing = [{
 }, {
    path: "/register",
    title: "Register",
-   icon: faIdCard
+   icon: faUserPlus
 }
 ];
 
@@ -45,18 +44,74 @@ const home = [{
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home/#finances",
+   path: "/home#finances",
    title: "Finances",
    icon: faChartLine
 }, {
-   path: "/home/#news",
+   path: "/home#news",
    title: "News",
    icon: faNewspaper
 }, {
-   path: "/home/#quotes",
+   path: "/home#quotes",
    title: "Quotes",
    icon: faQuoteLeft
 }];
+
+const MaterialUISwitch = styled(Switch)(({ theme }) => ({
+   width: 62,
+   height: 34,
+   padding: 7,
+   '& .MuiSwitch-switchBase': {
+     margin: 1,
+     padding: 0,
+     transform: 'translateX(6px)',
+     '&.Mui-checked': {
+       color: '#fff',
+       transform: 'translateX(22px)',
+       '& .MuiSwitch-thumb:before': {
+         backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20"><path fill="${encodeURIComponent(
+           '#fff',
+         )}" d="M4.2 2.5l-.7 1.8-1.8.7 1.8.7.7 1.8.6-1.8L6.7 5l-1.9-.7-.6-1.8zm15 8.3a6.7 6.7 0 11-6.6-6.6 5.8 5.8 0 006.6 6.6z"/></svg>')`,
+       },
+       '& + .MuiSwitch-track': {
+         opacity: 1,
+         backgroundColor: '#aab4be',
+         ...theme.applyStyles('dark', {
+           backgroundColor: '#8796A5',
+         }),
+       },
+     },
+   },
+   '& .MuiSwitch-thumb': {
+     backgroundColor: '#FFD700',
+     width: 32,
+     height: 32,
+     '&::before': {
+       content: "''",
+       position: 'absolute',
+       width: '100%',
+       height: '100%',
+       left: 0,
+       top: 0,
+       backgroundRepeat: 'no-repeat',
+       backgroundPosition: 'center',
+       backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20"><path fill="${encodeURIComponent(
+         '#fff',
+       )}" d="M9.305 1.667V3.75h1.389V1.667h-1.39zm-4.707 1.95l-.982.982L5.09 6.072l.982-.982-1.473-1.473zm10.802 0L13.927 5.09l.982.982 1.473-1.473-.982-.982zM10 5.139a4.872 4.872 0 00-4.862 4.86A4.872 4.872 0 0010 14.862 4.872 4.872 0 0014.86 10 4.872 4.872 0 0010 5.139zm0 1.389A3.462 3.462 0 0113.471 10a3.462 3.462 0 01-3.473 3.472A3.462 3.462 0 016.527 10 3.462 3.462 0 0110 6.528zM1.665 9.305v1.39h2.083v-1.39H1.666zm14.583 0v1.39h2.084v-1.39h-2.084zM5.09 13.928L3.616 15.4l.982.982 1.473-1.473-.982-.982zm9.82 0l-.982.982 1.473 1.473.982-.982-1.473-1.473zM9.305 16.25v2.083h1.389V16.25h-1.39z"/></svg>')`,
+     },
+     ...theme.applyStyles('dark', {
+       backgroundColor: theme.palette.primary.main,
+     }),
+   },
+   '& .MuiSwitch-track': {
+     opacity: 1,
+     backgroundColor: '#aab4be',
+     borderRadius: 20 / 2,
+     ...theme.applyStyles('dark', {
+       backgroundColor: '#8796A5',
+     }),
+   },
+ }));
 
 export function SideBar() {
    const [open, setOpen] = useState(false);
@@ -66,22 +121,22 @@ export function SideBar() {
    return (
       <Box>
          <IconButton
-            onClick={() => setOpen(true)}
-            sx={
+            onClick = { () => setOpen(true) }
+            color="primary"
+            sx = {
                {
                   position: "absolute",
-                  top: 15,
-                  left: 15,
-                  color: theme.palette.primary.main
+                  top: 10,
+                  left: 5
                }
             }
          >
-            <FontAwesomeIcon icon={faBarsStaggered} />
+            <FontAwesomeIcon icon = { faBarsStaggered } />
          </IconButton>
          <Drawer
-            onClose={() => setOpen(false)}
-            open={open}
-            sx={
+            onClose = { () => setOpen(false) }
+            open = { open }
+            sx = {
                {
                   [`& .${drawerClasses.paper}`]: {
                      pt: 2.5,
@@ -94,7 +149,7 @@ export function SideBar() {
                }
             }
          >
-            <SideBarContent links={authenticated ? home : landing} />
+            <SideBarContent links = { authenticated ? home : landing } />
          </Drawer>
       </Box>
    );
@@ -114,7 +169,7 @@ function SideBarContent(props: SideBarContentProps) {
    const queryClient = useQueryClient();
    const theme = useTheme();
    const location = useLocation();
-   
+
    const mutation = useMutation({
       mutationFn: clearAuthentication,
       onSuccess: () => {
@@ -133,26 +188,29 @@ function SideBarContent(props: SideBarContentProps) {
    });
 
    return (
-      <Box sx={{ position: "relative", height: "100%", textAlign: "center" }}>
+      <Box sx = { { position: "relative", height: "100%", textAlign: "center" } }>
          <Stack>
             <Box
-               alt="Logo"
-               component="img"
-               src="logo.svg"
-               sx={{ width: 125, height: "auto", }}
+               alt = "Logo"
+               component = "img"
+               src = "logo.svg"
+               sx = { { width: 125, height: "auto" } }
             />
-            <Typography variant="h4" sx={{ fontWeight: "fontWeightBold", color: theme.palette.primary.main }}>
+            <Typography
+               sx = { { fontWeight: "fontWeightBold", color: theme.palette.primary.main } }
+               variant = "h4"
+            >
                Capital
             </Typography>
          </Stack>
 
          <Box
-            component="nav"
-            sx={{ display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" }}
+            component = "nav"
+            sx = { { display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" } }
          >
             <Box
-               component="ul"
-               sx={{ gap: 0.5, pl: 1.5 }}
+               component = "ul"
+               sx = { { gap: 0.5, pl: 1.5 } }
             >
                {
                   links.map((link) => {
@@ -160,14 +218,14 @@ function SideBarContent(props: SideBarContentProps) {
 
                      return (
                         <ListItem
-                           disableGutters={true}
-                           disablePadding={true}
-                           key={link.title}
+                           disableGutters = { true }
+                           disablePadding = { true }
+                           key = { link.title }
                         >
                            <ListItemButton
-                              disableGutters={true}
-                              href={link.path}
-                              sx={
+                              disableGutters = { true }
+                              href = { link.path }
+                              sx = {
                                  {
                                     pl: 2,
                                     py: 1,
@@ -190,17 +248,17 @@ function SideBarContent(props: SideBarContentProps) {
                               }
                            >
                               <Box
-                                 component="span"
-                                 sx={{ width: 24, height: 24 }}
+                                 component = "span"
+                                 sx = { { width: 24, height: 24 } }
                               >
-                                 <FontAwesomeIcon icon={link.icon} />
+                                 <FontAwesomeIcon icon = { link.icon } />
                               </Box>
 
                               <Box
-                                 component="span"
-                                 flexGrow={1}
+                                 component = "span"
+                                 flexGrow = { 1 }
                               >
-                                 {link.title}
+                                 { link.title }
                               </Box>
                            </ListItemButton>
                         </ListItem>
@@ -209,85 +267,77 @@ function SideBarContent(props: SideBarContentProps) {
                }
             </Box>
             <Box
-               sx={{
-                  position: "relative",
-                  mb: 22
-               }}
+               sx = {
+                  {
+                     position: "relative",
+                     mb: 22
+                  }
+               }
             >
                {
                   links === home ? (
                      <Box>
                         <Box
-                           sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              mb: 1,
-                           }}
+                           sx = {
+                              {
+                                 display: "flex",
+                                 justifyContent: "center",
+                                 alignItems: "center",
+                                 mb: 1
+                              }
+                           }
                         >
                            <Box
-                              component="img"
-                              src="/logo.svg"
-                              alt="Profile"
-                              sx={{
-                                 width: 64,
-                                 height: 64,
-                                 borderRadius: "50%",
-                                 border: `2px solid ${theme.palette.primary.main}`,
-                              }}
+                              alt = "Profile"
+                              component = "img"
+                              src = "/logo.svg"
+                              sx = {
+                                 {
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: "50%",
+                                    border: `2px solid ${theme.palette.primary.main}`
+                                 }
+                              }
                            />
                         </Box>
                         <Stack
-                           direction="row"
-                           sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                           }}
+                           direction = "column"
+                           sx = {
+                              {
+                                 display: "flex",
+                                 justifyContent: "center",
+                                 alignItems: "center"
+                              }
+                           }
                         >
                            <IconButton
-                              aria-label="Logout"
-                              onClick={() => mutation.mutate()}
-                              sx={{
-                                 color: theme.palette.error.main,
-                              }}
-                              size="medium"
-                              disableRipple={true}
+                              aria-label = "Logout"
+                              disableRipple = { true }
+                              onClick = { () => mutation.mutate() }
+                              size = "medium"
+                              sx = {
+                                 {
+                                    color: theme.palette.error.main
+                                 }
+                              }
                            >
-                              <FontAwesomeIcon icon={faRightFromBracket} />
+                              <FontAwesomeIcon icon = { faRightFromBracket } />
                            </IconButton>
-                           <IconButton
-                              aria-controls="color-scheme-menu"
-                              aria-expanded="true"
-                              aria-haspopup="true"
-                              data-screenshot="toggle-mode"
-                              onClick={() => dispatch(toggle())}
-                              size="medium"
-                              disableRipple={true}
-                           >
-                              <FontAwesomeIcon
-                                 icon={theme.palette.mode === "light" ? faSun : faMoon}
-                                 color={theme.palette.mode === "light" ? "#FFD700" : theme.palette.primary.main}
-                              />
-                           </IconButton>
+                           <MaterialUISwitch 
+                              onChange={ () => dispatch(toggleTheme()) }
+                              sx={{ m: 1 }} 
+                              checked={ theme.palette.mode === "dark" }
+                           />
                         </Stack>
                      </Box>
                   ) : (
                      <Box>
-                        <IconButton
-                           aria-controls="color-scheme-menu"
-                           aria-expanded="true"
-                           aria-haspopup="true"
-                           data-screenshot="toggle-mode"
-                           onClick={() => dispatch(toggle())}
-                           size="medium"
-                           disableRipple={true}
-                        >
-                           <FontAwesomeIcon
-                              icon={theme.palette.mode === "light" ? faSun : faMoon}
-                              color={theme.palette.mode === "light" ? "#FFD700" : theme.palette.primary.main}
-                           />
-                        </IconButton>
+                        <MaterialUISwitch 
+                           onChange={ () => dispatch(toggleTheme()) }
+                           sx={{ m: 1 }} 
+                           checked={ theme.palette.mode === "dark" }
+                        />
                      </Box>
                   )
                }

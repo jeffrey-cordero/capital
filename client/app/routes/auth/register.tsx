@@ -1,4 +1,4 @@
-import { faEye, faEyeSlash, faIdCard } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
@@ -41,11 +41,14 @@ export default function Register() {
 
       const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
 
-      response?.status === "Success" && dispatch(addNotification({
-         type: "success",
-         message: "Login",
-         href: "/home"
-      }));
+      if (response?.status === "Success") {
+         dispatch(addNotification({
+            type: "success",
+            message: "Successfully registered!"
+         }));
+
+         setTimeout(() => window.location.reload(), 2500);
+      }
    };
 
    return (
@@ -268,7 +271,7 @@ export default function Register() {
                         fullWidth = { true }
                         loading = { isSubmitting }
                         loadingPosition = "start"
-                        startIcon = { <FontAwesomeIcon icon = { faIdCard } /> }
+                        startIcon = { <FontAwesomeIcon icon = { faUserPlus } /> }
                         type = "submit"
                         variant = "contained"
                      >

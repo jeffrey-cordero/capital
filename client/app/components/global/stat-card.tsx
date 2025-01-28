@@ -72,8 +72,8 @@ export function StatCard(props: StatCardProps) {
             : theme.palette.error.dark,
       neutral:
          theme.palette.mode === "light"
-            ? theme.palette.grey[400]
-            : theme.palette.grey[700]
+            ? theme.palette.info.main
+            : theme.palette.info.dark
    };
 
    const labelColors = {
@@ -88,7 +88,7 @@ export function StatCard(props: StatCardProps) {
 
    return (
       <Card
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: "12px", borderWidth: "0.5px" } }
          variant = "outlined"
       >
          <CardContent>

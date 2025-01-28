@@ -1,6 +1,7 @@
 import "@/styles/app.scss";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
