@@ -41,4 +41,3 @@ export type TopGainersLosers = {
 };
 
 export type Finances = Record<string, any>;
-

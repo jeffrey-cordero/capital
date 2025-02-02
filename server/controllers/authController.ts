@@ -3,13 +3,13 @@ import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { UserModel } from "@/models/userModel";
+import { authenticate } from "@/repository/userRepository";
 import { configureJWT } from "@/session";
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
    try {
       const { username, password } = req.body;
-      const user = await UserModel.authenticate(username, password);
+      const user = await authenticate(username, password);
 
       if (user === null) {
          return sendErrors(res, 401, "Invalid credentials", {

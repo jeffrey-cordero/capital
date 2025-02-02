@@ -38,6 +38,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                }
             }
          }
+         elevation={3}
       >
          <CardContent>
             <FontAwesomeIcon

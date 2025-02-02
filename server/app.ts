@@ -62,12 +62,7 @@ app.use("/auth", authRouter);
 app.use("/home", homeRouter);
 app.use("/users", usersRouter);
 
-// Cron job to update stock data every hour
-cron.schedule("0 * * * *", async () => {
-   await StocksModel.updateStocks();
-});
-
-// Initialize Redis cache with stock data, if applicable
+// Initialize Redis cache with financial data, if applicable
 const initializeRedisCache = async () => {
    await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
 }

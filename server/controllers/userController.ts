@@ -2,10 +2,11 @@ import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { sendErrors, sendSuccess } from "@/lib/api/response";
 import { UserModel } from "@/models/userModel";
+import { createUser as create } from "@/service/userService";
 import { configureJWT } from "@/session";
 import { User } from "capital-types/user";
 
-export const createUser = asyncHandler(async (req: Request, res: Response) => {
+export const createUsers = asyncHandler(async (req: Request, res: Response) => {
    try {
       const { username, name, password, verifyPassword, email } = req.body as User;
 

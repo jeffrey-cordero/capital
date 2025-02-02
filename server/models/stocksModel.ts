@@ -90,7 +90,7 @@ export class StocksModel {
       // Store in the database
       await StocksModel.insertStocks(time, data);
       
-      // Store in the Redis cache
-      await redisClient.set("stocks", JSON.stringify(data));
+      // Store in the Redis cache for 24 hours
+      await redisClient.setex("stocks", 24 * 60 * 60, JSON.stringify(data));
    }
 }
