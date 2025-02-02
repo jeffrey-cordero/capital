@@ -1,17 +1,16 @@
 import "@/styles/home.scss";
 
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import type { Feed } from "capital-types/news";
 import type { Stocks } from "capital-types/stocks";
-import { useDispatch } from "react-redux";
 
 import Loading from "@/components/global/loading";
 import Finances from "@/components/home/finances";
 import News from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
-import MonthlyStocks from "@/components/home/stocks";
+// import MonthlyStocks from "@/components/home/stocks";
 import { sendApiRequest } from "@/lib/server";
 
 async function fetchNews(): Promise<Feed> {

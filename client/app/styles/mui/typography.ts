@@ -6,7 +6,7 @@ const defaultTheme = createTheme();
 export const typography: TypographyOptions = {
    fontFamily: "Inter, sans-serif",
    h1: {
-      fontSize: defaultTheme.typography.pxToRem(48),
+      fontSize: defaultTheme.typography.pxToRem(42),
       fontWeight: 600,
       lineHeight: 1.2,
       letterSpacing: -0.5

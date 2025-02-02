@@ -8,11 +8,17 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: visible;
-}
 
-body {
-  font-family: $font-family;
-  color: var(--text-color);
+  body {
+    font-family: $font-family;
+    background-color: hsl(0, 0%, 100%);
+    color: black;
+
+    &[data-dark="true"] {
+      background-color: hsl(0, 0%, 12%);
+      color: white;
+    }
+  }
 }
 
 div {
@@ -124,32 +130,20 @@ img {
   margin: auto;
 }
 
-// Autofill override
+// MUI autofill overrides
 input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px $autofill-light inset !important;
-  -webkit-text-fill-color: #000;
-  background-color: $autofill-light;
-}
-
 .MuiInputBase-root:has(> input:-webkit-autofill) {
   background-color: $autofill-light;
 }
 
 body[data-dark="true"] {
   input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px $autofill-dark inset !important;
-    -webkit-text-fill-color: #fff;
+  .MuiInputBase-root:has(> input:-webkit-autofill) {
     background-color: $autofill-dark;
   }
 
-  .MuiInputBase-root:has(> input:-webkit-autofill) {
-    background-color: $autofill-dark;
+  .nav {
+    background-color: hsl(0, 0%, 15%); 
   }
 }
 

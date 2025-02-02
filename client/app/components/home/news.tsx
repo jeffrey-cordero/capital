@@ -1,4 +1,4 @@
-import { faArrowUpRightFromSquare, faCaretDown, faLink, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type Feed, type Story } from "capital-types/news";
@@ -103,7 +103,7 @@ function StoryItem(props: Story) {
                      <FontAwesomeIcon
                         className = "primary"
                         icon = { faUpRightFromSquare }
-                        style={{padding: "0 7px"}}
+                        style = { { padding: "0 7px" } }
                      />
                   </IconButton>
                </Stack>
@@ -145,7 +145,10 @@ function StoryItem(props: Story) {
                expand = { expanded }
                onClick = { () => setExpanded(!expanded) }
             >
-               <FontAwesomeIcon icon = { faCaretDown } style={{padding: "0 5px"}} />
+               <FontAwesomeIcon
+                  icon = { faCaretDown }
+                  style = { { padding: "0 5px" } }
+               />
             </ExpandMore>
          </CardActions>
          <Collapse
@@ -198,7 +201,7 @@ export default function News(props: NewsProps) {
                   >
                      <Stack
                         direction = "column"
-                        sx={{textAlign: "center", justifyContent: "center", alignItems: "center", gap: 3}}
+                        sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
                      >
                         <Box
                            alt = "News"
@@ -208,7 +211,7 @@ export default function News(props: NewsProps) {
                         />
                         <Stack
                            direction = { { xs: "row", lg: "column" } }
-                           sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3, textAlign: "left" } }
+                           sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
                         >
                            {
                               news?.channel[0].item.map(

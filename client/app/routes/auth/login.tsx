@@ -39,9 +39,11 @@ export default function Login() {
 
       const response = await sendApiRequest("auth/login", "POST", credentials, dispatch, setError);
 
-      response?.status === "Success" && setTimeout(() => {
-         window.location.reload();
-      }, 500);
+      if (response?.status === "Success") {
+         setTimeout(() => {
+            window.location.reload();
+         }, 500);
+      }
    };
 
    return (
@@ -80,7 +82,7 @@ export default function Login() {
                         <Typography
                            color = "text.secondary"
                            sx = { { fontSize: "16px", textAlign: "center" } }
-                           variant = "caption"
+                           variant = "subtitle2"
                         >
                            Enter your credentials to continue
                         </Typography>

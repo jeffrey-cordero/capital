@@ -32,7 +32,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                boxShadow: 3,
                transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                "&:hover": {
-                  transform: "scale(1.05)",
+                  transform: "scale(1.03)",
                   boxShadow: 6,
                   cursor: "pointer"
                }
@@ -49,7 +49,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                sx = { { fontStyle: "italic", mt: 2, mb: 1 } }
                variant = "h6"
             >
-               "{ text }"
+               &quot;{ text }&quot;
             </Typography>
             <Typography
                sx = { { fontWeight: "bold" } }
@@ -66,7 +66,7 @@ export default function QuotesGrid() {
    return (
       <Box
          id = "quotes"
-         sx = { { padding: 4 } }
+         sx = { { padding: 4, mt: 4 } }
       >
          <Box
             alt = "Quotes"

@@ -13,7 +13,6 @@ import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
 
-
 export default function Router({ home }: { home: boolean }) {
    // Handle authentication-related routing
    const { data, isLoading, error, isError } = useQuery({
@@ -46,11 +45,8 @@ export default function Router({ home }: { home: boolean }) {
          dispatch(authenticate(data));
       }
 
-      // Set theme state
-      const preferredTheme: string | undefined = window.localStorage.theme;
-      const prefersDarkMode: boolean = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-      dispatch(setTheme(preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light"));
+      // Set theme state based on body data-dark attribute
+      dispatch(setTheme(document.body.dataset.dark === "true" ? "dark" : "light"));
    }, [dispatch, data, isError, isLoading]);
 
    useEffect(() => {

@@ -21,5 +21,8 @@ export default defineConfig({
    plugins: [reactRouter(), tsconfigPaths()],
    define: {
       _global: ({})
+   },
+   optimizeDeps: {
+      exclude: ["chunk-HR3LP2OW"]
    }
 });

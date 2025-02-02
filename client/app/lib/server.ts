@@ -27,6 +27,8 @@ export async function sendApiRequest(path: string, method: string, body: any, di
          Object.entries(data.errors).forEach(
             ([field, message]) => setError?.(field, { type: "server", message: message as string })
          );
+
+         return data.errors;
       } else {
          throw new Error(data.errors?.system?.toString() || data.message);
       }

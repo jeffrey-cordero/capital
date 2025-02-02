@@ -54,7 +54,7 @@ export default function Register() {
    return (
       <div className = "center">
          <Callout
-            sx = { { width: "100%", my: 4 } }
+            sx = { { width: "100%", my: 12 } }
             type = "primary"
          >
             <Stack
@@ -87,7 +87,7 @@ export default function Register() {
                         <Typography
                            color = "text.secondary"
                            sx = { { fontSize: "16px", textAlign: "center" } }
-                           variant = "caption"
+                           variant = "subtitle2"
                         >
                            Enter your details to create an account and get started
                         </Typography>

@@ -4,8 +4,8 @@ import { brand, gray, green, orange, red } from "@/styles/mui/colors";
 
 export const palette: PaletteOptions = {
    primary: {
-      main: brand[600],
-      dark: brand[600],
+      main: brand[400],
+      dark: brand[400],
       contrastText: brand[50]
    },
    info: {
@@ -19,7 +19,7 @@ export const palette: PaletteOptions = {
    },
    error: {
       main: red[400],
-      dark: red[600]
+      dark: red[400]
    },
    success: {
       main: green[400],

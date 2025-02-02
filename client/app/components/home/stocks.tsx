@@ -1,5 +1,5 @@
 import { Box, Stack } from "@mui/material";
-import { LineChart, ResponsiveChartContainer } from "@mui/x-charts";
+// import { LineChart, ResponsiveChartContainer } from "@mui/x-charts";
 import { type Prices, type Stocks } from "capital-types/stocks";
 
 const legend: Record<string, string> = {

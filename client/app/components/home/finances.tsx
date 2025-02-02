@@ -42,7 +42,7 @@ const data: StatCardProps[] = [
    }
 ];
 
-function PageViewsBarChart() {
+function AccountsParChart() {
    const theme = useTheme();
    const colorPalette = [
       theme.palette.primary.dark,
@@ -53,7 +53,8 @@ function PageViewsBarChart() {
    return (
       <Card
          sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
-         variant = "outlined"
+         variant = "elevation"
+         elevation={3}
       >
          <CardContent>
             <Typography
@@ -61,7 +62,7 @@ function PageViewsBarChart() {
                gutterBottom = { true }
                variant = "subtitle2"
             >
-               Page views and downloads
+               Accounts
             </Typography>
             <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
@@ -90,7 +91,7 @@ function PageViewsBarChart() {
                   sx = { { color: "text.secondary" } }
                   variant = "caption"
                >
-                  Page views and downloads for the last 6 months
+                  Account values for the last 6 months
                </Typography>
             </Stack>
             <BarChart
@@ -102,23 +103,121 @@ function PageViewsBarChart() {
                series = {
                   [
                      {
-                        id: "page-views",
-                        label: "Page views",
+                        id: "account1",
+                        label: "Account 1",
                         data: [2234, 3872, 2998, 4125, 3357, 2789, 2998],
                         stack: "A"
                      },
                      {
-                        id: "downloads",
-                        label: "Downloads",
+                        id: "account2",
+                        label: "Account 2",
                         data: [3098, 4215, 2384, 2101, 4752, 3593, 2384],
-                        stack: "A"
+                        stack: "B"
                      },
                      {
-                        id: "conversions",
-                        label: "Conversions",
+                        id: "account3",
+                        label: "Account 3",
                         data: [4051, 2275, 3129, 4693, 3904, 2038, 2275],
-                        stack: "A"
+                        stack: "C"
                      }
+                  ]
+               }
+               slotProps = {
+                  {
+                     legend: {
+                        hidden: true
+                     }
+                  }
+               }
+               xAxis = {
+                  [
+                     {
+                        scaleType: "band",
+                        categoryGapRatio: 0.5,
+                        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+                     }
+                  ] as any
+               }
+            />
+         </CardContent>
+      </Card>
+   );
+}
+
+function BudgetBarChart() {
+   const theme = useTheme();
+   const colorPalette = [
+      theme.palette.primary.dark,
+      theme.palette.primary.main,
+      theme.palette.primary.light
+   ];
+
+   return (
+      <Card
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
+         variant = "elevation"
+         elevation={3}
+      >
+         <CardContent>
+            <Typography
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
+            >
+               Budget
+            </Typography>
+            <Stack sx = { { justifyContent: "space-between" } }>
+               <Stack
+                  direction = "row"
+                  sx = {
+                     {
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1
+                     }
+                  }
+               >
+                  <Typography
+                     component = "p"
+                     variant = "h4"
+                  >
+                     100K
+                  </Typography>
+                  <Chip
+                     color = "success"
+                     label = "+52%"
+                     size = "small"
+                  />
+               </Stack>
+               <Typography
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
+               >
+                  Income vs. Expenses for the last 6 months
+               </Typography>
+            </Stack>
+            <BarChart
+               borderRadius = { 8 }
+               colors = { colorPalette }
+               grid = { { horizontal: true } }
+               height = { 250 }
+               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               series = {
+                  [
+                     {
+                        id: "income",
+                        label: "Income",
+                        data: [45234, 33872, 29198, 49125, 41317, 27389, 29398],
+                        stack: "A",
+                        color: theme.palette.success.main
+                     },
+                     {
+                        id: "expenses",
+                        label: "Expenses",
+                        data: [45234, 33872, 29198, 42125, 51317, 27389, 29398],
+                        stack: "B",
+                        color: theme.palette.error.main
+                     },
                   ]
                }
                slotProps = {
@@ -156,7 +255,8 @@ function SessionsChart() {
    return (
       <Card
          sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
-         variant = "outlined"
+         variant = "elevation"
+         elevation={3}
       >
          <CardContent>
             <Typography
@@ -323,8 +423,14 @@ export default function Finances() {
                         alt = "Finances"
                         component = "img"
                         src = "finances.svg"
-                        sx = { { width: 300, height: "auto" } }
+                        sx = { { width: 525, height: "auto" } }
                      />
+                     <Grid size = { 12 }>
+                        <AccountsParChart />
+                     </Grid>
+                     <Grid size = { 12 }>
+                        <BudgetBarChart />
+                     </Grid>
                      {
                         data.map((card, index) => (
                            <Grid
@@ -337,9 +443,6 @@ export default function Finances() {
                      }
                      <Grid size = { 12 }>
                         <SessionsChart />
-                     </Grid>
-                     <Grid size = { 12 }>
-                        <PageViewsBarChart />
                      </Grid>
                   </Stack>
                </Slide>
