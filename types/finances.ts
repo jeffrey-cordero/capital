@@ -15,6 +15,11 @@ export type InflationRate = Record<string, {
    value: string // percentage
 }>;
 
+export type Trend = Record<string, {
+   data: string, // YYYY-MM-DD
+   value: string // percentage
+}>;
+
 export type TopGainersLosers = {
    last_update: string,
    top_gainers: {
@@ -40,4 +45,4 @@ export type TopGainersLosers = {
    }[]
 };
 
-export type Finances = Record<string, any>;
+export type Finances = Record<string, Trend | TopGainersLosers>;

@@ -26,7 +26,7 @@ export async function runQuery(query: string, parameters: any[]): Promise<unknow
 };
 
 export async function runTransaction(queries: { query: string, parameters: any[] }[]): Promise<unknown> {
-   // Initialize connection to database
+   // Initialize connection to database and submit queries for potential results
    const connection = mysql.createConnection({
       host: process.env.HOST,
       user: process.env.USER,
@@ -65,7 +65,6 @@ export async function runTransaction(queries: { query: string, parameters: any[]
       connection.end();
    }
 }
-
 
 export function hash(value: string): string {
    // Simple hashing method via crypto-js

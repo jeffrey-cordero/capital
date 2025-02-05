@@ -10,7 +10,7 @@ import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
 import indexRouter from "@/routers/indexRouter";
-import authRouter from "@/routers/authRouter";
+import authRouter from "@/routers/authenticationRouter";
 import userRouter from "@/routers/userRouter";
 import homeRouter from "@/routers/homeRouter";
 import { sendErrors } from "@/lib/api/response";

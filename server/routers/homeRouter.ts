@@ -1,11 +1,11 @@
 import express from "express";
 import { authenticateJWT } from "@/lib/api/authentication";
 
-import { fetchStocks, fetchNews } from "@/controllers/homeController";
+import * as controller from "@/controllers/homeController";
 
 const homeRouter = express.Router();
 
-homeRouter.get("/stocks", authenticateJWT(true), fetchStocks);
-homeRouter.get("/news", authenticateJWT(true), fetchNews);
+homeRouter.get("/finances", authenticateJWT(true), controller.FINANCES);
+homeRouter.get("/news", authenticateJWT(true), controller.NEWS);
 
 export default homeRouter;

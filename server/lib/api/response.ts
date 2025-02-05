@@ -1,5 +1,12 @@
 import { Response } from "express";
 
+export interface ServiceResponse {
+   code: number;
+   message: string;
+   data?: any;
+   errors?: Record<string, string>;
+}
+
 export function sendErrors(res: Response, code: number, message:string, errors?: Record<string, string> ): void {
    res.status(code).json({
       status: code === 500 ? "Failure" : "Error",
@@ -15,10 +22,3 @@ export function sendSuccess(res: Response, code: number, message: string, data?:
       data: data
    });
 };
-
-export interface ServiceResponse {
-   code: number;
-   message: string;
-   data?: any;
-   errors?: Record<string, string>;
-}

@@ -2,33 +2,33 @@ import { hash, runQuery } from "@/lib/database/query";
 import { User } from "capital-types/user";
 
 export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
-   // Return errors if user exists with same username and/or email, otherwise return is null
-   const normalizedUsername = username.toLowerCase().trim();
-   const normalizedEmail = email.toLowerCase().trim();
+  // Return errors if user exists with same username and/or email, otherwise return is null
+  const normalizedUsername = username.toLowerCase().trim();
+  const normalizedEmail = email.toLowerCase().trim();
 
-   const conflicts = "SELECT * FROM users WHERE username_normalized = ? OR email_normalized = ?;";
-   const parameters = [username, email];
+  const conflicts = "SELECT * FROM users WHERE username_normalized = ? OR email_normalized = ?;";
+  const parameters = [username, email];
 
-   const result = await runQuery(conflicts, parameters) as User[];
+  const result = await runQuery(conflicts, parameters) as User[];
 
-   if (conflicts.length > 0) {
-     // User exists with same username and/or email
-     const errors = result.reduce((account, user) => {
-       if (user.username.toLowerCase().trim() === normalizedUsername) {
-         account.username = "Username already exists";
-       }
+  if (conflicts.length > 0) {
+    // User exists with same username and/or email
+    const errors = result.reduce((account, user) => {
+      if (user.username.toLowerCase().trim() === normalizedUsername) {
+        account.username = "Username already exists";
+      }
 
-       if (user.email.toLowerCase().trim() === normalizedEmail) {
-         account.email = "Email already exists";
-       }
+      if (user.email.toLowerCase().trim() === normalizedEmail) {
+        account.email = "Email already exists";
+      } 
 
-       return account;
-     }, {} as Record<string, string>);
+      return account;
+    }, {} as Record<string, string>);
 
-     return errors;
-   } else {
-     return null;
-   }
+    return errors;
+  } else {
+    return null;
+  }
 }
 
 export async function getById(id: number): Promise<User | null> {

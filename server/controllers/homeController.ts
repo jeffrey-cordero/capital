@@ -2,12 +2,12 @@ const fs = require("fs").promises;
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { StocksModel } from "@/models/stocksModel";
 import { redisClient } from "@/app";
-import { Stocks } from "capital-types/stocks";
 import { parseStringPromise } from 'xml2js';
 
 import { type Feed } from "capital-types/news";
+import { Finances } from "capital-types/finances";
+import { fetchFinances } from "@/repository/financesRepository";
 
 async function parseXML(xml: string): Promise<Object> {
    try {
@@ -17,19 +17,19 @@ async function parseXML(xml: string): Promise<Object> {
    }
 }
 
-export const fetchStocks = asyncHandler(async (req: Request, res: Response) => {
+export const FINANCES = asyncHandler(async (_req: Request, res: Response) => {
    try {
-      const cache = await redisClient.get("stocks");
+      const cache = await redisClient.get("finances");
 
       if (cache) {
          const result = JSON.parse(cache);
 
-         return sendSuccess(res, 200, "Stocks", { stocks: result as Stocks });
+         return sendSuccess(res, 200, "Finances", { finances: result as Finances });
       } else {
-         const result = await StocksModel.fetchStocks() as Stocks;
-         redisClient.set("stocks", JSON.stringify(result));
+         const result = await fetchFinances();
+         redisClient.set("finances", JSON.stringify(result));
 
-         return sendSuccess(res, 200, "Stocks", { stocks: result });
+         return sendSuccess(res, 200, "Finances", { finances: result });
       }
    } catch (error: any) {
       console.error(error);
@@ -38,7 +38,7 @@ export const fetchStocks = asyncHandler(async (req: Request, res: Response) => {
    }
 });
 
-export const fetchNews = asyncHandler(async (req: Request, res: Response) => {
+export const NEWS = asyncHandler(async (_req: Request, res: Response) => {
    try {
       const cache = await redisClient.get("news");
       
@@ -52,7 +52,7 @@ export const fetchNews = asyncHandler(async (req: Request, res: Response) => {
       // Cache the results for 15 minutes
       await redisClient.setex("news", 15 * 60, JSON.stringify(data));
 
-      return sendSuccess(res, 200, "Latest Financial News", { news: data });
+      return sendSuccess(res, 200, "Latest Financial News", { news: data as Feed });
    } catch (error: any) {
       // Use backup XML news file, but don't cache the results
       console.error(error);
