@@ -1,58 +1,23 @@
 import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
-import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { UserModel } from "@/models/userModel";
-import { createUser as create } from "@/service/userService";
-import { configureJWT } from "@/session";
+import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
+import { createUser } from "@/service/userService";
+import { configureJWT } from "@/lib/api/authentication";
 import { User } from "capital-types/user";
 
-export const createUsers = asyncHandler(async (req: Request, res: Response) => {
+export const POST = asyncHandler(async (req: Request, res: Response) => {
    try {
-      const { username, name, password, verifyPassword, email } = req.body as User;
+      const user = req.body as User;
+      const result: ServiceResponse = await createUser(user);
 
-      // Validate user fields
-      const user = new UserModel(null, username?.trim(), name?.trim(), password, email?.trim(), false);
-      const errors = user.validate();
-
-      if (errors !== null) {
+      if (result.errors) {
          // Invalid user fields
-         return sendErrors(res, 400, "Invalid user fields", errors);
-      } else if (password !== verifyPassword) {
-         // Validate password match
-         return sendErrors(res, 400, "Passwords do not match", {
-            password: "Passwords do not match",
-            verifyPassword: "Passwords do not match"
-         });
+         return sendErrors(res, result.code, result.message, result.errors as Record<string, string>);
       } else {
-         // Validate user uniqueness
-         const normalizedUsername = username.toLowerCase().trim();
-         const normalizedEmail = email.toLowerCase().trim();
-         const conflicts = await UserModel.fetchExistingUsers(normalizedUsername, normalizedEmail);
+         // Configure JWT token for a successful registration
+         configureJWT(req, res, user);
 
-         if (conflicts.length > 0) {
-            // User exists with same username or email
-            const errors = conflicts.reduce((account, user) => {
-               if (user.username.toLowerCase().trim() === normalizedUsername) {
-                  account.username = "Username already exists";
-               }
-
-               if (user.email.toLowerCase().trim() === normalizedEmail) {
-                  account.email = "Email already exists";
-               }
-
-               return account;
-            }, {} as Record<string, string>);
-
-            return sendErrors(res, 400, "Account conflicts", errors);
-         } else {
-            // Create new user
-            await user.create();
-
-            // Configure JWT token
-            configureJWT(req, res, user);
-
-            return sendSuccess(res, 201, "Registration successful", { token: req.session.token });
-         }
+         return sendSuccess(res, result.code, result.message);
       }
    } catch (error: any) {
       console.error(error);
@@ -61,10 +26,10 @@ export const createUsers = asyncHandler(async (req: Request, res: Response) => {
    }
 });
 
-export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+export const PUT = asyncHandler(async (req: Request, res: Response) => {
    return sendSuccess(res, 200, "Updating user awaits implementation");
 });
 
-export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+export const DELETE = asyncHandler(async (req: Request, res: Response) => {
    return sendSuccess(res, 200, "Deleting user awaits implementation");
 });

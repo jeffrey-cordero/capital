@@ -15,3 +15,10 @@ export function sendSuccess(res: Response, code: number, message: string, data?:
       data: data
    });
 };
+
+export interface ServiceResponse {
+   code: number;
+   message: string;
+   data?: any;
+   errors?: Record<string, string>;
+}

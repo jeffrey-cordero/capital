@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateJWT } from "@/session";
+import { authenticateJWT } from "@/lib/api/authentication";
 
 import { fetchStocks, fetchNews } from "@/controllers/homeController";
 

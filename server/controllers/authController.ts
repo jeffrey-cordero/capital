@@ -4,7 +4,7 @@ import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { sendErrors, sendSuccess } from "@/lib/api/response";
 import { authenticate } from "@/repository/userRepository";
-import { configureJWT } from "@/session";
+import { configureJWT } from "@/lib/api/authentication";
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
    try {

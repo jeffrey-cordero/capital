@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateJWT } from "@/session";
+import { authenticateJWT } from "@/lib/api/authentication";
 
 import { login, logout, fetchAuthentication } from "@/controllers/authController";
 

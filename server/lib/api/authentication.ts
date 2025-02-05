@@ -1,32 +1,29 @@
 import jwt from "jsonwebtoken";
-import session from "express-session";
 import { NextFunction, Request, Response } from "express";
 import { sendErrors } from "@/lib/api/response";
 
 import { User } from "capital-types/user"
 
-declare module 'express-session' {
-   export interface SessionData {
-      token: string | undefined;
-   }
-}
-
-function configureJWT(req: Request, res: Response, user: User): void {
-   // JWT token generation
+// JWT Generation
+export function configureJWT(req: Request, res: Response, user: User): void {
+   // Generate JWT token
    const secret: string = process.env.SESSION_SECRET || "";
    const token = jwt.sign({ id: user.id, username: user.username }, secret, { expiresIn: "24h" });
 
-   // JWT token configuration
-   res.cookie("token", token, { httpOnly: true });
-   req.session.token = token;
-   req.session.save();
+   // Store JWT token in client cookies
+   res.cookie("token", token, { 
+      httpOnly: true,
+      sameSite: false,
+      maxAge: 1000 * 60 * 60 * 24,
+      secure: process.env.NODE_ENV === "production"
+   });
 }
 
-function authenticateJWT(required: boolean) {
-   // JWT validation middleware
+// JWT Middleware  
+export function authenticateJWT(required: boolean) {
    return (req: Request, res: Response, next: NextFunction) => {
       // Get the token from the session or cookies
-      const token = req.session.token || req.cookies.token;
+      const token = req.cookies.token;
 
       // If token is required but missing, return 401 Unauthorized
       if (!token && required) {
@@ -41,16 +38,6 @@ function authenticateJWT(required: boolean) {
             // Verify the JWT token
             const decoded = jwt.verify(token, secret);
 
-            // Refresh the token in the client if not present where token is stored in session
-            if (req.session.token && !req.cookies.token) {
-               res.cookie("token", req.session.token, { httpOnly: true });
-            }
-   
-            // Store JWT token in session for future requests (to prevent cache miss)
-            if (required && !req.session.token) {
-               req.session.token = token;
-            }
-   
             // Attach decoded user data to req.user for subsequent handlers
             res.locals.user = decoded;
 
@@ -74,5 +61,3 @@ function authenticateJWT(required: boolean) {
       }
    };
 }
-
-export { session, configureJWT, authenticateJWT };

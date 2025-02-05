@@ -1,19 +1,18 @@
 require("dotenv").config();
 
 import express from "express";
-import cron from "node-cron";
 import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
 import cors from "cors";
+import session from "express-session";
 import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
 import indexRouter from "@/routers/indexRouter";
 import authRouter from "@/routers/authRouter";
-import usersRouter from "@/routers/usersRouter";
+import userRouter from "@/routers/userRouter";
 import homeRouter from "@/routers/homeRouter";
-import { session } from "@/session";
 import { sendErrors } from "@/lib/api/response";
 import { Request, Response } from "express";
 import { StocksModel } from "@/models/stocksModel";
@@ -34,7 +33,7 @@ app.use(session({
    cookie: {
       httpOnly: true,
       sameSite: false,
-      maxAge: 1000 * 60 * 60,
+      maxAge: 1000 * 60 * 60 * 24,
       secure: process.env.NODE_ENV === "production"
   },
 }));
@@ -60,7 +59,7 @@ app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': tr
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
 app.use("/home", homeRouter);
-app.use("/users", usersRouter);
+app.use("/users", userRouter);
 
 // Initialize Redis cache with financial data, if applicable
 const initializeRedisCache = async () => {
