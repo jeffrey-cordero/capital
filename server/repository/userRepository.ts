@@ -11,7 +11,7 @@ export async function getConflictingUsers(username: string, email: string): Prom
 
   const result = await runQuery(conflicts, parameters) as User[];
 
-  if (conflicts.length > 0) {
+  if (result.length > 0) {
     // User exists with same username and/or email
     const errors = result.reduce((account, user) => {
       if (user.username.toLowerCase().trim() === normalizedUsername) {
@@ -27,6 +27,7 @@ export async function getConflictingUsers(username: string, email: string): Prom
 
     return errors;
   } else {
+    console.log("No conflicts found");
     return null;
   }
 }

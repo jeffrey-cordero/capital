@@ -11,8 +11,8 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
-import { clearAuthentication } from "@/lib/auth";
-import { logout } from "@/redux/slices/auth";
+import { clearAuthentication } from "@/lib/authentication";
+import { logout } from "@/redux/slices/authentication";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
@@ -44,8 +44,8 @@ const home = [{
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home#finances",
-   title: "Finances",
+   path: "/home#marketTrends",
+   title: "Market Trends",
    icon: faChartLine
 }, {
    path: "/home#news",
@@ -175,7 +175,7 @@ function SideBarContent(props: SideBarContentProps) {
       mutationFn: clearAuthentication,
       onSuccess: () => {
          // Update cached authentication status
-         queryClient.setQueriesData({ queryKey: "auth" }, false);
+         queryClient.setQueriesData({ queryKey: "authentication" }, false);
 
          // Update Redux store
          dispatch(logout());

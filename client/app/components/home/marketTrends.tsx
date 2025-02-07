@@ -8,6 +8,8 @@ import { BarChart } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";
 
 import { AreaGradient, getDaysInMonth, StatCard, type StatCardProps } from "@/components/global/stat-card";
+import type { MarketTrends } from "capital-types/marketTrends";
+import { use, useMemo, useState } from "react";
 
 const data: StatCardProps[] = [
    {
@@ -52,22 +54,22 @@ function AccountsParChart() {
 
    return (
       <Card
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
-         variant = "elevation"
+         sx={{ height: "100%", flexGrow: 1, textAlign: "left" }}
+         variant="elevation"
          elevation={3}
       >
          <CardContent>
             <Typography
-               component = "h2"
-               gutterBottom = { true }
-               variant = "subtitle2"
+               component="h2"
+               gutterBottom={true}
+               variant="subtitle2"
             >
                Accounts
             </Typography>
-            <Stack sx = { { justifyContent: "space-between" } }>
+            <Stack sx={{ justifyContent: "space-between" }}>
                <Stack
-                  direction = "row"
-                  sx = {
+                  direction="row"
+                  sx={
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -76,31 +78,31 @@ function AccountsParChart() {
                   }
                >
                   <Typography
-                     component = "p"
-                     variant = "h4"
+                     component="p"
+                     variant="h4"
                   >
                      1.3M
                   </Typography>
                   <Chip
-                     color = "error"
-                     label = "-8%"
-                     size = "small"
+                     color="error"
+                     label="-8%"
+                     size="small"
                   />
                </Stack>
                <Typography
-                  sx = { { color: "text.secondary" } }
-                  variant = "caption"
+                  sx={{ color: "text.secondary" }}
+                  variant="caption"
                >
                   Account values for the last 6 months
                </Typography>
             </Stack>
             <BarChart
-               borderRadius = { 8 }
-               colors = { colorPalette }
-               grid = { { horizontal: true } }
-               height = { 250 }
-               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
-               series = {
+               borderRadius={8}
+               colors={colorPalette}
+               grid={{ horizontal: true }}
+               height={250}
+               margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
+               series={
                   [
                      {
                         id: "account1",
@@ -122,14 +124,14 @@ function AccountsParChart() {
                      }
                   ]
                }
-               slotProps = {
+               slotProps={
                   {
                      legend: {
                         hidden: true
                      }
                   }
                }
-               xAxis = {
+               xAxis={
                   [
                      {
                         scaleType: "band",
@@ -154,22 +156,22 @@ function BudgetBarChart() {
 
    return (
       <Card
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
-         variant = "elevation"
+         sx={{ height: "100%", flexGrow: 1, textAlign: "left" }}
+         variant="elevation"
          elevation={3}
       >
          <CardContent>
             <Typography
-               component = "h2"
-               gutterBottom = { true }
-               variant = "subtitle2"
+               component="h2"
+               gutterBottom={true}
+               variant="subtitle2"
             >
                Budget
             </Typography>
-            <Stack sx = { { justifyContent: "space-between" } }>
+            <Stack sx={{ justifyContent: "space-between" }}>
                <Stack
-                  direction = "row"
-                  sx = {
+                  direction="row"
+                  sx={
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -178,31 +180,31 @@ function BudgetBarChart() {
                   }
                >
                   <Typography
-                     component = "p"
-                     variant = "h4"
+                     component="p"
+                     variant="h4"
                   >
                      100K
                   </Typography>
                   <Chip
-                     color = "success"
-                     label = "+52%"
-                     size = "small"
+                     color="success"
+                     label="+52%"
+                     size="small"
                   />
                </Stack>
                <Typography
-                  sx = { { color: "text.secondary" } }
-                  variant = "caption"
+                  sx={{ color: "text.secondary" }}
+                  variant="caption"
                >
                   Income vs. Expenses for the last 6 months
                </Typography>
             </Stack>
             <BarChart
-               borderRadius = { 8 }
-               colors = { colorPalette }
-               grid = { { horizontal: true } }
-               height = { 250 }
-               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
-               series = {
+               borderRadius={8}
+               colors={colorPalette}
+               grid={{ horizontal: true }}
+               height={250}
+               margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
+               series={
                   [
                      {
                         id: "income",
@@ -220,14 +222,14 @@ function BudgetBarChart() {
                      },
                   ]
                }
-               slotProps = {
+               slotProps={
                   {
                      legend: {
                         hidden: true
                      }
                   }
                }
-               xAxis = {
+               xAxis={
                   [
                      {
                         scaleType: "band",
@@ -254,22 +256,22 @@ function SessionsChart() {
 
    return (
       <Card
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left" } }
-         variant = "elevation"
+         sx={{ height: "100%", flexGrow: 1, textAlign: "left" }}
+         variant="elevation"
          elevation={3}
       >
          <CardContent>
             <Typography
-               component = "h2"
-               gutterBottom = { true }
-               variant = "subtitle2"
+               component="h2"
+               gutterBottom={true}
+               variant="subtitle2"
             >
                Sessions
             </Typography>
-            <Stack sx = { { justifyContent: "space-between" } }>
+            <Stack sx={{ justifyContent: "space-between" }}>
                <Stack
-                  direction = "row"
-                  sx = {
+                  direction="row"
+                  sx={
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -278,30 +280,30 @@ function SessionsChart() {
                   }
                >
                   <Typography
-                     component = "p"
-                     variant = "h4"
+                     component="p"
+                     variant="h4"
                   >
                      13,277
                   </Typography>
                   <Chip
-                     color = "success"
-                     label = "+35%"
-                     size = "small"
+                     color="success"
+                     label="+35%"
+                     size="small"
                   />
                </Stack>
                <Typography
-                  sx = { { color: "text.secondary" } }
-                  variant = "caption"
+                  sx={{ color: "text.secondary" }}
+                  variant="caption"
                >
                   Sessions per day for the last 30 days
                </Typography>
             </Stack>
             <LineChart
-               colors = { colorPalette }
-               grid = { { horizontal: true } }
-               height = { 250 }
-               margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
-               series = {
+               colors={colorPalette}
+               grid={{ horizontal: true }}
+               height={250}
+               margin={{ left: 50, right: 20, top: 20, bottom: 20 }}
+               series={
                   [
                      {
                         id: "direct",
@@ -316,58 +318,24 @@ function SessionsChart() {
                            3600, 3900, 4200, 4500, 3900, 4800, 5100, 5400, 4800, 5700, 6000,
                            6300, 6600, 6900, 7200, 7500, 7800, 8100
                         ]
-                     },
-                     {
-                        id: "referral",
-                        label: "Referral",
-                        showMark: false,
-                        curve: "linear",
-                        stack: "total",
-                        area: true,
-                        stackOrder: "ascending",
-                        data: [
-                           500, 900, 700, 1400, 1100, 1700, 2300, 2000, 2600, 2900, 2300, 3200,
-                           3500, 3800, 4100, 4400, 2900, 4700, 5000, 5300, 5600, 5900, 6200,
-                           6500, 5600, 6800, 7100, 7400, 7700, 8000
-                        ]
-                     },
-                     {
-                        id: "organic",
-                        label: "Organic",
-                        showMark: false,
-                        curve: "linear",
-                        stack: "total",
-                        stackOrder: "ascending",
-                        data: [
-                           1000, 1500, 1200, 1700, 1300, 2000, 2400, 2200, 2600, 2800, 2500,
-                           3000, 3400, 3700, 3200, 3900, 4100, 3500, 4300, 4500, 4000, 4700,
-                           5000, 5200, 4800, 5400, 5600, 5900, 6100, 6300
-                        ],
-                        area: true
                      }
                   ]
                }
-               slotProps = {
+               slotProps={
                   {
                      legend: {
                         hidden: true
                      }
                   }
                }
-               sx = {
+               sx={
                   {
-                     "& .MuiAreaElement-series-organic": {
-                        fill: "url('#organic')"
-                     },
-                     "& .MuiAreaElement-series-referral": {
-                        fill: "url('#referral')"
-                     },
                      "& .MuiAreaElement-series-direct": {
                         fill: "url('#direct')"
                      }
                   }
                }
-               xAxis = {
+               xAxis={
                   [
                      {
                         scaleType: "point",
@@ -378,16 +346,16 @@ function SessionsChart() {
                }
             >
                <AreaGradient
-                  color = { theme.palette.primary.dark }
-                  id = "organic"
+                  color={theme.palette.primary.dark}
+                  id="organic"
                />
                <AreaGradient
-                  color = { theme.palette.primary.main }
-                  id = "referral"
+                  color={theme.palette.primary.main}
+                  id="referral"
                />
                <AreaGradient
-                  color = { theme.palette.primary.light }
-                  id = "direct"
+                  color={theme.palette.primary.light}
+                  id="direct"
                />
             </LineChart>
          </CardContent>
@@ -395,55 +363,141 @@ function SessionsChart() {
    );
 }
 
-export default function Finances() {
+interface TrendChartProps {
+   type: string;
+   data: { date: string; value: string }[];
+}
+
+function TrendChart(props: TrendChartProps) {
+   const { type, data } = props;
+   const theme = useTheme();
+   const [range, setRange] = useState('year');
+
+   const sortedData = useMemo(() => data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [data]);
+
+   const getFilteredData = useMemo(() => {
+      const now = new Date();
+      
+      switch (range) {
+         case 'quarter':
+            return sortedData;
+            case 'year':
+               // Get all unique years from the data
+               const years = Array.from(new Set(sortedData.map(d => new Date(d.date).getFullYear())));
+
+               // Bucket the data by year and calculate the average value for each year
+               const bucketedData = years.map(year => {
+                  // Filter data for the current year
+                  const yearData = sortedData.filter(d => new Date(d.date).getFullYear() === year);
+
+                  console.log(yearData)
+
+                  // Calculate the average value for the year
+                  const yearAverage = yearData.length > 0 ? yearData.reduce((sum, d) => sum + Number(d.value), 0) / yearData.length : 0;
+
+                  return {
+                     date: year, 
+                     value: yearData.length > 0 ? yearAverage : 0
+                  };
+               });
+
+               return bucketedData
+         default:
+            return sortedData;
+      }
+   }, [range, sortedData]);
+
+   const filteredData = getFilteredData;
+   console.log(filteredData);
+   const trend = filteredData.length > 0 ? ((Number(filteredData[filteredData.length - 1].value) - Number(filteredData[0].value)) / Number(filteredData[0].value) * 100): 0;
+
+   return (
+      filteredData.length > 0 && (
+         <Card sx={{ width: "100%", height: "100%", flexGrow: 1, textAlign: "left" }} variant="elevation" elevation={3}>
+         <CardContent>
+            <Typography component="h2" gutterBottom variant="subtitle2">
+               { type }
+            </Typography>
+            <Stack sx={{ justifyContent: "space-between" }}>
+               <Stack direction="row" sx={{ alignContent: { xs: "center", sm: "flex-start" }, alignItems: "center", gap: 1 }}>
+                  <Typography component="p" variant="h4">
+                     {filteredData[filteredData.length - 1].value} B
+                  </Typography>
+                  <Chip color={ trend >= 0 ? "success" : "error"} label={`${trend.toFixed(2)}%`} size="small" />
+               </Stack>
+               <Typography sx={{ color: "text.secondary" }} variant="caption">
+                  {type} from {filteredData[0].date} to {filteredData[filteredData.length - 1].date}
+               </Typography>
+            </Stack>
+            <LineChart
+               xAxis={[{ data: filteredData.map(d => d.date), scaleType: 'point' }]}
+               series={[{ data: filteredData.map(d => Number(d.value)), area: true, curve: "linear" }]}
+               width={500}
+               height={300}
+            />
+         </CardContent>
+      </Card>
+      )
+   );
+}
+
+interface MarketTrendsProps {
+   trends: MarketTrends;
+}
+
+export default function Trends(props: MarketTrendsProps) {
+   const { trends } = props;
+
    return (
       <Box
-         id = "finances"
-         sx = { { width: "100%", mt: "-20px" } }
+         id="marketTrends"
+         sx={{ width: "100%", mt: "-20px" }}
       >
          <Fade
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
+            in={true}
+            mountOnEnter={true}
+            timeout={1000}
+            unmountOnExit={true}
          >
             <Box>
                <Slide
-                  direction = "down"
-                  in = { true }
-                  mountOnEnter = { true }
-                  timeout = { 1000 }
-                  unmountOnExit = { true }
+                  direction="down"
+                  in={true}
+                  mountOnEnter={true}
+                  timeout={1000}
+                  unmountOnExit={true}
                >
                   <Stack
-                     direction = "column"
-                     sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
+                     direction="column"
+                     sx={{ justifyContent: "center", alignItems: "center", gap: 2 }}
                   >
                      <Box
-                        alt = "Finances"
-                        component = "img"
-                        src = "finances.svg"
-                        sx = { { width: 525, height: "auto" } }
+                        alt="Finances"
+                        component="img"
+                        src="finances.svg"
+                        sx={{ width: 525, height: "auto" }}
                      />
-                     <Grid size = { 12 }>
+                     <Grid size={12}>
                         <AccountsParChart />
                      </Grid>
-                     <Grid size = { 12 }>
+                     <Grid size={12}>
                         <BudgetBarChart />
                      </Grid>
                      {
                         data.map((card, index) => (
                            <Grid
-                              key = { index }
-                              size = { 12 }
+                              key={index}
+                              size={12}
                            >
-                              <StatCard { ...card } />
+                              <StatCard {...card} />
                            </Grid>
                         ))
                      }
-                     <Grid size = { 12 }>
+                     <Grid size={12}>
                         <SessionsChart />
+                        <TrendChart data={trends.REAL_GDP.map((trend: any) => ({ date: trend.date, value: trend.value }))} type="REAL_GDP" />
                      </Grid>
+
                   </Stack>
                </Slide>
             </Box>

@@ -173,7 +173,7 @@ interface NewsProps {
    news: Feed;
 }
 
-export default function News(props: NewsProps) {
+export default function Stories(props: NewsProps) {
    const { news } = props;
    const containerRef = useRef<HTMLDivElement>(null);
 

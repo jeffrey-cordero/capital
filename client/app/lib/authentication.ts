@@ -1,9 +1,9 @@
 import { sendApiRequest } from "@/lib/server";
 
 export async function fetchAuthentication(): Promise<boolean> {
-   return (await sendApiRequest("auth", "GET", null))?.data.authenticated;
+   return (await sendApiRequest("authentication", "GET", null))?.data.authenticated;
 };
 
 export async function clearAuthentication(): Promise<void> {
-   await sendApiRequest("auth/logout", "POST", null);
+   await sendApiRequest("authentication/logout", "POST", null);
 };

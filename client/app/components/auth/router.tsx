@@ -7,8 +7,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import Loading from "@/components/global/loading";
 import Notifications from "@/components/global/notifications";
 import { SideBar } from "@/components/global/sidebar";
-import { fetchAuthentication } from "@/lib/auth";
-import { authenticate } from "@/redux/slices/auth";
+import { fetchAuthentication } from "@/lib/authentication";
+import { authenticate } from "@/redux/slices/authentication";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
@@ -16,7 +16,7 @@ import { theme } from "@/styles/mui/theme";
 export default function Router({ home }: { home: boolean }) {
    // Handle authentication-related routing
    const { data, isLoading, error, isError } = useQuery({
-      queryKey: ["auth"],
+      queryKey: ["authentication"],
       queryFn: fetchAuthentication,
       staleTime: 24 * 60 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000

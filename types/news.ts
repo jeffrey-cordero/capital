@@ -1,4 +1,4 @@
-export type Feed = {
+export type News = {
    "$": Object;
    "channel": {
       "copyright": string[];

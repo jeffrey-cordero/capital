@@ -3,34 +3,36 @@ import "@/styles/home.scss";
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQueries } from "@tanstack/react-query";
-import type { Feed } from "capital-types/news";
-import type { Stocks } from "capital-types/stocks";
+import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import Finances from "@/components/home/finances";
-import News from "@/components/home/news";
+import Trends from "@/components/home/marketTrends";
+import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
-// import MonthlyStocks from "@/components/home/stocks";
 import { sendApiRequest } from "@/lib/server";
 
-async function fetchNews(): Promise<Feed> {
-   return (await sendApiRequest("home/news", "GET", null))?.data.news as Feed;
+import { type MarketTrends } from "capital-types/marketTrends";
+
+async function fetchNews(): Promise<News> {
+   return (await sendApiRequest("home/news", "GET", null))?.data.news;
 }
 
-async function fetchStocks(): Promise<Stocks> {
-   return (await sendApiRequest("home/stocks", "GET", null))?.data.stocks as Stocks;
+async function fetchMarketTrends(): Promise<MarketTrends> {
+   return (await sendApiRequest("home/marketTrends", "GET", null))?.data.marketTrends;
 }
 
 export default function Home() {
    const homeQueries = useQueries({
       queries: [
-         { queryKey: ["stocks"], queryFn: fetchStocks, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 },
-         { queryKey: ["news"], queryFn: fetchNews, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 }
+         // Cache the market trends result for 24 hours
+         { queryKey: ["marketTrends"], queryFn: fetchMarketTrends, staleTime: 24 * 60 * 60 * 1000, gcTime: 24 * 60 * 60 * 1000 },
+         // Cache the news result for 15 minutes
+         { queryKey: ["news"], queryFn: fetchNews, staleTime: 15 * 60 * 1000, gcTime: 15 * 60 * 1000 }
       ]
    });
 
-   const [stocks, news] = homeQueries;
-   const isLoading: boolean = stocks.isLoading || news.isLoading;
+   const [marketTrends, news] = homeQueries;
+   const isLoading: boolean = marketTrends.isLoading || news.isLoading;
 
    return (
       !isLoading ? (
@@ -57,12 +59,12 @@ export default function Home() {
                         }
                      }
                   >
-                     <Finances />
+                     <Trends trends = { marketTrends.data as MarketTrends } />
                      <Quotes />
                   </Box>
                </Grid>
                <Grid size = { { xs: 12, lg: 4 } }>
-                  <News news = { news.data as Feed } />
+                  <Stories news = { news.data as News } />
                </Grid>
             </Grid>
          </Box>

@@ -1,37 +1,37 @@
 const fs = require("fs").promises;
 import { runQuery, runTransaction } from "@/lib/database/query";
 import { redisClient } from "@/app";
-import { Finances } from "capital-types/finances";
+import { MarketTrends } from "capital-types/marketTrends";
 import { ServiceResponse } from "@/lib/api/response";
 
-export async function fetchFinances(): Promise<Finances | null> {
-   const search = "SELECT * FROM finances;";
-   const result = await runQuery(search, []) as { data: string }[];
+export async function fetchMarketTrends(): Promise<MarketTrends | null> {
+   const search = "SELECT * FROM market_trends_api_cache;";
+   const result = await runQuery(search, []) as { time: string, data: MarketTrends }[];
 
    if (result.length === 0) {
       return null;
    } else {
-      return JSON.parse(result[0]?.data) as Finances;
+      return result[0]?.data as MarketTrends;
    }
 }
 
-async function insertFinances(time: Date, data: string): Promise<ServiceResponse> {
+async function insertMarketTrends(time: Date, data: string): Promise<ServiceResponse> {
    try {
-      // Transaction to update the finance data
+      // Transaction to update the market trends API cache
       await runTransaction([
          {
-            query: "DELETE FROM finances;",
+            query: "DELETE FROM market_trends_api_cache;",
             parameters: [],
          },
          {
-            query: "INSERT INTO finances (time, data) VALUES (?, ?);",
+            query: "INSERT INTO market_trends_api_cache (time, data) VALUES (?, ?);",
             parameters: [time, data],
          },
       ]);
 
       return {
          code: 200,
-         message: "Successfully inserted financial data",
+         message: "Successfully updated market trends API cache",
          data: null,
       };
    } catch (error) {
@@ -39,13 +39,13 @@ async function insertFinances(time: Date, data: string): Promise<ServiceResponse
 
       return {
          code: 500,
-         message: "Failed to insert financial data",
+         message: "Failed to update market trends API cache",
          errors: { system: "Internal server error" },
       };
    }
 }
 
-export async function updateFinances(): Promise<ServiceResponse> {
+export async function updateMarketTrends(): Promise<ServiceResponse> {
    const indicators = [
       "REAL_GDP",
       "TREASURY_YIELD",
@@ -54,7 +54,7 @@ export async function updateFinances(): Promise<ServiceResponse> {
       "UNEMPLOYMENT",
    ];
 
-   let finances: Record<string, any> = {};
+   let marketTrends: Record<string, any> = {};
 
    try {
       for (const indicator of indicators) {
@@ -66,7 +66,7 @@ export async function updateFinances(): Promise<ServiceResponse> {
          if (!response["data"]) {
             throw new Error(`Invalid API format for ${indicator}`);
          } else {
-            finances[indicator] = response["data"];
+            marketTrends[indicator] = response["data"];
          }
       }
    } catch (error) {
@@ -75,32 +75,32 @@ export async function updateFinances(): Promise<ServiceResponse> {
 
       return {
          code: 200,
-         message: "Backup financial data retrieved",
-         data: JSON.parse(await fs.readFile("resources/finances.json", "utf8")),
+         message: "Backup market trends data retrieved",
+         data: JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")),
       }
    }
 
    const time = new Date();
-   const data = JSON.stringify(finances);
+   const data = JSON.stringify(marketTrends);
 
    try {
       // Store in the database
-      await insertFinances(time, data);
+      await insertMarketTrends(time, data);
 
       // Store in the Redis cache for 24 hours
-      await redisClient.setex("finances", 24 * 60 * 60, data);
+      await redisClient.setex("marketTrends", 24 * 60 * 60, data);
 
       return {
          code: 200,
-         message: "Successfully updated financial data",
-         data: finances,
+         message: "Successfully updated market trends API cache",
+         data: marketTrends,
       };
    } catch (error) {
       console.error(error);
 
       return {
          code: 500,
-         message: "Failed to update financial data",
+         message: "Failed to update market trends API cache",
          errors: { system: "Internal server error" },
       };
    }

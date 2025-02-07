@@ -53,7 +53,7 @@ CREATE TABLE `transactions` (
    FOREIGN KEY (category_id) REFERENCES `categories`(category_id) ON DELETE CASCADE
 );
 
-CREATE TABLE `finances` (
+CREATE TABLE `market_trends_api_cache` (
    time DATETIME PRIMARY KEY,
    data JSON NOT NULL
 );

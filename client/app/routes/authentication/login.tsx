@@ -37,7 +37,7 @@ export default function Login() {
          password: data.password.trim()
       };
 
-      const response = await sendApiRequest("auth/login", "POST", credentials, dispatch, setError);
+      const response = await sendApiRequest("authentication/login", "POST", credentials, dispatch, setError);
 
       if (response?.status === "Success") {
          setTimeout(() => {

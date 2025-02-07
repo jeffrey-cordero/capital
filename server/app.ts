@@ -10,12 +10,12 @@ import Redis from "ioredis";
 import helmet from "helmet";
 import serveIndex from 'serve-index';
 import indexRouter from "@/routers/indexRouter";
-import authRouter from "@/routers/authenticationRouter";
+import authenticationRouter from "@/routers/authenticationRouter";
 import userRouter from "@/routers/userRouter";
 import homeRouter from "@/routers/homeRouter";
 import { sendErrors } from "@/lib/api/response";
 import { Request, Response } from "express";
-import { StocksModel } from "@/models/stocksModel";
+import { fetchMarketTrends, updateMarketTrends } from "@/repository/marketTrendsRepository";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -57,13 +57,13 @@ app.use("/resources", express.static(path.join(__dirname, "resources")));
 app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': true}));
 
 app.use("/", indexRouter);
-app.use("/auth", authRouter);
 app.use("/home", homeRouter);
 app.use("/users", userRouter);
+app.use("/authentication", authenticationRouter);
 
 // Initialize Redis cache with financial data, if applicable
 const initializeRedisCache = async () => {
-   await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
+   await fetchMarketTrends() === null && await updateMarketTrends();
 }
 
 initializeRedisCache();
