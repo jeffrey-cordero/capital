@@ -148,7 +148,7 @@ body[data-dark="true"] {
 }
 
 // Animations
-.floating-container {
+.animation-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -156,7 +156,7 @@ body[data-dark="true"] {
   width: 100%;
   min-height: 300px;
 
-  .floating-item {
+  .floating {
     position: absolute;
     animation: floating 5s ease-in-out infinite;
   }

@@ -77,12 +77,15 @@ export function ErrorBoundary() {
          className = "center"
          sx = { { justifyContent: "center", alignItems: "center" } }
       >
-         <Box
-            alt = "Error"
-            component = "img"
-            src = "error.svg"
-            sx = { { width: 350, height: "auto", my: 2 } }
-         />
+         <Box className = "animation-container">
+            <Box
+               alt = "Error"
+               className = "floating"
+               component = "img"
+               src = "error.svg"
+               sx = { { width: 350, height: "auto", my: 4 } }
+            />
+         </Box>
          <Typography
             align = "center"
             sx = { { fontWeight: "bold", margin: "0", px: 3 } }

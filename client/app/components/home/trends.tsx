@@ -6,10 +6,11 @@ import Grid from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import { BarChart } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";
-import type { MarketTrends } from "capital-types/marketTrends";
-import { use, useMemo, useState } from "react";
+import type { MarketTrends, StockTrends } from "capital-types/marketTrends";
+import { useMemo, useState } from "react";
 
 import { AreaGradient, getDaysInMonth, StatCard, type StatCardProps } from "@/components/global/stat-card";
+import { Stocks } from "@/components/global/trend";
 
 const data: StatCardProps[] = [
    {
@@ -468,13 +469,12 @@ interface MarketTrendsProps {
 
 export default function Trends(props: MarketTrendsProps) {
    const { trends } = props;
-
    console.log(trends);
 
    return (
       <Box
          id = "marketTrends"
-         sx = { { width: "100%", mt: "-20px" } }
+         sx = { { width: "100%" } }
       >
          <Fade
             in = { true }
@@ -484,7 +484,7 @@ export default function Trends(props: MarketTrendsProps) {
          >
             <Box>
                <Slide
-                  direction = "down"
+                  direction = "up"
                   in = { true }
                   mountOnEnter = { true }
                   timeout = { 1000 }
@@ -494,12 +494,15 @@ export default function Trends(props: MarketTrendsProps) {
                      direction = "column"
                      sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
-                     <Box
-                        alt = "Finances"
-                        component = "img"
-                        src = "finances.svg"
-                        sx = { { width: 525, height: "auto" } }
-                     />
+                     <Box className = "animation-container">
+                        <Box
+                           alt = "Finances"
+                           className = "floating"
+                           component = "img"
+                           src = "finances.svg"
+                           sx = { { width: 525, height: "auto" } }
+                        />
+                     </Box>
                      <Grid size = { 12 }>
                         <AccountsParChart />
                      </Grid>
@@ -518,10 +521,15 @@ export default function Trends(props: MarketTrendsProps) {
                      }
                      <Grid size = { 12 }>
                         <SessionsChart />
-                        <TrendChart
+                     </Grid>
+                     {/* <Grid size = { 12 }>
+                       <TrendChart
                            data = { trends.GDP.map((trend: any) => ({ date: trend.date, value: trend.value })) }
                            type = "GDP"
                         />
+                     </Grid> */}
+                     <Grid size = { 12 }>
+                        <Stocks {...trends["Stocks"][0] as StockTrends} />
                      </Grid>
 
                   </Stack>

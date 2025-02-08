@@ -1,12 +1,12 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
-import { type Feed, type Story } from "capital-types/news";
+import { type News, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 
-function timeSinceLastUpdate(date: string) {
+export function timeSinceLastUpdate(date: string) {
    // Calculate the difference in milliseconds
    const difference = new Date().getTime() - new Date(date).getTime();
 
@@ -69,7 +69,7 @@ function StoryItem(props: Story) {
    return (
       <Card
          elevation = { 3 }
-         sx = { { width: 345, borderRadius: 4 } }
+         sx = { { width: 345, borderRadius: 2 } }
       >
          <CardHeader
             avatar = {
@@ -170,7 +170,7 @@ function StoryItem(props: Story) {
 }
 
 interface NewsProps {
-   news: Feed;
+   news: News;
 }
 
 export default function Stories(props: NewsProps) {
@@ -203,12 +203,16 @@ export default function Stories(props: NewsProps) {
                         direction = "column"
                         sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
                      >
-                        <Box
-                           alt = "News"
-                           component = "img"
-                           src = "news.svg"
-                           sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
-                        />
+                        <Box className = "animation-container">
+                           <Box
+                              alt = "News"
+
+                              className = "floating"
+                              component = "img"
+                              src = "news.svg"
+                              sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
+                           />
+                        </Box>
                         <Stack
                            direction = { { xs: "row", lg: "column" } }
                            sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }

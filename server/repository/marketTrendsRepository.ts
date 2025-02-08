@@ -94,30 +94,27 @@ async function fetchIndicatorTrends(indicator: string): Promise<IndicatorTrends[
 async function updateMarketTrends(): Promise<ServiceResponse> {
    let marketTrends: MarketTrends = {};
 
-   console.log(process.env.XRapidAPIKey)
-
    try {
-      const trends = await Promise.all([
-         fetchStockTrends(),
-         fetchIndicatorTrends("REAL_GDP"),
-         fetchIndicatorTrends("INFLATION"),
-         fetchIndicatorTrends("UNEMPLOYMENT"),
-         fetchIndicatorTrends("TREASURY_YIELD"),
-         fetchIndicatorTrends("FEDERAL_FUNDS_RATE"),
-      ]);
+      const indicators = [
+         { key: "Stocks", fetch: fetchStockTrends },
+         { key: "GDP", fetch: () => fetchIndicatorTrends("REAL_GDP") },
+         { key: "Inflation", fetch: () => fetchIndicatorTrends("INFLATION") },
+         { key: "Unemployment", fetch: () => fetchIndicatorTrends("UNEMPLOYMENT") },
+         { key: "Treasury Yield", fetch: () => fetchIndicatorTrends("TREASURY_YIELD") },
+         { key: "Federal Interest Rate", fetch: () => fetchIndicatorTrends("FEDERAL_FUNDS_RATE") }
+      ];
 
-      marketTrends["Stocks"] = trends[0];
-      marketTrends["GDP"] = trends[1];
-      marketTrends["Inflation"] = trends[2];
-      marketTrends["Unemployment"] = trends[3];
-      marketTrends["Treasury Yield"] = trends[4];
-      marketTrends["Federal Interest Rate"] = trends[5];
+      const trends = await Promise.all(indicators.map(indicator => indicator.fetch()));
+
+      indicators.forEach((indicator, index) => {
+         marketTrends[indicator.key] = trends[index];
+      });
    } catch (error) {
+      // Use local file as fallback
       console.error(error);
+
       marketTrends = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"));
    }
-      
-   console.log(marketTrends)
 
    const time = new Date();
    const data = JSON.stringify(marketTrends);

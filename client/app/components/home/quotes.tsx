@@ -29,11 +29,11 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                flexDirection: "column",
                justifyContent: "center",
                textAlign: "center",
-               padding: 3,
+               padding: 1,
                boxShadow: 3,
                transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                "&:hover": {
-                  transform: "scale(1.03)",
+                  transform: "scale(1.01)",
                   boxShadow: 6,
                   cursor: "pointer"
                }
@@ -44,17 +44,17 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
             <FontAwesomeIcon
                color = "gold"
                icon = { faLightbulb }
-               size = "3x"
+               size = "2x"
             />
             <Typography
                sx = { { fontStyle: "italic", mt: 2, mb: 1 } }
-               variant = "h6"
+               variant = "subtitle1"
             >
                &quot;{ text }&quot;
             </Typography>
             <Typography
                sx = { { fontWeight: "bold" } }
-               variant = "subtitle1"
+               variant = "subtitle2"
             >
                - { author }
             </Typography>
@@ -67,15 +67,21 @@ export default function QuotesGrid() {
    return (
       <Box
          id = "quotes"
-         sx = { { padding: 4, mt: 4 } }
+         sx = { { padding: 4 } }
       >
          <Box
-            alt = "Quotes"
-            component = "img"
-            src = "quotes.svg"
-            sx = { { width: 250, height: "auto", mb: 6 } }
+            
          />
 
+<Box className = "animation-container">
+            <Box
+               alt = "Quotes"
+               className = "floating"
+               component = "img"
+               src = "quotes.svg"
+               sx = { { width: 350, height: "auto", mb: 6} }
+            />
+         </Box>
          <Grid2
             container = { true }
             spacing = { 3 }

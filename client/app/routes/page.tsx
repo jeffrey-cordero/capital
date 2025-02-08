@@ -14,16 +14,15 @@ export default function Landing() {
          className = "center"
          sx = { { gap: 0, px: 1 } }
       >
-         <div className = "floating-container">
+         <Box className = "animation-container">
             <Box
                alt = "Logo"
-               className = "floating-item"
+               className = "floating"
                component = "img"
                src = "logo.svg"
                sx = { { width: 300, height: "auto" } }
             />
-         </div>
-
+         </Box>
          <Box sx = { { mt: "-20px" } }>
             <Typography
                sx = { { fontWeight: "bold", marginBottom: "10px" } }
