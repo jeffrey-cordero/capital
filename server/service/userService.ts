@@ -19,7 +19,7 @@ export async function authenticateUser(username: string, password: string): Prom
       return {
          code: 200,
          message: "Successfully authenticated",
-         data: result
+         data: null
       };
    }
 }
@@ -62,10 +62,12 @@ export async function createUser(user: User): Promise<ServiceResponse> {
             errors: result
          };
       } else {
+         await create(user);
+
          return {
             code: 201,
             message: "Successfully registered",
-            data: await create(user)
+            data: null
          };
       }
    }

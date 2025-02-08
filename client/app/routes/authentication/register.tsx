@@ -41,6 +41,8 @@ export default function Register() {
 
       const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
 
+      console.log(response);
+
       if (response?.status === "Success") {
          dispatch(addNotification({
             type: "success",
@@ -222,7 +224,7 @@ export default function Register() {
                                     }
                                     id = "verifyPassword"
                                     label = "Verify Password"
-                                    type = { showPassword ? "text" : "password" }
+                                    type = { showVerifyPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
                                  {

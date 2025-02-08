@@ -11,7 +11,7 @@ import path from "path";
 import serveIndex from "serve-index";
 
 import { sendErrors } from "@/lib/api/response";
-import { fetchMarketTrends, updateMarketTrends } from "@/repository/marketTrendsRepository";
+import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
 import authenticationRouter from "@/routers/authenticationRouter";
 import homeRouter from "@/routers/homeRouter";
 import indexRouter from "@/routers/indexRouter";
@@ -62,7 +62,7 @@ app.use("/users", userRouter);
 app.use("/authentication", authenticationRouter);
 
 // Initialize Redis cache with market trends data
-(async() => (await fetchMarketTrends()) === null && await updateMarketTrends())();
+(async() => await fetchMarketTrends())();
 
 // Catch 404 and forward to error handler
 app.use(function(req: Request, res: Response) {

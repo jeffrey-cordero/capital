@@ -36,7 +36,7 @@ export const components: Components = {
       styleOverrides: {
          root: {
             "&.Mui-error": {
-               fontSize: "0.8rem",
+               fontSize: "0.8rem"
             }
          }
       }

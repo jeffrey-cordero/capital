@@ -1,18 +1,33 @@
 const fs = require("fs").promises;
-import { MarketTrends } from "capital-types/marketTrends";
+import { IndicatorTrends, MarketTrends, StockTrends } from "capital-types/marketTrends";
 
 import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
-import { runQuery, runTransaction } from "@/lib/database/query";
+import { runQuery, runTransaction } from "@/lib/database/client";
 
-export async function fetchMarketTrends(): Promise<MarketTrends | null> {
-   const search = "SELECT * FROM market_trends_api_cache;";
-   const result = await runQuery(search, []) as { time: string, data: MarketTrends }[];
+export async function fetchMarketTrends(): Promise<MarketTrends> {
+   try {
+      // Handle Redis cache hit or miss
+      const cache = await redisClient.get("marketTrends");
 
-   if (result.length === 0) {
-      return null;
-   } else {
-      return result[0]?.data as MarketTrends;
+      if (cache) {
+         return JSON.parse(cache) as MarketTrends;
+      } else {
+         const search = "SELECT * FROM market_trends_api_cache;";
+         const result = await runQuery(search, []) as { time: string, data: MarketTrends }[];
+
+         if (result.length === 0 || new Date(result[0].time) < new Date(new Date().getTime() - 24 * 60 * 60 * 1000)) {
+            // Handle missing or expired database cache
+            return (await updateMarketTrends()).data as MarketTrends;
+         } else {
+            // Return existing database cache
+            return result[0]?.data as MarketTrends;
+         }
+      }
+   } catch (error) {
+      console.error(error);
+
+      return JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")) as MarketTrends;
    }
 }
 
@@ -46,40 +61,63 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
    }
 }
 
-export async function updateMarketTrends(): Promise<ServiceResponse> {
-   const indicators = [
-      "REAL_GDP",
-      "TREASURY_YIELD",
-      "FEDERAL_FUNDS_RATE",
-      "INFLATION",
-      "UNEMPLOYMENT"
-   ];
+async function fetchStockTrends(): Promise<StockTrends[]> {
+   const response =  await fetch(
+      `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${process.env.XRapidAPIKey}`, {
+         method: "GET"
+      }
+   ).then(response => response.json());
 
-   const marketTrends: Record<string, any> = {};
+   if (!response["metadata"]) {
+      // Rate limit exceeded or invalid API key
+      throw new Error(response["Information"] ?? "Failed to fetch stock trends");
+   } else {
+      return response;
+   }
+}
+
+async function fetchIndicatorTrends(indicator: string): Promise<IndicatorTrends[]> {
+   const response = await fetch(
+      `https://www.alphavantage.co/query?function=${indicator}&interval=quarterly&apikey=${process.env.XRapidAPIKey}`, {
+         method: "GET"
+      }
+   ).then(response => response.json());
+
+   if (!response["data"]) {
+      // Rate limit exceeded or invalid API key
+      throw new Error(response["Information"] ?? `Failed to fetch indicator trends for ${indicator}`);
+   } else {
+      return response["data"];
+   }
+}
+
+async function updateMarketTrends(): Promise<ServiceResponse> {
+   let marketTrends: MarketTrends = {};
+
+   console.log(process.env.XRapidAPIKey)
 
    try {
-      for (const indicator of indicators) {
-         const response = await fetch(
-            `https://www.alphavantage.co/query?function=${indicator}&interval=quarterly&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`,
-            { method: "GET" }
-         ).then(async(response) => await response.json());
+      const trends = await Promise.all([
+         fetchStockTrends(),
+         fetchIndicatorTrends("REAL_GDP"),
+         fetchIndicatorTrends("INFLATION"),
+         fetchIndicatorTrends("UNEMPLOYMENT"),
+         fetchIndicatorTrends("TREASURY_YIELD"),
+         fetchIndicatorTrends("FEDERAL_FUNDS_RATE"),
+      ]);
 
-         if (!response["data"]) {
-            throw new Error(`Invalid API format for ${indicator}`);
-         } else {
-            marketTrends[indicator] = response["data"];
-         }
-      }
+      marketTrends["Stocks"] = trends[0];
+      marketTrends["GDP"] = trends[1];
+      marketTrends["Inflation"] = trends[2];
+      marketTrends["Unemployment"] = trends[3];
+      marketTrends["Treasury Yield"] = trends[4];
+      marketTrends["Federal Interest Rate"] = trends[5];
    } catch (error) {
-      // Use backup data if API request fails
       console.error(error);
-
-      return {
-         code: 200,
-         message: "Backup market trends data retrieved",
-         data: JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"))
-      };
+      marketTrends = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"));
    }
+      
+   console.log(marketTrends)
 
    const time = new Date();
    const data = JSON.stringify(marketTrends);

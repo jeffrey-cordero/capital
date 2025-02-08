@@ -21,6 +21,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
 
    return (
       <Card
+         elevation = { 3 }
          sx = {
             {
                height: "100%",
@@ -38,7 +39,6 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                }
             }
          }
-         elevation={3}
       >
          <CardContent>
             <FontAwesomeIcon

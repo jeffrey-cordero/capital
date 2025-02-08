@@ -88,9 +88,9 @@ export function StatCard(props: StatCardProps) {
 
    return (
       <Card
+         elevation = { 3 }
          sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: "12px", borderWidth: "0.5px" } }
          variant = "elevation"
-         elevation={3}
       >
          <CardContent>
             <Typography
@@ -145,7 +145,7 @@ export function StatCard(props: StatCardProps) {
                      xAxis = {
                         {
                            scaleType: "band",
-                           data: daysInWeek,
+                           data: daysInWeek
                         }
                      }
                   >

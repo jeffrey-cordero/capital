@@ -1,11 +1,10 @@
 import "@/styles/app.scss";
 
+import { Box, Container, Link, Typography } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
-import { Box, Paper, Container, Link, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 
 import store from "@/redux/store";
 
@@ -38,21 +37,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
    });
 
    return (
-      <html lang="en">
+      <html lang = "en">
          <head>
-            <meta charSet="utf-8" />
+            <meta charSet = "utf-8" />
             <meta
-               content="width=device-width, initial-scale=1"
-               name="viewport"
+               content = "width=device-width, initial-scale=1"
+               name = "viewport"
             />
             <Meta />
             <Links />
          </head>
          <body
-            data-dark={prefersDarkMode}
-            suppressHydrationWarning={true}
+            data-dark = { prefersDarkMode }
+            suppressHydrationWarning = { true }
          >
-            {children}
+            { children }
             <ScrollRestoration />
             <Scripts />
          </body>
@@ -64,8 +63,8 @@ const queryClient = new QueryClient();
 
 export default function App() {
    return (
-      <Provider store={store}>
-         <QueryClientProvider client={queryClient}>
+      <Provider store = { store }>
+         <QueryClientProvider client = { queryClient }>
             <Outlet />
          </QueryClientProvider>
       </Provider>
@@ -74,28 +73,31 @@ export default function App() {
 
 export function ErrorBoundary() {
    return (
-      <Container className="center" sx={{ justifyContent: "center", alignItems: "center" }}>
+      <Container
+         className = "center"
+         sx = { { justifyContent: "center", alignItems: "center" } }
+      >
          <Box
-            alt="Error"
-            component="img"
-            src="error.svg"
-            sx={{ width: 350, height: "auto", my: 2 }}
+            alt = "Error"
+            component = "img"
+            src = "error.svg"
+            sx = { { width: 350, height: "auto", my: 2 } }
          />
          <Typography
-            align="center"
-            sx={{ fontWeight: "bold", margin: "0", px: 3 }}
-            variant="body1"
+            align = "center"
+            sx = { { fontWeight: "bold", margin: "0", px: 3 } }
+            variant = "body1"
          >
-            Oops, Something went wrong. If the issue persists, please visit this {" "}
+            Oops, Something went wrong. If the issue persists, please visit this { " " }
             <Link
-               color="primary"
-               fontWeight="bold"
-               href="/"
-               underline="none"
+               color = "primary"
+               fontWeight = "bold"
+               href = "/"
+               underline = "none"
             >
                page
             </Link>
          </Typography>
       </Container>
-   )
+   );
 }

@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 import { sendErrors } from "@/lib/api/response";
 
-// JWT Generation
+// Token Generation
 export function configureJWT(req: Request, res: Response, user: User): void {
    // Generate JWT token
    const secret: string = process.env.SESSION_SECRET || "";
@@ -19,24 +19,24 @@ export function configureJWT(req: Request, res: Response, user: User): void {
    });
 }
 
-// JWT Middleware
+// Token Middleware
 export function authenticateJWT(required: boolean) {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
       // Get the token from the session or cookies
       const token = req.cookies.token;
 
-      // If token is required but missing, return 401 Unauthorized
+      // If token is required but missing, return 401 (Unauthorized)
       if (!token && required) {
          return sendErrors(res, 401, "Access Denied: No Token Provided");
       } else if (token && !required) {
-         // If token is not required but provided, return 403 Forbidden
+         // If token is not required but provided, return 403 (Forbidden)
          return sendErrors(res, 403, "Access Denied: Token Not Required");
       } else if (required) {
          try {
             const secret: string = process.env.SESSION_SECRET || "";
 
-            // Verify the JWT token
+            // Verify the JWT token, handling expected thrown errors
             const decoded = jwt.verify(token, secret);
 
             // Attach decoded user data to req.user for subsequent handlers
@@ -53,7 +53,7 @@ export function authenticateJWT(required: boolean) {
                res.clearCookie("connect.sid");
             }
 
-            // If the token is invalid, return 403 Forbidden
+            // If the token is invalid, return 403 (Forbidden)
             return sendErrors(res, 403, "Access Denied: Invalid Token");
          }
       } else {

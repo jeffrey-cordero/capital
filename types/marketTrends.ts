@@ -1,10 +1,11 @@
-export type Trend = Record<string, {
+export type IndicatorTrends = Record<string, {
    date: string;
    value: string;
 }>;
 
-export type TopGainersLosers = {
-   last_update: string,
+export type StockTrends = {
+   metadata: string;
+   last_updated: string;
    top_gainers: {
       ticker: string,
       price: string,
@@ -28,4 +29,4 @@ export type TopGainersLosers = {
    }[]
 };
 
-export type MarketTrends = Record<string, Trend[] | TopGainersLosers[]>;
+export type MarketTrends = Record<string, IndicatorTrends[] | StockTrends[]>;

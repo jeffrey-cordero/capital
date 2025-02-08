@@ -295,8 +295,8 @@ function SideBarContent(props: SideBarContentProps) {
                               src = "/logo.svg"
                               sx = {
                                  {
-                                    width: 72,
-                                    height: 72,
+                                    width: 64,
+                                    height: 64,
                                     borderRadius: "50%",
                                     border: `2px solid ${theme.palette.primary.main}`
                                  }

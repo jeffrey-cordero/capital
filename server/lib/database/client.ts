@@ -9,7 +9,8 @@ export async function runQuery(query: string, parameters: any[]): Promise<unknow
       host: process.env.HOST,
       user: process.env.USER,
       password: process.env.PASSWORD,
-      database: "capital"
+      database: "capital",
+      connectTimeout: 60 * 1000
    });
 
    const asyncQuery = util.promisify(connection.query).bind(connection);
@@ -31,7 +32,8 @@ export async function runTransaction(queries: { query: string, parameters: any[]
       host: process.env.HOST,
       user: process.env.USER,
       password: process.env.PASSWORD,
-      database: "capital"
+      database: "capital",
+      connectTimeout: 60 * 1000
    });
 
    const asyncQuery = util.promisify(connection.query).bind(connection);
@@ -67,6 +69,6 @@ export async function runTransaction(queries: { query: string, parameters: any[]
 }
 
 export function hash(value: string): string {
-   // Simple hashing method via crypto-js
+   // Hashing method via crypto-js using SHA-256
    return cryptoJS.SHA256(value).toString(cryptoJS.enc.Hex);
 }

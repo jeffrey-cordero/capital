@@ -3,6 +3,7 @@ import "@/styles/home.scss";
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQueries } from "@tanstack/react-query";
+import { type MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
@@ -10,8 +11,6 @@ import Trends from "@/components/home/marketTrends";
 import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
 import { sendApiRequest } from "@/lib/server";
-
-import { type MarketTrends } from "capital-types/marketTrends";
 
 async function fetchNews(): Promise<News> {
    return (await sendApiRequest("home/news", "GET", null))?.data.news;
