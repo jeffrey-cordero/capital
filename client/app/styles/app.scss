@@ -1,5 +1,6 @@
 @import "./variables";
 @import "./animations";
+@import "./overrides.scss";
 
 html,
 body {
@@ -32,10 +33,6 @@ div {
     min-height: 100vh;
     text-align: center;
   }
-
-  &.form-floating {
-    z-index: 0;
-  }
 }
 
 svg {
@@ -56,25 +53,6 @@ button {
 
   &.btn-primary {
     font-weight: bold;
-  }
-
-  &.btn-circle {
-    max-width: 50px;
-    max-height: 50px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    transform: scale(1);
-    transition: transform 1.5s ease-in-out, border 1.5s ease-in-out;
-    animation-fill-mode: forwards;
-    z-index: 3;
-
-    &.btn-cover {
-      opacity: 1;
-      width: 100vw;
-      height: 100vh;
-      transform: scale(250);
-    }
   }
 }
 
@@ -128,36 +106,4 @@ img {
   max-width: 100%;
   height: auto;
   margin: auto;
-}
-
-// MUI autofill overrides
-input:-webkit-autofill,
-.MuiInputBase-root:has(> input:-webkit-autofill) {
-  background-color: $autofill-light;
-}
-
-body[data-dark="true"] {
-  input:-webkit-autofill,
-  .MuiInputBase-root:has(> input:-webkit-autofill) {
-    background-color: $autofill-dark;
-  }
-
-  .nav {
-    background-color: hsl(0, 0%, 15%); 
-  }
-}
-
-// Animations
-.animation-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  width: 100%;
-  min-height: 300px;
-
-  .floating {
-    position: absolute;
-    animation: floating 5s ease-in-out infinite;
-  }
 }

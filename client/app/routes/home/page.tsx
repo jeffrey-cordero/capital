@@ -7,9 +7,9 @@ import { type MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import Trends from "@/components/home/trends";
 import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
+import Trends from "@/components/home/trends";
 import { sendApiRequest } from "@/lib/server";
 
 async function fetchNews(): Promise<News> {
@@ -59,7 +59,7 @@ export default function Home() {
                      }
                   >
                      <Trends trends = { marketTrends.data as MarketTrends } />
-                     
+
                   </Box>
                </Grid>
                <Grid size = { { xs: 12, lg: 4 } }>

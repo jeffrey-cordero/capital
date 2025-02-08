@@ -206,7 +206,6 @@ export default function Stories(props: NewsProps) {
                         <Box className = "animation-container">
                            <Box
                               alt = "News"
-
                               className = "floating"
                               component = "img"
                               src = "news.svg"

@@ -14,7 +14,7 @@ import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
 
 export default function Router({ home }: { home: boolean }) {
-   // Handle authentication-related routing
+   // Authentication-based routing
    const { data, isLoading, error, isError } = useQuery({
       queryKey: ["authentication"],
       queryFn: fetchAuthentication,
@@ -24,7 +24,7 @@ export default function Router({ home }: { home: boolean }) {
 
    const mode: "light" | "dark" = useSelector((state: RootState) => state.theme.value);
    const authenticated: boolean = useSelector((state: RootState) => state.auth.value);
-   const redirection: boolean = home && !authenticated || !home && authenticated;
+   const redirect: boolean = home && !authenticated || !home && authenticated;
    const navigate = useNavigate();
    const dispatch = useDispatch();
 
@@ -45,17 +45,17 @@ export default function Router({ home }: { home: boolean }) {
          dispatch(authenticate(data));
       }
 
-      // Set theme state based on body data-dark attribute
+      // Set theme state based on body data-dark attribute calculated client-side
       dispatch(setTheme(document.body.dataset.dark === "true" ? "dark" : "light"));
    }, [dispatch, data, isError, isLoading]);
 
    useEffect(() => {
-      if (redirection) {
+      if (redirect) {
          navigate(home ? "/login" : "/home");
       }
-   }, [redirection]);
+   }, [redirect]);
 
-   if (isLoading || redirection) {
+   if (isLoading || redirect) {
       return <Loading />;
    } else {
       return (

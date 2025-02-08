@@ -522,14 +522,14 @@ export default function Trends(props: MarketTrendsProps) {
                      <Grid size = { 12 }>
                         <SessionsChart />
                      </Grid>
-                     {/* <Grid size = { 12 }>
+                     { /* <Grid size = { 12 }>
                        <TrendChart
                            data = { trends.GDP.map((trend: any) => ({ date: trend.date, value: trend.value })) }
                            type = "GDP"
                         />
-                     </Grid> */}
+                     </Grid> */ }
                      <Grid size = { 12 }>
-                        <Stocks {...trends["Stocks"][0] as StockTrends} />
+                        <Stocks { ...trends["Stocks"][0] as StockTrends } />
                      </Grid>
 
                   </Stack>

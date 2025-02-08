@@ -69,17 +69,15 @@ export default function QuotesGrid() {
          id = "quotes"
          sx = { { padding: 4 } }
       >
-         <Box
-            
-         />
+         <Box />
 
-<Box className = "animation-container">
+         <Box className = "animation-container">
             <Box
                alt = "Quotes"
                className = "floating"
                component = "img"
                src = "quotes.svg"
-               sx = { { width: 350, height: "auto", mb: 6} }
+               sx = { { width: 350, height: "auto", mb: 6 } }
             />
          </Box>
          <Grid2

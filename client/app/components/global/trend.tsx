@@ -12,14 +12,29 @@ import Typography from "@mui/material/Typography";
 import { areaElementClasses } from "@mui/x-charts/LineChart";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 import type { StockTrends } from "capital-types/marketTrends";
+
 import { timeSinceLastUpdate } from "@/components/home/news";
 
 export function AreaGradient({ color, id }: { color: string; id: string }) {
    return (
       <defs>
-         <linearGradient id={id} x1="50%" x2="50%" y1="0%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
+         <linearGradient
+            id = { id }
+            x1 = "50%"
+            x2 = "50%"
+            y1 = "0%"
+            y2 = "100%"
+         >
+            <stop
+               offset = "0%"
+               stopColor = { color }
+               stopOpacity = { 0.3 }
+            />
+            <stop
+               offset = "100%"
+               stopColor = { color }
+               stopOpacity = { 0 }
+            />
          </linearGradient>
       </defs>
    );
@@ -41,13 +56,13 @@ export function Stocks(props: StockTrends) {
       neutral:
          theme.palette.mode === "light"
             ? theme.palette.info.main
-            : theme.palette.info.dark,
+            : theme.palette.info.dark
    };
 
    const labelColors = {
       up: "success" as const,
       down: "error" as const,
-      neutral: "default" as const,
+      neutral: "default" as const
    };
 
    // Helper function to render a single stock trend
@@ -67,49 +82,76 @@ export function Stocks(props: StockTrends) {
 
       return (
          <Card
-            elevation={3}
-            sx={{flexGrow: 1, textAlign: "left", borderRadius: 2, mb: 2, px: 2 }}
-            variant="elevation"
+            elevation = { 3 }
+            sx = { { flexGrow: 1, textAlign: "left", borderRadius: 2, mb: 2, px: 2 } }
+            variant = "elevation"
          >
             <CardContent>
-            <Box className="animation-container" sx = {{ flexDirection: "column" }}>
-               <Typography component="h2" variant="h3" fontWeight="bold">
-                  {title}
-               </Typography>
                <Box
-                  alt = "News"
-                  component = "img"
-                  src = { image }
-                  sx = { { width: 200, height: "auto", mx: "auto", my:0 } }
-               />
-            </Box>
-               {data.map((stock, index) => (
-                  <Stack key={index} direction="column" sx={{ gap: 1, mb: 2 }}>
-                     <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
-                        <Typography component="p" variant="h6" sx={{ fontWeight: "bold" }}>
-                           <Link href = {`https://www.google.com/search?q=${stock.ticker}+stock`} target = "_blank" underline="none">
-                              {stock.ticker}
-                           </Link>
-                        </Typography>
-                        <Chip
-                           color={color}
-                           label={stock.change_percentage}
-                           size="small"
-                        />
+                  className = "animation-container"
+                  sx = { { flexDirection: "column" } }
+               >
+                  <Typography
+                     component = "h2"
+                     fontWeight = "bold"
+                     variant = "h3"
+                  >
+                     { title }
+                  </Typography>
+                  <Box
+                     alt = "News"
+                     component = "img"
+                     src = { image }
+                     sx = { { width: 200, height: "auto", mx: "auto", my:0 } }
+                  />
+               </Box>
+               {
+                  data.map((stock, index) => (
+                     <Stack
+                        direction = "column"
+                        key = { index }
+                        sx = { { gap: 1, mb: 2 } }
+                     >
+                        <Stack
+                           direction = "row"
+                           sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1 } }
+                        >
+                           <Typography
+                              component = "p"
+                              sx = { { fontWeight: "bold" } }
+                              variant = "h6"
+                           >
+                              <Link
+                                 href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
+                                 target = "_blank"
+                                 underline = "none"
+                              >
+                                 { stock.ticker }
+                              </Link>
+                           </Typography>
+                           <Chip
+                              color = { color }
+                              label = { stock.change_percentage }
+                              size = "small"
+                           />
                         </Stack>
-                     <Typography variant="body2">Price: ${stock.price}</Typography>
-                     <Typography variant="body2">Change: ${stock.change_amount}</Typography>
-                     <Typography variant="body2">Volume: {stock.volume}</Typography>
-                  </Stack>
-               ))}
+                        <Typography variant = "body2">Price: ${ stock.price }</Typography>
+                        <Typography variant = "body2">Change: ${ stock.change_amount }</Typography>
+                        <Typography variant = "body2">Volume: { stock.volume }</Typography>
+                     </Stack>
+                  ))
+               }
             </CardContent>
          </Card>
       );
    };
 
    return (
-      <Stack direction="column" sx={{ gap: 2, py: 4 }}>
-          <Box className = "animation-container">
+      <Stack
+         direction = "column"
+         sx = { { gap: 2, py: 4 } }
+      >
+         <Box className = "animation-container">
             <Box
                alt = "Stocks"
                className = "floating"
@@ -118,13 +160,16 @@ export function Stocks(props: StockTrends) {
                sx = { { width: 400, height: "auto", mx: "auto" } }
             />
          </Box>
-         <Typography variant="subtitle2" fontStyle="italic">
-            Updated {timeSinceLastUpdate(last_updated.split(" ")[0] + ":" + last_updated.split(" ")[1])}
+         <Typography
+            fontStyle = "italic"
+            variant = "subtitle2"
+         >
+            Updated { timeSinceLastUpdate(last_updated.split(" ")[0] + ":" + last_updated.split(" ")[1]) }
          </Typography>
-         <Grid sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {renderTrend("Top Gainers", top_gainers, "up", "rocket.svg")}
-            {renderTrend("Top Losers", top_losers, "down", "loss.svg")}
-            {renderTrend("Most Actively Traded", most_actively_traded, "neutral", "active.svg")}
+         <Grid sx = { { display: "flex", flexDirection: "column", gap: 2 } }>
+            { renderTrend("Top Gainers", top_gainers, "up", "rocket.svg") }
+            { renderTrend("Top Losers", top_losers, "down", "loss.svg") }
+            { renderTrend("Most Actively Traded", most_actively_traded, "neutral", "active.svg") }
          </Grid>
       </Stack>
    );

@@ -4,10 +4,24 @@
      transform: translateY(0px);
    }
    50% {
-     transform: translateY(-8px);
+     transform: translateY(-5px);
    }
    100% {
      opacity: 1;
      transform: translateY(0px);
    }
+}
+
+.animation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+
+  .floating {
+    position: absolute;
+    animation: floating 5s ease-in-out infinite;
+  }
 }

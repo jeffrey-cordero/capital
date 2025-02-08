@@ -285,7 +285,7 @@ function SideBarContent(props: SideBarContentProps) {
                                  display: "flex",
                                  justifyContent: "center",
                                  alignItems: "center",
-                                 mb: 1
+                                 mb: 1,
                               }
                            }
                         >
@@ -298,7 +298,8 @@ function SideBarContent(props: SideBarContentProps) {
                                     width: 64,
                                     height: 64,
                                     borderRadius: "50%",
-                                    border: `2px solid ${theme.palette.primary.main}`
+                                    border: `2px solid ${theme.palette.primary.main}`,
+                                    background: "white"
                                  }
                               }
                            />
