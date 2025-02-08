@@ -1,6 +1,7 @@
-import { userSchema, User } from "capital-types/user";
-import { create, authenticate, getConflictingUsers } from "@/repository/userRepository";
+import { User, userSchema } from "capital-types/user";
+
 import { ServiceResponse } from "@/lib/api/response";
+import { authenticate, create, getConflictingUsers } from "@/repository/userRepository";
 
 export async function authenticateUser(username: string, password: string): Promise<ServiceResponse> {
    const result = await authenticate(username, password);
@@ -12,7 +13,7 @@ export async function authenticateUser(username: string, password: string): Prom
          errors: {
             username: "Invalid credentials",
             password: "Invalid credentials"
-         } 
+         }
       };
    } else {
       return {
@@ -36,10 +37,10 @@ export async function createUser(user: User): Promise<ServiceResponse> {
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
                field,
-               errors?.[0] || "Unknown error",
+               errors?.[0] || "Unknown error"
             ])
          )
-      }
+      };
    } else if (fields.data.password !== fields.data.verifyPassword) {
       // Invalid new password verification
       return {
@@ -65,7 +66,7 @@ export async function createUser(user: User): Promise<ServiceResponse> {
             code: 201,
             message: "Successfully registered",
             data: await create(user)
-         }
+         };
       }
    }
 }

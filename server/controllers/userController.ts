@@ -1,11 +1,12 @@
-import asyncHandler from "express-async-handler";
+import { User } from "capital-types/user";
 import { Request, Response } from "express";
+import asyncHandler from "express-async-handler";
+
+import { configureJWT } from "@/lib/api/authentication";
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
 import { createUser } from "@/service/userService";
-import { configureJWT } from "@/lib/api/authentication";
-import { User } from "capital-types/user";
 
-export const POST = asyncHandler(async (req: Request, res: Response) => {
+export const POST = asyncHandler(async(req: Request, res: Response) => {
    try {
       const user = req.body as User;
       const result: ServiceResponse = await createUser(user);
@@ -26,10 +27,10 @@ export const POST = asyncHandler(async (req: Request, res: Response) => {
    }
 });
 
-export const PUT = asyncHandler(async (req: Request, res: Response) => {
+export const PUT = asyncHandler(async(req: Request, res: Response) => {
    return sendSuccess(res, 200, "Updating user awaits implementation");
 });
 
-export const DELETE = asyncHandler(async (req: Request, res: Response) => {
+export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    return sendSuccess(res, 200, "Deleting user awaits implementation");
 });

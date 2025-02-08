@@ -5,17 +5,17 @@
  */
 require("dotenv").config();
 
-const debug = require('debug')('capital:server');
-import http from 'http';
-import { app } from '@/app';
+const debug = require("debug")("capital:server");
+import http from "http";
+
+import { app } from "@/app";
 
 /**
  * Get port from environment and store in Express.
  */
 
-
-const port = normalizePort(process.env.PORT || '8000');
-app.set('port', port);
+const port = normalizePort(process.env.PORT || "8000");
+app.set("port", port);
 
 /**
  * Create HTTP server.
@@ -28,58 +28,58 @@ const server = http.createServer(app);
  */
 
 server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+server.on("error", onError);
+server.on("listening", onListening);
 
 // Handle graceful shutdown
 let shuttingDown = false;
 
 const gracefulShutdown = () => {
-  if (shuttingDown) {
-    console.log('Already shutting down. Ignoring signal.');
-    return;
-  }
+   if (shuttingDown) {
+      console.log("Already shutting down. Ignoring signal.");
+      return;
+   }
 
-  shuttingDown = true;
-  console.log();
-  console.log('Received kill signal, shutting down gracefully.');
-  console.log();
+   shuttingDown = true;
+   console.log();
+   console.log("Received kill signal, shutting down gracefully.");
+   console.log();
 
-  // Close server and perform cleanup
-  server.close(() => {
-    console.log('Closed out remaining connections.');
-    process.exit(0);
-  });
+   // Close server and perform cleanup
+   server.close(() => {
+      console.log("Closed out remaining connections.");
+      process.exit(0);
+   });
 
-  // Force server-closure
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down.');
-    process.exit(1);
-  }, 15000);
+   // Force server-closure
+   setTimeout(() => {
+      console.error("Could not close connections in time, forcefully shutting down.");
+      process.exit(1);
+   }, 15000);
 };
 
 // Handle SIGTERM and SIGINT signals for graceful shutdown
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
 
 /**
  * Normalize a port into a number, string, or false.
  */
 
 function normalizePort(val: string) {
-  const port = parseInt(val, 10);
+   const port = parseInt(val, 10);
 
-  if (isNaN(port)) {
-    // Named pipe
-    return val;
-  }
+   if (isNaN(port)) {
+      // Named pipe
+      return val;
+   }
 
-  if (port >= 0) {
-    // Port number
-    return port;
-  }
+   if (port >= 0) {
+      // Port number
+      return port;
+   }
 
-  return false;
+   return false;
 }
 
 /**
@@ -87,27 +87,27 @@ function normalizePort(val: string) {
  */
 
 function onError(error: any) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // Handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
+   if (error.syscall !== "listen") {
       throw error;
-  }
+   }
+
+   const bind = typeof port === "string"
+      ? "Pipe " + port
+      : "Port " + port;
+
+   // Handle specific listen errors with friendly messages
+   switch (error.code) {
+      case "EACCES":
+         console.error(bind + " requires elevated privileges");
+         process.exit(1);
+         break;
+      case "EADDRINUSE":
+         console.error(bind + " is already in use");
+         process.exit(1);
+         break;
+      default:
+         throw error;
+   }
 }
 
 /**
@@ -115,12 +115,12 @@ function onError(error: any) {
  */
 
 function onListening() {
-  const addr = server.address();
-  const bind = addr !== null && typeof addr === 'string'
-    ? 'pipe ' + addr
-    : addr !== null
-    ? 'port ' + addr.port
-    : 'unknown';
+   const addr = server.address();
+   const bind = addr !== null && typeof addr === "string"
+      ? "pipe " + addr
+      : addr !== null
+         ? "port " + addr.port
+         : "unknown";
 
-  debug('Listening on ' + bind);
+   debug("Listening on " + bind);
 }

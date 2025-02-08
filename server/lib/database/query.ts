@@ -1,7 +1,7 @@
 require("dotenv").config();
+import cryptoJS from "crypto-js";
 import mysql from "mysql2";
 import util from "util";
-import cryptoJS from "crypto-js";
 
 export async function runQuery(query: string, parameters: any[]): Promise<unknown> {
    // Initialize connection to database and submit query for potential results
@@ -23,7 +23,7 @@ export async function runQuery(query: string, parameters: any[]): Promise<unknow
    } finally {
       connection.end();
    }
-};
+}
 
 export async function runTransaction(queries: { query: string, parameters: any[] }[]): Promise<unknown> {
    // Initialize connection to database and submit queries for potential results
@@ -69,4 +69,4 @@ export async function runTransaction(queries: { query: string, parameters: any[]
 export function hash(value: string): string {
    // Simple hashing method via crypto-js
    return cryptoJS.SHA256(value).toString(cryptoJS.enc.Hex);
-};
+}

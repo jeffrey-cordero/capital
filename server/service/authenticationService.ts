@@ -1,4 +1,5 @@
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+
 import { ServiceResponse } from "@/lib/api/response";
 import { authenticate } from "@/repository/userRepository";
 
@@ -12,8 +13,8 @@ export async function login(username: string, password: string): Promise<Service
             message: "Invalid credentials",
             errors: {
                username: "Invalid credentials",
-               password: "Invalid credentials",
-            },
+               password: "Invalid credentials"
+            }
          };
       } else {
          return {
@@ -28,7 +29,7 @@ export async function login(username: string, password: string): Promise<Service
       return {
          code: 500,
          message: "Internal server error",
-         errors: { system: error.message },
+         errors: { system: error.message }
       };
    }
 }
@@ -39,7 +40,7 @@ export async function fetchAuthentication(token: string): Promise<ServiceRespons
       return {
          code: 200,
          message: "Authenticated status retrieved",
-         data: { authenticated: jwt.verify(token, process.env.SESSION_SECRET || "") },
+         data: { authenticated: jwt.verify(token, process.env.SESSION_SECRET || "") }
       };
    } catch (error: any) {
       // Handle JWT verification errors
@@ -47,7 +48,7 @@ export async function fetchAuthentication(token: string): Promise<ServiceRespons
          return {
             code: 200,
             message: "Authenticated status retrieved",
-            data: { authenticated: false },
+            data: { authenticated: false }
          };
       }  else {
          console.error(error);
@@ -55,7 +56,7 @@ export async function fetchAuthentication(token: string): Promise<ServiceRespons
          return {
             code: 500,
             message: "Internal server error",
-            errors: { system: error.message },
+            errors: { system: error.message }
          };
       }
    }

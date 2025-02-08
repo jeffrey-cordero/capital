@@ -1,8 +1,9 @@
 const fs = require("fs").promises;
-import { runQuery, runTransaction } from "@/lib/database/query";
-import { redisClient } from "@/app";
 import { MarketTrends } from "capital-types/marketTrends";
+
+import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
+import { runQuery, runTransaction } from "@/lib/database/query";
 
 export async function fetchMarketTrends(): Promise<MarketTrends | null> {
    const search = "SELECT * FROM market_trends_api_cache;";
@@ -21,18 +22,18 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
       await runTransaction([
          {
             query: "DELETE FROM market_trends_api_cache;",
-            parameters: [],
+            parameters: []
          },
          {
             query: "INSERT INTO market_trends_api_cache (time, data) VALUES (?, ?);",
-            parameters: [time, data],
-         },
+            parameters: [time, data]
+         }
       ]);
 
       return {
          code: 200,
          message: "Successfully updated market trends API cache",
-         data: null,
+         data: null
       };
    } catch (error) {
       console.error(error);
@@ -40,7 +41,7 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
       return {
          code: 500,
          message: "Failed to update market trends API cache",
-         errors: { system: "Internal server error" },
+         errors: { system: "Internal server error" }
       };
    }
 }
@@ -51,17 +52,17 @@ export async function updateMarketTrends(): Promise<ServiceResponse> {
       "TREASURY_YIELD",
       "FEDERAL_FUNDS_RATE",
       "INFLATION",
-      "UNEMPLOYMENT",
+      "UNEMPLOYMENT"
    ];
 
-   let marketTrends: Record<string, any> = {};
+   const marketTrends: Record<string, any> = {};
 
    try {
       for (const indicator of indicators) {
          const response = await fetch(
             `https://www.alphavantage.co/query?function=${indicator}&interval=quarterly&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`,
             { method: "GET" }
-         ).then(async (response) => await response.json());
+         ).then(async(response) => await response.json());
 
          if (!response["data"]) {
             throw new Error(`Invalid API format for ${indicator}`);
@@ -76,8 +77,8 @@ export async function updateMarketTrends(): Promise<ServiceResponse> {
       return {
          code: 200,
          message: "Backup market trends data retrieved",
-         data: JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")),
-      }
+         data: JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"))
+      };
    }
 
    const time = new Date();
@@ -93,7 +94,7 @@ export async function updateMarketTrends(): Promise<ServiceResponse> {
       return {
          code: 200,
          message: "Successfully updated market trends API cache",
-         data: marketTrends,
+         data: marketTrends
       };
    } catch (error) {
       console.error(error);
@@ -101,7 +102,7 @@ export async function updateMarketTrends(): Promise<ServiceResponse> {
       return {
          code: 500,
          message: "Failed to update market trends API cache",
-         errors: { system: "Internal server error" },
+         errors: { system: "Internal server error" }
       };
    }
 }
