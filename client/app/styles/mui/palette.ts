@@ -8,6 +8,11 @@ export const palette: PaletteOptions = {
       dark: brand[400],
       contrastText: brand[50]
    },
+   secondary: {
+      main: brand[100],
+      dark: brand[100],
+      contrastText: brand[600]
+   },
    info: {
       main: gray[400],
       dark: gray[600],

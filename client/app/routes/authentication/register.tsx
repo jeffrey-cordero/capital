@@ -267,6 +267,7 @@ export default function Register() {
                         }
                      />
                      <Button
+                        className = "btn-primary"
                         color = "primary"
                         fullWidth = { true }
                         loading = { isSubmitting }

@@ -34,7 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
 
       setPrefersDarkMode(preferredTheme === "dark" || (!preferredTheme && prefersDarkMode));
-   });
+   }, [setPrefersDarkMode]);
 
    return (
       <html lang = "en">

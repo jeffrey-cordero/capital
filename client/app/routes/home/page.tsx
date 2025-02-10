@@ -1,12 +1,11 @@
-import "@/styles/home.scss";
-
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQueries } from "@tanstack/react-query";
-import { type MarketTrends } from "capital-types/marketTrends";
+import { type MarketTrends, type StockTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
+import { Stocks } from "@/components/global/trend";
 import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
 import Trends from "@/components/home/trends";
@@ -37,14 +36,14 @@ export default function Home() {
       !isLoading ? (
          <Box
             sx = { { margin: "auto", py: 6 } }
-            width = { { xs: "95%", sm: "90%", md: "85%", lg: "80%", xl: "75%" } }
+            width = { { xs: "95%", sm: "90%", md: "85%" } }
          >
             <Grid
                columnSpacing = { 8 }
                container = { true }
                sx = { { width: "100%", height: "100%" } }
             >
-               <Grid size = { { xs: 12, lg: 8 } }>
+               <Grid size = { { xs: 12, xl: 8 } }>
                   <Box
                      sx = {
                         {
@@ -59,12 +58,12 @@ export default function Home() {
                      }
                   >
                      <Trends trends = { marketTrends.data as MarketTrends } />
-
+                     <Stories news = { news.data as News } />
+                     <Quotes />
                   </Box>
                </Grid>
-               <Grid size = { { xs: 12, lg: 4 } }>
-                  <Stories news = { news.data as News } />
-                  <Quotes />
+               <Grid size = { { xs: 12, xl: 4 } }>
+                  <Stocks { ...marketTrends.data?.["Stocks"] as StockTrends } />
                </Grid>
             </Grid>
          </Box>

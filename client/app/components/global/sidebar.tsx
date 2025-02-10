@@ -1,4 +1,4 @@
-import { faBank, faBarsStaggered, faChartLine, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faBank, faBarsStaggered, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition, faCommentsDollar }  from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -44,8 +44,12 @@ const home = [{
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home#marketTrends",
-   title: "Market Trends",
+   path: "/home#stocks",
+   title: "Stocks",
+   icon: faCommentsDollar
+}, {
+   path: "/home#indicators",
+   title: "Indicators",
    icon: faChartLine
 }, {
    path: "/home#news",
@@ -55,11 +59,15 @@ const home = [{
    path: "/home#quotes",
    title: "Quotes",
    icon: faQuoteLeft
+}, {
+   path: "/settings",
+   title: "Settings",
+   icon: faGears
 }];
 
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
-   width: 62,
-   height: 34,
+   width: 58,
+   height: 30,
    padding: 7,
    "& .MuiSwitch-switchBase": {
       margin: 1,
@@ -84,8 +92,8 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    },
    "& .MuiSwitch-thumb": {
       backgroundColor: "#FFD700",
-      width: 32,
-      height: 32,
+      width: 28,
+      height: 28,
       "&::before": {
          content: "''",
          position: "absolute",
@@ -285,7 +293,7 @@ function SideBarContent(props: SideBarContentProps) {
                                  display: "flex",
                                  justifyContent: "center",
                                  alignItems: "center",
-                                 mb: 1,
+                                 mb: 1
                               }
                            }
                         >
@@ -295,8 +303,8 @@ function SideBarContent(props: SideBarContentProps) {
                               src = "/logo.svg"
                               sx = {
                                  {
-                                    width: 64,
-                                    height: 64,
+                                    width: 58,
+                                    height: 58,
                                     borderRadius: "50%",
                                     border: `2px solid ${theme.palette.primary.main}`,
                                     background: "white"

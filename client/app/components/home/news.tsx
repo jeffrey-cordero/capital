@@ -69,7 +69,16 @@ function StoryItem(props: Story) {
    return (
       <Card
          elevation = { 3 }
-         sx = { { width: 345, borderRadius: 2 } }
+         sx = {
+            {
+               width: {
+                  xs: 200,
+                  sm: 300,
+                  lg: 400
+               },
+               borderRadius: 2
+            }
+         }
       >
          <CardHeader
             avatar = {
@@ -86,8 +95,11 @@ function StoryItem(props: Story) {
                   sx = { { justifyContent: "space-between" } }
                >
                   <Stack spacing = { 0 }>
-                     <Typography variant = "subtitle2">
-                        { author }
+                     <Typography
+                        sx = { { whiteSpace: "nowrap", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" } }
+                        variant = "subtitle2"
+                     >
+                        { author.join(", ") }
                      </Typography>
                      <Typography variant = "caption">
                         { timeSinceLastUpdate(pubDate[0]) }
@@ -128,6 +140,7 @@ function StoryItem(props: Story) {
                      WebkitBoxOrient: "vertical",
                      overflow: "hidden",
                      WebkitLineClamp: 3,
+                     minHeight: "60.5px",
                      textOverflow: "ellipsis",
                      fontWeight: "medium",
                      mr: 2
@@ -213,7 +226,7 @@ export default function Stories(props: NewsProps) {
                            />
                         </Box>
                         <Stack
-                           direction = { { xs: "row", lg: "column" } }
+                           direction = { { xs: "row"  } }
                            sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
                         >
                            {

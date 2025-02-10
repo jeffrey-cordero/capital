@@ -164,6 +164,7 @@ export default function Login() {
                         }
                      />
                      <Button
+                        className = "btn-primary"
                         color = "primary"
                         fullWidth = { true }
                         loading = { isSubmitting }

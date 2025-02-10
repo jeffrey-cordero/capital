@@ -9,6 +9,7 @@ import Notifications from "@/components/global/notifications";
 import { SideBar } from "@/components/global/sidebar";
 import { fetchAuthentication } from "@/lib/authentication";
 import { authenticate } from "@/redux/slices/authentication";
+import { addNotification } from "@/redux/slices/notifications";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
@@ -36,6 +37,13 @@ export default function Router({ home }: { home: boolean }) {
          // Internal server error
          console.error(error);
 
+         dispatch(
+            addNotification({
+               type: "error",
+               message: "Internal Server Error"
+            })
+         );
+
          dispatch(authenticate(false));
       } else if (!data) {
          // Unauthenticated
@@ -47,13 +55,13 @@ export default function Router({ home }: { home: boolean }) {
 
       // Set theme state based on body data-dark attribute calculated client-side
       dispatch(setTheme(document.body.dataset.dark === "true" ? "dark" : "light"));
-   }, [dispatch, data, isError, isLoading]);
+   }, [dispatch, data, error, isError, isLoading]);
 
    useEffect(() => {
       if (redirect) {
          navigate(home ? "/login" : "/home");
       }
-   }, [redirect]);
+   }, [home, navigate, redirect]);
 
    if (isLoading || redirect) {
       return <Loading />;

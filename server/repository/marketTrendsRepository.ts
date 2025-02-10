@@ -1,5 +1,5 @@
 const fs = require("fs").promises;
-import { IndicatorTrends, MarketTrends, StockTrends } from "capital-types/marketTrends";
+import { IndicatorTrend, MarketTrends, StockTrends } from "capital-types/marketTrends";
 
 import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
@@ -76,7 +76,7 @@ async function fetchStockTrends(): Promise<StockTrends[]> {
    }
 }
 
-async function fetchIndicatorTrends(indicator: string): Promise<IndicatorTrends[]> {
+async function fetchIndicatorTrends(indicator: string): Promise<IndicatorTrend[]> {
    const response = await fetch(
       `https://www.alphavantage.co/query?function=${indicator}&interval=quarterly&apikey=${process.env.XRapidAPIKey}`, {
          method: "GET"
@@ -95,6 +95,7 @@ async function updateMarketTrends(): Promise<ServiceResponse> {
    let marketTrends: MarketTrends = {};
 
    try {
+      // Fetch API data
       const indicators = [
          { key: "Stocks", fetch: fetchStockTrends },
          { key: "GDP", fetch: () => fetchIndicatorTrends("REAL_GDP") },
@@ -107,7 +108,7 @@ async function updateMarketTrends(): Promise<ServiceResponse> {
       const trends = await Promise.all(indicators.map(indicator => indicator.fetch()));
 
       indicators.forEach((indicator, index) => {
-         marketTrends[indicator.key] = trends[index];
+         marketTrends[indicator.key] = trends[index] as any;
       });
    } catch (error) {
       // Use local file as fallback
@@ -125,6 +126,9 @@ async function updateMarketTrends(): Promise<ServiceResponse> {
 
       // Store in the Redis cache for 24 hours
       await redisClient.setex("marketTrends", 24 * 60 * 60, data);
+
+      // Store in the local backup file
+      await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
 
       return {
          code: 200,

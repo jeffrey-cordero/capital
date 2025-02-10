@@ -31,6 +31,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                textAlign: "center",
                padding: 1,
                boxShadow: 3,
+               borderRadius: 2,
                transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                "&:hover": {
                   transform: "scale(1.01)",
