@@ -8,6 +8,8 @@ import Typography from "@mui/material/Typography";
 import { areaElementClasses } from "@mui/x-charts/LineChart";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 
+import { AreaGradient } from "@/components/home/trend";
+
 export type StatCardProps = {
    title: string;
    value: string;
@@ -29,31 +31,6 @@ export function getDaysInMonth(month: number, year: number) {
       i += 1;
    }
    return days;
-}
-
-export function AreaGradient({ color, id }: { color: string; id: string }) {
-   return (
-      <defs>
-         <linearGradient
-            id = { id }
-            x1 = "50%"
-            x2 = "50%"
-            y1 = "0%"
-            y2 = "100%"
-         >
-            <stop
-               offset = "0%"
-               stopColor = { color }
-               stopOpacity = { 0.3 }
-            />
-            <stop
-               offset = "100%"
-               stopColor = { color }
-               stopOpacity = { 0 }
-            />
-         </linearGradient>
-      </defs>
-   );
 }
 
 export function StatCard(props: StatCardProps) {

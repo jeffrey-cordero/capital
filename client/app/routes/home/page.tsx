@@ -5,9 +5,9 @@ import { type MarketTrends, type StockTrends } from "capital-types/marketTrends"
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import { Stocks } from "@/components/global/trend";
 import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
+import { Stocks } from "@/components/home/trend";
 import Trends from "@/components/home/trends";
 import { sendApiRequest } from "@/lib/server";
 

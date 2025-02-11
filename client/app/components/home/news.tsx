@@ -1,6 +1,6 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Stack, styled, Typography } from "@mui/material";
 import { type News, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
@@ -198,54 +198,37 @@ export default function Stories(props: NewsProps) {
             ref = { containerRef }
             sx = { { textAlign: "center" } }
          >
-            <Fade
-               in = { true }
-               mountOnEnter = { true }
-               timeout = { 1000 }
-               unmountOnExit = { true }
+            <Stack
+               direction = "column"
+               sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
             >
-               <Box>
-                  <Slide
-                     direction = "up"
-                     in = { true }
-                     mountOnEnter = { true }
-                     timeout = { 1000 }
-                     unmountOnExit = { true }
-                  >
-                     <Stack
-                        direction = "column"
-                        sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
-                     >
-                        <Box className = "animation-container">
-                           <Box
-                              alt = "News"
-                              className = "floating"
-                              component = "img"
-                              src = "news.svg"
-                              sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
-                           />
-                        </Box>
-                        <Stack
-                           direction = { { xs: "row"  } }
-                           sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
-                        >
-                           {
-                              news?.channel[0].item.map(
-                                 (item: Story, index: number) => {
-                                    return (
-                                       <StoryItem
-                                          { ...item }
-                                          key = { index }
-                                       />
-                                    );
-                                 }
-                              )
-                           }
-                        </Stack>
-                     </Stack>
-                  </Slide>
+               <Box className = "animation-container">
+                  <Box
+                     alt = "News"
+                     className = "floating"
+                     component = "img"
+                     src = "news.svg"
+                     sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
+                  />
                </Box>
-            </Fade>
+               <Stack
+                  direction = { { xs: "row"  } }
+                  sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
+               >
+                  {
+                     news?.channel[0].item.map(
+                        (item: Story, index: number) => {
+                           return (
+                              <StoryItem
+                                 { ...item }
+                                 key = { index }
+                              />
+                           );
+                        }
+                     )
+                  }
+               </Stack>
+            </Stack>
          </Box>
       ) : (
          null

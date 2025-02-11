@@ -8,7 +8,7 @@ import { BarChart } from "@mui/x-charts";
 import type { IndicatorTrend, MarketTrends } from "capital-types/marketTrends";
 
 import { StatCard, type StatCardProps } from "@/components/global/stat-card";
-import { Indicators } from "@/components/global/trend";
+import { Indicators } from "@/components/home/trend";
 
 const data: StatCardProps[] = [
    {
