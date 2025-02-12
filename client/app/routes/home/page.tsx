@@ -1,14 +1,14 @@
-import { Box } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQueries } from "@tanstack/react-query";
-import { type MarketTrends, type StockTrends } from "capital-types/marketTrends";
+import { type IndicatorTrend, type MarketTrends, type StockTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import Stories from "@/components/home/news";
+import Finances from "@/components/home/finances";
+import { Markets, Stocks } from "@/components/home/indicators";
+import Stories, { timeSinceLastUpdate } from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
-import { Stocks } from "@/components/home/trend";
-import Trends from "@/components/home/trends";
 import { sendApiRequest } from "@/lib/server";
 
 async function fetchNews(): Promise<News> {
@@ -29,17 +29,24 @@ export default function Home() {
       ]
    });
 
-   const [marketTrends, news] = homeQueries;
-   const isLoading: boolean = marketTrends.isLoading || news.isLoading;
+   const [marketTrends, newsData] = homeQueries;
+   const isLoading: boolean = marketTrends.isLoading || newsData.isLoading;
+
+   const trends = marketTrends.data as MarketTrends;
+   const stocks = trends["Stocks"] as StockTrends;
+   const news = newsData.data as News;
+
+   const lastUpdatedDate = stocks.last_updated.split(" ");
+   const timeSinceLastUpdated = timeSinceLastUpdate(lastUpdatedDate[0] + ":" + lastUpdatedDate[1]);
 
    return (
       !isLoading ? (
          <Box
             sx = { { margin: "auto", py: 6 } }
-            width = { { xs: "95%", sm: "90%", md: "85%" } }
+            width = { { xs: "90%" } }
          >
             <Grid
-               columnSpacing = { 8 }
+               columnSpacing = { 4 }
                container = { true }
                sx = { { width: "100%", height: "100%" } }
             >
@@ -57,13 +64,51 @@ export default function Home() {
                         }
                      }
                   >
-                     <Trends trends = { marketTrends.data as MarketTrends } />
-                     <Stories news = { news.data as News } />
-                     <Quotes />
+                     <Grid size = { { xs: 12 } }>
+                        <Finances />
+                     </Grid>
+                     <Grid size = { { xs: 12 } }>
+                        <Stack direction="column" spacing={1}>
+                           <Box className = "animation-container">
+                              <Box
+                                 alt = "Stocks"
+                                 className = "floating"
+                                 component = "img"
+                                 src = "stocks.svg"
+                                 sx = { { width: 400, height: "auto", mx: "auto" } }
+                              />
+                           </Box>
+                           <Box>
+                           <Typography
+                              fontStyle = "italic"
+                              fontWeight = "bold"
+                              variant = "subtitle2"
+                              sx={{ mb: 2}}
+                           >
+                              Last updated { timeSinceLastUpdated }
+                           </Typography>
+                           </Box>
+                           
+                              <Markets
+                                 data =  {
+                                    Object.keys(trends)
+                                       .filter(key => key !== "Stocks")
+                                       .reduce((acc: { [key: string]: IndicatorTrend[] }, key) => {
+                                          acc[key] = trends[key] as IndicatorTrend[];
+                                          return acc;
+                                       }, {})
+                                 }
+                              />
+                              <Stocks { ...stocks } />
+                        </Stack>
+                     </Grid>
                   </Box>
                </Grid>
                <Grid size = { { xs: 12, xl: 4 } }>
-                  <Stocks { ...marketTrends.data?.["Stocks"] as StockTrends } />
+                  <Stories news = { news } />
+               </Grid>
+               <Grid size = { { xs: 12 } }>
+                  <Quotes />
                </Grid>
             </Grid>
          </Box>

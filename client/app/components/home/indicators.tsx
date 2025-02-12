@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid2";
 import { useTheme } from "@mui/material/styles";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type { IndicatorTrend, StockIndictor, StockTrends } from "capital-types/marketTrends";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { timeSinceLastUpdate } from "@/components/home/news";
@@ -37,7 +37,7 @@ interface TrendChartProps {
    data: Record<string, IndicatorTrend[]>;
 }
 
-export function Indicators(props: TrendChartProps) {
+export function Markets(props: TrendChartProps) {
    const { data } = props;
    const theme = useTheme();
 
@@ -47,41 +47,44 @@ export function Indicators(props: TrendChartProps) {
       formState: { errors }
    } = useForm();
 
-   const view = watch("view", "QTD");
+   const view = watch("view", "YTD");
    const indicator = watch("indicator", "GDP");
    const from = watch("from", "");
    const to = watch("to", "");
 
-   const sortedData = useMemo(() => {
+   const constructDate = useCallback((date: string, view?: "MTD" | "YTD"): Date => {
+      if (view === "MTD") {
+         const [month, year] = date.split("/");
+
+         return new Date(Number(year), Number(month) - 1, 1);
+      } else if (view === "YTD") {
+         return new Date(Number(date), 0, 1);
+      } else {
+         return new Date(`${date}T00:00:00`);
+      }
+   }, []);
+
+   const sorted = useMemo(() => {
       return data[indicator].filter((a) => {
-         return (from !== "" ? new Date(a.date) >= new Date(from) : true) && (to !== "" ? new Date(a.date) <= new Date(to) : true);
+         const date = constructDate(a.date);
+
+         return (from !== "" ? date >= constructDate(from) : true)
+                  && (to !== "" ? date <= constructDate(to) : true);
       }).sort((a, b) => {
-         return new Date(a.date).getTime() - new Date(b.date).getTime();
+         return constructDate(a.date).getTime() - constructDate(b.date).getTime();
       });
-   }, [data, from, to, indicator]);
+   }, [data, from, to, constructDate, indicator]);
 
-   const getFilteredData = useMemo(() => {
+   const getFiltered = useMemo(() => {
       switch (view) {
-         case "QTD":
-            // YYYY QX
-            const quarters = ["Q1", "Q2", "Q3", "Q4"];
-            const quarterData = sortedData.reduce((acc: IndicatorTrend[], d) => {
-               const quarter = quarters[Math.floor(new Date(d.date).getMonth() / 3)];
-               const title = quarter + " " + new Date(d.date).getFullYear().toString() + `(${d.date})`;
-
-               acc.push({ date: title, value: d.value });
-               return acc;
-            }, []);
-
-            return quarterData;
-         case "YTD":
-            // Get all unique years from the data
-            const years = Array.from(new Set(sortedData.map(d => new Date(d.date).getFullYear())));
+         case "YTD": {
+            // Format the data for the yearly view
+            const years = Array.from(new Set(sorted.map(d => constructDate(d.date).getFullYear())));
 
             // Bucket the data by year and calculate the average value for each year
             const bucketedData = years.map((year) => {
                // Filter data for the current year
-               const yearData = sortedData.filter(d => new Date(d.date).getFullYear() === year);
+               const yearData = sorted.filter(d => constructDate(d.date).getFullYear() === year);
 
                // Calculate the average value for the year
                const yearAverage = yearData.length > 0 ? yearData.reduce((sum, d) => sum + Number(d.value), 0) / yearData.length : 0;
@@ -93,21 +96,38 @@ export function Indicators(props: TrendChartProps) {
             });
 
             return bucketedData;
-         default:
-            return sortedData;
-      }
-   }, [view, sortedData]);
+         }
+         case "MTD": {
+            // Format the data for monthly view
+            const quarterData = sorted.reduce((acc: IndicatorTrend[], d) => {
+               const date = constructDate(d.date);
+               const title = (date.getMonth() + 1).toString().padStart(2, "0") + "/" + (date.getFullYear().toString());
 
-   const filteredData = getFilteredData.length > 0 ? getFilteredData : [{ date: new Date().toISOString(), value: 0 }];
-   const trend = filteredData.length > 0 ? (
-      (Number(filteredData[filteredData.length - 1].value) - Number(filteredData[0].value))
-      / (Number(filteredData[0].value) !== 0 ? Number(filteredData[0].value) : 1) * 100)
+               acc.push({ date: title, value: d.value });
+               return acc;
+            }, []);
+
+            return quarterData;
+         }
+         default: {
+            return sorted;
+         }
+      }
+   }, [view, sorted, constructDate]);
+
+   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: new Date().toISOString(), value: 0 }];
+   const trend = filtered.length > 0 ? (
+      (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value))
+      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100)
       : (0);
    const color = trend > 0 ? theme.palette.success.main : trend < 0 ? theme.palette.error.main : theme.palette.text.primary;
    const chip = trend > 0 ? "success" : trend < 0 ? "error" : "default";
 
-   const fromValue = from === "" ? sortedData[0].date : from;
-   const toValue = to === "" ? sortedData[sortedData.length - 1].date : to;
+   const fromValue = from === "" ? sorted[0].date : from;
+   const toValue = to === "" ? sorted[sorted.length - 1].date : to;
+
+   const minDate = constructDate(filtered[0].date, view).toISOString().split("T")[0];
+   const maxDate = constructDate(filtered[filtered.length - 1].date, view).toISOString().split("T")[0];
 
    return (
       <Card
@@ -137,6 +157,7 @@ export function Indicators(props: TrendChartProps) {
                               { ...field }
                               error = { Boolean(errors.indicator) }
                               id = "indicator"
+                              value = { indicator }
                            >
                               {
                                  Object.keys(data).map((key) => (
@@ -168,8 +189,9 @@ export function Indicators(props: TrendChartProps) {
                            <NativeSelect
                               { ...field }
                               id = "view"
+                              value = { view }
                            >
-                              <option value = "QTD">QTD</option>
+                              <option value = "MTD">MTD</option>
                               <option value = "YTD">YTD</option>
                            </NativeSelect>
                         </FormControl>
@@ -195,12 +217,12 @@ export function Indicators(props: TrendChartProps) {
                      { indicator === "GDP" ? "$" : "" }
                      {
                         indicator === "GDP" ? (
-                           new Intl.NumberFormat().format(Number(filteredData[filteredData.length - 1].value))
+                           new Intl.NumberFormat().format(Number(filtered[filtered.length - 1].value))
                         ) : (
-                           Number(filteredData[filteredData.length - 1].value).toFixed(2)
+                           Number(filtered[filtered.length - 1].value).toFixed(2)
                         )
                      }
-                     { indicator === "GDP" ? " billion" : "%" }
+                     { indicator === "GDP" ? "B" : "%" }
                   </Typography>
                   <Chip
                      color = { chip }
@@ -222,7 +244,7 @@ export function Indicators(props: TrendChartProps) {
                         showMark: false,
                         curve: "linear",
                         area: true,
-                        data: filteredData.map(d => Number(d.value))
+                        data: filtered.map(d => Number(d.value))
 
                      }
                   ]
@@ -245,7 +267,7 @@ export function Indicators(props: TrendChartProps) {
                   [
                      {
                         scaleType: "point",
-                        data: filteredData.map(d => d.date)
+                        data: filtered.map(d => d.date)
                      }
                   ]
                }
@@ -257,7 +279,7 @@ export function Indicators(props: TrendChartProps) {
             </LineChart>
             <Stack
                direction = "row"
-               sx = { { gap: 2, mt: 2, justifyContent: "space-between", px: 4 } }
+               sx = { { gap: 2, mt: 3, justifyContent: "space-between", px: 4 } }
             >
                <Controller
                   control = { control }
@@ -272,8 +294,13 @@ export function Indicators(props: TrendChartProps) {
                               size = "small"
                               slotProps = {
                                  {
-                                    htmlInput: { min: filteredData[0].date, max: filteredData[filteredData.length - 1].date },
-                                    inputLabel: { shrink: true }
+                                    htmlInput: {
+                                       min: minDate,
+                                       max: maxDate
+                                    },
+                                    inputLabel: {
+                                       shrink: true
+                                    }
                                  }
                               }
                               sx = { { mt: 1 } }
@@ -297,8 +324,13 @@ export function Indicators(props: TrendChartProps) {
                            size = "small"
                            slotProps = {
                               {
-                                 htmlInput: { min: filteredData[0].date, max: filteredData[filteredData.length - 1].date },
-                                 inputLabel: { shrink: true }
+                                 htmlInput: {
+                                    min: minDate,
+                                    max: maxDate
+                                 },
+                                 inputLabel: {
+                                    shrink: true
+                                 }
                               }
                            }
                            sx = { { mt: 1 } }
@@ -317,8 +349,6 @@ export function Indicators(props: TrendChartProps) {
 
 export function Stocks(props: StockTrends) {
    const { top_gainers, top_losers, most_actively_traded, last_updated } = props;
-   const lastUpdatedDate = last_updated.split(" ");
-   const timeSinceLastUpdated = timeSinceLastUpdate(lastUpdatedDate[0] + ":" + lastUpdatedDate[1]);
 
    const colors = {
       up: "success" as const,
@@ -428,45 +458,29 @@ export function Stocks(props: StockTrends) {
                mountOnEnter = { true }
                timeout = { 1000 }
                unmountOnExit = { true }
-            ><Stack
-               direction = "column"
-               id = "stocks"
-               sx = { { gap: 2, py: 6, textAlign: "center", justifyContent: "center", alignItems: "center" } }
             >
-                  <Box className = "animation-container">
-                  <Box
-                        alt = "Stocks"
-                        className = "floating"
-                        component = "img"
-                        src = "stocks.svg"
-                        sx = { { width: 400, height: "auto", mx: "auto" } }
-                     />
-               </Box>
-                  <Typography
-                  fontStyle = "italic"
-                  fontWeight = "bold"
-                  variant = "subtitle2"
+               <Stack
+                  direction = "column"
+                  id = "stocks"
+                  sx = { { gap: 2, mt: 5, textAlign: "center", justifyContent: "center", alignItems: "center" } }
                >
-                     Last updated { timeSinceLastUpdated }
-               </Typography>
                   <Grid
-                  container = { true }
-                  direction = "row"
-                  spacing = { 2 }
-                  sx = { { width: "100%" } }
-               >
-                  <Grid size = { { xs: 12, md: 6, lg: 4, xl: 12 } }>
+                     container = { true }
+                     direction = "row"
+                     spacing = { 2 }
+                     sx = { { width: "100%", mt: 2 } }
+                  >
+                     <Grid size = { { xs: 12, md: 6, lg: 4 } }>
                         { renderTrend("Top Gainers", top_gainers, "up", "rocket.svg") }
                      </Grid>
-                  <Grid size = { { xs: 12, md: 6, lg: 4, xl: 12 } }>
+                     <Grid size = { { xs: 12, md: 6, lg: 4 } }>
                         { renderTrend("Top Losers", top_losers, "down", "loss.svg") }
                      </Grid>
-                  <Grid size = { { xs: 12, lg: 4, xl: 12 } }>
+                     <Grid size = { { xs: 12, lg: 4 } }>
                         { renderTrend("Most Actively Traded", most_actively_traded, "neutral", "active.svg") }
                      </Grid>
-               </Grid>
+                  </Grid>
                </Stack>
-
             </Slide>
          </Box>
       </Fade>

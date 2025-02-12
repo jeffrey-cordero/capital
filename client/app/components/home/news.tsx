@@ -72,9 +72,10 @@ function StoryItem(props: Story) {
          sx = {
             {
                width: {
-                  xs: 200,
-                  sm: 300,
-                  lg: 400
+                  sm: "100%",
+                  md: 350,
+                  lg: 375,
+                  xl: 450
                },
                borderRadius: 2
             }
@@ -122,13 +123,23 @@ function StoryItem(props: Story) {
 
             }
          />
-         <Stack sx = { { textAlign:"center", justifyContent: "center", alignItems: "center" } }>
+         <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
             <CardMedia
                alt = "Story Image"
                component = "img"
                image = { imageRegex.test(image) && !isResourceError ? image : "/backup.svg" }
                onError = { () => setIsResourceError(true) }
-               sx = { { maxHeight: "200px", minHeight: "200px", height: "200px" } }
+               sx = {
+                  {
+                     objectFit: "cover",
+                     objectPosition: "center center",
+                     height: {
+                        sm: "auto",
+                        md: "200px"
+                     },
+                     backgroundColor: "white"
+                  }
+               }
                title = "News"
             />
          </Stack>
@@ -194,7 +205,6 @@ export default function Stories(props: NewsProps) {
       Object.keys(news).length > 0 ? (
          <Box
             id = "news"
-            marginTop = { { xs: 4, lg: 0 } }
             ref = { containerRef }
             sx = { { textAlign: "center" } }
          >
@@ -212,7 +222,7 @@ export default function Stories(props: NewsProps) {
                   />
                </Box>
                <Stack
-                  direction = { { xs: "row"  } }
+                  direction = { { xs: "row" } }
                   sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
                >
                   {

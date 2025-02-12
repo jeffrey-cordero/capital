@@ -1,4 +1,4 @@
-import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
+import { faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Card, CardContent, Grid2, Typography } from "@mui/material";
 
@@ -13,7 +13,8 @@ const quotes = [
    { text: "Compound interest is the eighth wonder of the world. He who understands it earns it; he who doesn't pays it.", author: "Albert Einstein" },
    { text: "Financial freedom is available to those who learn about it and work for it.", author: "Robert Kiyosaki" },
    { text: "Risk comes from not knowing what you're doing.", author: "Warren Buffett" },
-   { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" }
+   { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+   { text: "In investing, what is comfortable is rarely profitable.", author: "Robert Arnott" }
 ];
 
 function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
@@ -29,13 +30,13 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
                flexDirection: "column",
                justifyContent: "center",
                textAlign: "center",
-               padding: 1,
+               padding: 2,
                boxShadow: 3,
                borderRadius: 2,
                transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                "&:hover": {
                   transform: "scale(1.01)",
-                  boxShadow: 6,
+                  boxShadow: 5,
                   cursor: "pointer"
                }
             }
@@ -43,8 +44,8 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
       >
          <CardContent>
             <FontAwesomeIcon
-               color = "gold"
-               icon = { faLightbulb }
+               className = "primary"
+               icon = { faQuoteLeft }
                size = "2x"
             />
             <Typography
@@ -68,10 +69,8 @@ export default function QuotesGrid() {
    return (
       <Box
          id = "quotes"
-         sx = { { padding: 4 } }
+         sx = { { mt: 6 } }
       >
-         <Box />
-
          <Box className = "animation-container">
             <Box
                alt = "Quotes"
@@ -83,13 +82,14 @@ export default function QuotesGrid() {
          </Box>
          <Grid2
             container = { true }
+            justifyContent = "center"
             spacing = { 3 }
          >
             {
                quotes.map((quote, index) => (
                   <Grid2
                      key = { index }
-                     size = { { xs: 12  } }
+                     size = { { xs: 12, md: 6, xl: 4  } }
                   >
                      <QuoteCard quote = { quote } />
                   </Grid2>

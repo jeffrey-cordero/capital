@@ -1,6 +1,6 @@
 @import "./variables";
 @import "./animations";
-@import "./overrides.scss";
+@import "./overrides";
 
 html,
 body {
@@ -12,11 +12,11 @@ body {
 
   body {
     font-family: $font-family;
-    background-color: hsl(0, 0%, 100%);
+    background-color: hsl(0deg 0% 100%);
     color: black;
 
     &[data-dark="true"] {
-      background-color: hsl(0, 0%, 12%);
+      background-color: hsl(0deg 0% 12%);
       color: white;
     }
   }

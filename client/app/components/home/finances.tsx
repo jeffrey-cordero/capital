@@ -5,10 +5,8 @@ import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import { BarChart } from "@mui/x-charts";
-import type { IndicatorTrend, MarketTrends } from "capital-types/marketTrends";
 
 import { StatCard, type StatCardProps } from "@/components/global/stat-card";
-import { Indicators } from "@/components/home/trend";
 
 const data: StatCardProps[] = [
    {
@@ -243,17 +241,12 @@ function BudgetBarChart() {
    );
 }
 
-interface MarketTrendsProps {
-   trends: MarketTrends;
-}
 
-export default function Trends(props: MarketTrendsProps) {
-   const { trends } = props;
-
+export default function Finances() {
    return (
       <Box
          id = "marketTrends"
-         sx = { { width: "100%", mt: 11 } }
+         sx = { { width: "100%" } }
       >
          <Fade
             in = { true }
@@ -271,6 +264,7 @@ export default function Trends(props: MarketTrendsProps) {
                >
                   <Stack
                      direction = "column"
+                     spacing={1}
                      sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
                      <Box className = "animation-container">
@@ -298,18 +292,6 @@ export default function Trends(props: MarketTrendsProps) {
                            </Grid>
                         ))
                      }
-                     <Grid size = { 12 }>
-                        <Indicators
-                           data =  {
-                              Object.keys(trends)
-                                 .filter(key => key !== "Stocks")
-                                 .reduce((acc: { [key: string]: IndicatorTrend[] }, key) => {
-                                    acc[key] = trends[key] as IndicatorTrend[];
-                                    return acc;
-                                 }, {})
-                           }
-                        />
-                     </Grid>
                   </Stack>
                </Slide>
             </Box>

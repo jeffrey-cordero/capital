@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 import { areaElementClasses } from "@mui/x-charts/LineChart";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 
-import { AreaGradient } from "@/components/home/trend";
+import { AreaGradient } from "@/components/home/indicators";
 
 export type StatCardProps = {
    title: string;

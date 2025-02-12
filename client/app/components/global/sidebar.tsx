@@ -1,4 +1,4 @@
-import { faBank, faBarsStaggered, faChartLine, faCommentsDollar, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import { faBank, faBarsStaggered, faChartColumn, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -44,13 +44,13 @@ const home = [{
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home#stocks",
-   title: "Stocks",
-   icon: faCommentsDollar
-}, {
    path: "/home#indicators",
    title: "Indicators",
    icon: faChartLine
+}, {
+   path: "/home#stocks",
+   title: "Stocks",
+   icon: faChartColumn
 }, {
    path: "/home#news",
    title: "News",
@@ -158,7 +158,10 @@ export function SideBar() {
                }
             }
          >
-            <SideBarContent links = { authenticated ? home : landing } />
+            <SideBarContent
+               links = { authenticated ? home : landing }
+               onClose = { () => setOpen(false) }
+            />
          </Drawer>
       </Box>
    );
@@ -170,10 +173,11 @@ interface SideBarContentProps {
       title: string;
       icon: IconDefinition;
    }[];
+   onClose: () => void;
 };
 
 function SideBarContent(props: SideBarContentProps) {
-   const { links } = props;
+   const { links, onClose } = props;
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
    const theme = useTheme();
@@ -234,6 +238,7 @@ function SideBarContent(props: SideBarContentProps) {
                            <ListItemButton
                               disableGutters = { true }
                               href = { link.path }
+                              onClick = { onClose }
                               sx = {
                                  {
                                     pl: 1.5,
