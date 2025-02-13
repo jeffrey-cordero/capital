@@ -1,33 +1,12 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, IconButton, type IconButtonProps, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
 import { type News, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
+import { timeSinceLastUpdate } from "@/lib/dates";
+
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
-
-export function timeSinceLastUpdate(date: string) {
-   // Calculate the difference in milliseconds
-   const difference = new Date().getTime() - new Date(date).getTime();
-
-   // Convert to time units
-   const minutes = Math.floor(difference / 60000);
-   const hours = Math.floor(minutes / 60);
-   const days = Math.floor(hours / 24);
-
-   // Determine the appropriate output string
-   if (minutes === 0) {
-      return "now";
-   } else {
-      const parts = [];
-
-      if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-      if (hours >= 1) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-      if (minutes >= 1) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
-
-      return parts.join(", ") + " ago";
-   }
-}
 
 interface ExpandMoreProps extends IconButtonProps {
    expand: boolean;
@@ -74,8 +53,7 @@ function StoryItem(props: Story) {
                width: {
                   sm: "100%",
                   md: 350,
-                  lg: 375,
-                  xl: 450
+                  lg: 375
                },
                borderRadius: 2
             }
@@ -194,54 +172,67 @@ function StoryItem(props: Story) {
 }
 
 interface NewsProps {
-   news: News;
+   data: News;
 }
 
 export default function Stories(props: NewsProps) {
-   const { news } = props;
+   const { data } = props;
    const containerRef = useRef<HTMLDivElement>(null);
 
    return (
-      Object.keys(news).length > 0 ? (
-         <Box
-            id = "news"
-            ref = { containerRef }
-            sx = { { textAlign: "center" } }
-         >
-            <Stack
-               direction = "column"
-               sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
+      <Fade
+         in = { true }
+         mountOnEnter = { true }
+         timeout = { 1000 }
+         unmountOnExit = { true }
+      >
+         <Box>
+            <Slide
+               direction = "up"
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
             >
-               <Box className = "animation-container">
-                  <Box
-                     alt = "News"
-                     className = "floating"
-                     component = "img"
-                     src = "news.svg"
-                     sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
-                  />
-               </Box>
-               <Stack
-                  direction = { { xs: "row" } }
-                  sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
+               <Box
+                  id = "news"
+                  ref = { containerRef }
+                  sx = { { textAlign: "center" } }
                >
-                  {
-                     news?.channel[0].item.map(
-                        (item: Story, index: number) => {
-                           return (
-                              <StoryItem
-                                 { ...item }
-                                 key = { index }
-                              />
-                           );
+                  <Stack
+                     direction = "column"
+                     sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2, mt:1 } }
+                  >
+                     <Box className = "animation-container">
+                        <Box
+                           alt = "News"
+                           className = "floating"
+                           component = "img"
+                           src = "news.svg"
+                           sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
+                        />
+                     </Box>
+                     <Stack
+                        direction = { { xs: "row" } }
+                        sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
+                     >
+                        {
+                           data?.channel[0].item.map(
+                              (item: Story, index: number) => {
+                                 return (
+                                    <StoryItem
+                                       { ...item }
+                                       key = { index }
+                                    />
+                                 );
+                              }
+                           )
                         }
-                     )
-                  }
-               </Stack>
-            </Stack>
+                     </Stack>
+                  </Stack>
+               </Box>
+            </Slide>
          </Box>
-      ) : (
-         null
-      )
+      </Fade>
    );
 }

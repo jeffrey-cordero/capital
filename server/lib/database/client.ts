@@ -1,9 +1,9 @@
 require("dotenv").config();
 import cryptoJS from "crypto-js";
 import mysql from "mysql2";
-import util from "util";
 import { Pool } from "mysql2/typings/mysql/lib/Pool";
 import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
+import util from "util";
 
 // Connection pool for database scalability
 const pool: Pool = mysql.createPool({

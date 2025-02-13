@@ -241,7 +241,6 @@ function BudgetBarChart() {
    );
 }
 
-
 export default function Finances() {
    return (
       <Box
@@ -264,7 +263,7 @@ export default function Finances() {
                >
                   <Stack
                      direction = "column"
-                     spacing={1}
+                     spacing = { 1 }
                      sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
                      <Box className = "animation-container">

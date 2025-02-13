@@ -8,7 +8,8 @@ import Typography from "@mui/material/Typography";
 import { areaElementClasses } from "@mui/x-charts/LineChart";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 
-import { AreaGradient } from "@/components/home/indicators";
+import { AreaGradient } from "@/components/global/graphs";
+import { getDaysInMonth } from "@/lib/dates";
 
 export type StatCardProps = {
    title: string;
@@ -17,21 +18,6 @@ export type StatCardProps = {
    trend: "up" | "down" | "neutral";
    data: number[];
 };
-
-export function getDaysInMonth(month: number, year: number) {
-   const date = new Date(year, month, 0);
-   const monthName = date.toLocaleDateString("en-US", {
-      month: "short"
-   });
-   const daysInMonth = date.getDate();
-   const days = [];
-   let i = 1;
-   while (days.length < daysInMonth) {
-      days.push(`${monthName} ${i}`);
-      i += 1;
-   }
-   return days;
-}
 
 export function StatCard(props: StatCardProps) {
    const { title, value, interval, trend, data } = props;

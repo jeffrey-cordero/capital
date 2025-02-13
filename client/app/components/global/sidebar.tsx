@@ -1,4 +1,4 @@
-import { faBank, faBarsStaggered, faChartColumn, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import { faBank, faBarsStaggered, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -28,8 +28,7 @@ const landing = [{
    path: "/register",
    title: "Register",
    icon: faUserPlus
-}
-];
+}];
 
 const home = [{
    path: "/home",
@@ -47,10 +46,6 @@ const home = [{
    path: "/home#indicators",
    title: "Indicators",
    icon: faChartLine
-}, {
-   path: "/home#stocks",
-   title: "Stocks",
-   icon: faChartColumn
 }, {
    path: "/home#news",
    title: "News",
