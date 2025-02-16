@@ -1,6 +1,7 @@
 import { User } from "capital-types/user";
 
-import { hash, runQuery } from "@/lib/database/client";
+import { runQuery } from "@/lib/database/client";
+import { compare, hash } from "@/lib/database/cryptography";
 
 export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
    // Return errors if user exists with same username and/or email, otherwise return is null
@@ -48,12 +49,12 @@ export async function authenticate(username: string, password: string): Promise<
 
    const result = await runQuery(search, parameters) as User[];
 
-   return result.length > 0 ? result[0].password === hash(password) ? result[0] : null : null;
+   return result.length > 0 ? await compare(password, result[0].password) ? result[0] : null : null;
 }
 
 export async function create(user: User): Promise<User> {
    // Create new user with hashed password and unverified status
-   const fields = { ...user, password: hash(user.password), verified: false };
+   const fields = { ...user, password: await hash(user.password), verified: false };
    const creation = "INSERT INTO users (username, name, password, email, verified) VALUES (?, ?, ?, ?, ?);";
    const parameters = [fields.username, fields.name, fields.password, fields.email, fields.verified];
 

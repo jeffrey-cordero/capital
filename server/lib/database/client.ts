@@ -1,5 +1,4 @@
 require("dotenv").config();
-import cryptoJS from "crypto-js";
 import mysql from "mysql2";
 import { Pool } from "mysql2/typings/mysql/lib/Pool";
 import { PoolConnection } from "mysql2/typings/mysql/lib/PoolConnection";
@@ -71,9 +70,4 @@ export async function runTransaction(queries: { query: string, parameters: any[]
    } finally {
       connection?.release();
    }
-}
-
-export function hash(value: string): string {
-   // Hashing method via crypto-js using SHA-256
-   return cryptoJS.SHA256(value).toString(cryptoJS.enc.Hex);
 }
