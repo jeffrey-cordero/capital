@@ -34,9 +34,18 @@ CREATE TABLE `accounts` (
    account_id INT AUTO_INCREMENT PRIMARY KEY,
    name VARCHAR(30) NOT NULL,
    type VARCHAR(20) NOT NULL,
-   balance DECIMAL(13, 2) NOT NULL,
    user_id INT NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE
+   FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
+   UNIQUE (name, user_id)
+);
+
+CREATE TABLE `accounts_balances` (
+   account_balance_id INT AUTO_INCREMENT PRIMARY KEY,
+   account_id INT NOT NULL,
+   balance DECIMAL(13, 2) NOT NULL,
+   year YEAR NOT NULL,
+   month TINYINT(2) NOT NULL,
+   FOREIGN KEY (account_id) REFERENCES `accounts`(account_id) ON DELETE CASCADE
 );
 
 CREATE TABLE `transactions` (

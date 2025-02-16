@@ -35,11 +35,11 @@ const home = [{
    title: "Home",
    icon: faHome
 }, {
-   path: "/accounts",
+   path: "/home/accounts",
    title: "Accounts",
    icon: faBank
 }, {
-   path: "/budget",
+   path: "/home/budget",
    title: "Budget",
    icon: faPieChart
 }, {
@@ -201,7 +201,7 @@ function SideBarContent(props: SideBarContentProps) {
             <Box
                alt = "Logo"
                component = "img"
-               src = "logo.svg"
+               src = "/logo.svg"
                sx = { { width: 125, height: "auto" } }
             />
             <Typography

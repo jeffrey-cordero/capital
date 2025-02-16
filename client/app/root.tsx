@@ -82,7 +82,7 @@ export function ErrorBoundary() {
                alt = "Error"
                className = "floating"
                component = "img"
-               src = "error.svg"
+               src = "/error.svg"
                sx = { { width: 350, height: "auto", my: 4 } }
             />
          </Box>

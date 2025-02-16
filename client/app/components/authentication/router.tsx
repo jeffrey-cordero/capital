@@ -2,7 +2,7 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import Loading from "@/components/global/loading";
 import Notifications from "@/components/global/notifications";
@@ -50,7 +50,7 @@ export default function Router({ home }: { home: boolean }) {
          dispatch(authenticate(false));
       } else {
          // Authenticated
-         dispatch(authenticate(data));
+         dispatch(authenticate(true));
       }
 
       // Set theme state based on body data-dark attribute calculated client-side
@@ -59,7 +59,7 @@ export default function Router({ home }: { home: boolean }) {
 
    useEffect(() => {
       if (redirect) {
-         navigate(home ? "/login" : "/home");
+         navigate(home ? "/login": "/home" );
       }
    }, [home, navigate, redirect]);
 

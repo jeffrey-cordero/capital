@@ -8,6 +8,7 @@ export default [
    ]),
 
    layout("routes/home/layout.tsx", [
-      route("home", "routes/home/page.tsx")
+      route("home", "routes/home/page.tsx"),
+      route("home/accounts", "routes/home/accounts/page.tsx")
    ])
 ] satisfies RouteConfig;
