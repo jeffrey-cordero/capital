@@ -1,10 +1,14 @@
 CREATE TABLE `users` (
    user_id INT AUTO_INCREMENT PRIMARY KEY,
    username VARCHAR(30) NOT NULL UNIQUE,
+   username_normalized VARCHAR(30) GENERATED ALWAYS AS (LOWER(TRIM(username))) STORED,
    name VARCHAR(30) NOT NULL,
    password VARCHAR(255) NOT NULL,
    email VARCHAR(255) NOT NULL UNIQUE,
-   verified BOOLEAN NOT NULL DEFAULT FALSE
+   email_normalized VARCHAR(255) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED,
+   verified BOOLEAN NOT NULL DEFAULT FALSE,
+   UNIQUE (username_normalized),
+   UNIQUE (email_normalized)
 );
 
 CREATE TABLE `budgets` (
@@ -49,7 +53,7 @@ CREATE TABLE `transactions` (
    FOREIGN KEY (category_id) REFERENCES `categories`(category_id) ON DELETE CASCADE
 );
 
-CREATE TABLE `stocks` (
+CREATE TABLE `market_trends_api_cache` (
    time DATETIME PRIMARY KEY,
    data JSON NOT NULL
 );

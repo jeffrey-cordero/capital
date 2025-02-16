@@ -6,7 +6,7 @@
     "build": "npx tsc",
     "start": "npm run build && node -r module-alias/register ./bin/www.ts",
     "dev": "npm run build && nodemon -L -r module-alias/register ./bin/www.ts",
-    "lint": "npx eslint . --fix --ignore-pattern 'build/'"
+    "lint": "npx eslint '**/*.ts' --fix --ignore-pattern 'build/'"
   },
   "keywords": [],
   "author": "Jeffrey Cordero",
@@ -54,12 +54,16 @@
     "@types/node-cron": "^3.0.11",
     "@types/serve-index": "^1.9.4",
     "@types/xml2js": "^0.4.14",
+    "@typescript-eslint/eslint-plugin": "^8.23.0",
+    "@typescript-eslint/parser": "^8.23.0",
+    "babel-eslint": "^10.1.0",
     "concurrently": "^9.1.2",
-    "eslint": "^9.2.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   },
   "_moduleAliases": {
     "@": "./"

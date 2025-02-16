@@ -1,117 +1,109 @@
-// Import Bootstrap SASS
 @import "./variables";
-@import "bootstrap/scss/bootstrap";
+@import "./animations";
+@import "./overrides";
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: visible;
-}
 
-body {
-  font-family: $font-family;
-  background-color: white;
-  color: var(--text-color);
+  body {
+    font-family: $font-family;
+    background-color: hsl(0deg 0% 100%);
+    color: black;
+
+    &[data-dark="true"] {
+      background-color: hsl(0deg 0% 12%);
+      color: white;
+    }
+  }
 }
 
 div {
-  &.main {
+  &.center {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
     margin: auto;
-    gap: 1.5rem;
     min-height: 100vh;
     text-align: center;
   }
+}
 
-  &.loading {
+svg {
+  &.primary {
     color: $primary;
-  }
-
-  &.image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 2rem;
-    font-weight: bold;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-  
-    img {
-      max-height: 350px;
-      width: auto;
-      max-width: 90%;
-    }
-  }
-
-  &.form-floating {
-    z-index: 0;
   }
 }
 
 button {
   cursor: pointer;
   box-sizing: border-box;
-  border:0;
+  border: 0;
   border-radius: 7px;
   font-weight: bold;
-  font-size:1rem;
-  height:2.6rem;
+  font-size: 1rem;
+  height: 2.6rem;
   transition: all 0.5s ease;
 
-  &.primary {
-    background-color: $primary;
-    width: 100%;
-    margin: auto;
-    color:white;
-
-    &:hover {
-      opacity:0.9;
-      box-shadow: rgb(0 0 0 / 10%) 0 4px 6px -1px, rgb(0 0 0 / 6%) 0 2px 4px -1px;
-    }
-  }
-
-  &.danger {
-    background-color: red;
-  }
-
-  &.icon {
-    display: flex;
-    flex-flow: row wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  &.circle {
-    max-width: 50px;
-    max-height: 50px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    transform: scale(1);
-    transition: transform 1.5s ease-in-out, border 1.5s ease-in-out;
-    animation-fill-mode: forwards;
-    z-index: 3;
-
-    &.cover {
-      opacity: 1;
-      width: 100vw;
-      height: 100vh;
-      transform: scale(250);
-    }
+  &.btn-primary {
+    font-weight: bold;
   }
 }
 
 a {
+  position: relative;
   color: $primary;
   text-decoration: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: $primary;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+
+  &:hover::before {
+    transform: scaleX(1);
+  }
+
+  &.success {
+    color: $success;
+
+    &::before {
+      background-color: $success;
+    }
+  }
+
+  &.snackbar {
+    color: white;
+
+    &::before {
+      transform: scaleX(1);
+      background-color: white;
+    }
+  }
+
+  &.news {
+    &::before {
+      background-color: transparent;
+    }
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin: auto;
 }

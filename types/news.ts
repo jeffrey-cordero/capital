@@ -1,4 +1,4 @@
-export type Feed = {
+export type News = {
    "$": Object;
    "channel": {
       "copyright": string[];
@@ -22,7 +22,7 @@ export type Story = {
    "link": string[];
    "pubDate": string[];
    "title": string[];
-   "media:content": { 
+   "media:content"?: { 
       $: { 
          image: string; 
          type: string; 

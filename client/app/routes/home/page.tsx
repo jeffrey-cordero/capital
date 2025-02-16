@@ -1,134 +1,78 @@
-import "@/styles/home.scss";
-
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-import type { Feed } from "capital-types/news";
-import type { Stocks } from "capital-types/stocks";
-import { Col, Container, Row } from "react-bootstrap";
-import { useDispatch } from "react-redux";
+import { Box } from "@mui/material";
+import Grid from "@mui/material/Grid2";
+import { useQueries } from "@tanstack/react-query";
+import { type MarketTrends } from "capital-types/marketTrends";
+import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import NavigateButton from "@/components/global/navigate-button";
-import News from "@/components/home/news";
-import MonthlyStocks from "@/components/home/stocks";
-import { clearAuthentication } from "@/lib/auth";
-import { logout } from "@/redux/slices/auth";
-import { SERVER_URL } from "@/root";
+import Finances from "@/components/home/finances";
+import { Indicators  } from "@/components/home/indicators";
+import Stories from "@/components/home/news";
+import Quotes from "@/components/home/quotes";
+import { sendApiRequest } from "@/lib/server";
 
-async function fetchNews(): Promise<Feed> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/news`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return result.data.news as Feed;
-   } catch (error) {
-      console.error(error);
-
-      return {} as Feed;
-   }
+async function fetchNews(): Promise<News> {
+   return (await sendApiRequest("home/news", "GET", null))?.data.news;
 }
 
-async function fetchStocks(): Promise<Stocks> {
-   try {
-      const response = await fetch(`${SERVER_URL}/home/stocks`, {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json"
-         },
-         credentials: "include"
-      });
-
-      const result = await response.json();
-
-      return JSON.parse(result.data.stocks);
-   } catch (error) {
-      console.error(error);
-
-      return {};
-   }
+async function fetchMarketTrends(): Promise<MarketTrends> {
+   return (await sendApiRequest("home/marketTrends", "GET", null))?.data.marketTrends;
 }
 
 export default function Home() {
-   const dispatch = useDispatch();
-   const queryClient = useQueryClient();
-
    const homeQueries = useQueries({
       queries: [
-         { queryKey: ["stocks"], queryFn: fetchStocks, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 },
-         { queryKey: ["news"], queryFn: fetchNews, staleTime: 60 * 60 * 1000, gcTime: 60 * 60 * 1000 }
+         // Cache the market trends result for 24 hours
+         { queryKey: ["marketTrends"], queryFn: fetchMarketTrends, staleTime: 24 * 60 * 60 * 1000, gcTime: 24 * 60 * 60 * 1000 },
+         // Cache the news result for 15 minutes
+         { queryKey: ["news"], queryFn: fetchNews, staleTime: 15 * 60 * 1000, gcTime: 15 * 60 * 1000 }
       ]
    });
 
-   const mutation = useMutation({
-      mutationFn: clearAuthentication,
-      onSuccess: () => {
-         // Update cached authentication status
-         queryClient.setQueriesData({ queryKey: "auth" }, false);
+   const [marketTrends, newsData] = homeQueries;
+   const isLoading: boolean = marketTrends.isLoading || newsData.isLoading;
 
-         // Update Redux store
-         dispatch(logout());
-
-         // Navigate to the login page
-         window.location.reload();
-      },
-      onError: (error: any) => {
-         console.error(error);
-      }
-   });
-
-   const [stocks, news] = homeQueries;
-   const isLoading: boolean = stocks.isLoading || news.isLoading;
+   if (isLoading) return <Loading />;
 
    return (
-      !isLoading ? (
-         <Container
-            className = "vw-100 d-flex flex-column justify-content-center align-items-center mb-3"
-            fluid = { true }
+      <Box
+         sx = { { margin: "auto", py: 6 } }
+         width = { { xs: "90%" } }
+      >
+         <Grid
+            columnSpacing = { 0 }
+            container = { true }
+            sx = { { width: "100%", height: "100%" } }
          >
-            <Row className = "w-100">
-               <Col
-                  className = "vh-100"
-                  md = { 8 }
-                  xs = { 12 }
+            <Grid size = { { xs: 12, xl: 8 } }>
+               <Box
+                  sx = {
+                     {
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "start",
+                        alignItems: "center",
+                        height: "100%",
+                        gap: "2rem",
+                        textAlign: "center"
+                     }
+                  }
                >
-                  <div className = "d-flex flex-column justify-content-between align-items-center gap-3">
-                     <MonthlyStocks
-                        stocks = { stocks.data as Stocks }
-                     />
-                     <NavigateButton
-                        className = "icon primary danger"
-                        navigate = {
-                           () => {
-                              mutation.mutate();
-                              window.location.reload();
-                           }
-                        }
-                     >
-                        <FontAwesomeIcon icon = { faRightFromBracket } />
-                        <span>Logout</span>
-                     </NavigateButton>
-                  </div>
-               </Col>
-               <Col
-                  lg = { 12 }
-                  xl = { 4 }
-               >
-                  <News
-                     news = { news.data as Feed }
-                  />
-               </Col>
-            </Row>
-         </Container>
-      ) : (
-         <Loading />
-      )
+                  <Grid size = { { xs: 12 } }>
+                     <Finances />
+                  </Grid>
+                  <Grid size = { { xs: 12 } }>
+                     <Indicators data = { marketTrends.data as MarketTrends } />
+                  </Grid>
+               </Box>
+            </Grid>
+            <Grid size = { { xs: 12, xl: 4 } }>
+               <Stories data = { newsData.data as News } />
+            </Grid>
+            <Grid size = { { xs: 12 } }>
+               <Quotes />
+            </Grid>
+         </Grid>
+      </Box>
    );
 }

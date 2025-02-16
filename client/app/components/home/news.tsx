@@ -1,115 +1,240 @@
-import { faAt, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type Feed, type Story } from "capital-types/news";
-import { useState } from "react";
-import { Card, Container, Image } from "react-bootstrap";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
+import { type News, type Story } from "capital-types/news";
+import { useRef, useState } from "react";
 
-import { SERVER_URL } from "@/root";
-
-function timeSinceLastUpdate(date: string) {
-   // Calculate the difference in milliseconds
-   const difference = new Date().getTime() - new Date(date).getTime();
-
-   // Convert to time units
-   const minutes = Math.floor(difference / 60000);
-   const hours = Math.floor(minutes / 60);
-   const days = Math.floor(hours / 24);
-
-   // Determine the appropriate output string
-   if (minutes === 0) {
-      return "now";
-   } else {
-      const parts = [];
-
-      if (days > 0) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-      if (hours > 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-      if (minutes > 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
-
-      return parts.join(", ") + " ago";
-   }
-}
+import { timeSinceLastUpdate } from "@/lib/dates";
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
+
+interface ExpandMoreProps extends IconButtonProps {
+   expand: boolean;
+}
+
+const ExpandMore = styled((props: ExpandMoreProps) => {
+   const { expand, ...other } = props;  // eslint-disable-line
+   return <IconButton { ...other } />;
+})(({ theme }) => ({
+   margin: "0",
+   padding: "0 8px",
+   transition: theme.transitions.create("transform", {
+      duration: theme.transitions.duration.standard,
+      easing: theme.transitions.easing.easeInOut
+   }),
+   variants: [
+      {
+         props: ({ expand }) => !expand,
+         style: {
+            transform: "rotate(0deg)"
+         }
+      },
+      {
+         props: ({ expand }) => !!expand,
+         style: {
+            transform: "rotate(180deg)"
+         }
+      }
+   ]
+}));
 
 function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
-   const image = props["media:content"][0].$.url;
+   const [expanded, setExpanded] = useState(false);
+   const image = props["media:content"]?.[0].$.url || "/backup.svg";
 
    return (
-      <Card className = "story">
-         <div className = "story-image">
-            <Card.Img
-               onError = { () => setIsResourceError(true) }
-               src = { imageRegex.test(image) && !isResourceError ? image : `${SERVER_URL}/resources/home/story.jpg` }
-               variant = "top"
-            />
-         </div>
-         <Card.Body>
-            <Card.Title className = "fw-semibold">
-               <a
-                  href = { link[0] }
-                  rel = "noreferrer"
-                  target = "_blank"
+      <Card
+         elevation = { 3 }
+         sx = {
+            {
+               width: {
+                  sm: "100%",
+                  md: 350,
+                  lg: 375,
+                  xl: "70%"
+               },
+               maxWidth: "95%",
+               margin: "auto",
+               borderRadius: 2
+            }
+         }
+      >
+         <CardHeader
+            avatar = {
+               <Avatar
+                  aria-label = "recipe"
+                  sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
-                  { title }
-               </a>
-            </Card.Title>
-            <Card.Text className = "fw-normal fs-6">
-               { description }
-            </Card.Text>
-         </Card.Body>
-         <Card.Footer className = "d-flex flex-column justify-content-start align-items-start gap-1">
-            <div className = "d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon = { faAt } />
-               <small className = "text-muted">
-                  { author[0] }
-               </small>
-            </div>
-            <div className = "d-flex justify-content-start align-items-center gap-2">
-               <FontAwesomeIcon icon = { faCalendarDays } />
-               <small className = "text-muted">
-                  { `Last updated ${timeSinceLastUpdate(pubDate[0])}` }
-               </small>
-            </div>
-         </Card.Footer>
+                  { author[0].charAt(0).toUpperCase() }
+               </Avatar>
+            }
+            title = {
+               <Stack
+                  direction = "row"
+                  sx = { { justifyContent: "space-between" } }
+               >
+                  <Stack spacing = { 0 }>
+                     <Typography
+                        sx = { { whiteSpace: "nowrap", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" } }
+                        variant = "subtitle2"
+                     >
+                        { author.join(", ") }
+                     </Typography>
+                     <Typography variant = "caption">
+                        { timeSinceLastUpdate(pubDate[0]) }
+                     </Typography>
+                  </Stack>
+                  <IconButton
+                     aria-label = "Read More"
+                     className = "news"
+                     href = { link[0] }
+                     size = "small"
+                     target = "_blank"
+                  >
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faUpRightFromSquare }
+                        style = { { padding: "0 7px" } }
+                     />
+                  </IconButton>
+               </Stack>
+
+            }
+         />
+         <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
+            <CardMedia
+               alt = "Story Image"
+               component = "img"
+               image = { imageRegex.test(image) && !isResourceError ? image : "/backup.svg" }
+               onError = { () => setIsResourceError(true) }
+               sx = {
+                  {
+                     objectFit: "cover",
+                     objectPosition: "center center",
+                     height: {
+                        sm: "auto",
+                        md: "200px"
+                     },
+                     backgroundColor: "white"
+                  }
+               }
+               title = "News"
+            />
+         </Stack>
+         <CardContent>
+            <Typography
+               sx = {
+                  {
+                     display: "-webkit-box",
+                     WebkitBoxOrient: "vertical",
+                     overflow: "hidden",
+                     WebkitLineClamp: 3,
+                     minHeight: "60.5px",
+                     textOverflow: "ellipsis",
+                     fontWeight: "medium",
+                     mr: 2
+                  }
+               }
+               variant = "body2"
+            >
+               { title[0] }
+            </Typography>
+         </CardContent>
+         <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
+            <ExpandMore
+               aria-expanded = { expanded }
+               aria-label = "show more"
+               expand = { expanded }
+               onClick = { () => setExpanded(!expanded) }
+            >
+               <FontAwesomeIcon
+                  icon = { faCaretDown }
+                  style = { { padding: "0 5px" } }
+               />
+            </ExpandMore>
+         </CardActions>
+         <Collapse
+            in = { expanded }
+            timeout = "auto"
+            unmountOnExit = { true }
+         >
+            <CardContent sx = { { p: "0 15px" } }>
+               <Typography
+                  color = "textSecondary"
+                  variant = "body2"
+               >
+                  { description[0] }
+               </Typography>
+            </CardContent>
+         </Collapse>
       </Card>
    );
 }
 
 interface NewsProps {
-   news: Feed;
+   data: News;
 }
 
-export default function News(props: NewsProps) {
-   const { news } = props;
+export default function Stories(props: NewsProps) {
+   const { data } = props;
+   const containerRef = useRef<HTMLDivElement>(null);
 
    return (
-      Object.keys(news).length > 0 ? (
-         <Container>
-            <div className = "image">
-               <Image
-                  alt = "News"
-                  src = { `${SERVER_URL}/resources/home/news.png` }
-               />
-            </div>
-            <div className = "d-flex flex-column justify-content-center align-items-center gap-3">
-               {
-                  news?.channel[0].item.map(
-                     (item: Story, index: number) => {
-                        return (
-                           <StoryItem
-                              { ...item }
-                              key = { index }
-                           />
-                        );
-                     }
-                  )
-               }
-            </div>
-         </Container>
-      ) : (
-         null
-      )
+      <Fade
+         in = { true }
+         mountOnEnter = { true }
+         timeout = { 1000 }
+         unmountOnExit = { true }
+      >
+         <Box>
+            <Slide
+               direction = "up"
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Box
+                  id = "news"
+                  ref = { containerRef }
+                  sx = { { textAlign: "center" } }
+               >
+                  <Stack
+                     direction = "column"
+                     sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
+                  >
+                     <Box className = "animation-container">
+                        <Box
+                           alt = "News"
+                           className = "floating"
+                           component = "img"
+                           src = "news.svg"
+                           sx = { { width: 225, height: "auto", mx: "auto" } }
+                        />
+                     </Box>
+                     <Stack
+                        direction = { { xs: "row", xl: "column" } }
+                        sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
+                     >
+                        {
+                           data?.channel[0].item.map(
+                              (item: Story, index: number) => {
+                                 return (
+                                    <StoryItem
+                                       { ...item }
+                                       key = { index }
+                                    />
+                                 );
+                              }
+                           )
+                        }
+                     </Stack>
+                  </Stack>
+               </Box>
+            </Slide>
+         </Box>
+      </Fade>
    );
 }

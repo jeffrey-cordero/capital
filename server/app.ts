@@ -1,22 +1,21 @@
 require("dotenv").config();
 
-import express from "express";
-import cron from "node-cron";
-import path from "path";
 import cookieParser from "cookie-parser";
-import logger from "morgan";
 import cors from "cors";
-import Redis from "ioredis";
+import express, { Request, Response } from "express";
+import session from "express-session";
 import helmet from "helmet";
-import serveIndex from 'serve-index';
-import indexRouter from "@/routers/indexRouter";
-import authRouter from "@/routers/authRouter";
-import usersRouter from "@/routers/usersRouter";
-import homeRouter from "@/routers/homeRouter";
-import { session } from "@/session";
+import Redis from "ioredis";
+import logger from "morgan";
+import path from "path";
+import serveIndex from "serve-index";
+
 import { sendErrors } from "@/lib/api/response";
-import { Request, Response } from "express";
-import { StocksModel } from "@/models/stocksModel";
+import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
+import authenticationRouter from "@/routers/authenticationRouter";
+import homeRouter from "@/routers/homeRouter";
+import indexRouter from "@/routers/indexRouter";
+import userRouter from "@/routers/userRouter";
 
 const app = express();
 const redisStore = require("connect-redis").default;
@@ -34,9 +33,9 @@ app.use(session({
    cookie: {
       httpOnly: true,
       sameSite: false,
-      maxAge: 1000 * 60 * 60,
+      maxAge: 1000 * 60 * 60 * 24,
       secure: process.env.NODE_ENV === "production"
-  },
+   }
 }));
 app.use(cors({
    origin: process.env.CLIENT_URL || "http://localhost:3000",
@@ -55,32 +54,23 @@ app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use("/resources", express.static(path.join(__dirname, "resources")));
-app.use('/resources', serveIndex(path.join(__dirname, 'resources'), {'icons': true}));
+app.use("/resources", serveIndex(path.join(__dirname, "resources"), { "icons": true }));
 
 app.use("/", indexRouter);
-app.use("/auth", authRouter);
 app.use("/home", homeRouter);
-app.use("/users", usersRouter);
+app.use("/users", userRouter);
+app.use("/authentication", authenticationRouter);
 
-// Cron job to update stock data every hour
-cron.schedule("0 * * * *", async () => {
-   await StocksModel.updateStocks();
-});
-
-// Initialize Redis cache with stock data, if applicable
-const initializeRedisCache = async () => {
-   await StocksModel.fetchStocks() === null && await StocksModel.updateStocks();
-}
-
-initializeRedisCache();
+// Initialize Redis cache with market trends data
+(async() => await fetchMarketTrends())();
 
 // Catch 404 and forward to error handler
-app.use(function (req: Request, res: Response) {
+app.use(function(req: Request, res: Response) {
    return sendErrors(res, 404, "Internal server error", { system: "The requested resource could not be found" });
 });
 
 // Error handler
-app.use(function (error: any, req: Request, res: Response) {
+app.use(function(error: any, req: Request, res: Response) {
    console.error(error);
 
    const status: number = error.status || 500;

@@ -1,36 +1,22 @@
 const fs = require("fs").promises;
-import asyncHandler from "express-async-handler";
+import { type News } from "capital-types/news";
 import { Request, Response } from "express";
-import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { StocksModel } from "@/models/stocksModel";
+import asyncHandler from "express-async-handler";
+import { parseStringPromise } from "xml2js";
+
 import { redisClient } from "@/app";
-import { Stocks } from "capital-types/stocks";
-import { parseStringPromise } from 'xml2js';
+import { sendErrors, sendSuccess } from "@/lib/api/response";
+import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
 
-import { type Feed } from "capital-types/news";
-
-async function parseXML(xml: string): Promise<Object> {
-   try {
-      return (await parseStringPromise(xml))?.rss;
-   } catch (error) {
-      throw error;
-   }
+async function parseXML(xml: string): Promise<object> {
+   return (await parseStringPromise(xml))?.rss;
 }
 
-export const fetchStocks = asyncHandler(async (req: Request, res: Response) => {
+export const MARKET_TRENDS = asyncHandler(async(_req: Request, res: Response) => {
    try {
-      const cache = await redisClient.get("stocks");
-
-      if (cache) {
-         const result = JSON.parse(cache);
-
-         return sendSuccess(res, 200, "Stocks", { stocks: result as Stocks });
-      } else {
-         const result = await StocksModel.fetchStocks() as Stocks;
-         redisClient.set("stocks", JSON.stringify(result));
-
-         return sendSuccess(res, 200, "Stocks", { stocks: result });
-      }
+      return sendSuccess(res, 200, "Market Trends", {
+         marketTrends: await fetchMarketTrends()
+      });
    } catch (error: any) {
       console.error(error);
 
@@ -38,28 +24,33 @@ export const fetchStocks = asyncHandler(async (req: Request, res: Response) => {
    }
 });
 
-export const fetchNews = asyncHandler(async (req: Request, res: Response) => {
+export const NEWS = asyncHandler(async(_req: Request, res: Response) => {
    try {
       const cache = await redisClient.get("news");
-      
+
       if (cache) {
-         return sendSuccess(res, 200, "Financial News", { news: JSON.parse(cache) as Feed });
+         // Cache hit
+         return sendSuccess(res, 200, "Financial News", {
+            news: JSON.parse(cache) as News
+         });
+      } else {
+         // Handle cache miss
+         const response = await fetch(
+            "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+         ).then(async(response) => await response.text());
+         const data = await parseXML(response);
+
+         // Cache the news result for 15 minutes
+         await redisClient.setex("news", 15 * 60, JSON.stringify(data));
+
+         return sendSuccess(res, 200, "Financial News", { news: data as News });
       }
-
-      const response = await fetch("https://feeds.content.dowjones.io/public/rss/mw_topstories");
-      const data = await parseXML(await response.text());
-      
-      // Cache the results for 15 minutes
-      await redisClient.setex("news", 15 * 60, JSON.stringify(data));
-
-      return sendSuccess(res, 200, "Latest Financial News", { news: data });
    } catch (error: any) {
-      // Use backup XML news file, but don't cache the results
+      // Use backup XML news file with no caching application
       console.error(error);
-         
-      const xmlBackup = await fs.readFile("resources/home/news.xml", "utf8");
-      const data = await parseXML(xmlBackup);
 
-      return sendSuccess(res, 200, "Backup Financial News", { news: data as Feed });
+      return sendSuccess(res, 200, "Financial News", {
+         news: await parseXML(await fs.readFile("resources/news.xml", "utf8")) as News
+      });
    }
 });

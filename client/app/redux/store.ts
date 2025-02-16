@@ -1,10 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-import authenticationReducer from "@/redux/slices/auth";
+import authenticationReducer from "@/redux/slices/authentication";
+import notificationsReducer from "@/redux/slices/notifications";
+import themeReducer from "@/redux/slices/theme";
 
 const store = configureStore({
    reducer: {
-      auth: authenticationReducer
+      theme: themeReducer,
+      auth: authenticationReducer,
+      notifications: notificationsReducer
    }
 });
 

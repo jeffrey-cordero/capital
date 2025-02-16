@@ -1,0 +1,27 @@
+@keyframes floating {
+   0% {
+     opacity: 1;
+     transform: translateY(0);
+   }
+
+   50% {
+     transform: translateY(-5px);
+   }
+
+   100% {
+     opacity: 1;
+     transform: translateY(0);
+   }
+}
+
+.animation-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+
+  .floating {
+    animation: floating 5s ease-in-out infinite;
+  }
+}

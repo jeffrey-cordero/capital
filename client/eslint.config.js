@@ -1,5 +1,6 @@
 import pluginJs from "@eslint/js";
 import pluginReact from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 import pluginSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -18,7 +19,8 @@ export default [
          }
       },
       plugins: {
-         "simple-import-sort": pluginSort
+         "simple-import-sort": pluginSort,
+         "react-hooks": reactHooksPlugin
       },
       rules: {
          "no-undef": "off",
@@ -52,6 +54,8 @@ export default [
          "no-console": ["warn", { allow: ["warn", "error"] }],
          "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 
+         "react-hooks/rules-of-hooks": "error",
+         "react-hooks/exhaustive-deps": "error",
          "react/jsx-uses-vars": "error",
          "react/jsx-sort-props": "error",
          "react/jsx-uses-react": "error",
