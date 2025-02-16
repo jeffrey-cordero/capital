@@ -11,7 +11,7 @@ import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 import { AreaGradient } from "@/components/global/graphs";
 import { getDaysInMonth } from "@/lib/dates";
 
-export type StatCardProps = {
+export type TrendProps = {
    title: string;
    value: string;
    interval: string;
@@ -19,7 +19,7 @@ export type StatCardProps = {
    data: number[];
 };
 
-export function StatCard(props: StatCardProps) {
+export function Trend(props: TrendProps) {
    const { title, value, interval, trend, data } = props;
    const theme = useTheme();
    const daysInWeek = getDaysInMonth(4, 2024);
@@ -52,7 +52,7 @@ export function StatCard(props: StatCardProps) {
    return (
       <Card
          elevation = { 3 }
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
+         sx = { { width:"100%", textAlign: "left", borderRadius: 2 } }
          variant = "elevation"
       >
          <CardContent>

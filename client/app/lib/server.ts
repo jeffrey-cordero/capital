@@ -3,7 +3,7 @@ import type { UseFormSetError } from "react-hook-form";
 
 import { addNotification } from "@/redux/slices/notifications";
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export async function sendApiRequest(path: string, method: string, body: any, dispatch?: Dispatch<any>, setError?: UseFormSetError<any>): Promise<{
   status: string;

@@ -15,13 +15,11 @@ interface TrendChartProps {
 
 function Indicator(props: TrendChartProps) {
    const { data } = props;
-   const theme = useTheme();
-
    const {
       watch,
-      control,
-      formState: { errors }
+      control
    } = useForm();
+   const theme = useTheme();
 
    const view = watch("view", "YTD");
    const indicator = watch("indicator", "GDP");
@@ -29,41 +27,42 @@ function Indicator(props: TrendChartProps) {
    const to = watch("to", "");
 
    const sorted = useMemo(() => {
-      return data[indicator].filter((a) => {
+      return data[indicator].sort(
+         (a, b) => constructDate(a.date).getTime() - constructDate(b.date).getTime()
+      );
+   }, [data, indicator]);
+
+   const range = useMemo(() => {
+      return sorted.filter((a) => {
          const date = constructDate(a.date);
 
-         return (from !== "" ? date >= constructDate(from) : true)
-                  && (to !== "" ? date <= constructDate(to) : true);
-      }).sort((a, b) => {
-         return constructDate(a.date).getTime() - constructDate(b.date).getTime();
+         return (from !== "" ? date >= constructDate(from) : true) && (to !== "" ? date <= constructDate(to) : true);
       });
-   }, [data, from, to, indicator]);
+   }, [from, to, sorted]);
 
    const getFiltered = useMemo(() => {
       switch (view) {
          case "YTD": {
-            // Format the data for the yearly view
-            const years = Array.from(new Set(sorted.map(d => constructDate(d.date).getFullYear())));
+            // Format yearly indicator view (YYYY)
+            const years = Array.from(new Set(range.map(d => constructDate(d.date).getFullYear())));
 
             // Bucket the data by year and calculate the average value for each year
             const bucketedData = years.map((year) => {
-               // Filter data for the current year
-               const yearData = sorted.filter(d => constructDate(d.date).getFullYear() === year);
-
-               // Calculate the average value for the year
-               const yearAverage = yearData.length > 0 ? yearData.reduce((sum, d) => sum + Number(d.value), 0) / yearData.length : 0;
+               // Filter data for the current year and calculate the average
+               const data = range.filter(d => constructDate(d.date).getFullYear() === year);
+               const average = data.length > 0 ? data.reduce((sum, d) => sum + Number(d.value), 0) / data.length : 0;
 
                return {
                   date: year.toString(),
-                  value: yearData.length > 0 ? yearAverage : 0
+                  value: data.length > 0 ? average : 0
                };
             });
 
             return bucketedData;
          }
          case "MTD": {
-            // Format the data for monthly view
-            const quarterData = sorted.reduce((acc: IndicatorTrend[], d) => {
+            // Format monthly indicator view (MM/YYYY)
+            const quarterData = range.reduce((acc: IndicatorTrend[], d) => {
                const date = constructDate(d.date);
                const title = (date.getMonth() + 1).toString().padStart(2, "0") + "/" + (date.getFullYear().toString());
 
@@ -74,24 +73,27 @@ function Indicator(props: TrendChartProps) {
             return quarterData;
          }
          default: {
-            return sorted;
+            return range;
          }
       }
-   }, [view, sorted]);
+   }, [view, range]);
 
-   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: new Date().toISOString(), value: 0 }];
+   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: constructDate(new Date().toISOString(), view), value: 0 }];
+
+   // Growth from start to end of potential range
    const trend = filtered.length > 0 ? (
       (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value))
-      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100)
-      : (0);
+      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100) : (0);
+
+   // Chart coloring parameters
    const color = trend > 0 ? theme.palette.success.main : trend < 0 ? theme.palette.error.main : theme.palette.text.primary;
    const chip = trend > 0 ? "success" : trend < 0 ? "error" : "default";
 
-   const fromValue = from === "" ? sorted[0].date : from;
-   const toValue = to === "" ? sorted[sorted.length - 1].date : to;
-
-   const minDate = constructDate(filtered[0].date, view).toISOString().split("T")[0];
-   const maxDate = constructDate(filtered[filtered.length - 1].date, view).toISOString().split("T")[0];
+   // Date input parameters
+   const minDate = constructDate(sorted[0].date).toISOString().split("T")[0];
+   const maxDate = constructDate(sorted[sorted.length - 1].date).toISOString().split("T")[0];
+   const fromValue = from === "" ? range[0].date : from;
+   const toValue = to === "" ? range[range.length - 1].date : to;
 
    return (
       <Card
@@ -101,15 +103,17 @@ function Indicator(props: TrendChartProps) {
       >
          <CardContent>
             <Stack
-               direction = "row"
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center" } }
+               direction = { { xs: "column", sm: "row" } }
+               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, px: 1 } }
             >
                <Controller
                   control = { control }
                   name = "indicator"
                   render = {
                      ({ field }) => (
-                        <FormControl error = { Boolean(errors.indicator) }>
+                        <FormControl
+                           sx = { { width: { xs: "100%", sm: "auto" } } }
+                        >
                            <InputLabel
                               htmlFor = "indicator"
                               variant = "standard"
@@ -118,7 +122,6 @@ function Indicator(props: TrendChartProps) {
                            </InputLabel>
                            <NativeSelect
                               { ...field }
-                              error = { Boolean(errors.indicator) }
                               id = "indicator"
                               value = { indicator }
                            >
@@ -162,14 +165,15 @@ function Indicator(props: TrendChartProps) {
                   }
                />
             </Stack>
-            <Stack sx = { { justifyContent: "space-between", mt: 1 } }>
+            <Stack sx = { { justifyContent: "space-between", mt: 1, px: 1 } }>
                <Stack
                   direction = "row"
                   sx = {
                      {
-                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignContent: "center",
                         alignItems: "center",
-                        gap: 1
+                        gap: 1,
+                        mt : { xs: 1, sm: 0 }
                      }
                   }
                >
@@ -241,8 +245,8 @@ function Indicator(props: TrendChartProps) {
                />
             </LineChart>
             <Stack
-               direction = "row"
-               sx = { { gap: 2, mt: 3, justifyContent: "space-between", px: 4 } }
+               direction = { { xs: "column", sm: "row" } }
+               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: 1 } }
             >
                <Controller
                   control = { control }
@@ -310,11 +314,11 @@ function Indicator(props: TrendChartProps) {
    );
 }
 
-interface StocksProps {
+interface StockProps {
    data: StockTrends;
 }
 
-function Stocks(props: StocksProps) {
+function Stocks(props: StockProps) {
    const { data } = props;
    const { top_gainers, top_losers, most_actively_traded } = data;
 
@@ -380,7 +384,7 @@ function Stocks(props: StocksProps) {
                            </Typography>
                            <Chip
                               color = { color }
-                              label = { stock.change_percentage }
+                              label = { parseFloat(stock.change_percentage).toFixed(2) + "%" }
                               size = "small"
                            />
                         </Stack>
@@ -416,7 +420,7 @@ function Stocks(props: StocksProps) {
       <Stack
          direction = "column"
          id = "stocks"
-         sx = { { gap: 2, mt: 3, textAlign: "center", justifyContent: "center", alignItems: "center" } }
+         sx = { { gap: 2, mt: 1, textAlign: "center", justifyContent: "center", alignItems: "center" } }
       >
          <Grid
             container = { true }
@@ -458,8 +462,6 @@ export function Indicators(props: IndicatorProps) {
       <Stack
          direction = "column"
          id = "indicators"
-         spacing = { 1 }
-         sx = { { mt: 4 } }
       >
          <Box className = "animation-container">
             <Box
@@ -474,13 +476,12 @@ export function Indicators(props: IndicatorProps) {
             <Typography
                fontStyle = "italic"
                fontWeight = "bold"
-               sx = { { mb: 2 } }
+               sx = { { mb: 2, mt: -5, px: 2 } }
                variant = "subtitle2"
             >
                Last updated { timeSinceLastUpdated }
             </Typography>
          </Box>
-
          <Indicator
             data =  { indicators }
          />

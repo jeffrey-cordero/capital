@@ -13,8 +13,7 @@ interface ExpandMoreProps extends IconButtonProps {
 }
 
 const ExpandMore = styled((props: ExpandMoreProps) => {
-   // eslint-disable-next-line
-   const { expand, ...other } = props;
+   const { expand, ...other } = props;  // eslint-disable-line
    return <IconButton { ...other } />;
 })(({ theme }) => ({
    margin: "0",
@@ -53,8 +52,11 @@ function StoryItem(props: Story) {
                width: {
                   sm: "100%",
                   md: 350,
-                  lg: 375
+                  lg: 375,
+                  xl: "70%"
                },
+               maxWidth: "95%",
+               margin: "auto",
                borderRadius: 2
             }
          }
@@ -201,7 +203,7 @@ export default function Stories(props: NewsProps) {
                >
                   <Stack
                      direction = "column"
-                     sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2, mt:1 } }
+                     sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
                      <Box className = "animation-container">
                         <Box
@@ -209,12 +211,12 @@ export default function Stories(props: NewsProps) {
                            className = "floating"
                            component = "img"
                            src = "news.svg"
-                           sx = { { width: 250, height: "auto", mx: "auto", mb: 2 } }
+                           sx = { { width: 225, height: "auto", mx: "auto" } }
                         />
                      </Box>
                      <Stack
-                        direction = { { xs: "row" } }
-                        sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, textAlign: "left" } }
+                        direction = { { xs: "row", xl: "column" } }
+                        sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
                      >
                         {
                            data?.channel[0].item.map(

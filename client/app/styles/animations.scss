@@ -15,15 +15,13 @@
 }
 
 .animation-container {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
-  width: 100%;
-  min-height: 300px;
+  margin-bottom: 15px;
 
   .floating {
-    position: absolute;
     animation: floating 5s ease-in-out infinite;
   }
 }

@@ -6,9 +6,9 @@ import Grid from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import { BarChart } from "@mui/x-charts";
 
-import { StatCard, type StatCardProps } from "@/components/global/stat-card";
+import { Trend, type TrendProps } from "@/components/global/trend";
 
-const data: StatCardProps[] = [
+const data: TrendProps[] = [
    {
       title: "Income",
       value: "100k",
@@ -154,7 +154,7 @@ function BudgetBarChart() {
    return (
       <Card
          elevation = { 3 }
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left",  borderRadius: 2 } }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
          variant = "elevation"
       >
          <CardContent>
@@ -263,7 +263,6 @@ export default function Finances() {
                >
                   <Stack
                      direction = "column"
-                     spacing = { 1 }
                      sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
                   >
                      <Box className = "animation-container">
@@ -272,7 +271,7 @@ export default function Finances() {
                            className = "floating"
                            component = "img"
                            src = "finances.svg"
-                           sx = { { width: 525, height: "auto" } }
+                           sx = { { width: 435, height: "auto" } }
                         />
                      </Box>
                      <Grid size = { 12 }>
@@ -281,16 +280,23 @@ export default function Finances() {
                      <Grid size = { 12 }>
                         <BudgetBarChart />
                      </Grid>
-                     {
-                        data.map((card, index) => (
-                           <Grid
-                              key = { index }
-                              size = { 12 }
-                           >
-                              <StatCard { ...card } />
-                           </Grid>
-                        ))
-                     }
+                     <Grid
+                        container = { true }
+                        direction = "column"
+                        spacing = { 2 }
+                        sx = { { width: "100%" } }
+                     >
+                        {
+                           data.map((card, index) => (
+                              <Grid
+                                 key = { `stat-${index}` }
+                                 size = { { xs: 12 } }
+                              >
+                                 <Trend { ...card } />
+                              </Grid>
+                           ))
+                        }
+                     </Grid>
                   </Stack>
                </Slide>
             </Box>
