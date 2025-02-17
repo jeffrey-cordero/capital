@@ -42,7 +42,7 @@ function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
-   const image = props["media:content"]?.[0].$.url || "/backup.svg";
+   const image = props["media:content"]?.[0]?.$.url || "/backup.svg";
 
    return (
       <Card
@@ -67,7 +67,7 @@ function StoryItem(props: Story) {
                   aria-label = "recipe"
                   sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
-                  { author[0].charAt(0).toUpperCase() }
+                  { author?.[0].charAt(0).toUpperCase() ?? "N" }
                </Avatar>
             }
             title = {
@@ -80,16 +80,16 @@ function StoryItem(props: Story) {
                         sx = { { whiteSpace: "nowrap", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" } }
                         variant = "subtitle2"
                      >
-                        { author.join(", ") }
+                        { author?.join(", ") ?? "No Author" }
                      </Typography>
                      <Typography variant = "caption">
-                        { timeSinceLastUpdate(pubDate[0]) }
+                        { timeSinceLastUpdate(pubDate[0] ?? new Date().toISOString()) }
                      </Typography>
                   </Stack>
                   <IconButton
                      aria-label = "Read More"
                      className = "news"
-                     href = { link[0] }
+                     href = { link[0] ?? "#" }
                      size = "small"
                      target = "_blank"
                   >
@@ -139,7 +139,7 @@ function StoryItem(props: Story) {
                }
                variant = "body2"
             >
-               { title[0] }
+               { title?.[0] ?? "No Title" }
             </Typography>
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
@@ -165,7 +165,7 @@ function StoryItem(props: Story) {
                   color = "textSecondary"
                   variant = "body2"
                >
-                  { description[0] }
+                  { description?.[0] ?? "No Description" }
                </Typography>
             </CardContent>
          </Collapse>
@@ -219,7 +219,7 @@ export default function Stories(props: NewsProps) {
                         sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
                      >
                         {
-                           data?.channel[0].item.map(
+                           data?.channel[0]?.item.map(
                               (item: Story, index: number) => {
                                  return (
                                     <StoryItem

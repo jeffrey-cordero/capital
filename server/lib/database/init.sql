@@ -39,7 +39,7 @@ CREATE TABLE `accounts` (
    UNIQUE (name, user_id)
 );
 
-CREATE TABLE `accounts_balances` (
+CREATE TABLE `accounts_history` (
    account_balance_id INT AUTO_INCREMENT PRIMARY KEY,
    account_id INT NOT NULL,
    balance DECIMAL(13, 2) NOT NULL,
