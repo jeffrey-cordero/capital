@@ -6,7 +6,7 @@ import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
 import Finances from "@/components/home/finances";
-import { Indicators  } from "@/components/home/indicators";
+import { Indicators } from "@/components/home/indicators";
 import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
 import { sendApiRequest } from "@/lib/server";
@@ -19,7 +19,7 @@ async function fetchMarketTrends(): Promise<MarketTrends> {
    return (await sendApiRequest("home/marketTrends", "GET", null))?.data.marketTrends;
 }
 
-export default function Home() {
+export default function Page() {
    const homeQueries = useQueries({
       queries: [
          // Cache the market trends result for 24 hours

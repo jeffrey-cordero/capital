@@ -42,7 +42,7 @@ function StoryItem(props: Story) {
    const { author, description, link, pubDate, title } = props;
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
-   const image = props["media:content"]?.[0]?.$.url || "/backup.svg";
+   const image = props["media:content"]?.[0]?.$.url || "/svg/backup.svg";
 
    return (
       <Card
@@ -107,7 +107,7 @@ function StoryItem(props: Story) {
             <CardMedia
                alt = "Story Image"
                component = "img"
-               image = { imageRegex.test(image) && !isResourceError ? image : "/backup.svg" }
+               image = { imageRegex.test(image) && !isResourceError ? image : "/svg/backup.svg" }
                onError = { () => setIsResourceError(true) }
                sx = {
                   {
@@ -210,7 +210,7 @@ export default function Stories(props: NewsProps) {
                            alt = "News"
                            className = "floating"
                            component = "img"
-                           src = "news.svg"
+                           src = "/svg/news.svg"
                            sx = { { width: 225, height: "auto", mx: "auto" } }
                         />
                      </Box>

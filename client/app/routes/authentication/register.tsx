@@ -74,7 +74,7 @@ export default function Register() {
                         <Box
                            alt = "Logo"
                            component = "img"
-                           src = "logo.svg"
+                           src = "/svg/logo.svg"
                            sx = { { width: 150, height: "auto", p: 0, m: 0 } }
                         />
                         <Typography

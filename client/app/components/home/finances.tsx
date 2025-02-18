@@ -270,7 +270,7 @@ export default function Finances() {
                            alt = "Finances"
                            className = "floating"
                            component = "img"
-                           src = "finances.svg"
+                           src = "/svg/finances.svg"
                            sx = { { width: 435, height: "auto" } }
                         />
                      </Box>

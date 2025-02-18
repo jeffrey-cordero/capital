@@ -8,7 +8,7 @@ export function meta() {
    ];
 }
 
-export default function Landing() {
+export default function Page() {
    return (
       <Container
          className = "center"
@@ -19,7 +19,7 @@ export default function Landing() {
                alt = "Logo"
                className = "floating"
                component = "img"
-               src = "logo.svg"
+               src = "/svg/logo.svg"
                sx = { { width: 300, height: "auto" } }
             />
          </Box>

@@ -52,7 +52,7 @@ export const GET = asyncHandler(async(req: Request, res: Response) => {
       const result: ServiceResponse = await fetchAuthentication(req.cookies.token);
 
       if (result.code === 200) {
-         return sendSuccess(res, result.code, result.message, result.data);
+         return sendSuccess(res, result.code, result.message, { authenticated: true });
       } else {
          return sendErrors(res, result.code, result.message, result.errors);
       }

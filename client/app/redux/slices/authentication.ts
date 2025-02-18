@@ -11,9 +11,11 @@ const authenticationSlice = createSlice({
       },
       logout: (state) => {
          state.value = false;
+         localStorage.setItem("authenticated", "false");
       },
       authenticate(state, action: PayloadAction<boolean>) {
          state.value = action.payload;
+         localStorage.setItem("authenticated", action.payload.toString());
       }
    }
 });

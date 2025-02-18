@@ -7,7 +7,7 @@ import themeReducer from "@/redux/slices/theme";
 const store = configureStore({
    reducer: {
       theme: themeReducer,
-      auth: authenticationReducer,
+      authentication: authenticationReducer,
       notifications: notificationsReducer
    }
 });

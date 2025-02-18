@@ -118,7 +118,7 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
 
 export function SideBar() {
    const [open, setOpen] = useState(false);
-   const authenticated = useSelector((state: RootState) => state.auth.value);
+   const authenticated = useSelector((state: RootState) => state.authentication.value);
    const theme = useTheme();
 
    return (
@@ -201,7 +201,7 @@ function SideBarContent(props: SideBarContentProps) {
             <Box
                alt = "Logo"
                component = "img"
-               src = "/logo.svg"
+               src = "/svg/logo.svg"
                sx = { { width: 125, height: "auto" } }
             />
             <Typography
@@ -300,7 +300,7 @@ function SideBarContent(props: SideBarContentProps) {
                            <Box
                               alt = "Profile"
                               component = "img"
-                              src = "/logo.svg"
+                              src = "/svg/logo.svg"
                               sx = {
                                  {
                                     width: 58,

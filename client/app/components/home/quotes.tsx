@@ -65,7 +65,7 @@ function QuoteCard({ quote }: { quote: { text: string, author: string } }) {
    );
 }
 
-export default function QuotesGrid() {
+export default function Quotes() {
    return (
       <Box
          id = "quotes"
@@ -76,7 +76,7 @@ export default function QuotesGrid() {
                alt = "Quotes"
                className = "floating"
                component = "img"
-               src = "quotes.svg"
+               src = "/svg/quotes.svg"
                sx = { { width: 350, height: "auto", mb: 6 } }
             />
          </Box>

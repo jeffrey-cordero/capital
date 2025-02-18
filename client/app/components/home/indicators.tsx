@@ -429,13 +429,13 @@ function Stocks(props: StockProps) {
             sx = { { width: "100%", mt: 2 } }
          >
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Gainers", top_gainers, "up", "rocket.svg") }
+               { renderTrend("Top Gainers", top_gainers, "up", "/svg/rocket.svg") }
             </Grid>
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Losers", top_losers, "down", "loss.svg") }
+               { renderTrend("Top Losers", top_losers, "down", "/svg/loss.svg") }
             </Grid>
             <Grid size = { { xs: 12, lg: 4 } }>
-               { renderTrend("Most Actively Traded", most_actively_traded, "neutral", "active.svg") }
+               { renderTrend("Most Actively Traded", most_actively_traded, "neutral", "/svg/active.svg") }
             </Grid>
          </Grid>
       </Stack>
@@ -468,7 +468,7 @@ export function Indicators(props: IndicatorProps) {
                alt = "Stocks"
                className = "floating"
                component = "img"
-               src = "stocks.svg"
+               src = "/svg/stocks.svg"
                sx = { { width: 400, height: "auto", mx: "auto" } }
             />
          </Box>
