@@ -36,11 +36,13 @@ export async function login(username: string, password: string): Promise<Service
 
 export async function fetchAuthentication(token: string): Promise<ServiceResponse> {
    try {
-      // Verify the JWT token
+      // Verify the JWT token, which will throw an error if invalid
+      jwt.verify(token, process.env.SESSION_SECRET || "");
+
       return {
          code: 200,
          message: "Authenticated status retrieved",
-         data: { authenticated: jwt.verify(token, process.env.SESSION_SECRET || "") }
+         data: { authenticated: true }
       };
    } catch (error: any) {
       // Handle JWT verification errors
