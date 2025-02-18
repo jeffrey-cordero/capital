@@ -13,7 +13,10 @@ export async function fetchMarketTrends(): Promise<MarketTrends> {
       if (cache) {
          return JSON.parse(cache) as MarketTrends;
       } else {
-         const search = "SELECT * FROM market_trends_api_cache;";
+         const search = `
+            SELECT * 
+            FROM market_trends_api_cache;
+         `;
          const result = await runQuery(search, []) as { time: string, data: MarketTrends }[];
 
          if (result.length === 0 || new Date(result[0].time) < new Date(new Date().getTime() - 24 * 60 * 60 * 1000)) {
