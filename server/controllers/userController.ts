@@ -2,8 +2,8 @@ import { User } from "capital-types/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { configureJWT } from "@/lib/authentication/utils";
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
+import { configureJWT } from "@/lib/authentication/utils";
 import { createUser } from "@/service/userService";
 
 export const POST = asyncHandler(async(req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 CREATE TABLE `users` (
-   user_id INT AUTO_INCREMENT PRIMARY KEY,
+   user_id BINARY(16) PRIMARY KEY,
    username VARCHAR(30) NOT NULL UNIQUE,
    username_normalized VARCHAR(30) GENERATED ALWAYS AS (LOWER(TRIM(username))) STORED,
    name VARCHAR(30) NOT NULL,
@@ -12,8 +12,8 @@ CREATE TABLE `users` (
 );
 
 CREATE TABLE `budgets` (
-   budget_id INT AUTO_INCREMENT PRIMARY KEY,
-   user_id INT NOT NULL,
+   budget_id BINARY(16) PRIMARY KEY,
+   user_id BINARY(16) NOT NULL,
    income_limit DECIMAL(13, 2) NOT NULL,
    expenses_limit DECIMAL(13, 2) NOT NULL,
    month DATE NOT NULL,
@@ -21,27 +21,29 @@ CREATE TABLE `budgets` (
 );
 
 CREATE TABLE `categories` (
-   category_id INT AUTO_INCREMENT PRIMARY KEY,
+   category_id BINARY(16) PRIMARY KEY,
    name VARCHAR(30) NOT NULL,
    type ENUM('Income', 'Expenses') NOT NULL,
    category_limit DECIMAL(13, 2) NOT NULL,
    month DATE NOT NULL,
-   user_id INT NOT NULL,
+   user_id BINARY(16) NOT NULL,
    FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE `accounts` (
-   account_id INT AUTO_INCREMENT PRIMARY KEY,
+   account_id BINARY(16) PRIMARY KEY,
    name VARCHAR(30) NOT NULL,
    type VARCHAR(20) NOT NULL,
-   user_id INT NOT NULL,
+   image VARCHAR(255),
+   account_order INT NOT NULL,
+   user_id BINARY(16) NOT NULL,
    FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
    UNIQUE (name, user_id)
 );
 
 CREATE TABLE `accounts_history` (
-   account_balance_id INT AUTO_INCREMENT PRIMARY KEY,
-   account_id INT NOT NULL,
+   account_balance_id BINARY(16) PRIMARY KEY,
+   account_id BINARY(16) NOT NULL,
    balance DECIMAL(13, 2) NOT NULL,
    year YEAR NOT NULL,
    month TINYINT(2) NOT NULL,
@@ -49,14 +51,14 @@ CREATE TABLE `accounts_history` (
 );
 
 CREATE TABLE `transactions` (
-   transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+   transaction_id BINARY(16) PRIMARY KEY,
    title VARCHAR(50) NOT NULL,
    date DATE NOT NULL,
    type ENUM('Income', 'Expenses') NOT NULL,
    amount DECIMAL(13, 2) NOT NULL,
-   user_id INT NOT NULL,
-   account_id INT,
-   category_id INT NOT NULL,
+   user_id BINARY(16) NOT NULL,
+   account_id BINARY(16),
+   category_id BINARY(16) NOT NULL,
    FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
    FOREIGN KEY (account_id) REFERENCES `accounts`(account_id) ON DELETE SET NULL,
    FOREIGN KEY (category_id) REFERENCES `categories`(category_id) ON DELETE CASCADE

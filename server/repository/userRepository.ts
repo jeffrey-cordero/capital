@@ -55,10 +55,12 @@ export async function authenticate(username: string, password: string): Promise<
 export async function create(user: User): Promise<User> {
    // Create new user with hashed password and unverified status
    const fields = { ...user, password: await hash(user.password), verified: false };
-   const creation = "INSERT INTO users (username, name, password, email, verified) VALUES (?, ?, ?, ?, ?);";
+   const creation = "INSERT INTO users (user_id, username, name, password, email, verified) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?, ?);";
    const parameters = [fields.username, fields.name, fields.password, fields.email, fields.verified];
 
    const result = await runQuery(creation, parameters) as any;
+
+   console.log(result);
 
    fields.id = result.insertId;
 

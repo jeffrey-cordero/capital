@@ -2,8 +2,8 @@ import { User } from "capital-types/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { configureJWT } from "@/lib/authentication/utils";
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
+import { configureJWT } from "@/lib/authentication/utils";
 import { fetchAuthentication, login } from "@/service/authenticationService";
 
 export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
@@ -57,7 +57,7 @@ export const GET = asyncHandler(async(req: Request, res: Response) => {
          res.clearCookie("token");
       }
 
-      return sendSuccess(res, 200, result.message, { 
+      return sendSuccess(res, 200, result.message, {
          authenticated: authenticated
       });
    } catch (error: any) {

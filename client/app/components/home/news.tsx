@@ -1,6 +1,6 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Tooltip, Typography } from "@mui/material";
 import { type News, type Story } from "capital-types/news";
 import { useRef, useState } from "react";
 
@@ -86,21 +86,25 @@ function StoryItem(props: Story) {
                         { timeSinceLastUpdate(pubDate[0] ?? new Date().toISOString()) }
                      </Typography>
                   </Stack>
-                  <IconButton
-                     aria-label = "Read More"
-                     className = "news"
-                     href = { link[0] ?? "#" }
-                     size = "small"
-                     target = "_blank"
+                  <Tooltip
+                     placement = "top"
+                     title = "Read More"
                   >
-                     <FontAwesomeIcon
-                        className = "primary"
-                        icon = { faUpRightFromSquare }
-                        style = { { padding: "0 7px" } }
-                     />
-                  </IconButton>
+                     <IconButton
+                        aria-label = "Read More"
+                        className = "news"
+                        href = { link[0] ?? "#" }
+                        size = "small"
+                        target = "_blank"
+                     >
+                        <FontAwesomeIcon
+                           className = "primary"
+                           icon = { faUpRightFromSquare }
+                           style = { { padding: "0 7px" } }
+                        />
+                     </IconButton>
+                  </Tooltip>
                </Stack>
-
             }
          />
          <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
@@ -143,17 +147,22 @@ function StoryItem(props: Story) {
             </Typography>
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
-            <ExpandMore
-               aria-expanded = { expanded }
-               aria-label = "show more"
-               expand = { expanded }
-               onClick = { () => setExpanded(!expanded) }
+            <Tooltip
+               placement = "top"
+               title = "Description"
             >
-               <FontAwesomeIcon
-                  icon = { faCaretDown }
-                  style = { { padding: "0 5px" } }
-               />
-            </ExpandMore>
+               <ExpandMore
+                  aria-expanded = { expanded }
+                  aria-label = "show more"
+                  expand = { expanded }
+                  onClick = { () => setExpanded(!expanded) }
+               >
+                  <FontAwesomeIcon
+                     icon = { faCaretDown }
+                     style = { { padding: "0 5px" } }
+                  />
+               </ExpandMore>
+            </Tooltip>
          </CardActions>
          <Collapse
             in = { expanded }

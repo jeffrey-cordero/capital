@@ -1,104 +1,79 @@
 
-import { faPencil } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Card, CardContent, Fab, Rating, Stack, Tooltip, Typography } from "@mui/material";
+import { Avatar, Card, CardContent, Fab, Stack, Tooltip, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import type { Account } from "capital-types/accounts";
+import { useState } from "react";
 
-const data = [
-   {
-      name: "Property",
-      lastUpdated: "September 14, 2023",
-      image: "/images/property.png",
-      balance: 285
-   },
-   {
-      name: "Bank",
-      lastUpdated: "September 14, 2023",
-      image: "/images/bank.png",
-      balance: 900
-   },
-   {
-      name: "Red Valvet Dress",
-      lastUpdated: "September 14, 2023",
-      image: "/images/property.png",
-      balance: 200
-   },
-   {
-      name: "Cute Soft Teddybear",
-      lastUpdated: "September 14, 2023",
-      image: "/images/property.png",
-      salesPrice: 285,
-      balance: 345,
-      rating: 2
-   }
-];
+interface AccountCardProps {
+   account: Account;
+}
 
-export default function Account() {
+export default function AccountCard(props: AccountCardProps) {
+   const { account } = props;
+   const [open, setOpen] = useState<boolean>(false);
+
    return (
       <Grid
          container = { true }
          spacing = { 3 }
       >
          {
-            data.map((account, index) => (
-               <Grid
-                  key = { index }
-                  size = { { xs: 12, md: 4, lg: 3 } }
+            <Grid
+               size = { { xs: 12, md: 4, lg: 3 } }
+            >
+               <Card
+                  elevation = { 9 }
+                  sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
+                  variant = { undefined }
                >
-                  <Card
-                     elevation = { 9 }
-                     sx = { { p: 0, position: "relative" } }
-                     variant = { undefined }
+                  <Typography
+                     component = "a"
+                     href = "/"
                   >
-                     <Typography
-                        component = "a"
-                        href = "/"
-                     >
-                        <Avatar
-                           src = { account.image }
-                           sx = {
-                              {
-                                 height: 250,
-                                 width: "100%"
-                              }
+                     <Avatar
+                        src = { account.image }
+                        sx = {
+                           {
+                              height: 250,
+                              width: "100%"
                            }
-                           variant = "square"
-                        />
+                        }
+                        variant = "square"
+                     />
+                  </Typography>
+                  <Tooltip title = "Edit Account">
+                     <Fab
+                        color = "primary"
+                        size = "small"
+                        sx = { { bottom: "75px", right: "15px", position: "absolute" } }
+                     >
+                     </Fab>
+                  </Tooltip>
+                  <CardContent sx = { { p: 3, pt: 2 } }>
+                     <Typography variant = "h5">
+                        { account.name }
                      </Typography>
-                     <Tooltip title = "Edit Account">
-                        <Fab
-                           color = "primary"
-                           size = "small"
-                           sx = { { bottom: "75px", right: "15px", position: "absolute" } }
+                     <Stack
+                        direction = "column"
+                        sx = { { width:"100%", alignItems: "flex-start" } }
+                     >
+                        <Typography
+                           sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }
+                           variant = "h6"
                         >
-                           <FontAwesomeIcon icon = { faPencil } />
-                        </Fab>
-                     </Tooltip>
-                     <CardContent sx = { { p: 3, pt: 2 } }>
-                        <Typography variant = "h6">{ account.name }</Typography>
-                        <Stack
-                           alignItems = "center"
-                           direction = "row"
-                           justifyContent = "space-between"
-                           mt = { 1 }
+                           ${ new Intl.NumberFormat().format(Number(account.history?.[0].amount ?? 0)) }
+                        </Typography>
+                        <Typography
+                           fontStyle = "italic"
+                           variant = "subtitle2"
                         >
-                           <Stack
-                              alignItems = "center"
-                              direction = "row"
-                           >
-                              <Typography variant = "h6">${ account.balance }</Typography>
-                           </Stack>
-                           <Rating
-                              name = "read-only"
-                              readOnly = { true }
-                              size = "small"
-                              value = { 5 }
-                           />
-                        </Stack>
-                     </CardContent>
-                  </Card>
-               </Grid>
-            ))
+                           { new Date(account.lastUpdated).toDateString() }
+                        </Typography>
+                     </Stack>
+                  </CardContent>
+               </Card>
+            </Grid>
+
          }
       </Grid>
    );

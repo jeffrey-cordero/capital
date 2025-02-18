@@ -9,7 +9,6 @@ import Notifications from "@/components/global/notifications";
 import { SideBar } from "@/components/global/sidebar";
 import { fetchAuthentication } from "@/lib/authentication";
 import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
@@ -55,7 +54,7 @@ export default function Router(props: RouterProps) {
    }, [dispatch, data, error, isError, isLoading]);
 
    useEffect(() => {
-      if (!isLoading || redirecting) {
+      if (!isLoading && redirecting) {
          navigate(authenticated ? "/home" : "/login");
       }
    }, [authenticated, secure, navigate, isLoading, redirecting]);
