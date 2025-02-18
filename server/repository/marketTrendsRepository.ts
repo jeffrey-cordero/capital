@@ -56,7 +56,7 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
       return {
          code: 500,
          message: "Failed to update market trends API cache",
-         errors: { system: "Internal server error" }
+         errors: { system: "Internal Server Error" }
       };
    }
 }
@@ -141,7 +141,7 @@ async function updateMarketTrends(): Promise<ServiceResponse> {
       return {
          code: 500,
          message: "Failed to update market trends API cache",
-         errors: { system: "Internal server error" }
+         errors: { system: "Internal Server Error" }
       };
    }
 }

@@ -66,7 +66,7 @@ app.use("/authentication", authenticationRouter);
 
 // Catch 404 and forward to error handler
 app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, "Internal server error", { system: "The requested resource could not be found" });
+   return sendErrors(res, 404, "Internal Server Error", { system: "The requested resource could not be found" });
 });
 
 // Error handler
@@ -76,7 +76,7 @@ app.use(function(error: any, req: Request, res: Response) {
    const status: number = error.status || 500;
    const message: string = error.message || "An unknown error occurred";
 
-   return sendErrors(res, status, "Internal server error", { system: message });
+   return sendErrors(res, status, "Internal Server Error", { system: message });
 });
 
 export { app, redisClient };

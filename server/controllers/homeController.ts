@@ -20,7 +20,7 @@ export const MARKET_TRENDS = asyncHandler(async(_req: Request, res: Response) =>
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });
 

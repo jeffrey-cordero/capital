@@ -2,7 +2,7 @@ import { User } from "capital-types/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { configureJWT } from "@/lib/api/authentication";
+import { configureJWT } from "@/lib/authentication/utils";
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
 import { fetchAuthentication, login } from "@/service/authenticationService";
 
@@ -22,7 +22,7 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });
 
@@ -43,22 +43,26 @@ export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });
 
 export const GET = asyncHandler(async(req: Request, res: Response) => {
    try {
       const result: ServiceResponse = await fetchAuthentication(req.cookies.token);
+      const authenticated: boolean = result.data?.authenticated;
 
-      if (result.code === 200) {
-         return sendSuccess(res, result.code, result.message, { authenticated: true });
-      } else {
-         return sendErrors(res, result.code, result.message, result.errors);
+      if (!authenticated) {
+         // Clear the JWT cookie from the client
+         res.clearCookie("token");
       }
+
+      return sendSuccess(res, 200, result.message, { 
+         authenticated: authenticated
+      });
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });

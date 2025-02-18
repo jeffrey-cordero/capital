@@ -28,7 +28,7 @@ export async function login(username: string, password: string): Promise<Service
 
       return {
          code: 500,
-         message: "Internal server error",
+         message: "Internal Server Error",
          errors: { system: error.message }
       };
    }
@@ -47,7 +47,7 @@ export async function fetchAuthentication(token: string): Promise<ServiceRespons
       if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
          return {
             code: 200,
-            message: "Authenticated status retrieved",
+            message: "Invalid token or token expired",
             data: { authenticated: false }
          };
       }  else {
@@ -55,7 +55,7 @@ export async function fetchAuthentication(token: string): Promise<ServiceRespons
 
          return {
             code: 500,
-            message: "Internal server error",
+            message: "Internal Server Error",
             errors: { system: error.message }
          };
       }

@@ -2,7 +2,7 @@ import { User } from "capital-types/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { configureJWT } from "@/lib/api/authentication";
+import { configureJWT } from "@/lib/authentication/utils";
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
 import { createUser } from "@/service/userService";
 
@@ -23,7 +23,7 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });
 
@@ -33,7 +33,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });
 
@@ -43,6 +43,6 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal server error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
 });

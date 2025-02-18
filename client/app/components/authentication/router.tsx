@@ -27,7 +27,6 @@ export default function Router(props: RouterProps) {
       staleTime: 1 * 60 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000
    });
-   console.log(data);
    const mode: "light" | "dark" = useSelector((state: RootState) => state.theme.value);
    const authenticated = useSelector((state: RootState) => state.authentication.value);
    const redirecting: boolean = (authenticated && !secure) || (!authenticated && secure);
@@ -46,20 +45,8 @@ export default function Router(props: RouterProps) {
       // Set authentication state based on server response
       if (isLoading) return;
 
-      if (isError) {
-         // Internal server error
-         console.error(error);
-
-         dispatch(
-            addNotification({
-               type: "error",
-               message: "Internal Server Error"
-            })
-         );
-
-         dispatch(authenticate(false));
-      } else if (data !== true) {
-         // Unauthenticated
+      if (data !== true) {
+         // Not authenticated
          dispatch(authenticate(false));
       } else {
          // Authenticated
