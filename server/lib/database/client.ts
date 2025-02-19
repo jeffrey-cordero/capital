@@ -23,9 +23,24 @@ const asyncQuery = util.promisify(pool.query).bind(pool);
 // Full control over pool connection
 const getConnection = util.promisify(pool.getConnection).bind(pool);
 
-export async function runQuery(query: string, parameters: any[]): Promise<unknown> {
+export async function query(query: string, parameters: any[]): Promise<unknown> {
    try {
       return await asyncQuery({ sql: query, values: parameters });
+   } catch (error) {
+      console.error(error);
+
+      throw error;
+   }
+}
+
+export async function insertQuery(table: string, column: string, query: string, parameters: any[]): Promise<unknown> {
+   try {
+      const insertion = await asyncQuery({ sql: query, values: parameters }) as any;
+
+      return await asyncQuery({ 
+         sql: `SELECT * FROM \`${table}\` WHERE \`${column}\` = ?;`, 
+         values: [insertion?.insertId] 
+      });
    } catch (error) {
       console.error(error);
 

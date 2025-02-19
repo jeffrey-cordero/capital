@@ -3,7 +3,7 @@ import { IndicatorTrend, MarketTrends, StockTrends } from "capital-types/marketT
 
 import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
-import { runQuery, runTransaction } from "@/lib/database/client";
+import { query, runTransaction } from "@/lib/database/client";
 
 export async function fetchMarketTrends(): Promise<MarketTrends> {
    try {
@@ -17,7 +17,7 @@ export async function fetchMarketTrends(): Promise<MarketTrends> {
             SELECT * 
             FROM market_trends_api_cache;
          `;
-         const result = await runQuery(search, []) as { time: string, data: MarketTrends }[];
+         const result = await query(search, []) as { time: string, data: MarketTrends }[];
 
          if (result.length === 0 || new Date(result[0].time) < new Date(new Date().getTime() - 24 * 60 * 60 * 1000)) {
             // Handle missing or expired database cache

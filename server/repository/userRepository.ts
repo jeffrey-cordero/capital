@@ -1,6 +1,6 @@
 import { User } from "capital-types/user";
 
-import { runQuery } from "@/lib/database/client";
+import { insertQuery, query } from "@/lib/database/client";
 import { compare, hash } from "@/lib/database/cryptography";
 
 export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
@@ -13,7 +13,7 @@ export async function getConflictingUsers(username: string, email: string): Prom
       WHERE username_normalized = ? 
       OR email_normalized = ?;
    `;
-   const result = await runQuery(conflicts, [username, email]) as User[];
+   const result = await query(conflicts, [username, email]) as User[];
 
    if (result.length > 0) {
       // User exists with same username and/or email
@@ -41,7 +41,7 @@ export async function getById(id: number): Promise<User | null> {
       SELECT * FROM users 
       WHERE id = ?;
    `;
-   const result = await runQuery(search, [id]) as User[];
+   const result = await query(search, [id]) as User[];
 
    return result.length > 0 ? result[0] : null;
 }
@@ -51,7 +51,7 @@ export async function authenticate(username: string, password: string): Promise<
       SELECT * FROM users 
       WHERE username = ?;
    `;
-   const result = await runQuery(search, [username]) as User[];
+   const result = await query(search, [username]) as User[];
 
    return result.length > 0 ? await compare(password, result[0].password) ? result[0] : null : null;
 }
@@ -60,18 +60,11 @@ export async function create(user: User): Promise<User> {
    // Create new user with hashed password and unverified status
    const fields = { ...user, password: await hash(user.password), verified: false };
    const creation = `
-      INSERT INTO users (user_id, username, name, password, email, verified) 
-      VALUES (UUID(), ?, ?, ?, ?, ?);
+      INSERT INTO users (username, name, password, email, verified) 
+      VALUES (?, ?, ?, ?, ?);
    `;
-   await runQuery(creation, [fields.username, fields.name, fields.password, fields.email, fields.verified]);
-
-   // Fetch the user ID for expected response
-   const insertion = `
-      SELECT user_id 
-      FROM users 
-      WHERE username = ?;
-   `;
-   const result = await runQuery(insertion, [fields.username]) as { user_id: string }[];
+   const result = await insertQuery("users", "user_id", creation, [fields.username, fields.name, fields.password, fields.email, fields.verified]) as any[];
+   console.log(result)
    fields.id = result[0].user_id;
 
    return fields;
