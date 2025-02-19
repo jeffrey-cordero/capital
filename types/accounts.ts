@@ -8,6 +8,7 @@ export type Account = {
    name: string;
    type: string;
    image: string;
+   balance: number;
    history: { 
       year: string; 
       month: string;
@@ -19,7 +20,18 @@ export type Account = {
 
 export const accountSchema = z.object({
    account_id: z.number().nullable(),
-   name: z.string().min(1).max(30),
+   name: z.string().min(1, {
+      message: "Name must be at least 1 character"
+   }).max(30, {
+      message: "Name must be at most 30 characters"
+   }),
+   balance: z.coerce.number({
+      message: "Balance must be a valid number"
+   }).min(0, {
+      message: "Balance must be at least 0"
+   }).max(99999999999.99, {
+      message: "Balance cannot exceed 99,999,999,999.99"
+   }),
    type: z.enum(types),
    image: z.union([z.enum(images), z.string().url()]).optional(),
    history: z.array(z.object({

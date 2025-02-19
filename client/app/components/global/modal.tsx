@@ -1,10 +1,9 @@
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Modal as MuiModal, type SxProps } from "@mui/material";
 import { css, styled } from "@mui/material";
 
 import { gray } from "@/styles/mui/colors";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
 
 const ModalContent = styled("div")(
    ({ theme }) => css`
@@ -15,11 +14,11 @@ const ModalContent = styled("div")(
      display: flex;
      top: 50%;
      left: 50%;
-     transform: translate(-50%, 50%) !important;
+     transform: translate(-50%, -50%);
      flex-direction: column;
      gap: 8px;
      overflow: hidden;
-     background-color: ${theme.palette.mode === "dark" ? gray[800] : "#fff"};
+     background-color: ${theme.palette.mode === "dark" ? "#2B2B2B" : "#fff"};
      border-radius: 8px;
      border: 1px solid ${theme.palette.mode === "dark" ? gray[700] : gray[200]};
      box-shadow: 0 4px 12px
@@ -55,16 +54,16 @@ export default function Modal(props: ModalProps) {
 
    return (
       <MuiModal
-         open={open}
-         onClose={onClose}
+         onClose = { onClose }
+         open = { open }
       >
-         <ModalContent sx={sx}>
-            <Box sx = {{position: "relative"}}>
+         <ModalContent sx = { sx }>
+            <Box sx = { { position: "relative" } }>
                <FontAwesomeIcon
-                  icon={faXmark}
-                  size="xl"
-                  onClick={onClose}
-                  style={{ position: "absolute", top: -16, right: -12, cursor: "pointer", color: "red" }}
+                  icon = { faXmark }
+                  onClick = { onClose }
+                  size = "xl"
+                  style = { { position: "absolute", top: -16, right: -12, cursor: "pointer", color: "red" } }
                />
                { children }
             </Box>

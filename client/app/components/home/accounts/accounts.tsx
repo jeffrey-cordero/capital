@@ -33,6 +33,7 @@ export default function Accounts() {
                               name: image,
                               type: "asset",
                               image: `/images/${image}.png`,
+                              balance: 1000,
                               history: [
                                  {
                                     month: "January",

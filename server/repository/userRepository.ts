@@ -59,12 +59,13 @@ export async function authenticate(username: string, password: string): Promise<
 export async function create(user: User): Promise<User> {
    // Create new user with hashed password and unverified status
    const fields = { ...user, password: await hash(user.password), verified: false };
-   const creation = `
+   const insert = `
       INSERT INTO users (username, name, password, email, verified) 
       VALUES (?, ?, ?, ?, ?);
    `;
-   const result = await insertQuery("users", "user_id", creation, [fields.username, fields.name, fields.password, fields.email, fields.verified]) as any[];
-   console.log(result)
+   const result = await insertQuery("users", "user_id", insert, 
+      [fields.username, fields.name, fields.password, fields.email, fields.verified]
+   ) as any[];
    fields.id = result[0].user_id;
 
    return fields;

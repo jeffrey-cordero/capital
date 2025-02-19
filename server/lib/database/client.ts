@@ -25,6 +25,7 @@ const getConnection = util.promisify(pool.getConnection).bind(pool);
 
 export async function query(query: string, parameters: any[]): Promise<unknown> {
    try {
+      // Simple queries for GET, PUT, DELETE
       return await asyncQuery({ sql: query, values: parameters });
    } catch (error) {
       console.error(error);
@@ -35,6 +36,7 @@ export async function query(query: string, parameters: any[]): Promise<unknown> 
 
 export async function insertQuery(table: string, column: string, query: string, parameters: any[]): Promise<unknown> {
    try {
+      // Insert query for POST methods to fetch inserted content manually as MySQL does not support RETURNING
       const insertion = await asyncQuery({ sql: query, values: parameters }) as any;
 
       return await asyncQuery({ 
