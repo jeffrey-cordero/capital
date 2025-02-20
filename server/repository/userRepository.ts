@@ -67,7 +67,7 @@ export async function create(user: User): Promise<User> {
    const result = await query(insert,
       [fields.username, fields.name, fields.password, fields.email, fields.verified]
    ) as { user_id: string }[];
-   fields.id = result[0].user_id;
+   fields.user_id = result[0].user_id;
 
    return fields;
 }

@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
-import { configureJWT } from "@/lib/authentication/utils";
+import { configureJWT } from "@/lib/authentication/middleware";
 import { fetchAuthentication, login } from "@/service/authenticationService";
 
 export const LOGIN = asyncHandler(async(req: Request, res: Response) => {

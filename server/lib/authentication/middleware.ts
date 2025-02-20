@@ -8,7 +8,7 @@ import { sendErrors } from "@/lib/api/response";
 export function configureJWT(req: Request, res: Response, user: User): void {
    // Generate JWT token
    const secret: string = process.env.SESSION_SECRET || "";
-   const token = jwt.sign({ id: user.id, username: user.username }, secret, { expiresIn: "24h" });
+   const token = jwt.sign({ user_id: user.user_id, username: user.username }, secret, { expiresIn: "24h" });
 
    // Store JWT token in client cookies
    res.cookie("token", token, {

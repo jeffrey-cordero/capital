@@ -39,11 +39,11 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
       // Transaction to update the market trends API cache
       await runTransaction([
          {
-            query: `DELETE FROM market_trends_api_cache;`,
+            query: "DELETE FROM market_trends_api_cache;",
             parameters: []
          },
          {
-            query: `INSERT INTO market_trends_api_cache (time, data) VALUES ($1, $2);`,
+            query: "INSERT INTO market_trends_api_cache (time, data) VALUES ($1, $2);",
             parameters: [time, data]
          }
       ]);

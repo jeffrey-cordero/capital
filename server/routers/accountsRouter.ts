@@ -5,8 +5,8 @@ import { authenticateJWT } from "@/lib/authentication/middleware";
 
 const usersRouter = express.Router();
 
-usersRouter.post("/", authenticateJWT(false), controller.POST);
-usersRouter.put("/", authenticateJWT(true), controller.PUT);
-usersRouter.delete("/", authenticateJWT(true), controller.DELETE);
+// POST (/home/accounts)
+// PUT (/home/accounts/:id, /home/accounts/order)
+// DELETE (/home/accounts/:id)
 
 export default usersRouter;

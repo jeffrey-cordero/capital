@@ -29,7 +29,7 @@ export const userSchema = z.object({
 });
 
 export type User = {
-  id: string | null;
+  user_id: string | null;
   username: string;
   name: string;
   password: string;

@@ -1,7 +1,7 @@
 import { Account, AccountHistory } from "capital-types/accounts";
+import { PoolClient } from "pg";
 
 import { pool, query  } from "@/lib/database/client";
-import { PoolClient } from "pg";
 
 export async function getAccounts(user_id: string): Promise<Account[] | null> {
    const search = `
@@ -16,7 +16,7 @@ export async function getAccounts(user_id: string): Promise<Account[] | null> {
    const positions: { [key: string]: number } = {};
    const accounts = await query(search, [user_id]) as (Account & AccountHistory)[];
 
-   // Group by account's and collect their history of balances, 
+   // Group by account's and collect their history of balances,
    return accounts.reduce((accounts: Account[], row: Account & AccountHistory) => {
       // Assume accounts are ordered by `account_order` DESC then `last_updated` ASC
       const existing = positions[row.account_id as string];
@@ -74,7 +74,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
       )?.rows as { last_updated: string }[];
 
       await client.query("COMMIT");
-      
+
       return {
          account_id: result[0].account_id,
          name: account.name,
@@ -151,7 +151,7 @@ export async function updateAccountHistory(account_id: string, balance: number, 
 
 export async function updateAccountOrders(user_id: string, updates: { account_id: string, account_order: number }[]): Promise<boolean> {
    // Flatten array of parameters
-   const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(', ');
+   const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [update.account_id, update.account_order]);
 
    // Update account orders in a single query

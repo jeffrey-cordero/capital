@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
 import { clearAuthentication } from "@/lib/authentication";
-import { logout } from "@/redux/slices/authentication";
+import { authenticate } from "@/redux/slices/authentication";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
@@ -185,7 +185,7 @@ function SideBarContent(props: SideBarContentProps) {
          queryClient.setQueriesData({ queryKey: "authentication" }, false);
 
          // Update Redux store
-         dispatch(logout());
+         dispatch(authenticate(false));
 
          // Navigate to the login page
          window.location.reload();

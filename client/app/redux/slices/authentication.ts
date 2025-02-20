@@ -6,13 +6,6 @@ const authenticationSlice = createSlice({
       value: false
    },
    reducers: {
-      login: (state) => {
-         state.value = true;
-      },
-      logout: (state) => {
-         state.value = false;
-         localStorage.setItem("authenticated", "false");
-      },
       authenticate(state, action: PayloadAction<boolean>) {
          state.value = action.payload;
          localStorage.setItem("authenticated", action.payload.toString());
@@ -20,5 +13,5 @@ const authenticationSlice = createSlice({
    }
 });
 
-export const { login, logout, authenticate } = authenticationSlice.actions;
+export const { authenticate } = authenticationSlice.actions;
 export default authenticationSlice.reducer;
