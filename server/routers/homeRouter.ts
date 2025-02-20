@@ -1,11 +1,18 @@
 import express from "express";
 
-import * as controller from "@/controllers/homeController";
+import * as homeController from "@/controllers/homeController";
+import * as accountsController from "@/controllers/accountsController";
 import { authenticateJWT } from "@/lib/authentication/middleware";
 
 const homeRouter = express.Router();
 
-homeRouter.get("/marketTrends", authenticateJWT(true), controller.MARKET_TRENDS);
-homeRouter.get("/news", authenticateJWT(true), controller.NEWS);
+homeRouter.get("/marketTrends", authenticateJWT(true), homeController.MARKET_TRENDS);
+homeRouter.get("/news", authenticateJWT(true), homeController.NEWS);
+
+homeRouter.get("/accounts", authenticateJWT(true), accountsController.GET);
+homeRouter.post("/accounts", authenticateJWT(true), accountsController.POST);
+homeRouter.put("/accounts/order", authenticateJWT(true), accountsController.PUT);
+homeRouter.put("/accounts/:id", authenticateJWT(true), accountsController.PUT);
+homeRouter.delete("/accounts/:id", authenticateJWT(true), accountsController.DELETE);
 
 export default homeRouter;

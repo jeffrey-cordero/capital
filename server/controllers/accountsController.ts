@@ -41,6 +41,10 @@ const deleteAccount = async(user_id: string, id: string): Promise<ServiceRespons
 };
 
 // Controller implementation
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   return sendSuccess(res, 200, "Accounts Retrieved", {});
+});
+
 export const POST = asyncHandler(async(req: Request, res: Response) => {
    try {
       const account = req.body as Account;
