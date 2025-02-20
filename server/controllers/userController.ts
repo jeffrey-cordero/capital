@@ -11,9 +11,9 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
       const user = req.body as User;
       const result: ServiceResponse = await createUser(user);
 
-      if (result.code === 201) {
+      if (result.code === 200) {
          // Configure JWT token for authentication purposes
-         configureJWT(req, res, user);
+         configureJWT(req, res, result.data as User);
 
          return sendSuccess(res, result.code, result.message);
       } else {

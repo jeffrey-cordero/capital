@@ -1,40 +1,14 @@
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
 import { ServiceResponse } from "@/lib/api/response";
-import { authenticate } from "@/repository/userRepository";
+
+import { authenticateUser } from "./userService";
 
 export async function login(username: string, password: string): Promise<ServiceResponse> {
-   try {
-      const result = await authenticate(username, password);
-
-      if (result === null) {
-         return {
-            code: 401,
-            message: "Invalid credentials",
-            errors: {
-               username: "Invalid credentials",
-               password: "Invalid credentials"
-            }
-         };
-      } else {
-         return {
-            code: 200,
-            message: "Login successful",
-            data: result
-         };
-      }
-   } catch (error: any) {
-      console.error(error);
-
-      return {
-         code: 500,
-         message: "Internal Server Error",
-         errors: { system: error.message }
-      };
-   }
+   return await authenticateUser(username, password);
 }
 
-export async function fetchAuthentication(token: string): Promise<ServiceResponse> {
+export async function getAuthentication(token: string): Promise<ServiceResponse> {
    try {
       // Verify the JWT token, which will throw an error if invalid
       jwt.verify(token, process.env.SESSION_SECRET || "");

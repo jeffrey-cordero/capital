@@ -3,7 +3,7 @@ import { PoolClient } from "pg";
 
 import { pool, query  } from "@/lib/database/client";
 
-export async function getAccounts(user_id: string): Promise<Account[] | null> {
+export async function getAccounts(user_id: string): Promise<Account[]> {
    const search = `
       SELECT a.*, ah.*
       FROM accounts as a
@@ -46,7 +46,7 @@ export async function getAccounts(user_id: string): Promise<Account[] | null> {
    }, []);
 }
 
-export async function createAccount(user_id: string, account: Account): Promise<Account | null> {
+export async function createAccount(user_id: string, account: Account): Promise<Account> {
    const client: PoolClient | null = await pool.connect();
 
    try {
@@ -88,14 +88,16 @@ export async function createAccount(user_id: string, account: Account): Promise<
          }]
       };
    } catch (error) {
-      console.log(error);
+      console.error(error);
       await client?.query("ROLLBACK");
 
       throw error;
+   } finally {
+      client?.release();
    }
 }
 
-export async function updateAccountDetails(account_id: string, updates: Partial<Account>): Promise<Account | null> {
+export async function updateAccountDetails(account_id: string, updates: Partial<Account>): Promise<Account[]> {
    // Update only the provided fields
    const fields: string[] = [];
    const values: any[] = [];
@@ -133,7 +135,7 @@ export async function updateAccountDetails(account_id: string, updates: Partial<
       WHERE account_id = $${params}
       RETURNING *;
    `;
-   return (await query(updateQuery, values) as Account[])?.[0];
+   return await query(updateQuery, values) as Account[];
 }
 
 export async function updateAccountHistory(account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {

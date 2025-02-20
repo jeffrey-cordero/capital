@@ -11,7 +11,6 @@ import path from "path";
 import serveIndex from "serve-index";
 
 import { sendErrors } from "@/lib/api/response";
-import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
 import authenticationRouter from "@/routers/authenticationRouter";
 import homeRouter from "@/routers/homeRouter";
 import indexRouter from "@/routers/indexRouter";
@@ -53,16 +52,12 @@ app.use(
 app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use("/resources", express.static(path.join(__dirname, "resources")));
 app.use("/resources", serveIndex(path.join(__dirname, "resources"), { "icons": true }));
 
 app.use("/", indexRouter);
 app.use("/home", homeRouter);
 app.use("/users", userRouter);
 app.use("/authentication", authenticationRouter);
-
-// Initialize Redis cache with market trends data
-(async() => await fetchMarketTrends())();
 
 // Catch 404 and forward to error handler
 app.use(function(req: Request, res: Response) {

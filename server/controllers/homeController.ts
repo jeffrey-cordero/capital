@@ -1,4 +1,5 @@
 const fs = require("fs").promises;
+import { MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
@@ -6,7 +7,7 @@ import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
 import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
+import { fetchMarketTrends } from "@/service/marketTrendsService";
 
 async function parseXML(xml: string): Promise<object> {
    return (await parseStringPromise(xml))?.rss;
@@ -14,9 +15,9 @@ async function parseXML(xml: string): Promise<object> {
 
 export const MARKET_TRENDS = asyncHandler(async(_req: Request, res: Response) => {
    try {
-      return sendSuccess(res, 200, "Market Trends", {
-         marketTrends: await fetchMarketTrends()
-      });
+      const result = await fetchMarketTrends();
+
+      return sendSuccess(res, result.code, result.message, { marketTrends:result.data as MarketTrends });
    } catch (error: any) {
       console.error(error);
 

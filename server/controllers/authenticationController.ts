@@ -4,7 +4,7 @@ import asyncHandler from "express-async-handler";
 
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
 import { configureJWT } from "@/lib/authentication/middleware";
-import { fetchAuthentication, login } from "@/service/authenticationService";
+import { getAuthentication, login } from "@/service/authenticationService";
 
 export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
    try {
@@ -49,7 +49,7 @@ export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
 
 export const GET = asyncHandler(async(req: Request, res: Response) => {
    try {
-      const result: ServiceResponse = await fetchAuthentication(req.cookies.token);
+      const result: ServiceResponse = await getAuthentication(req.cookies.token);
       const authenticated: boolean = result.data?.authenticated;
 
       if (!authenticated) {
@@ -57,9 +57,7 @@ export const GET = asyncHandler(async(req: Request, res: Response) => {
          res.clearCookie("token");
       }
 
-      return sendSuccess(res, 200, result.message, {
-         authenticated: authenticated
-      });
+      return sendSuccess(res, 200, result.message, { authenticated: authenticated });
    } catch (error: any) {
       console.error(error);
 

@@ -1,73 +1,46 @@
 import { User } from "capital-types/user";
 
-import { pool, query } from "@/lib/database/client";
-import { compare, hash } from "@/lib/database/cryptography";
+import { query } from "@/lib/database/client";
 
-export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
-   // Return errors if user exists with same username and/or email, otherwise return is null
+export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
+   // Return potential conflicts for username and email
+   const conflicts = `
+      SELECT * FROM users 
+      WHERE username_normalized = $1 OR email_normalized = $2;
+   `;
    const normalizedUsername = username.toLowerCase().trim();
    const normalizedEmail = email.toLowerCase().trim();
 
-   const conflicts = `
-      SELECT * FROM users 
-      WHERE username_normalized = $1 
-      OR email_normalized = $2;
-   `;
-   const result = await query(conflicts, [username, email]) as User[];
-
-   if (result.length > 0) {
-      // User exists with same username and/or email
-      const errors = result.reduce((account, user) => {
-         if (user.username.toLowerCase().trim() === normalizedUsername) {
-            account.username = "Username already exists";
-         }
-
-         if (user.email.toLowerCase().trim() === normalizedEmail) {
-            account.email = "Email already exists";
-         }
-
-         return account;
-      }, {} as Record<string, string>);
-
-      return errors;
-   } else {
-      return null;
-   }
+   return await query(conflicts, [normalizedUsername, normalizedEmail]) as User[];
 }
 
-export async function getById(id: number): Promise<User | null> {
-   // Find user by their unique ID
+export async function findById(id: string): Promise<User[]> {
+   // Return user by their unique ID
    const search = `
       SELECT * FROM users 
       WHERE id = $1;
    `;
-   const result = await query(search, [id]) as User[];
 
-   return result.length > 0 ? result[0] : null;
+   return await query(search, [id]) as User[];
 }
 
-export async function authenticate(username: string, password: string): Promise<User | null> {
+export async function findByUsername(username: string): Promise<User[]> {
+   // Return user by their unique username
    const search = `
       SELECT * FROM users 
       WHERE username = $1;
    `;
-   const result = await query(search, [username]) as User[];
 
-   return result.length > 0 ? await compare(password, result[0].password) ? result[0] : null : null;
+   return await query(search, [username]) as User[];
 }
 
-export async function create(user: User): Promise<User> {
-   // Create new user with hashed password and unverified status
-   const fields = { ...user, password: await hash(user.password), verified: false };
+export async function create(user: User): Promise<User[]> {
+   // Create new user with provided fields
    const insert = `
-      INSERT INTO users (username, name, password, email, verified) 
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING user_id;
+      INSERT INTO users (username, name, password, email) 
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
    `;
-   const result = await query(insert,
-      [fields.username, fields.name, fields.password, fields.email, fields.verified]
-   ) as { user_id: string }[];
-   fields.user_id = result[0].user_id;
 
-   return fields;
+   return await query(insert, [user.username, user.name, user.password, user.email]) as User[];
 }

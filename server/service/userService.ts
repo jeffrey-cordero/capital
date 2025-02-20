@@ -1,12 +1,14 @@
 import { User, userSchema } from "capital-types/user";
 
 import { ServiceResponse } from "@/lib/api/response";
-import { authenticate, create, getConflictingUsers } from "@/repository/userRepository";
+import { compare, hash } from "@/lib/database/cryptography";
+import { create, findByUsername, findConflictingUsers } from "@/repository/userRepository";
 
 export async function authenticateUser(username: string, password: string): Promise<ServiceResponse> {
-   const result = await authenticate(username, password);
+   // Authenticate user based on existing username and valid password through hashing
+   const user = await findByUsername(username);
 
-   if (result === null) {
+   if (user.length === 0 || !(await compare(password, user[0].password))) {
       return {
          code: 401,
          message: "Invalid credentials",
@@ -19,16 +21,16 @@ export async function authenticateUser(username: string, password: string): Prom
       return {
          code: 200,
          message: "Successfully authenticated",
-         data: null
+         data: user[0]
       };
    }
 }
 
 export async function createUser(user: User): Promise<ServiceResponse> {
+   // Validate user fields and uniqueness before insertion
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
-      // Return single error message per registration field
       const errors = fields.error.flatten().fieldErrors;
 
       return {
@@ -52,22 +54,39 @@ export async function createUser(user: User): Promise<ServiceResponse> {
          }
       };
    } else {
-      // Handle user uniqueness or successfully create new user
-      const result = await getConflictingUsers(user.username, user.email);
+      // Handle user uniqueness
+      const result = await findConflictingUsers(user.username, user.email);
 
-      if (result !== null) {
+      if (result.length === 0) {
+         // User does not exist with same username and/or email
+         const creation = await create({ ...user, password: await hash(user.password) });
+
+         return {
+            code: 200,
+            message: "Successfully registered",
+            data: creation[0]
+         };
+      } else {
+         // User exists with same username and/or email
+         const normalizedUsername = user.username.toLowerCase().trim();
+         const normalizedEmail = user.email.toLowerCase().trim();
+
+         const errors = result.reduce((account, user) => {
+            if (user.username.toLowerCase().trim() === normalizedUsername) {
+               account.username = "Username already exists";
+            }
+
+            if (user.email.toLowerCase().trim() === normalizedEmail) {
+               account.email = "Email already exists";
+            }
+
+            return account;
+         }, {} as Record<string, string>);
+
          return {
             code: 409,
             message: "Invalid user fields",
-            errors: result
-         };
-      } else {
-         await create(user);
-
-         return {
-            code: 201,
-            message: "Successfully registered",
-            data: null
+            errors: errors
          };
       }
    }
