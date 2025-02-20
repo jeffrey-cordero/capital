@@ -37,18 +37,18 @@ CREATE TABLE accounts (
    image VARCHAR(255),
    account_order INT NOT NULL,
    user_id UUID NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-   UNIQUE (name, user_id)
+   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE accounts_history (
    account_balance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    balance DECIMAL(13, 2) NOT NULL,
-   year INT CHECK (year >= 1900 AND year <= 2100) NOT NULL,
-   month SMALLINT CHECK (month BETWEEN 1 AND 12) NOT NULL,
    last_updated TIMESTAMP NOT NULL,
    account_id UUID NOT NULL,
-   FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+   year INT NOT NULL GENERATED ALWAYS AS (EXTRACT(YEAR FROM last_updated)) STORED,
+   month INT NOT NULL GENERATED ALWAYS AS (EXTRACT(MONTH FROM last_updated)) STORED,
+   FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,
+   CONSTRAINT unique_account_year_month UNIQUE (account_id, year, month)
 );
 
 CREATE TABLE transactions (

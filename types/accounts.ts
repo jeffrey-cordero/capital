@@ -4,22 +4,27 @@ export const images = ["property", "bank", "cash", "credit", "investment", "loan
 export const types = ["Checking", "Savings", "Credit Card", "Retirement", "Investment", "Loan", "Property", "Other"] as const;
 
 export type Account = {
-   account_id: number | null;
+   account_id: string | null;
    name: string;
    type: string;
    image: string;
    balance: number;
-   history: { 
-      year: string; 
-      month: string;
-      amount: number; 
-      last_updated: string;
-   }[];
    account_order: number;
+   history?: AccountHistory[];
 }
 
+export type AccountHistory = {
+   balance: number; 
+   last_updated: string;
+}
+
+export const accountHistorySchema = z.object({
+   balance: z.number(),
+   last_updated: z.string(),
+});
+
 export const accountSchema = z.object({
-   account_id: z.number().nullable(),
+   account_id: z.string().uuid().optional(),
    name: z.string().min(1, {
       message: "Name must be at least 1 character"
    }).max(30, {
@@ -34,11 +39,6 @@ export const accountSchema = z.object({
    }),
    type: z.enum(types),
    image: z.union([z.enum(images), z.string().url()]).optional(),
-   history: z.array(z.object({
-      year: z.string(),
-      month: z.string(),
-      amount: z.number(),
-      last_updated: z.string().datetime()
-   })),
+   history: z.array(accountHistorySchema).optional(),
    account_order: z.number().min(0)
 });

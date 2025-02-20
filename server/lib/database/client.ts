@@ -2,7 +2,7 @@ require("dotenv").config();
 import { Pool, PoolClient } from "pg";
 
 // Connection pool for database scalability
-const pool = new Pool({
+export const pool = new Pool({
    host: process.env.HOST,
    user: process.env.USER,
    password: process.env.PASSWORD,
@@ -16,8 +16,6 @@ const pool = new Pool({
 export async function query(query: string, parameters: any[]): Promise<unknown> {
    try {
       const result = await pool.query(query, parameters);
-
-      console.log(result);
 
       return result.rows;
    } catch (error) {
@@ -42,6 +40,7 @@ export async function runTransaction(queries: { query: string, parameters: any[]
       for (const { query, parameters } of queries) {
          const result = await client.query(query, parameters);
 
+         console.log(result.rows);
          results.push(result.rows);
       }
 

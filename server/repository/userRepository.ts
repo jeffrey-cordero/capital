@@ -1,6 +1,6 @@
 import { User } from "capital-types/user";
 
-import { query } from "@/lib/database/client";
+import { pool, query } from "@/lib/database/client";
 import { compare, hash } from "@/lib/database/cryptography";
 
 export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
@@ -66,7 +66,7 @@ export async function create(user: User): Promise<User> {
    `;
    const result = await query(insert,
       [fields.username, fields.name, fields.password, fields.email, fields.verified]
-   ) as { user_id: number }[];
+   ) as { user_id: string }[];
    fields.id = result[0].user_id;
 
    return fields;

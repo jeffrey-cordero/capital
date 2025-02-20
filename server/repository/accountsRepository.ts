@@ -1,6 +1,7 @@
-import { Account } from "capital-types/accounts";
+import { Account, AccountHistory } from "capital-types/accounts";
 
-import { query } from "@/lib/database/client";
+import { pool, query  } from "@/lib/database/client";
+import { PoolClient } from "pg";
 
 export async function getAccounts(user_id: string): Promise<Account[] | null> {
    const search = `
@@ -8,30 +9,169 @@ export async function getAccounts(user_id: string): Promise<Account[] | null> {
       FROM accounts as a
       INNER JOIN accounts_history as ah
       ON a.account_id = ah.account_id
-      WHERE a.user_id = $1;
+      WHERE a.user_id = $1
+      ORDER BY a.account_order DESC, ah.last_updated ASC;
    `;
 
-   return await query(search, [user_id]) as Account[];
+   const positions: { [key: string]: number } = {};
+   const accounts = await query(search, [user_id]) as (Account & AccountHistory)[];
+
+   // Group by account's and collect their history of balances, 
+   return accounts.reduce((accounts: Account[], row: Account & AccountHistory) => {
+      // Assume accounts are ordered by `account_order` DESC then `last_updated` ASC
+      const existing = positions[row.account_id as string];
+
+      if (existing) {
+         accounts[existing].history?.push({
+            balance: row.balance,
+            last_updated: row.last_updated
+         });
+      } else {
+         positions[row.account_id as string] = accounts.length;
+         accounts.push({
+            account_id: row.account_id,
+            name: row.name,
+            type: row.type,
+            image: row.image,
+            balance: row.balance,
+            account_order: row.account_order,
+            history: [{
+               balance: row.balance,
+               last_updated: row.last_updated
+            }]
+         });
+      }
+
+      return accounts;
+   }, []);
 }
 
 export async function createAccount(user_id: string, account: Account): Promise<Account | null> {
-   // user_id fetched from session
-   // TODO: use $1
-   // const insert = `
-   //    INSERT INTO accounts (user_id, name, type, image, account_order)
-   //    VALUES (?, ?, ?, ?, ?, ?)
-   //    RETURNING account_id;
-   // `;
+   const client: PoolClient | null = await pool.connect();
 
-   // const result = await ("insert,
-   //    [user_id, account.name, account.type, account.image, JSON.stringify(account.history), account.account_order]
-   // ) as any[];
+   try {
+      // Transactional insertion queries to create account and its history for data integrity
+      await client.query("BEGIN");
 
-   const balance = `
-      INSERT INTO accounts_history (account_id, balance, date)
-      VALUES ($1, $2, $3);
+      // Create the account
+      const creation = `
+         INSERT INTO accounts (user_id, name, type, image, account_order)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING account_id;
+      `;
+      const result = (
+         await client.query(creation, [user_id, account.name, account.type, account.image, account.account_order])
+      )?.rows as { account_id: string }[];
+
+      // Initialize the account's history
+      const history = `
+         INSERT INTO accounts_history (account_id, balance, last_updated)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         RETURNING last_updated;
+      `;
+      const insertion = (
+         await client.query(history, [result[0].account_id, account.balance])
+      )?.rows as { last_updated: string }[];
+
+      await client.query("COMMIT");
+      
+      return {
+         account_id: result[0].account_id,
+         name: account.name,
+         type: account.type,
+         image: account.image,
+         balance: account.balance,
+         account_order: account.account_order,
+         history: [{
+            balance: account.balance,
+            last_updated: insertion[0].last_updated
+         }]
+      };
+   } catch (error) {
+      console.log(error);
+      await client?.query("ROLLBACK");
+
+      throw error;
+   }
+}
+
+export async function updateAccountDetails(account_id: string, updates: Partial<Account>): Promise<Account | null> {
+   // Update only the provided fields
+   const fields: string[] = [];
+   const values: any[] = [];
+   let params = 1;
+
+   if (updates.name) {
+      fields.push(`name = $${params}`);
+      values.push(updates.name);
+      params++;
+   }
+
+   if (updates.type) {
+      fields.push(`type = $${params}`);
+      values.push(updates.type);
+      params++;
+   }
+
+   if (updates.image) {
+      fields.push(`image = $${params}`);
+      values.push(updates.image);
+      params++;
+   }
+
+   if (updates.account_order) {
+      fields.push(`account_order = $${params}`);
+      values.push(updates.account_order);
+      params++;
+   }
+
+   values.push(account_id);
+
+   const updateQuery = `
+      UPDATE accounts
+      SET ${fields.join(", ")}
+      WHERE account_id = $${params}
+      RETURNING *;
+   `;
+   return (await query(updateQuery, values) as Account[])?.[0];
+}
+
+export async function updateAccountHistory(account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {
+   const updateHistory = `
+      INSERT INTO accounts_history (account_id, balance, last_updated)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (account_id, year, month) 
+      DO UPDATE SET
+         balance = EXCLUDED.balance,
+         last_updated = EXCLUDED.last_updated;
    `;
 
-   // return result?.[0] as Account;
-   return null;
+   return (await query(updateHistory, [account_id, balance, last_updated]) as any)?.rowCount > 0;
+}
+
+export async function updateAccountOrders(user_id: string, updates: { account_id: string, account_order: number }[]): Promise<boolean> {
+   // Flatten array of parameters
+   const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(', ');
+   const params = updates.flatMap(update => [update.account_id, update.account_order]);
+
+   // Update account orders in a single query
+   const update = `
+      UPDATE accounts
+      SET account_order = v.new_order
+      FROM (VALUES ${values}) AS v(account_id, new_order)
+      WHERE accounts.account_id = v.account_id::uuid
+      AND accounts.user_id = $${params.length + 1}
+   `;
+
+   return (await query(update, [...params, user_id]) as any)?.rowCount > 0;
+}
+
+export async function deleteAccount(account_id: string, user_id: string): Promise<boolean> {
+   const deleteQuery = `
+      DELETE FROM accounts
+      WHERE account_id = $1 AND user_id = $2
+      RETURNING account_id;
+   `;
+
+   return (await query(deleteQuery, [account_id, user_id]) as any)?.rowCount > 0;
 }

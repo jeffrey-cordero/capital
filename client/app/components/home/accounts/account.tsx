@@ -23,7 +23,7 @@ export default function AccountCard(props: AccountCardProps) {
    } = useForm({
       resolver: zodResolver(accountSchema)
    });
-   const onSubmit = async (data: any) => {
+   const onSubmit = async(data: any) => {
       console.log(data);
    };
 
@@ -31,113 +31,113 @@ export default function AccountCard(props: AccountCardProps) {
 
    return (
       <Grid
-         size={{ xs: 12, md: 4, lg: 3 }}
+         size = { { xs: 12, md: 4, lg: 3 } }
       >
          <Card
-            elevation={9}
-            sx={{ p: 0, position: "relative", textAlign: "left", borderRadius: 2 }}
-            variant={undefined}
+            elevation = { 9 }
+            sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
+            variant = { undefined }
          >
             <Typography
-               component="a"
-               href="/"
+               component = "a"
+               href = "/"
             >
                <Avatar
-                  src={account.image}
-                  sx={
+                  src = { account.image }
+                  sx = {
                      {
                         height: 250,
                         width: "100%"
                      }
                   }
-                  variant="square"
+                  variant = "square"
                />
             </Typography>
             <Tooltip
-               onClick={() => setOpen(true)}
-               title="Edit Account"
+               onClick = { () => setOpen(true) }
+               title = "Edit Account"
             >
                <Fab
-                  color="primary"
-                  size="small"
-                  sx={{ bottom: "75px", right: "15px", position: "absolute" }}
+                  color = "primary"
+                  size = "small"
+                  sx = { { bottom: "75px", right: "15px", position: "absolute" } }
                >
                   <FontAwesomeIcon
-                     icon={faPencil}
+                     icon = { faPencil }
                   />
                </Fab>
             </Tooltip>
-            <CardContent sx={{ p: 3, pt: 2 }}>
-               <Typography variant="h5">
-                  {account.name}
+            <CardContent sx = { { p: 3, pt: 2 } }>
+               <Typography variant = "h5">
+                  { account.name }
                </Typography>
                <Stack
-                  direction="column"
-                  sx={{ width: "100%", alignItems: "flex-start" }}
+                  direction = "column"
+                  sx = { { width: "100%", alignItems: "flex-start" } }
                >
                   <Typography
-                     sx={{ maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                     variant="h6"
+                     sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }
+                     variant = "h6"
                   >
-                     ${new Intl.NumberFormat().format(account.balance)}
+                     ${ new Intl.NumberFormat().format(account.balance) }
                   </Typography>
                   <Typography
-                     fontStyle="italic"
-                     variant="subtitle2"
+                     fontStyle = "italic"
+                     variant = "subtitle2"
                   >
-                     {new Date(account.history?.[0].last_updated).toLocaleDateString()}
+                     { new Date(account.history?.[0].last_updated).toLocaleDateString() }
                   </Typography>
                </Stack>
             </CardContent>
          </Card>
          <Modal
-            onClose={() => setOpen(false)}
-            open={open}
-            sx={{ width: { xs: "90%", md: "60%", lg: "30%" }, maxWidth: "90%" }}
+            onClose = { () => setOpen(false) }
+            open = { open }
+            sx = { { width: { xs: "90%", md: "60%", lg: "30%" }, maxWidth: "90%" } }
          >
-            <form onSubmit={handleSubmit(onSubmit)}>
-               <Stack sx={{ alignItems: "center", justifyContent: "center" }}>
+            <form onSubmit = { handleSubmit(onSubmit) }>
+               <Stack sx = { { alignItems: "center", justifyContent: "center" } }>
                   <Typography
-                     sx={{ fontWeight: "bold" }}
-                     variant="h3"
+                     sx = { { fontWeight: "bold" } }
+                     variant = "h3"
                   >
                      Edit Account
                   </Typography>
                   <Box
-                     alt="Account"
-                     component="img"
-                     src="/svg/account.svg"
-                     sx={{ width: 250, height: "auto", mx: "auto", justifySelf: "center", mt: -5 }}
+                     alt = "Account"
+                     component = "img"
+                     src = "/svg/account.svg"
+                     sx = { { width: 250, height: "auto", mx: "auto", justifySelf: "center", mt: -5 } }
                   />
                </Stack>
                <Stack
-                  direction="column"
-                  spacing={2}
-                  sx={{ mt: -5 }}
+                  direction = "column"
+                  spacing = { 2 }
+                  sx = { { mt: -5 } }
                >
                   <Controller
-                     control={control}
-                     name="name"
-                     render={
+                     control = { control }
+                     name = "name"
+                     render = {
                         ({ field }) => (
-                           <FormControl error={Boolean(errors.name)}>
-                              <InputLabel htmlFor="name">
+                           <FormControl error = { Boolean(errors.name) }>
+                              <InputLabel htmlFor = "name">
                                  Name
                               </InputLabel>
                               <OutlinedInput
-                                 {...field}
-                                 aria-label="Name"
-                                 autoFocus={true}
-                                 disabled={isSubmitting}
-                                 id="name"
-                                 label="Name"
-                                 type="text"
-                                 value={field.value || ""}
+                                 { ...field }
+                                 aria-label = "Name"
+                                 autoFocus = { true }
+                                 disabled = { isSubmitting }
+                                 id = "name"
+                                 label = "Name"
+                                 type = "text"
+                                 value = { field.value || "" }
                               />
                               {
                                  errors.name && (
                                     <FormHelperText>
-                                       {errors.name?.message?.toString()}
+                                       { errors.name?.message?.toString() }
                                     </FormHelperText>
                                  )
                               }
@@ -146,28 +146,28 @@ export default function AccountCard(props: AccountCardProps) {
                      }
                   />
                   <Controller
-                     control={control}
-                     name="balance"
-                     render={
+                     control = { control }
+                     name = "balance"
+                     render = {
                         ({ field }) => (
-                           <FormControl error={Boolean(errors.balance)}>
-                              <InputLabel htmlFor="balance">
+                           <FormControl error = { Boolean(errors.balance) }>
+                              <InputLabel htmlFor = "balance">
                                  Balance
                               </InputLabel>
                               <OutlinedInput
-                                 {...field}
-                                 aria-label="Balance"
-                                 autoFocus={true}
-                                 disabled={isSubmitting}
-                                 id="balance"
-                                 label="Balance"
-                                 type="number"
-                                 value={field.value || ""}
+                                 { ...field }
+                                 aria-label = "Balance"
+                                 autoFocus = { true }
+                                 disabled = { isSubmitting }
+                                 id = "balance"
+                                 label = "Balance"
+                                 type = "number"
+                                 value = { field.value || "" }
                               />
                               {
                                  errors.balance && (
                                     <FormHelperText>
-                                       {errors.balance?.message?.toString()}
+                                       { errors.balance?.message?.toString() }
                                     </FormHelperText>
                                  )
                               }
@@ -176,14 +176,14 @@ export default function AccountCard(props: AccountCardProps) {
                      }
                   />
                   <Button
-                     className="btn-primary"
-                     color="primary"
-                     fullWidth={true}
-                     loading={isSubmitting}
-                     loadingPosition="start"
-                     startIcon={<FontAwesomeIcon icon={faPlus} />}
-                     type="submit"
-                     variant="contained"
+                     className = "btn-primary"
+                     color = "primary"
+                     fullWidth = { true }
+                     loading = { isSubmitting }
+                     loadingPosition = "start"
+                     startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+                     type = "submit"
+                     variant = "contained"
                   >
                      Create
                   </Button>
