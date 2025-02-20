@@ -43,7 +43,7 @@ async function insertMarketTrends(time: Date, data: string): Promise<ServiceResp
             parameters: []
          },
          {
-            query: "INSERT INTO market_trends_api_cache (time, data) VALUES (?, ?);",
+            query: "INSERT INTO market_trends_api_cache (time, data) VALUES ($1, $2);",
             parameters: [time, data]
          }
       ]);

@@ -1,6 +1,6 @@
 import { User } from "capital-types/user";
 
-import { insertQuery, query } from "@/lib/database/client";
+import { query } from "@/lib/database/client";
 import { compare, hash } from "@/lib/database/cryptography";
 
 export async function getConflictingUsers(username: string, email: string): Promise<Record<string, string> | null> {
@@ -10,8 +10,8 @@ export async function getConflictingUsers(username: string, email: string): Prom
 
    const conflicts = `
       SELECT * FROM users 
-      WHERE username_normalized = ? 
-      OR email_normalized = ?;
+      WHERE username_normalized = $1 
+      OR email_normalized = $2;
    `;
    const result = await query(conflicts, [username, email]) as User[];
 
@@ -39,7 +39,7 @@ export async function getById(id: number): Promise<User | null> {
    // Find user by their unique ID
    const search = `
       SELECT * FROM users 
-      WHERE id = ?;
+      WHERE id = $1;
    `;
    const result = await query(search, [id]) as User[];
 
@@ -49,7 +49,7 @@ export async function getById(id: number): Promise<User | null> {
 export async function authenticate(username: string, password: string): Promise<User | null> {
    const search = `
       SELECT * FROM users 
-      WHERE username = ?;
+      WHERE username = $1;
    `;
    const result = await query(search, [username]) as User[];
 
@@ -61,11 +61,12 @@ export async function create(user: User): Promise<User> {
    const fields = { ...user, password: await hash(user.password), verified: false };
    const insert = `
       INSERT INTO users (username, name, password, email, verified) 
-      VALUES (?, ?, ?, ?, ?);
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING user_id;
    `;
-   const result = await insertQuery("users", "user_id", insert, 
+   const result = await query(insert,
       [fields.username, fields.name, fields.password, fields.email, fields.verified]
-   ) as any[];
+   ) as { user_id: number }[];
    fields.id = result[0].user_id;
 
    return fields;
