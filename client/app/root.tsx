@@ -1,7 +1,7 @@
 import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
@@ -9,6 +9,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import store from "@/redux/store";
 
 import type { Route } from "./+types/root";
+import queryClient from "@/tanstack/client";
 
 export const links: Route.LinksFunction = () => [
    { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -58,8 +59,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </html>
    );
 }
-
-const queryClient = new QueryClient();
 
 export default function App() {
    return (

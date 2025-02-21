@@ -1,9 +1,11 @@
 const fs = require("fs").promises;
 import { IndicatorTrend, MarketTrends, StockTrends } from "capital-types/marketTrends";
+import { News } from "capital-types/news";
+import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
-import { getMarketTrends, updateMarketTrends } from "@/repository/marketTrendsRepository";
+import { getMarketTrends, updateMarketTrends } from "@/repository/homeRepository";
 
 async function fetchStocks(): Promise<StockTrends[]> {
    // Retrieve stock trends from the API (Top Gainers, Losers, and Most Active)
@@ -15,7 +17,7 @@ async function fetchStocks(): Promise<StockTrends[]> {
 
    if (!response["metadata"]) {
       // Rate limit exceeded or invalid API key
-      throw new Error(response["Information"] ?? "Failed to fetch stock trends");
+      throw new Error(response["Information"] ?? "Failed to fetch stocks");
    } else {
       return response;
    }
@@ -31,7 +33,7 @@ async function fetchIndicators(indicator: string): Promise<IndicatorTrend[]> {
 
    if (!response["data"]) {
       // Rate limit exceeded or invalid API key
-      throw new Error(response["Information"] ?? `Failed to fetch indicator trends for ${indicator}`);
+      throw new Error(response["Information"] ?? "Failed to fetch indicators");
    } else {
       return response["data"];
    }
@@ -45,7 +47,7 @@ export async function fetchMarketTrends(): Promise<ServiceResponse> {
       if (cache) {
          return {
             code: 200,
-            message: "Cached market trends data",
+            message: "Cached Market Trends",
             data: JSON.parse(cache) as MarketTrends
          };
       } else {
@@ -75,32 +77,93 @@ export async function fetchMarketTrends(): Promise<ServiceResponse> {
             const time = new Date();
             const data = JSON.stringify(marketTrends);
 
-            await updateMarketTrends(time, data);
             await redisClient.setex("marketTrends", 24 * 60 * 60, data);
             await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
+            await updateMarketTrends(time, data);
 
             return {
                code: 200,
-               message: "Successfully updated market trends API cache",
+               message: "Latest Market Trends",
                data: marketTrends
             };
-
          } else {
-            // Return existing database cache
+            // Return existing database cache as it is still valid in terms of time
             return {
                code: 200,
-               message: "Stored market trends data",
+               message: "Stored Market Trends",
                data: stored[0]?.data as MarketTrends
             };
          }
       }
-   } catch (error) {
-      console.error(error);
+   } catch (error: any) {
+      // Non-rate limit error
+      const backup = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")) as MarketTrends;
+
+      if (!String(error?.message).startsWith("Thank you for using Alpha Vantage!")) {
+         console.error(error);
+      }
+
+      if (await redisClient.get("marketTrends") === null) {
+         // Update cache with backup data in case of API failure for 15 minutes
+         await redisClient.setex("marketTrends", 15 * 60, JSON.stringify(backup));
+      }
 
       return {
-         code: 500,
-         message: "Failed to update market trends API cache",
-         errors: { system: "Internal Server Error" }
+         code: 200,
+         message: "Backup Market Trends",
+         data: backup
+      };
+   }
+}
+
+async function fetchNews(): Promise<News> {
+   // Retrieve the latest financial news from the Dow Jones RSS feed
+   const response = await fetch(
+      "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+   ).then(async(response) => await response.text());
+
+   return await (await parseStringPromise(response))?.rss as News;
+}
+
+export async function fetchFinancialNews(): Promise<ServiceResponse> {
+   try {
+      const cache = await redisClient.get("news");
+
+      if (cache) {
+         // Cache hit
+         return {
+            code: 200,
+            message: "Cached Financial News",
+            data: JSON.parse(cache) as News
+         };
+      } else {
+         // Handle cache miss
+         const data = await fetchNews();
+
+         // Cache the news result for 15 minutes
+         await redisClient.setex("news", 15 * 60, JSON.stringify(data));
+
+         return {
+            code: 200,
+            message: "Latest Financial News",
+            data: data as News
+         };
+      }
+   } catch (error: any) {
+      // Use backup XML news file
+      console.error(error);
+
+      const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss as News;
+
+      if (await redisClient.get("news") === null) {
+         // Update cache with backup news in case of API failure for 5 minutes
+         await redisClient.setex("news", 5 * 60, JSON.stringify(backup));
+      }
+
+      return {
+         code: 200,
+         message: "Backup Financial News",
+         data: backup
       };
    }
 }

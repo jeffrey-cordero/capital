@@ -62,18 +62,18 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
    }
 });
 
-export const PUT = asyncHandler(async(req: Request, res: Response) => {
+const extracted = async(req: Request, res: Response) => {
    try {
       if (req.path.endsWith("/order")) {
          const accounts = req.body as Account[];
-         const result = await updateAccountOrder("", accounts);
+         const result: ServiceResponse = await updateAccountOrder("", accounts);
 
          return sendSuccess(res, result.code, result.message);
       } else {
          const account_id = req.params.id;
          const account = req.body as Account;
 
-         const result = await updateAccount("", account_id, account);
+         const result: ServiceResponse = await updateAccount("", account_id, account);
 
          if (result.code === 200) {
             return sendSuccess(res, result.code, result.message);
@@ -85,7 +85,8 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       console.error(error);
       return sendErrors(res, 500, "Internal Server Error", { system: error.message });
    }
-});
+};
+export const PUT = asyncHandler(extracted);
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    try {

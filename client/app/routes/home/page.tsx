@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { type MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
@@ -11,28 +11,22 @@ import Stories from "@/components/home/news";
 import Quotes from "@/components/home/quotes";
 import { sendApiRequest } from "@/lib/server";
 
-async function fetchNews(): Promise<News> {
-   return (await sendApiRequest("home/news", "GET", null))?.data.news;
-}
-
-async function fetchMarketTrends(): Promise<MarketTrends> {
-   return (await sendApiRequest("home/marketTrends", "GET", null))?.data.marketTrends;
+async function fetchHomeData(): Promise<{ marketTrends: MarketTrends, financialNews: News }> {
+   return (await sendApiRequest("home", "GET", null))?.data;
 }
 
 export default function Page() {
-   const homeQueries = useQueries({
-      queries: [
-         // Cache the market trends result for 24 hours
-         { queryKey: ["marketTrends"], queryFn: fetchMarketTrends, staleTime: 24 * 60 * 60 * 1000, gcTime: 24 * 60 * 60 * 1000 },
-         // Cache the news result for 15 minutes
-         { queryKey: ["news"], queryFn: fetchNews, staleTime: 15 * 60 * 1000, gcTime: 15 * 60 * 1000 }
-      ]
+   const { data, isLoading } = useQuery({ 
+      queryKey: ["home"], 
+      queryFn: fetchHomeData,
+      staleTime: 15 * 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000
    });
 
-   const [marketTrends, newsData] = homeQueries;
-   const isLoading: boolean = marketTrends.isLoading || newsData.isLoading;
-
    if (isLoading) return <Loading />;
+
+   const marketTrends = data?.marketTrends as MarketTrends;
+   const financialNews = data?.financialNews as News;
 
    return (
       <Box
@@ -62,12 +56,12 @@ export default function Page() {
                      <Finances />
                   </Grid>
                   <Grid size = { { xs: 12 } }>
-                     <Indicators data = { marketTrends.data as MarketTrends } />
+                     <Indicators data = { marketTrends } />
                   </Grid>
                </Box>
             </Grid>
             <Grid size = { { xs: 12, xl: 4 } }>
-               <Stories data = { newsData.data as News } />
+               <Stories data = { financialNews } />
             </Grid>
             <Grid size = { { xs: 12 } }>
                <Quotes />

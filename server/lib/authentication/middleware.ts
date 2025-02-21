@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { sendErrors } from "@/lib/api/response";
 
 // Token Generation
-export function configureJWT(req: Request, res: Response, user: User): void {
+export function configureJWT(res: Response, user: User): void {
    // Generate JWT token
    const secret: string = process.env.SESSION_SECRET || "";
    const token = jwt.sign({ user_id: user.user_id, username: user.username }, secret, { expiresIn: "24h" });

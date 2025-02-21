@@ -3,18 +3,14 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { sendErrors, sendSuccess, ServiceResponse } from "@/lib/api/response";
-import { configureJWT } from "@/lib/authentication/middleware";
 import { createUser } from "@/service/userService";
 
 export const POST = asyncHandler(async(req: Request, res: Response) => {
    try {
       const user = req.body as User;
-      const result: ServiceResponse = await createUser(user);
+      const result: ServiceResponse = await createUser(req, res, user);
 
       if (result.code === 200) {
-         // Configure JWT token for authentication purposes
-         configureJWT(req, res, result.data as User);
-
          return sendSuccess(res, result.code, result.message);
       } else {
          // Invalid user fields or account conflict(s)

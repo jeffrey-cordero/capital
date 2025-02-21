@@ -1,32 +1,12 @@
 import { User, userSchema } from "capital-types/user";
+import { Request, Response } from "express";
 
 import { ServiceResponse } from "@/lib/api/response";
-import { compare, hash } from "@/lib/database/cryptography";
-import { create, findByUsername, findConflictingUsers } from "@/repository/userRepository";
+import { configureJWT } from "@/lib/authentication/middleware";
+import { hash } from "@/lib/database/cryptography";
+import { create, findConflictingUsers } from "@/repository/userRepository";
 
-export async function authenticateUser(username: string, password: string): Promise<ServiceResponse> {
-   // Authenticate user based on existing username and valid password through hashing
-   const user = await findByUsername(username);
-
-   if (user.length === 0 || !(await compare(password, user[0].password))) {
-      return {
-         code: 401,
-         message: "Invalid credentials",
-         errors: {
-            username: "Invalid credentials",
-            password: "Invalid credentials"
-         }
-      };
-   } else {
-      return {
-         code: 200,
-         message: "Successfully authenticated",
-         data: user[0]
-      };
-   }
-}
-
-export async function createUser(user: User): Promise<ServiceResponse> {
+export async function createUser(req: Request, res: Response, user: User): Promise<ServiceResponse> {
    // Validate user fields and uniqueness before insertion
    const fields = userSchema.safeParse(user);
 
@@ -60,6 +40,9 @@ export async function createUser(user: User): Promise<ServiceResponse> {
       if (result.length === 0) {
          // User does not exist with same username and/or email
          const creation = await create({ ...user, password: await hash(user.password) });
+
+         // Configure JWT token for authentication purposes
+         configureJWT(res, creation[0]);
 
          return {
             code: 200,

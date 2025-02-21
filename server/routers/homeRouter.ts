@@ -6,8 +6,7 @@ import { authenticateJWT } from "@/lib/authentication/middleware";
 
 const homeRouter = express.Router();
 
-homeRouter.get("/news", authenticateJWT(true), homeController.NEWS);
-homeRouter.get("/marketTrends", authenticateJWT(true), homeController.MARKET_TRENDS);
+homeRouter.get("/", authenticateJWT(true), homeController.GET);
 
 homeRouter.get("/accounts", authenticateJWT(true), accountsController.GET);
 homeRouter.post("/accounts", authenticateJWT(true), accountsController.POST);
