@@ -11,7 +11,10 @@ export const GET = asyncHandler(async(_req: Request, res: Response) => {
          fetchFinancialNews()
       ]);
 
-      return sendSuccess(res, 200, "Home Data", { marketTrends, financialNews });
+      return sendSuccess(res, 200, "Home Data", { 
+         marketTrends: marketTrends.data,
+         financialNews: financialNews.data 
+      });
    } catch (error: any) {
       console.error(error);
 

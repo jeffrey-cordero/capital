@@ -11,10 +11,9 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
-import { clearAuthentication } from "@/lib/authentication";
-import { authenticate } from "@/redux/slices/authentication";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
+import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
 
 const landing = [{
    path: "/",
@@ -175,25 +174,9 @@ function SideBarContent(props: SideBarContentProps) {
    const { links, onClose } = props;
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
+   const mutation = useAuthenticationMutation(false, queryClient, dispatch);
    const theme = useTheme();
    const location = useLocation();
-
-   const mutation = useMutation({
-      mutationFn: clearAuthentication,
-      onSuccess: () => {
-         // Update cached authentication status
-         queryClient.setQueriesData({ queryKey: "authentication" }, false);
-
-         // Update Redux store
-         dispatch(authenticate(false));
-
-         // Navigate to the login page
-         window.location.reload();
-      },
-      onError: (error: any) => {
-         console.error(error);
-      }
-   });
 
    return (
       <Box sx = { { position: "relative", height: "100%", textAlign: "center" } }>

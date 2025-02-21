@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
 import { addNotification } from "@/redux/slices/notifications";
+import { useQueryClient } from "@tanstack/react-query";
 
 const registrationSchema = userSchema.extend({
    verifyPassword: userSchema.shape.password
@@ -19,6 +20,7 @@ const registrationSchema = userSchema.extend({
 
 export default function Register() {
    const dispatch = useDispatch();
+   const queryClient = useQueryClient();
    const {
       control,
       handleSubmit,
@@ -42,6 +44,8 @@ export default function Register() {
       const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
 
       if (response?.status === "Success") {
+         queryClient.setQueryData(["authentication"], true);
+
          dispatch(addNotification({
             type: "success",
             message: "Successfully registered!"
