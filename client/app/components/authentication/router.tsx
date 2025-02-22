@@ -13,13 +13,8 @@ import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { theme } from "@/styles/mui/theme";
 
-interface RouterProps {
-   secure: boolean;
-}
-
-export default function Router(props: RouterProps) {
+export default function Router({ secure }: { secure: boolean }) {
    // Authentication-based routing
-   const { secure } = props;
    const { data, isLoading, error, isError } = useQuery({
       queryKey: ["authentication"],
       queryFn: getAuthentication,

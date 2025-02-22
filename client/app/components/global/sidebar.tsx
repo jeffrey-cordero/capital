@@ -170,8 +170,7 @@ interface SideBarContentProps {
    onClose: () => void;
 };
 
-function SideBarContent(props: SideBarContentProps) {
-   const { links, onClose } = props;
+function SideBarContent({ links, onClose } : SideBarContentProps) {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
    const mutation = useAuthenticationMutation(false, queryClient, dispatch);

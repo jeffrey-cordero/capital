@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type Account, images } from "capital-types/accounts";
+import { images } from "capital-types/accounts";
 
 import AccountCard from "@/components/home/accounts/account";
 
@@ -28,7 +28,7 @@ export default function Accounts() {
                      <AccountCard
                         account = {
                            {
-                              account_id: index,
+                              account_id: String(index),
                               account_order: index,
                               name: image,
                               type: "asset",
@@ -36,9 +36,7 @@ export default function Accounts() {
                               balance: 1000,
                               history: [
                                  {
-                                    month: "January",
-                                    year: "2023",
-                                    amount: 1000,
+                                    balance: 1000,
                                     last_updated: new Date("01/01/2023").toISOString()
                                  }
                               ]

@@ -16,8 +16,8 @@ async function fetchHomeData(): Promise<{ marketTrends: MarketTrends, financialN
 }
 
 export default function Page() {
-   const { data, isLoading } = useQuery({ 
-      queryKey: ["home"], 
+   const { data, isLoading } = useQuery({
+      queryKey: ["home"],
       queryFn: fetchHomeData,
       staleTime: 15 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000

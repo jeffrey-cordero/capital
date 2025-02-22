@@ -49,9 +49,7 @@ interface ModalProps {
    sx?: SxProps<any>;
 }
 
-export default function Modal(props: ModalProps) {
-   const { open, onClose, children, sx } = props;
-
+export default function Modal({ open, onClose, children, sx }: ModalProps) {
    return (
       <MuiModal
          onClose = { onClose }

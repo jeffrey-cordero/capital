@@ -13,8 +13,7 @@ interface TrendChartProps {
    data: Record<string, IndicatorTrend[]>;
 }
 
-function Indicator(props: TrendChartProps) {
-   const { data } = props;
+function Indicator({ data }: TrendChartProps) {
    const {
       watch,
       control
@@ -314,12 +313,7 @@ function Indicator(props: TrendChartProps) {
    );
 }
 
-interface StockProps {
-   data: StockTrends;
-}
-
-function Stocks(props: StockProps) {
-   const { data } = props;
+function Stocks({ data }: { data: StockTrends }) {
    const { top_gainers, top_losers, most_actively_traded } = data;
 
    const colors = {
@@ -442,13 +436,7 @@ function Stocks(props: StockProps) {
    );
 }
 
-interface IndicatorProps {
-   data: MarketTrends;
-}
-
-export function Indicators(props: IndicatorProps) {
-   const { data } = props;
-
+export function Indicators({ data }: { data: MarketTrends }) {
    const indicators = Object.keys(data).filter(key => key !== "Stocks")
       .reduce((acc: { [key: string]: IndicatorTrend[] }, key) => {
          acc[key] = data[key] as IndicatorTrend[];

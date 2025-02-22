@@ -19,8 +19,7 @@ export type TrendProps = {
    data: number[];
 };
 
-export function Trend(props: TrendProps) {
-   const { title, value, interval, trend, data } = props;
+export function Trend({ title, value, interval, trend, data }: TrendProps) {
    const theme = useTheme();
    const daysInWeek = getDaysInMonth(4, 2024);
 

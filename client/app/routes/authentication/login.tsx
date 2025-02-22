@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { useQueryClient } from "@tanstack/react-query";
 import { userSchema } from "capital-types/user";
 import clsx from "clsx";
 import { useState } from "react";
@@ -12,7 +13,6 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
-import { useQueryClient } from "@tanstack/react-query";
 import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
 
 const loginSchema = z.object({

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { useQueryClient } from "@tanstack/react-query";
 import { userSchema } from "capital-types/user";
 import clsx from "clsx";
 import { useState } from "react";
@@ -12,7 +13,7 @@ import { useDispatch } from "react-redux";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
 import { addNotification } from "@/redux/slices/notifications";
-import { useQueryClient } from "@tanstack/react-query";
+import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
 
 const registrationSchema = userSchema.extend({
    verifyPassword: userSchema.shape.password
@@ -21,6 +22,7 @@ const registrationSchema = userSchema.extend({
 export default function Register() {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
+   const mutation = useAuthenticationMutation(true, queryClient, dispatch);
    const {
       control,
       handleSubmit,
@@ -51,7 +53,7 @@ export default function Register() {
             message: "Successfully registered!"
          }));
 
-         setTimeout(() => window.location.reload(), 2500);
+         setTimeout(() => mutation.mutate(), 2000);
       }
    };
 

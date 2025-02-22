@@ -10,7 +10,7 @@ export type Account = {
    image: string;
    balance: number;
    account_order: number;
-   history?: AccountHistory[];
+   history: AccountHistory[];
 }
 
 export type AccountHistory = {

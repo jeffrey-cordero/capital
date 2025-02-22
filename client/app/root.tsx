@@ -7,9 +7,9 @@ import { Provider } from "react-redux";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import store from "@/redux/store";
+import queryClient from "@/tanstack/client";
 
 import type { Route } from "./+types/root";
-import queryClient from "@/tanstack/client";
 
 export const links: Route.LinksFunction = () => [
    { rel: "preconnect", href: "https://fonts.googleapis.com" },

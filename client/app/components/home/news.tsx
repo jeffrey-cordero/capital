@@ -12,8 +12,7 @@ interface ExpandMoreProps extends IconButtonProps {
    expand: boolean;
 }
 
-const ExpandMore = styled((props: ExpandMoreProps) => {
-   const { expand, ...other } = props;  // eslint-disable-line
+const ExpandMore = styled(({ expand, ...other }: ExpandMoreProps) => {
    return <IconButton { ...other } />;
 })(({ theme }) => ({
    margin: "0",
@@ -38,11 +37,10 @@ const ExpandMore = styled((props: ExpandMoreProps) => {
    ]
 }));
 
-function StoryItem(props: Story) {
-   const { author, description, link, pubDate, title } = props;
+function StoryItem({ author, description, link, pubDate, title, ...rest }: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
-   const image = props["media:content"]?.[0]?.$.url || "/svg/backup.svg";
+   const image = rest["media:content"]?.[0]?.$.url || "/svg/backup.svg";
 
    return (
       <Card
@@ -182,12 +180,7 @@ function StoryItem(props: Story) {
    );
 }
 
-interface NewsProps {
-   data: News;
-}
-
-export default function Stories(props: NewsProps) {
-   const { data } = props;
+export default function Stories({ data }: { data: News }) {
    const containerRef = useRef<HTMLDivElement>(null);
 
    return (

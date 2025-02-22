@@ -1,4 +1,4 @@
-import { faBank, faPencil, faPlus, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
+import { faPencil, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Avatar, Box, Button, Card, CardContent, Fab, FormControl, FormHelperText, InputLabel, OutlinedInput, Stack, Tooltip, Typography } from "@mui/material";
@@ -9,12 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import Modal from "@/components/global/modal";
 
-interface AccountCardProps {
-   account: Account;
-}
-
-export default function AccountCard(props: AccountCardProps) {
-   const { account } = props;
+export default function AccountCard({ account }: { account: Account }) {
    const {
       control,
       handleSubmit,
@@ -85,7 +80,7 @@ export default function AccountCard(props: AccountCardProps) {
                      fontStyle = "italic"
                      variant = "subtitle2"
                   >
-                     { new Date(account.history?.[0].last_updated).toLocaleDateString() }
+                     { new Date(account.history[0].last_updated).toLocaleDateString() }
                   </Typography>
                </Stack>
             </CardContent>

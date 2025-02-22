@@ -6,12 +6,9 @@ interface CalloutProps {
    type: "primary" | "error";
    children: React.ReactNode;
    sx?: SxProps<any>;
-
 }
 
-export default function Callout(props: CalloutProps) {
-   const { type, children, sx } = props;
-
+export default function Callout({ type, children, sx }: CalloutProps) {
    return (
       <Grid
          container = { true }
