@@ -42,7 +42,20 @@ const deleteAccount = async(user_id: string, id: string): Promise<ServiceRespons
 
 // Controller implementation
 export const GET = asyncHandler(async(req: Request, res: Response) => {
-   return sendSuccess(res, 200, "Accounts Retrieved", {});
+   return sendSuccess(res, 200, "Accounts", {
+      accounts: [{
+         account_id: "1234",
+         name: "Checking",
+         type: "Bank",
+         image: "bank",
+         balance: 1000,
+         account_order: 0,
+         history: [{
+            last_updated: "2021-01-01",
+            balance: 1000
+         }]
+      }]
+   });
 });
 
 export const POST = asyncHandler(async(req: Request, res: Response) => {

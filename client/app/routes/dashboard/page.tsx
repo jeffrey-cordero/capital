@@ -4,26 +4,23 @@ import { useQuery } from "@tanstack/react-query";
 import { type MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
-import Loading from "@/components/global/loading";
 import Finances from "@/components/dashboard/finances";
 import { Indicators } from "@/components/dashboard/indicators";
 import Stories from "@/components/dashboard/news";
 import Quotes from "@/components/dashboard/quotes";
-import { sendApiRequest } from "@/lib/server";
-
-async function fetchHomeData(): Promise<{ marketTrends: MarketTrends, financialNews: News }> {
-   return (await sendApiRequest("dashboard", "GET", null))?.data;
-}
+import Loading from "@/components/global/loading";
+import { fetchDashboard } from "@/tanstack/queries/dashboard";
 
 export default function Page() {
    const { data, isLoading } = useQuery({
       queryKey: ["dashboard"],
-      queryFn: fetchHomeData,
+      queryFn: fetchDashboard,
       staleTime: 15 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000
    });
-
    if (isLoading) return <Loading />;
+
+   console.log(data);
 
    const marketTrends = data?.marketTrends as MarketTrends;
    const financialNews = data?.financialNews as News;

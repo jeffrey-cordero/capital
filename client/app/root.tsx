@@ -7,9 +7,9 @@ import { Provider } from "react-redux";
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
 import Router from "@/components/authentication/router";
-import { getAuthentication } from "@/lib/authentication";
 import store from "@/redux/store";
 import queryClient from "@/tanstack/client";
+import { getAuthentication } from "@/tanstack/queries/authentication";
 
 import type { Route } from "./+types/root";
 
@@ -57,23 +57,23 @@ export default function App() {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
-            <Configs />
+            <Configurations />
             <Router secure = { store.getState().authentication.value } />
          </QueryClientProvider>
       </Provider>
    );
 }
 
-function Configs() {
-   // Prefetch configurations for client-side rendering and routing within the QueryClientProvider
+export function Configurations() {
+   // Prefetch configurations for client-side rendering within the QueryClientProvider
    const client = useQueryClient();
 
    useEffect(() => {
       // Fetch preferred theme
-      const preferredTheme: string | undefined = window.localStorage.theme;
+      const preferredTheme: string | undefined = localStorage.theme;
       const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
 
-      // Prefetch authentication state from server
+      // Prefetch authentication state from the server
       client.prefetchQuery({
          queryKey: ["authentication"],
          queryFn: getAuthentication,
@@ -81,12 +81,7 @@ function Configs() {
          gcTime: 24 * 60 * 60 * 1000
       });
 
-      // Set initial authentication and theme state based on localStorage or system preferences
-      store.dispatch({
-         type: "authentication/authenticate",
-         payload: localStorage.getItem("authenticated") === "true"
-      });
-
+      // Set initial theme state based on localStorage or system preferences
       store.dispatch({
          type: "theme/setTheme",
          payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"

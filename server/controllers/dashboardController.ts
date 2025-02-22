@@ -11,7 +11,7 @@ export const GET = asyncHandler(async(_req: Request, res: Response) => {
          fetchFinancialNews()
       ]);
 
-      return sendSuccess(res, 200, "Dashboard Data", { 
+      return sendSuccess(res, 200, "Dashboard", { 
          marketTrends: marketTrends.data,
          financialNews: financialNews.data 
       });

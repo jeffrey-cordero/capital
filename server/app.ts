@@ -12,7 +12,7 @@ import serveIndex from "serve-index";
 
 import { sendErrors } from "@/lib/api/response";
 import authenticationRouter from "@/routers/authenticationRouter";
-import homeRouter from "@/routers/dashboardRouter";
+import dashboardRouter from "@/routers/dashboardRouter";
 import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
@@ -55,7 +55,7 @@ app.use(express.json());
 app.use("/resources", serveIndex(path.join(__dirname, "resources"), { "icons": true }));
 
 app.use("/", indexRouter);
-app.use("/dashboard", homeRouter);
+app.use("/dashboard", dashboardRouter);
 app.use("/users", userRouter);
 app.use("/authentication", authenticationRouter);
 

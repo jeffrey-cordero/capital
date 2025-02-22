@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 const saveLocalTheme = (theme: "light" | "dark") => {
-   window.localStorage.theme = theme;
+   localStorage.theme = theme;
    document.body.dataset.dark = theme === "dark" ? "true" : "false";
 };
 

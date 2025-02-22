@@ -3,12 +3,11 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 const authenticationSlice = createSlice({
    name: "authentication",
    initialState: {
-      value: false
+      value: true
    },
    reducers: {
       authenticate(state, action: PayloadAction<boolean>) {
          state.value = action.payload;
-         localStorage.setItem("authenticated", action.payload.toString());
       }
    }
 });

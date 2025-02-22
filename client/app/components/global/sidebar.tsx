@@ -13,7 +13,7 @@ import { useLocation } from "react-router";
 
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import { clearAuthentication } from "@/lib/authentication";
+import { clearAuthentication } from "@/tanstack/queries/authentication";
 
 const landing = [{
    path: "/",
@@ -312,10 +312,12 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                            <IconButton
                               aria-label = "Logout"
                               disableRipple = { true }
-                              onClick = { async () => {
-                                 await clearAuthentication();
-                                 queryClient.invalidateQueries({ queryKey: ["authentication"] })
-                              } }
+                              onClick = {
+                                 async() => {
+                                    await clearAuthentication();
+                                    queryClient.invalidateQueries({ queryKey: ["authentication"] });
+                                 }
+                              }
                               size = "medium"
                               sx = {
                                  {

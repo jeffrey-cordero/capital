@@ -1,17 +1,17 @@
 import express from "express";
 
 import * as accountsController from "@/controllers/accountsController";
-import * as homeController from "@/controllers/dashboardController";
+import * as dashboardController from "@/controllers/dashboardController";
 import { authenticateJWT } from "@/lib/authentication/middleware";
 
-const homeRouter = express.Router();
+const dashboardRouter = express.Router();
 
-homeRouter.get("/", authenticateJWT(true), homeController.GET);
+dashboardRouter.get("/", authenticateJWT(true), dashboardController.GET);
 
-homeRouter.get("/accounts", authenticateJWT(true), accountsController.GET);
-homeRouter.post("/accounts", authenticateJWT(true), accountsController.POST);
-homeRouter.put("/accounts/order", authenticateJWT(true), accountsController.PUT);
-homeRouter.put("/accounts/:id", authenticateJWT(true), accountsController.PUT);
-homeRouter.delete("/accounts/:id", authenticateJWT(true), accountsController.DELETE);
+dashboardRouter.get("/accounts", authenticateJWT(true), accountsController.GET);
+dashboardRouter.post("/accounts", authenticateJWT(true), accountsController.POST);
+dashboardRouter.put("/accounts/order", authenticateJWT(true), accountsController.PUT);
+dashboardRouter.put("/accounts/:id", authenticateJWT(true), accountsController.PUT);
+dashboardRouter.delete("/accounts/:id", authenticateJWT(true), accountsController.DELETE);
 
-export default homeRouter;
+export default dashboardRouter;
