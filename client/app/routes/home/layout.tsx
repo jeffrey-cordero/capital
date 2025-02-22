@@ -1,7 +1,7 @@
-import Router from "@/components/authentication/router";
+import { Outlet } from "react-router";
 
 export default function Layout() {
    return (
-      <Router secure = { true } />
+      <Outlet />
    );
 }

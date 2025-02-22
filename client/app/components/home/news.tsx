@@ -12,7 +12,7 @@ interface ExpandMoreProps extends IconButtonProps {
    expand: boolean;
 }
 
-const ExpandMore = styled(({ expand, ...other }: ExpandMoreProps) => {
+const ExpandMore = styled(({ expand, ...other }: ExpandMoreProps) => { // eslint-disable-line
    return <IconButton { ...other } />;
 })(({ theme }) => ({
    margin: "0",

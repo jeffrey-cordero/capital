@@ -1,7 +1,6 @@
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Modal as MuiModal, type SxProps } from "@mui/material";
-import { css, styled } from "@mui/material";
+import { Box, css, Modal as MuiModal, styled, type SxProps } from "@mui/material";
 
 import { gray } from "@/styles/mui/colors";
 

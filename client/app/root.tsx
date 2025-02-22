@@ -1,11 +1,13 @@
 import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Provider } from "react-redux";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
+import Router from "@/components/authentication/router";
+import { getAuthentication } from "@/lib/authentication";
 import store from "@/redux/store";
 import queryClient from "@/tanstack/client";
 
@@ -28,15 +30,6 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-   const [prefersDarkMode, setPrefersDarkMode] = useState<boolean>(true);
-
-   useEffect(() => {
-      const preferredTheme: string | undefined = window.localStorage.theme;
-      const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
-
-      setPrefersDarkMode(preferredTheme === "dark" || (!preferredTheme && prefersDarkMode));
-   }, [setPrefersDarkMode]);
-
    return (
       <html lang = "en">
          <head>
@@ -49,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Links />
          </head>
          <body
-            data-dark = { prefersDarkMode }
+            data-dark = { store.getState().theme.value === "dark" }
             suppressHydrationWarning = { true }
          >
             { children }
@@ -64,10 +57,43 @@ export default function App() {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
-            <Outlet />
+            <Configs />
+            <Router secure = { store.getState().authentication.value } />
          </QueryClientProvider>
       </Provider>
    );
+}
+
+function Configs() {
+   // Prefetch configurations for client-side rendering and routing within the QueryClientProvider
+   const client = useQueryClient();
+
+   useEffect(() => {
+      // Fetch preferred theme
+      const preferredTheme: string | undefined = window.localStorage.theme;
+      const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      // Prefetch authentication state from server
+      client.prefetchQuery({
+         queryKey: ["authentication"],
+         queryFn: getAuthentication,
+         staleTime: 1 * 60 * 60 * 1000,
+         gcTime: 24 * 60 * 60 * 1000
+      });
+
+      // Set initial authentication and theme state based on localStorage or system preferences
+      store.dispatch({
+         type: "authentication/authenticate",
+         payload: localStorage.getItem("authenticated") === "true"
+      });
+
+      store.dispatch({
+         type: "theme/setTheme",
+         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"
+      });
+   }, [client]);
+
+   return null;
 }
 
 export function ErrorBoundary() {

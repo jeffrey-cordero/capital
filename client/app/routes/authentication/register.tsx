@@ -13,7 +13,6 @@ import { useDispatch } from "react-redux";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
 import { addNotification } from "@/redux/slices/notifications";
-import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
 
 const registrationSchema = userSchema.extend({
    verifyPassword: userSchema.shape.password
@@ -22,7 +21,6 @@ const registrationSchema = userSchema.extend({
 export default function Register() {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
-   const mutation = useAuthenticationMutation(true, queryClient, dispatch);
    const {
       control,
       handleSubmit,
@@ -53,7 +51,7 @@ export default function Register() {
             message: "Successfully registered!"
          }));
 
-         setTimeout(() => mutation.mutate(), 2000);
+         setTimeout(() => queryClient.invalidateQueries({ queryKey: ["authentication"] }), 2000);
       }
    };
 

@@ -13,7 +13,6 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/server";
-import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -23,7 +22,6 @@ const loginSchema = z.object({
 export default function Login() {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
-   const mutation = useAuthenticationMutation(true, queryClient, dispatch);
 
    const {
       control,
@@ -44,7 +42,7 @@ export default function Login() {
       const response = await sendApiRequest("authentication/login", "POST", credentials, dispatch, setError);
 
       if (response?.status === "Success") {
-         mutation.mutate();
+         queryClient.invalidateQueries({ queryKey: ["authentication"] });
       }
    };
 

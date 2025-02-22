@@ -6,14 +6,14 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import useAuthenticationMutation from "@/tanstack/mutations/authenticationMutation";
+import { clearAuthentication } from "@/lib/authentication";
 
 const landing = [{
    path: "/",
@@ -173,7 +173,6 @@ interface SideBarContentProps {
 function SideBarContent({ links, onClose } : SideBarContentProps) {
    const dispatch = useDispatch();
    const queryClient = useQueryClient();
-   const mutation = useAuthenticationMutation(false, queryClient, dispatch);
    const theme = useTheme();
    const location = useLocation();
 
@@ -313,7 +312,10 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                            <IconButton
                               aria-label = "Logout"
                               disableRipple = { true }
-                              onClick = { () => mutation.mutate() }
+                              onClick = { async () => {
+                                 await clearAuthentication();
+                                 queryClient.invalidateQueries({ queryKey: ["authentication"] })
+                              } }
                               size = "medium"
                               sx = {
                                  {
