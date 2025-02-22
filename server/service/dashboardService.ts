@@ -5,7 +5,7 @@ import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
 import { ServiceResponse } from "@/lib/api/response";
-import { getMarketTrends, updateMarketTrends } from "@/repository/homeRepository";
+import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 
 async function fetchStocks(): Promise<StockTrends[]> {
    // Retrieve stock trends from the API (Top Gainers, Losers, and Most Active)

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { fetchFinancialNews, fetchMarketTrends } from "@/service/homeService";
+import { fetchFinancialNews, fetchMarketTrends } from "@/service/dashboardService";
 
 export const GET = asyncHandler(async(_req: Request, res: Response) => {
    try {
@@ -11,7 +11,7 @@ export const GET = asyncHandler(async(_req: Request, res: Response) => {
          fetchFinancialNews()
       ]);
 
-      return sendSuccess(res, 200, "Home Data", { 
+      return sendSuccess(res, 200, "Dashboard Data", { 
          marketTrends: marketTrends.data,
          financialNews: financialNews.data 
       });

@@ -34,7 +34,7 @@ export default function Router({ secure }: { secure: boolean }) {
    useEffect(() => {
       // Navigate to appropriate route based on authentication state
       if (!isLoading && routing) {
-         navigate(authenticated ? "/home" : "/login");
+         navigate(authenticated ? "/dashboard" : "/login");
       }
    }, [authenticated, secure, navigate, isLoading, routing]);
 

@@ -29,28 +29,28 @@ const landing = [{
    icon: faUserPlus
 }];
 
-const home = [{
-   path: "/home",
-   title: "Home",
+const dashboard = [{
+   path: "/dashboard",
+   title: "Dashboard",
    icon: faHome
 }, {
-   path: "/home/accounts",
+   path: "/dashboard/accounts",
    title: "Accounts",
    icon: faBank
 }, {
-   path: "/home/budget",
+   path: "/dashboard/budget",
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home#indicators",
+   path: "/dashboard#indicators",
    title: "Indicators",
    icon: faChartLine
 }, {
-   path: "/home#news",
+   path: "/dashboard#news",
    title: "News",
    icon: faNewspaper
 }, {
-   path: "/home#quotes",
+   path: "/dashboard#quotes",
    title: "Quotes",
    icon: faQuoteLeft
 }, {
@@ -153,7 +153,7 @@ export function SideBar() {
             }
          >
             <SideBarContent
-               links = { authenticated ? home : landing }
+               links = { authenticated ? dashboard : landing }
                onClose = { () => setOpen(false) }
             />
          </Drawer>
@@ -266,7 +266,7 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                }
             >
                {
-                  links === home ? (
+                  links === dashboard ? (
                      <Box>
                         <Box
                            sx = {

@@ -5,19 +5,19 @@ import { type MarketTrends } from "capital-types/marketTrends";
 import { type News } from "capital-types/news";
 
 import Loading from "@/components/global/loading";
-import Finances from "@/components/home/finances";
-import { Indicators } from "@/components/home/indicators";
-import Stories from "@/components/home/news";
-import Quotes from "@/components/home/quotes";
+import Finances from "@/components/dashboard/finances";
+import { Indicators } from "@/components/dashboard/indicators";
+import Stories from "@/components/dashboard/news";
+import Quotes from "@/components/dashboard/quotes";
 import { sendApiRequest } from "@/lib/server";
 
 async function fetchHomeData(): Promise<{ marketTrends: MarketTrends, financialNews: News }> {
-   return (await sendApiRequest("home", "GET", null))?.data;
+   return (await sendApiRequest("dashboard", "GET", null))?.data;
 }
 
 export default function Page() {
    const { data, isLoading } = useQuery({
-      queryKey: ["home"],
+      queryKey: ["dashboard"],
       queryFn: fetchHomeData,
       staleTime: 15 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000

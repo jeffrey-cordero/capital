@@ -1,7 +1,7 @@
 import express from "express";
 
 import * as accountsController from "@/controllers/accountsController";
-import * as homeController from "@/controllers/homeController";
+import * as homeController from "@/controllers/dashboardController";
 import { authenticateJWT } from "@/lib/authentication/middleware";
 
 const homeRouter = express.Router();

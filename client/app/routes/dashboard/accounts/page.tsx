@@ -1,8 +1,8 @@
 import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
-import Accounts from "@/components/home/accounts/accounts";
-import Transactions from "@/components/home/accounts/transactions";
+import Accounts from "@/components/dashboard/accounts/accounts";
+import Transactions from "@/components/dashboard/accounts/transactions";
 
 export default function Page() {
    return (

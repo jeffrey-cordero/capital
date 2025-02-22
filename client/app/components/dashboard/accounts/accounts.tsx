@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { images } from "capital-types/accounts";
 
-import AccountCard from "@/components/home/accounts/account";
+import AccountCard from "@/components/dashboard/accounts/account";
 
 export default function Accounts() {
    return (
