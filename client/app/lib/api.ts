@@ -41,6 +41,7 @@ export async function sendApiRequest(
 
       // Handle valid JSON response
       const result = await response.json();
+      dispatch(authenticate(window.location.pathname.startsWith("/dashboard")));
 
       if (result.status === "Success") {
          // Successful response

@@ -15,7 +15,7 @@ const authenticationSlice = createSlice({
             return account.account_id === action.payload.account_id ? action.payload : account;
          });
       },
-      removeAccount(state, action: PayloadAction<number>) {
+      removeAccount(state, action: PayloadAction<string>) {
          state.value = state.value.filter((account) => {
             return account.account_id !== action.payload;
          });

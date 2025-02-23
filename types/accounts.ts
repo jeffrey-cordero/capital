@@ -40,5 +40,7 @@ export const accountSchema = z.object({
    type: z.enum(types),
    image: z.union([z.enum(images), z.string().url()]).optional(),
    history: z.array(accountHistorySchema).optional(),
-   account_order: z.number().min(0)
+   account_order: z.coerce.number().min(0, {
+      message: "Account order must be at least 0"
+   })
 });

@@ -15,7 +15,7 @@ export const GET = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });
 
@@ -33,7 +33,7 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });
 
@@ -64,7 +64,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       }
    } catch (error: any) {
       console.error(error);
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });
 
@@ -77,6 +77,6 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
       return sendSuccess(res, result.status, result.message);
    } catch (error: any) {
       console.error(error);
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });

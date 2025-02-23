@@ -57,7 +57,7 @@ export default function Page() {
                      }
                   >
                      <Grid size = { { xs: 12 } }>
-                        <Finances />
+                        <Finances accounts = { accounts } />
                      </Grid>
                      <Grid size = { { xs: 12 } }>
                         <Indicators data = { marketTrends } />

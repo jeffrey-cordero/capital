@@ -1,4 +1,4 @@
-import { faBank, faBarsStaggered, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import { faBank, faBarsStaggered, faChartLine, faGauge, faGears, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -31,7 +31,7 @@ const landing = [{
 const dashboard = [{
    path: "/dashboard",
    title: "Dashboard",
-   icon: faHome
+   icon: faGauge
 }, {
    path: "/dashboard/accounts",
    title: "Accounts",
@@ -202,7 +202,7 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
             >
                {
                   links.map((link) => {
-                     const isActivated = link.path === location.pathname;
+                     const isActivated = link.path === location.pathname || link.path + "/" === location.pathname;
 
                      return (
                         <ListItem
@@ -311,7 +311,12 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                            <IconButton
                               aria-label = "Logout"
                               disableRipple = { true }
-                              onClick = { () => clearAuthentication(dispatch, navigate) }
+                              onClick = {
+                                 async() => {
+                                    await clearAuthentication(dispatch, navigate);
+                                    onClose();
+                                 }
+                              }
                               size = "medium"
                               sx = {
                                  {

@@ -1,10 +1,10 @@
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { images } from "capital-types/accounts";
+import { type Account, images } from "capital-types/accounts";
 
 import AccountCard from "@/components/dashboard/accounts/account";
 
-export default function Accounts() {
+export default function Accounts({ accounts }: {accounts: Account[]}) {
    return (
       <Box
          id = "accounts"

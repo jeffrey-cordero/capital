@@ -1,8 +1,8 @@
-import { Account, AccountHistory, accountSchema } from "capital-types/accounts";
+import { Account, AccountHistory, accountHistorySchema, accountSchema } from "capital-types/accounts";
 import { ServerResponse } from "capital-types/server";
 
 import { redisClient } from "@/app";
-import { findByUserId } from "@/repository/accountsRepository";
+import {  create,  deleteAccount as removeAccount, findByUserId, updateDetails, updateHistory as updateAccountHistory, updateOrdering } from "@/repository/accountsRepository";
 
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Validate account fields
@@ -11,7 +11,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    if (cache) {
       return {
          status: 200,
-         message: "Cached accounts",
+         message: "Accounts",
          data: JSON.parse(cache)
       };
    } else {
@@ -23,7 +23,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
 
       return {
          status: 200,
-         message: "Fetched accounts",
+         message: "Accounts",
          data: result
       };
    }
@@ -33,44 +33,139 @@ export async function createAccount(user_id: string, account: Account): Promise<
    // Validate account fields
    const fields = accountSchema.safeParse(account);
 
-   // TODO: Will need to clear redis cache for accounts on successful creation
+   if (!fields.success) {
+      const errors = fields.error.flatten().fieldErrors;
+
+      return {
+         status: 400,
+         message: "Invalid account fields",
+         errors: Object.fromEntries(
+            Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
+               field,
+               errors?.[0] || "Unknown error"
+            ])
+         )
+      };
+   }
+
+   const creation = await create(user_id, account);
+   await redisClient.del(`accounts:${user_id}`);
 
    return {
       status: 200,
-      message: "Awaiting implementation",
-      data: {}
+      message: "Account created",
+      data: { account_id: creation.account_id }
    };
 }
 
 export async function updateAccount(type: "details" | "history", user_id: string, account: Partial<Account & AccountHistory>): Promise<ServerResponse> {
    // Validate account fields
-   const fields = accountSchema.safeParse(account);
+   const fields = accountSchema.partial().safeParse(account);
 
-   // TODO: Will need to clear redis cache for accounts on successful updates
+   if (!fields.success) {
+      const errors = fields.error.flatten().fieldErrors;
+
+      return {
+         status: 400,
+         message: "Invalid account fields",
+         errors: Object.fromEntries(
+            Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
+               field,
+               errors?.[0] || "Unknown error"
+            ])
+         )
+      };
+   }
+
+   if (!account.account_id) {
+      return {
+         status: 400,
+         message: "Account ID is required",
+         errors: { account_id: "Missing account ID" }
+      };
+   }
+
+   if (type === "details") {
+      await updateDetails(account.account_id, account);
+   } else {
+      if (!account.balance) {
+         return {
+            status: 400,
+            message: "Balance is required for updating account history",
+            errors: { balance: "Missing balance" }
+         };
+      }
+
+      const fields = accountHistorySchema.safeParse(account as AccountHistory);
+
+      if (!fields.success) {
+         const errors = fields.error.flatten().fieldErrors;
+
+         return {
+            status: 400,
+            message: "Invalid account history fields",
+            errors: Object.fromEntries(
+               Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
+                  field,
+                  errors?.[0] || "Unknown error"
+               ])
+            )
+         };
+      }
+
+      await updateAccountHistory(account.account_id, account.balance, account.last_updated ? new Date(account.last_updated) : new Date());
+   }
+
+   await redisClient.del(`accounts:${user_id}`);
 
    return {
       status: 200,
-      message: "Awaiting implementation",
-      data: {}
+      message: type === "details" ? "Account details updated" : "Account history updated"
    };
 }
 
 export async function updateAccountsOrdering(user_id: string, accounts: Partial<Account>[]): Promise<ServerResponse> {
-   // TODO: Will need to clear redis cache for accounts on successful updates
+   const updates: Partial<Account>[] = [];
+
+   for (const account of accounts) {
+      if (!account.account_id || typeof account.account_order !== "number") {
+         return {
+            status: 400,
+            message: "Invalid account ordering data",
+            errors: { account_order: "Account order must be a number" }
+         };
+      }
+
+      updates.push({ account_id: account.account_id, account_order: account.account_order });
+   }
+
+   await updateOrdering(user_id, updates);
+   await redisClient.del(`accounts:${user_id}`);
 
    return {
       status: 200,
-      message: "Awaiting implementation",
-      data: {}
+      message: "Account ordering updated"
    };
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   // TODO: Will need to clear redis cache for accounts on successful deletion
+
+   const result = await removeAccount(account_id, user_id);
+
+   if (!result) {
+      return {
+         status: 404,
+         message: "Account not found",
+         errors: { account: "Account does not exist based on the provided ID" }
+      };
+   }
+
+   await redisClient.del(`accounts:${user_id}`);
 
    return {
       status: 200,
-      message: "Awaiting implementation",
-      data: {}
+      message: "Account deleted",
+      data: { success: true }
    };
+
 }

@@ -3,7 +3,20 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { sendErrors, sendSuccess } from "@/lib/api/response";
-import { authenticateUser, logoutUser } from "@/service/authenticationService";
+import { authenticateUser, getAuthentication, logoutUser } from "@/service/authenticationService";
+
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   try {
+      const result: ServerResponse = await getAuthentication(res, req.cookies.token);
+      const authenticated: boolean = result.data?.authenticated;
+
+      return sendSuccess(res, 200, result.message, { authenticated: authenticated });
+   } catch (error: any) {
+      console.error(error);
+
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
+   }
+});
 
 export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
    try {
@@ -18,7 +31,7 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });
 
@@ -30,6 +43,6 @@ export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
    } catch (error: any) {
       console.error(error);
 
-      return sendErrors(res, 500, "Internal Server Error", { system: error.message });
+      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }
 });

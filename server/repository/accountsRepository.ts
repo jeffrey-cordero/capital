@@ -97,7 +97,7 @@ export async function create(user_id: string, account: Account): Promise<Account
    }
 }
 
-export async function updateDetails(account_id: string, updates: Partial<Account>): Promise<Account[]> {
+export async function updateDetails(account_id: string, updates: Partial<Account & AccountHistory>): Promise<Account[]> {
    // Update only the provided fields
    const fields: string[] = [];
    const values: any[] = [];
@@ -127,6 +127,11 @@ export async function updateDetails(account_id: string, updates: Partial<Account
       params++;
    }
 
+   // Handle updating most-recent balance
+   if (updates.balance) {
+      await updateHistory(account_id, updates.balance, new Date());
+   }
+
    values.push(account_id);
 
    const updateQuery = `
@@ -135,6 +140,7 @@ export async function updateDetails(account_id: string, updates: Partial<Account
       WHERE account_id = $${params}
       RETURNING *;
    `;
+
    return await query(updateQuery, values) as Account[];
 }
 
@@ -151,7 +157,7 @@ export async function updateHistory(account_id: string, balance: number, last_up
    return (await query(updateHistory, [account_id, balance, last_updated]) as any)?.rowCount > 0;
 }
 
-export async function updateOrdering(user_id: string, updates: { account_id: string, account_order: number }[]): Promise<boolean> {
+export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
    // Flatten array of parameters
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [update.account_id, update.account_order]);

@@ -48,7 +48,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       if (cache) {
          return {
             status: 200,
-            message: "Cached Market Trends",
+            message: "Market Trends",
             data: JSON.parse(cache) as MarketTrends
          };
       } else {
@@ -84,14 +84,14 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
             return {
                status: 200,
-               message: "Latest Market Trends",
+               message: "Market Trends",
                data: marketTrends
             };
          } else {
             // Return existing database cache as it is still valid in terms of time
             return {
                status: 200,
-               message: "Stored Market Trends",
+               message: "Market Trends",
                data: stored[0]?.data as MarketTrends
             };
          }
@@ -111,7 +111,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
       return {
          status: 200,
-         message: "Backup Market Trends",
+         message: "Market Trends",
          data: backup
       };
    }
@@ -134,7 +134,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
          // Cache hit
          return {
             status: 200,
-            message: "Cached Financial News",
+            message: "Financial News",
             data: JSON.parse(cache) as News
          };
       } else {
@@ -146,7 +146,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
 
          return {
             status: 200,
-            message: "Latest Financial News",
+            message: "Financial News",
             data: data as News
          };
       }
@@ -163,7 +163,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
 
       return {
          status: 200,
-         message: "Backup Financial News",
+         message: "Financial News",
          data: backup
       };
    }

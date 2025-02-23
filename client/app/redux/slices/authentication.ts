@@ -3,10 +3,10 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 const authenticationSlice = createSlice({
    name: "authentication",
    initialState: {
-      value: undefined as boolean | undefined
+      value: undefined as undefined | boolean
    },
    reducers: {
-      authenticate(state, action: PayloadAction<boolean | undefined>) {
+      authenticate(state, action: PayloadAction<boolean>) {
          state.value = action.payload;
       }
    }
