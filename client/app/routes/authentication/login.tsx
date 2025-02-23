@@ -3,16 +3,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useQueryClient } from "@tanstack/react-query";
 import { userSchema } from "capital-types/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 import { z } from "zod";
 
 import Callout from "@/components/global/callout";
-import { sendApiRequest } from "@/lib/server";
+import { sendApiRequest } from "@/lib/api";
+import { authenticate } from "@/redux/slices/authentication";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -21,7 +22,7 @@ const loginSchema = z.object({
 
 export default function Login() {
    const dispatch = useDispatch();
-   const queryClient = useQueryClient();
+   const navigate = useNavigate();
 
    const {
       control,
@@ -39,10 +40,10 @@ export default function Login() {
          password: data.password.trim()
       };
 
-      const response = await sendApiRequest("authentication/login", "POST", credentials, dispatch, setError);
+      const result = await sendApiRequest("authentication/login", "POST", credentials, dispatch, navigate, setError);
 
-      if (response?.status === "Success") {
-         queryClient.invalidateQueries({ queryKey: ["authentication"] });
+      if (result !== null) {
+         dispatch(authenticate(true));
       }
    };
 
@@ -197,4 +198,4 @@ export default function Login() {
          </Callout>
       </div>
    );
-}
+};

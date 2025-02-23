@@ -1,12 +1,11 @@
 import express from "express";
 
 import * as controller from "@/controllers/authenticationController";
-import { authenticateJWT } from "@/lib/authentication/middleware";
+import { authenticateToken } from "@/lib/authentication/middleware";
 
 const authenticationRouter = express.Router();
 
-authenticationRouter.get("/", controller.GET);
-authenticationRouter.post("/login", authenticateJWT(false), controller.LOGIN);
-authenticationRouter.post("/logout", authenticateJWT(true), controller.LOGOUT);
+authenticationRouter.post("/login", authenticateToken(false), controller.LOGIN);
+authenticationRouter.post("/logout", authenticateToken(true), controller.LOGOUT);
 
 export default authenticationRouter;

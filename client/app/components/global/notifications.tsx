@@ -22,7 +22,7 @@ export default function Notifications() {
                   >
                      <Alert
                         onClose = { () => dispatch(removeNotification(index)) }
-                        severity = { notification.type }
+                        severity = { notification.type === "Success" ? "success" : "error" }
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }
                         variant = "filled"
                      >

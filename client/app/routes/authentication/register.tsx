@@ -9,9 +9,11 @@ import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
-import { sendApiRequest } from "@/lib/server";
+import { sendApiRequest } from "@/lib/api";
+import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 const registrationSchema = userSchema.extend({
@@ -20,6 +22,7 @@ const registrationSchema = userSchema.extend({
 
 export default function Register() {
    const dispatch = useDispatch();
+   const navigate = useNavigate();
    const queryClient = useQueryClient();
    const {
       control,
@@ -41,17 +44,15 @@ export default function Register() {
          email: data.email.trim()
       };
 
-      const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
+      const result = await sendApiRequest("users", "POST", registration, dispatch, navigate, setError);
 
-      if (response?.status === "Success") {
-         queryClient.setQueryData(["authentication"], true);
-
+      if (result) {
          dispatch(addNotification({
-            type: "success",
-            message: "Successfully registered!"
+            type: "Success",
+            message: "Welcome!"
          }));
 
-         setTimeout(() => queryClient.invalidateQueries({ queryKey: ["authentication"] }), 2000);
+         dispatch(authenticate(true));
       }
    };
 

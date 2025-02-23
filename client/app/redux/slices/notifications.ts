@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface Notification {
-   type: "error" | "success";
+   type: "Success" | "Error";
    message: string;
    href?: string
 }

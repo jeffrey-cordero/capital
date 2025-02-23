@@ -6,7 +6,7 @@ import { palette } from "@/styles/mui/palette";
 import { shadows } from "@/styles/mui/shadow";
 import { typography } from "@/styles/mui/typography";
 
-export const theme = (mode: "light" | "dark") => (
+export const constructTheme = (mode: "light" | "dark") => (
    createTheme({
       palette: {
          mode: mode,

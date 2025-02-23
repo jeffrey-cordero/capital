@@ -1,15 +1,14 @@
 import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
-import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Provider } from "react-redux";
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
-import Router from "@/components/authentication/router";
 import store from "@/redux/store";
+import Router from "@/routes/router";
 import queryClient from "@/tanstack/client";
-import { getAuthentication } from "@/tanstack/queries/authentication";
 
 import type { Route } from "./+types/root";
 
@@ -30,6 +29,18 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+   useEffect(() => {
+      // Fetch preferred theme
+      const preferredTheme: string | undefined = localStorage.theme;
+      const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      // Set initial theme state based on localStorage or system preferences
+      store.dispatch({
+         type: "theme/setTheme",
+         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"
+      });
+   }, []);
+
    return (
       <html lang = "en">
          <head>
@@ -57,38 +68,10 @@ export default function App() {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
-            <Configurations />
-            <Router secure = { store.getState().authentication.value } />
+            <Router />
          </QueryClientProvider>
       </Provider>
    );
-}
-
-export function Configurations() {
-   // Prefetch configurations for client-side rendering within the QueryClientProvider
-   const client = useQueryClient();
-
-   useEffect(() => {
-      // Fetch preferred theme
-      const preferredTheme: string | undefined = localStorage.theme;
-      const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
-
-      // Prefetch authentication state from the server
-      client.prefetchQuery({
-         queryKey: ["authentication"],
-         queryFn: getAuthentication,
-         staleTime: 1 * 60 * 60 * 1000,
-         gcTime: 24 * 60 * 60 * 1000
-      });
-
-      // Set initial theme state based on localStorage or system preferences
-      store.dispatch({
-         type: "theme/setTheme",
-         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"
-      });
-   }, [client]);
-
-   return null;
 }
 
 export function ErrorBoundary() {

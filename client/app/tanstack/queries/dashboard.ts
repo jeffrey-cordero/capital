@@ -1,7 +1,10 @@
-import { sendApiRequest } from "@/lib/server";
+import type { Dispatch } from "@reduxjs/toolkit";
 import type { Account } from "capital-types/accounts";
 import type { MarketTrends } from "capital-types/marketTrends";
 import type { News } from "capital-types/news";
+import type { NavigateFunction } from "react-router";
+
+import { sendApiRequest } from "@/lib/api";
 
 interface Dashboard {
    accounts: Account[];
@@ -9,16 +12,12 @@ interface Dashboard {
    marketTrends: MarketTrends;
 }
 
-export async function fetchDashboard(): Promise<Dashboard> {
-   // const dashboard = await sendApiRequest("dashboard", "GET", null);
-   const [dashboard, accounts] = await Promise.all([
-      sendApiRequest("dashboard", "GET", null),
-      sendApiRequest("dashboard/accounts", "GET", null)
-   ]);
+export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | null> {
+   const dashboard = await sendApiRequest("dashboard", "GET", null, dispatch, navigate) as Dashboard;
 
-   return {
-      accounts: accounts ? accounts.data.accounts : [],
-      financialNews: dashboard ? dashboard.data.financialNews : {},
-      marketTrends: dashboard ? dashboard.data.marketTrends : {}
-   }
+   return dashboard ? {
+      accounts: dashboard.accounts,
+      financialNews: dashboard.financialNews,
+      marketTrends: dashboard.marketTrends
+   } : null;
 }

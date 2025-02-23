@@ -1,12 +1,12 @@
 import express from "express";
 
 import * as controller from "@/controllers/userController";
-import { authenticateJWT } from "@/lib/authentication/middleware";
+import { authenticateToken } from "@/lib/authentication/middleware";
 
 const usersRouter = express.Router();
 
-usersRouter.post("/", authenticateJWT(false), controller.POST);
-usersRouter.put("/", authenticateJWT(true), controller.PUT);
-usersRouter.delete("/", authenticateJWT(true), controller.DELETE);
+usersRouter.post("/", authenticateToken(false), controller.POST);
+usersRouter.put("/", authenticateToken(true), controller.PUT);
+usersRouter.delete("/", authenticateToken(true), controller.DELETE);
 
 export default usersRouter;

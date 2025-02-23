@@ -1,12 +1,12 @@
+import { ServerResponse } from "capital-types/server";
 import { User, userSchema } from "capital-types/user";
 import { Request, Response } from "express";
 
-import { ServiceResponse } from "@/lib/api/response";
-import { configureJWT } from "@/lib/authentication/middleware";
+import { configureToken } from "@/lib/authentication/middleware";
 import { hash } from "@/lib/database/cryptography";
 import { create, findConflictingUsers } from "@/repository/userRepository";
 
-export async function createUser(req: Request, res: Response, user: User): Promise<ServiceResponse> {
+export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields and uniqueness before insertion
    const fields = userSchema.safeParse(user);
 
@@ -14,7 +14,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       const errors = fields.error.flatten().fieldErrors;
 
       return {
-         code: 400,
+         status: 400,
          message: "Invalid user fields",
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
@@ -26,7 +26,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    } else if (fields.data.password !== fields.data.verifyPassword) {
       // Invalid new password verification
       return {
-         code: 400,
+         status: 400,
          message: "Invalid user fields",
          errors: {
             password: "Passwords do not match",
@@ -42,12 +42,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          const creation = await create({ ...user, password: await hash(user.password) });
 
          // Configure JWT token for authentication purposes
-         configureJWT(res, creation[0]);
+         configureToken(res, creation[0]);
 
          return {
-            code: 200,
-            message: "Successfully registered",
-            data: creation[0]
+            status: 200,
+            message: "Successfully registered"
          };
       } else {
          // User exists with same username and/or email
@@ -67,7 +66,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          }, {} as Record<string, string>);
 
          return {
-            code: 409,
+            status: 409,
             message: "Invalid user fields",
             errors: errors
          };

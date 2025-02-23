@@ -1,10 +1,11 @@
 const fs = require("fs").promises;
+
 import { IndicatorTrend, MarketTrends, StockTrends } from "capital-types/marketTrends";
 import { News } from "capital-types/news";
+import { ServerResponse } from "capital-types/server";
 import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
-import { ServiceResponse } from "@/lib/api/response";
 import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 
 async function fetchStocks(): Promise<StockTrends[]> {
@@ -39,14 +40,14 @@ async function fetchIndicators(indicator: string): Promise<IndicatorTrend[]> {
    }
 }
 
-export async function fetchMarketTrends(): Promise<ServiceResponse> {
+export async function fetchMarketTrends(): Promise<ServerResponse> {
    // Fetch market trends from the cache, database, or worst-case scenario, the API to update the cache
    const cache = await redisClient.get("marketTrends");
 
    try {
       if (cache) {
          return {
-            code: 200,
+            status: 200,
             message: "Cached Market Trends",
             data: JSON.parse(cache) as MarketTrends
          };
@@ -82,14 +83,14 @@ export async function fetchMarketTrends(): Promise<ServiceResponse> {
             await updateMarketTrends(time, data);
 
             return {
-               code: 200,
+               status: 200,
                message: "Latest Market Trends",
                data: marketTrends
             };
          } else {
             // Return existing database cache as it is still valid in terms of time
             return {
-               code: 200,
+               status: 200,
                message: "Stored Market Trends",
                data: stored[0]?.data as MarketTrends
             };
@@ -109,7 +110,7 @@ export async function fetchMarketTrends(): Promise<ServiceResponse> {
       }
 
       return {
-         code: 200,
+         status: 200,
          message: "Backup Market Trends",
          data: backup
       };
@@ -125,14 +126,14 @@ async function fetchNews(): Promise<News> {
    return await (await parseStringPromise(response))?.rss as News;
 }
 
-export async function fetchFinancialNews(): Promise<ServiceResponse> {
+export async function fetchFinancialNews(): Promise<ServerResponse> {
    try {
       const cache = await redisClient.get("news");
 
       if (cache) {
          // Cache hit
          return {
-            code: 200,
+            status: 200,
             message: "Cached Financial News",
             data: JSON.parse(cache) as News
          };
@@ -144,7 +145,7 @@ export async function fetchFinancialNews(): Promise<ServiceResponse> {
          await redisClient.setex("news", 15 * 60, JSON.stringify(data));
 
          return {
-            code: 200,
+            status: 200,
             message: "Latest Financial News",
             data: data as News
          };
@@ -161,7 +162,7 @@ export async function fetchFinancialNews(): Promise<ServiceResponse> {
       }
 
       return {
-         code: 200,
+         status: 200,
          message: "Backup Financial News",
          data: backup
       };

@@ -1,51 +1,18 @@
+import { ServerResponse } from "capital-types/server";
 import { Request, Response } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
-import { ServiceResponse } from "@/lib/api/response";
-import { configureJWT } from "@/lib/authentication/middleware";
+import { configureToken } from "@/lib/authentication/middleware";
 import { compare } from "@/lib/database/cryptography";
 import { findByUsername } from "@/repository/userRepository";
 
-export async function getAuthentication(res: Response, token: string): Promise<ServiceResponse> {
-   try {
-      // Verify the JWT token, which will throw an error if invalid
-      jwt.verify(token, process.env.SESSION_SECRET || "");
-
-      return {
-         code: 200,
-         message: "Authenticated status retrieved",
-         data: { authenticated: true }
-      };
-   } catch (error: any) {
-      // Handle JWT verification errors
-      if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
-         // Clear the JWT cookie from the client
-         res.clearCookie("token");
-
-         return {
-            code: 200,
-            message: "Invalid token or token expired",
-            data: { authenticated: false }
-         };
-      }  else {
-         console.error(error);
-
-         return {
-            code: 500,
-            message: "Internal Server Error",
-            errors: { system: error.message }
-         };
-      }
-   }
-}
-
-export async function authenticateUser(res: Response, username: string, password: string): Promise<ServiceResponse> {
+export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
    // Authenticate user based on existing username and valid password through hashing
    const user = await findByUsername(username);
 
    if (user.length === 0 || !(await compare(password, user[0].password))) {
       return {
-         code: 401,
+         status: 401,
          message: "Invalid credentials",
          errors: {
             username: "Invalid credentials",
@@ -54,17 +21,16 @@ export async function authenticateUser(res: Response, username: string, password
       };
    } else {
       // Configure JWT token for authentication purposes
-      configureJWT(res, user[0]);
+      configureToken(res, user[0]);
 
       return {
-         code: 200,
-         message: "Successfully authenticated",
-         data: user[0]
+         status: 200,
+         message: "Successfully authenticated"
       };
    }
 }
 
-export async function logoutUser(req: Request, res: Response): Promise<ServiceResponse> {
+export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
    // Clear the cookies
    res.clearCookie("token");
    res.clearCookie("connect.sid");
@@ -75,7 +41,7 @@ export async function logoutUser(req: Request, res: Response): Promise<ServiceRe
    });
 
    return {
-      code: 200,
+      status: 200,
       message: "Successfully logged out"
    };
 }
