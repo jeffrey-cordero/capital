@@ -48,7 +48,13 @@ export async function updateAccount(type: "details" | "history", user_id: string
    }
 
    if (type === "details") {
-      await updateDetails(account.account_id, account);
+      const result = await updateDetails(account.account_id, account);
+
+      if (result) {
+         return sendServerResponse(200, "Account details updated");
+      } else {
+         return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
+      }
    } else {
       if (!account.balance) {
          return sendValidationErrors(null, "Balance is required for updating account history", { balance: "Missing balance" });
@@ -59,13 +65,17 @@ export async function updateAccount(type: "details" | "history", user_id: string
       if (!fields.success) {
          return sendValidationErrors(fields, "Invalid account history fields");
       } else {
-         await updateAccountHistory(account.account_id, account.balance, account.last_updated ? new Date(account.last_updated) : new Date());
+         const result = await updateAccountHistory(
+            account.account_id, account.balance, account.last_updated ? new Date(account.last_updated) : new Date()
+         );
+
+         if (result) {
+            return sendServerResponse(200, "Account history updated");
+         } else {
+            return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
+         }
       }
    }
-
-   await redisClient.del(`accounts:${user_id}`);
-
-   return sendServerResponse(204, type === "details" ? "Account details updated" : "Account history updated");
 }
 
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
@@ -85,10 +95,15 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       updates.push({ account_id: accounts[i], account_order: i });
    }
 
-   await updateOrdering(user_id, updates);
-   await redisClient.del(`accounts:${user_id}`);
+   const result = await updateOrdering(user_id, updates);
 
-   return sendServerResponse(204, "Account ordering updated");
+   if (!result) {
+      return sendServerResponse(404, "Account(s) not found", undefined, { accounts: "No account order's could be updated based on provided ID(s)" });
+   } else {
+      await redisClient.del(`accounts:${user_id}`);
+
+      return sendServerResponse(204, "Account ordering updated");
+   }
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {

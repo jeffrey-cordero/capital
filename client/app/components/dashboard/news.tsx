@@ -50,8 +50,7 @@ function StoryItem({ author, description, link, pubDate, title, ...rest }: Story
                width: {
                   sm: "100%",
                   md: 350,
-                  lg: 375,
-                  xl: "70%"
+                  lg: "70%"
                },
                maxWidth: "95%",
                margin: "auto",
@@ -217,7 +216,7 @@ export default function Stories({ data }: { data: News }) {
                         />
                      </Box>
                      <Stack
-                        direction = { { xs: "row", xl: "column" } }
+                        direction = { { xs: "row", lg: "column" } }
                         sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
                      >
                         {

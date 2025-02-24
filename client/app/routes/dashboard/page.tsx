@@ -42,7 +42,7 @@ export default function Page() {
                container = { true }
                sx = { { width: "100%", height: "100%" } }
             >
-               <Grid size = { { xs: 12, xl: 8 } }>
+               <Grid size = { { xs: 12, lg: 8 } }>
                   <Box
                      sx = {
                         {

@@ -15,10 +15,6 @@ import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
-const registrationSchema = userSchema.extend({
-   verifyPassword: userSchema.shape.password
-});
-
 export default function Register() {
    const dispatch = useDispatch();
    const navigate = useNavigate();
@@ -29,12 +25,16 @@ export default function Register() {
       setError,
       formState: { isSubmitting, errors }
    } = useForm({
-      resolver: zodResolver(registrationSchema)
+      resolver: zodResolver(userSchema)
    });
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
+      dispatch(addNotification({
+         type: "Success",
+         message: "Welcome"
+      }));
       const registration = {
          username: data.username.trim(),
          name: data.name.trim(),
@@ -48,7 +48,7 @@ export default function Register() {
       if (result === 201) {
          dispatch(addNotification({
             type: "Success",
-            message: "Welcome!"
+            message: "Welcome"
          }));
 
          dispatch(authenticate(true));

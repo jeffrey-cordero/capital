@@ -105,7 +105,7 @@ export async function create(user_id: string, account: Account): Promise<Account
    }
 }
 
-export async function updateDetails(account_id: string, updates: Partial<Account & AccountHistory>): Promise<Account[]> {
+export async function updateDetails(account_id: string, updates: Partial<Account & AccountHistory>): Promise<boolean> {
    // Update only the provided fields
    const fields: string[] = [];
    const values: any[] = [];
@@ -148,7 +148,7 @@ export async function updateDetails(account_id: string, updates: Partial<Account
       WHERE account_id = $${params};
    `;
 
-   return await query(updateQuery, values) as Account[];
+   return (await query(updateQuery, values) as Account[]).length > 0;
 }
 
 export async function updateHistory(account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {
@@ -177,8 +177,6 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       WHERE accounts.account_id = v.account_id::uuid
       AND accounts.user_id = $${params.length + 1}
    `;
-
-   console.log(update);
 
    return (await query(update, [...params, user_id]) as any[]).length > 0;
 }

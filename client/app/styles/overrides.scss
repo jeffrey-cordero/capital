@@ -13,10 +13,21 @@ body[data-dark="true"] {
   .nav {
     background-color: hsl(0deg 0% 15%);
   }
+
+  .css-qtfkgb-MuiInputBase-input-MuiOutlinedInput-input:-webkit-autofill {
+    border-radius: 0;
+  }
 }
 
 div {
   &.form-floating {
    z-index: 0;
+  }
+
+  &.MuiAlert-action {
+    button {
+      --IconButton-hoverBg: none;
+      margin-bottom: 4px;
+    }
   }
 }

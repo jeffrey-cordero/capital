@@ -20,7 +20,8 @@ export const components: Components = {
          root: {
             borderRadius: "12px",
             fontSize: "0.95rem",
-            borderColor: "primary.main"
+            borderColor: "primary.main",
+            overflow: "hidden"
          },
          input: {
             fontSize: "0.95rem",
