@@ -37,7 +37,7 @@ export default function Accounts({ accounts }: {accounts: Account[]}) {
                               history: [
                                  {
                                     balance: 1000,
-                                    last_updated: new Date("01/01/2023").toISOString()
+                                    last_updated: new Date("01/01/2023")
                                  }
                               ]
                            }

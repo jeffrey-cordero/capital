@@ -14,7 +14,9 @@ export async function sendApiRequest(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
-): Promise<object | null> {
+): Promise<object | number | null> {
+   const login = window.location.pathname.includes("/login");
+
    return await fetch(`${SERVER_URL}/${path}`, {
       method: method,
       headers: {
@@ -23,7 +25,7 @@ export async function sendApiRequest(
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include"
    }).then(async(response) => {
-      if (response.status === 401 && !window.location.pathname.includes("/login")) {
+      if (response.status === 401 && !login) {
          // Unauthorized access
          dispatch(authenticate(false));
          navigate("/login");
@@ -37,6 +39,11 @@ export async function sendApiRequest(
       } else if (response.status === 500) {
          // Internal server errors
          throw new Error(response.statusText);
+      }
+
+      if (response.status === 201 || response.status === 204 || (response.status === 200 && login)) {
+         // No content required on successful actions
+         return response.status;
       }
 
       // Handle valid JSON response

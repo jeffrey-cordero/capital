@@ -10,7 +10,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
       INNER JOIN accounts_history as ah
       ON a.account_id = ah.account_id
       WHERE a.user_id = $1
-      ORDER BY a.account_order DESC, ah.last_updated ASC;
+      ORDER BY a.account_order ASC, ah.last_updated ASC;
    `;
 
    const positions: { [key: string]: number } = {};
@@ -53,6 +53,13 @@ export async function create(user_id: string, account: Account): Promise<Account
       // Transactional insertion queries to create account and its history for data integrity
       await client.query("BEGIN");
 
+      const total = `
+         SELECT COUNT(*) as total
+         FROM accounts
+         WHERE user_id = $1;
+      `;
+      const count = (await client.query(total, [user_id]))?.rows[0].total as number;
+
       // Create the account
       const creation = `
          INSERT INTO accounts (user_id, name, type, image, account_order)
@@ -60,7 +67,7 @@ export async function create(user_id: string, account: Account): Promise<Account
          RETURNING account_id;
       `;
       const result = (
-         await client.query(creation, [user_id, account.name, account.type, account.image, account.account_order])
+         await client.query(creation, [user_id, account.name, account.type, account.image, count])
       )?.rows as { account_id: string }[];
 
       // Initialize the account's history
@@ -84,7 +91,7 @@ export async function create(user_id: string, account: Account): Promise<Account
          account_order: account.account_order,
          history: [{
             balance: account.balance,
-            last_updated: insertion[0].last_updated
+            last_updated: new Date(insertion[0].last_updated)
          }]
       };
    } catch (error) {
@@ -137,8 +144,7 @@ export async function updateDetails(account_id: string, updates: Partial<Account
    const updateQuery = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE account_id = $${params}
-      RETURNING *;
+      WHERE account_id = $${params};
    `;
 
    return await query(updateQuery, values) as Account[];

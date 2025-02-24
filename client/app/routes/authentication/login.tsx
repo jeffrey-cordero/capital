@@ -42,7 +42,7 @@ export default function Login() {
 
       const result = await sendApiRequest("authentication/login", "POST", credentials, dispatch, navigate, setError);
 
-      if (result !== null) {
+      if (result === 200) {
          dispatch(authenticate(true));
       }
    };

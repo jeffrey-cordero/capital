@@ -2,6 +2,7 @@ import { ServerResponse } from "capital-types/server";
 import { User, userSchema } from "capital-types/user";
 import { Request, Response } from "express";
 
+import { sendServerResponse, sendValidationErrors } from "@/lib/api/service";
 import { configureToken } from "@/lib/authentication/middleware";
 import { hash } from "@/lib/database/cryptography";
 import { create, findConflictingUsers } from "@/repository/userRepository";
@@ -11,28 +12,13 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
-      const errors = fields.error.flatten().fieldErrors;
-
-      return {
-         status: 400,
-         message: "Invalid user fields",
-         errors: Object.fromEntries(
-            Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
-               field,
-               errors?.[0] || "Unknown error"
-            ])
-         )
-      };
+      return sendValidationErrors(fields, "Invalid user fields");
    } else if (fields.data.password !== fields.data.verifyPassword) {
       // Invalid new password verification
-      return {
-         status: 400,
-         message: "Invalid user fields",
-         errors: {
-            password: "Passwords do not match",
-            verifyPassword: "Passwords do not match"
-         }
-      };
+      return sendValidationErrors(null, "Invalid user fields", {
+         password: "Passwords do not match",
+         verifyPassword: "Passwords do not match"
+      });
    } else {
       // Handle user uniqueness
       const result = await findConflictingUsers(user.username, user.email);
@@ -44,10 +30,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          // Configure JWT token for authentication purposes
          configureToken(res, creation[0]);
 
-         return {
-            status: 200,
-            message: "Successfully registered"
-         };
+         return sendServerResponse(201, "Successfully registered");
       } else {
          // User exists with same username and/or email
          const normalizedUsername = user.username.toLowerCase().trim();
@@ -65,11 +48,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
             return account;
          }, {} as Record<string, string>);
 
-         return {
-            status: 409,
-            message: "Invalid user fields",
-            errors: errors
-         };
+         return sendServerResponse(409, "Invalid user fields", undefined, errors);
       }
    }
 }

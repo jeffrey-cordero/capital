@@ -1,45 +1,10 @@
-import { ServerResponse } from "capital-types/server";
 import { User } from "capital-types/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { sendErrors, sendSuccess } from "@/lib/api/response";
+import { submitServiceRequest } from "@/lib/api/controllers";
 import { createUser } from "@/service/userService";
 
-export const POST = asyncHandler(async(req: Request, res: Response) => {
-   try {
-      const user = req.body as User;
-      const result: ServerResponse = await createUser(req, res, user);
-
-      if (result.status === 200) {
-         return sendSuccess(res, result.status, result.message);
-      } else {
-         // Invalid user fields or account conflict(s)
-         return sendErrors(res, result.status, result.message, result.errors);
-      }
-   } catch (error: any) {
-      console.error(error);
-
-      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
-   }
-});
-
-export const PUT = asyncHandler(async(req: Request, res: Response) => {
-   try {
-      return sendSuccess(res, 200, "Updating user awaits implementation");
-   } catch (error: any) {
-      console.error(error);
-
-      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
-   }
-});
-
-export const DELETE = asyncHandler(async(req: Request, res: Response) => {
-   try {
-      return sendSuccess(res, 200, "Deleting user awaits implementation");
-   } catch (error: any) {
-      console.error(error);
-
-      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
-   }
-});
+export const POST = asyncHandler(async(req: Request, res: Response) =>
+   submitServiceRequest(() => createUser(req, res, req.body as User), res)
+);

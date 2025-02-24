@@ -45,7 +45,7 @@ export default function Register() {
 
       const result = await sendApiRequest("users", "POST", registration, dispatch, navigate, setError);
 
-      if (result) {
+      if (result === 201) {
          dispatch(addNotification({
             type: "Success",
             message: "Welcome!"

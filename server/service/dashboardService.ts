@@ -6,7 +6,9 @@ import { ServerResponse } from "capital-types/server";
 import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
+import { sendServerResponse } from "@/lib/api/service";
 import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
+import { fetchAccounts } from "@/service/accountsService";
 
 async function fetchStocks(): Promise<StockTrends[]> {
    // Retrieve stock trends from the API (Top Gainers, Losers, and Most Active)
@@ -46,11 +48,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
    try {
       if (cache) {
-         return {
-            status: 200,
-            message: "Market Trends",
-            data: JSON.parse(cache) as MarketTrends
-         };
+         return sendServerResponse(200, "Market Trends", JSON.parse(cache) as MarketTrends);
       } else {
          const stored = await getMarketTrends();
 
@@ -82,23 +80,15 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
             await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
             await updateMarketTrends(time, data);
 
-            return {
-               status: 200,
-               message: "Market Trends",
-               data: marketTrends
-            };
+            return sendServerResponse(200, "Market Trends", marketTrends as MarketTrends);
          } else {
-            // Return existing database cache as it is still valid in terms of time
-            return {
-               status: 200,
-               message: "Market Trends",
-               data: stored[0]?.data as MarketTrends
-            };
+            // Return existing database cache that is still valid
+            return sendServerResponse(200, "Market Trends", stored[0].data as MarketTrends);
          }
       }
    } catch (error: any) {
       // Non-rate limit error
-      const backup = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")) as MarketTrends;
+      const backup = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"));
 
       if (!String(error?.message).startsWith("Thank you for using Alpha Vantage!")) {
          console.error(error);
@@ -109,11 +99,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
          await redisClient.setex("marketTrends", 15 * 60, JSON.stringify(backup));
       }
 
-      return {
-         status: 200,
-         message: "Market Trends",
-         data: backup
-      };
+      return sendServerResponse(200, "Market Trends", backup as MarketTrends);
    }
 }
 
@@ -132,11 +118,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
 
       if (cache) {
          // Cache hit
-         return {
-            status: 200,
-            message: "Financial News",
-            data: JSON.parse(cache) as News
-         };
+         return sendServerResponse(200, "Financial News", JSON.parse(cache) as News);
       } else {
          // Handle cache miss
          const data = await fetchNews();
@@ -144,11 +126,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
          // Cache the news result for 15 minutes
          await redisClient.setex("news", 15 * 60, JSON.stringify(data));
 
-         return {
-            status: 200,
-            message: "Financial News",
-            data: data as News
-         };
+         return sendServerResponse(200, "Financial News", data as News);
       }
    } catch (error: any) {
       // Use backup XML news file
@@ -161,10 +139,26 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
          await redisClient.setex("news", 5 * 60, JSON.stringify(backup));
       }
 
-      return {
-         status: 200,
-         message: "Financial News",
-         data: backup
-      };
+      return sendServerResponse(200, "Financial News", backup);
+   }
+}
+
+export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
+   try {
+      const [marketTrends, financialNews, accounts] = await Promise.all([
+         fetchMarketTrends(),
+         fetchFinancialNews(),
+         fetchAccounts(user_id)
+      ]);
+
+      return sendServerResponse(200, "Dashboard", {
+         marketTrends: marketTrends.data,
+         financialNews: financialNews.data,
+         accounts: accounts.data
+      });
+   } catch (error: any) {
+      console.error(error);
+
+      return sendServerResponse(500, "Internal Server Error", undefined, { System: error.message });
    }
 }

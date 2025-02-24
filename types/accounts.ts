@@ -15,12 +15,18 @@ export type Account = {
 
 export type AccountHistory = {
    balance: number; 
-   last_updated: string;
+   last_updated: Date;
 }
 
 export const accountHistorySchema = z.object({
-   balance: z.number(),
-   last_updated: z.string(),
+   balance: z.coerce.number({
+      message: "Balance must be a valid number"
+   }).min(0, {
+      message: "Balance must be at least 0"
+   }).max(99999999999.99, {
+      message: "Balance cannot exceed 99,999,999,999.99"
+   }),
+   last_updated: z.coerce.date()
 });
 
 export const accountSchema = z.object({
@@ -37,10 +43,8 @@ export const accountSchema = z.object({
    }).max(99999999999.99, {
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
-   type: z.enum(types),
-   image: z.union([z.enum(images), z.string().url()]).optional(),
-   history: z.array(accountHistorySchema).optional(),
-   account_order: z.coerce.number().min(0, {
-      message: "Account order must be at least 0"
-   })
+   type: z.enum(types, {
+      message: "Type must be one of: Checking, Savings, Credit Card, Retirement, Investment, Loan, Property, Other"
+   }),
+   image: z.union([z.enum(images), z.string().url()]).optional()
 });
