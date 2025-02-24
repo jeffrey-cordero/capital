@@ -10,25 +10,26 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
       INNER JOIN accounts_history as ah
       ON a.account_id = ah.account_id
       WHERE a.user_id = $1
-      ORDER BY a.account_order ASC, ah.last_updated ASC;
+      ORDER BY a.account_order ASC, ah.last_updated DESC;
    `;
 
    const positions: { [key: string]: number } = {};
    const accounts = await query(search, [user_id]) as (Account & AccountHistory)[];
 
    // Group by account's and collect their history of balances,
-   return accounts.reduce((accounts: Account[], row: Account & AccountHistory) => {
+   return accounts.reduce((acc: Account[], row: Account & AccountHistory) => {
       // Assume accounts are ordered by `account_order` DESC then `last_updated` ASC
       const existing = positions[row.account_id as string];
 
-      if (existing) {
-         accounts[existing].history?.push({
+      if (row.account_id as string in positions) {
+         acc[existing].history?.push({
             balance: row.balance,
             last_updated: row.last_updated
          });
       } else {
-         positions[row.account_id as string] = accounts.length;
-         accounts.push({
+         positions[row.account_id as string] = acc.length;
+
+         acc.push({
             account_id: row.account_id,
             name: row.name,
             type: row.type,
@@ -42,7 +43,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
          });
       }
 
-      return accounts;
+      return acc;
    }, []);
 }
 
@@ -160,32 +161,33 @@ export async function updateHistory(account_id: string, balance: number, last_up
          last_updated = EXCLUDED.last_updated;
    `;
 
-   return (await query(updateHistory, [account_id, balance, last_updated]) as any)?.rowCount > 0;
+   return (await query(updateHistory, [account_id, balance, last_updated]) as any[])?.length > 0;
 }
 
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
    // Flatten array of parameters
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
-   const params = updates.flatMap(update => [update.account_id, update.account_order]);
+   const params = updates.flatMap(update => [String(update.account_id), Number(update.account_order)]);
 
    // Update account orders in a single query
    const update = `
       UPDATE accounts
-      SET account_order = v.new_order
-      FROM (VALUES ${values}) AS v(account_id, new_order)
+      SET account_order = v.account_order::int
+      FROM (VALUES ${values}) AS v(account_id, account_order)
       WHERE accounts.account_id = v.account_id::uuid
       AND accounts.user_id = $${params.length + 1}
    `;
 
-   return (await query(update, [...params, user_id]) as any)?.rowCount > 0;
+   console.log(update);
+
+   return (await query(update, [...params, user_id]) as any[]).length > 0;
 }
 
-export async function deleteAccount(account_id: string, user_id: string): Promise<boolean> {
+export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    const deleteQuery = `
       DELETE FROM accounts
       WHERE account_id = $1 AND user_id = $2
       RETURNING account_id;
    `;
-
-   return (await query(deleteQuery, [account_id, user_id]) as any)?.rowCount > 0;
+   return (await query(deleteQuery, [account_id, user_id]) as any[]).length > 0;
 }

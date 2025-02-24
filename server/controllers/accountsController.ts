@@ -19,7 +19,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
 
    if (req.path.endsWith("/order")) {
       // Update accounts ordering
-      return submitServiceRequest(() => updateAccountsOrdering(user_id, req.body as string[]), res);
+      return submitServiceRequest(() => updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[]), res);
    } else {
       // Update account details or history
       return submitServiceRequest(

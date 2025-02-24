@@ -11,7 +11,6 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    const cache = await redisClient.get(`accounts:${user_id}`);
 
    if (cache) {
-      console.log("Cache hit");
       return sendServerResponse(200, "Accounts", JSON.parse(cache));
    } else {
       // Fetch accounts from the database repository
@@ -74,9 +73,13 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    const uuidSchema = z.string().uuid();
    const updates: Partial<Account>[] = [];
 
+   if (!accounts || accounts.length === 0) {
+      return sendValidationErrors(null, "Invalid account ordering data", { accounts: "Account ID array must be non-empty" });
+   }
+
    for (let i = 0; i < accounts.length; i++) {
       if (!uuidSchema.safeParse(accounts[i]).success) {
-         return sendValidationErrors(null, "Invalid account ordering data", { account_order: "Account order must be a number" });
+         return sendValidationErrors(null, "Invalid account ordering data", { account_order: `Account order must be a number: '${accounts[i]}'` });
       }
 
       updates.push({ account_id: accounts[i], account_order: i });
@@ -89,7 +92,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   const result = await removeAccount(account_id, user_id);
+   const result = await removeAccount(user_id, account_id);
 
    if (!result) {
       return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
