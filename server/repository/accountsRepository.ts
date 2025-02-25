@@ -54,21 +54,14 @@ export async function create(user_id: string, account: Account): Promise<Account
       // Transactional insertion queries to create account and its history for data integrity
       await client.query("BEGIN");
 
-      const total = `
-         SELECT COUNT(*) as total
-         FROM accounts
-         WHERE user_id = $1;
-      `;
-      const count = (await client.query(total, [user_id]))?.rows[0].total as number;
-
       // Create the account
       const creation = `
          INSERT INTO accounts (user_id, name, type, image, account_order)
-         VALUES ($1, $2, $3, $4, $5)
+         VALUES ($1, $2, $3, $4, get_next_account_order($1))
          RETURNING account_id;
       `;
       const result = (
-         await client.query(creation, [user_id, account.name, account.type, account.image, count])
+         await client.query(creation, [user_id, account.name, account.type, account.image])
       )?.rows as { account_id: string }[];
 
       // Initialize the account's history

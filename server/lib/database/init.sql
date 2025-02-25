@@ -11,34 +11,32 @@ CREATE TABLE users (
    UNIQUE (email_normalized)
 );
 
-CREATE TABLE budgets (
-   budget_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   income_limit DECIMAL(13, 2) NOT NULL,
-   expenses_limit DECIMAL(13, 2) NOT NULL,
-   month DATE NOT NULL,
-   user_id UUID NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-CREATE TABLE categories (
-   category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   name VARCHAR(30) NOT NULL,
-   type VARCHAR(8) CHECK (type IN ('Income', 'Expenses')) NOT NULL,
-   category_limit DECIMAL(13, 2) NOT NULL,
-   month DATE NOT NULL,
-   user_id UUID NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+CREATE INDEX idx_users_username_normalized ON users (username_normalized);
+CREATE INDEX idx_users_email_normalized ON users (email_normalized);
 
 CREATE TABLE accounts (
    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    name VARCHAR(30) NOT NULL,
    type VARCHAR(20) CHECK (type IN ('Checking', 'Savings', 'Credit Card', 'Retirement', 'Investment', 'Loan', 'Property', 'Other')) NOT NULL,
    image VARCHAR(255),
-   account_order INT NOT NULL,
+   account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL,
    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION get_next_account_order(user_uuid UUID) 
+RETURNS INT AS $$
+DECLARE
+   next_order INT;
+BEGIN
+   SELECT COALESCE(MAX(account_order) + 1, 0)
+   INTO next_order
+   FROM accounts
+   WHERE user_id = user_uuid;
+    
+   RETURN next_order;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE accounts_history (
    account_balance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,19 +49,8 @@ CREATE TABLE accounts_history (
    CONSTRAINT unique_account_year_month UNIQUE (account_id, year, month)
 );
 
-CREATE TABLE transactions (
-   transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   title VARCHAR(50) NOT NULL,
-   date DATE NOT NULL,
-   type VARCHAR(8) CHECK (type IN ('Income', 'Expenses')) NOT NULL,
-   amount DECIMAL(13, 2) NOT NULL,
-   account_id UUID,
-   user_id UUID NOT NULL,
-   category_id UUID NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-   FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE SET NULL,
-   FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
-);
+CREATE INDEX idx_accounts_history_last_updated ON accounts_history (last_updated);
+CREATE INDEX idx_accounts_history_year_month ON accounts_history (year, month);
 
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,
