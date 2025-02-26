@@ -23,7 +23,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install --legacy-peer-deps && npm run dev"
     container_name: capital_client
 
   server:
@@ -50,7 +50,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install --legacy-peer-deps && npm run dev"
     container_name: capital_server
 
   postgres: 
@@ -61,7 +61,7 @@ services:
       POSTGRES_DB: capital
     volumes:
       - capital_postgres_data:/var/lib/capital/data
-      - ./server/lib/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./server/lib/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - capital_network
     ports:

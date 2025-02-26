@@ -56,8 +56,8 @@ export async function create(user_id: string, account: Account): Promise<Account
 
       // Create the account
       const creation = `
-         INSERT INTO accounts (user_id, name, type, image, account_order)
-         VALUES ($1, $2, $3, $4, get_next_account_order($1))
+         INSERT INTO accounts (user_id, name, type, image)
+         VALUES ($1, $2, $3, $4)
          RETURNING account_id;
       `;
       const result = (
@@ -138,7 +138,8 @@ export async function updateDetails(account_id: string, updates: Partial<Account
    const updateQuery = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE account_id = $${params};
+      WHERE account_id = $${params}
+      RETURNING account_id;
    `;
 
    return (await query(updateQuery, values) as Account[]).length > 0;
@@ -151,7 +152,8 @@ export async function updateHistory(account_id: string, balance: number, last_up
       ON CONFLICT (account_id, year, month) 
       DO UPDATE SET
          balance = EXCLUDED.balance,
-         last_updated = EXCLUDED.last_updated;
+         last_updated = EXCLUDED.last_updated
+      RETURNING account_id;
    `;
 
    return (await query(updateHistory, [account_id, balance, last_updated]) as any[])?.length > 0;
@@ -169,6 +171,7 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       FROM (VALUES ${values}) AS v(account_id, account_order)
       WHERE accounts.account_id = v.account_id::uuid
       AND accounts.user_id = $${params.length + 1}
+      RETURNING accounts.user_id;
    `;
 
    return (await query(update, [...params, user_id]) as any[]).length > 0;

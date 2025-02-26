@@ -24,19 +24,21 @@ CREATE TABLE accounts (
    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE OR REPLACE FUNCTION get_next_account_order(user_uuid UUID) 
-RETURNS INT AS $$
-DECLARE
-   next_order INT;
+CREATE OR REPLACE FUNCTION set_account_order()
+RETURNS TRIGGER AS $$
 BEGIN
-   SELECT COALESCE(MAX(account_order) + 1, 0)
-   INTO next_order
-   FROM accounts
-   WHERE user_id = user_uuid;
-    
-   RETURN next_order;
+   NEW.account_order := COALESCE(
+      (SELECT MAX(account_order) + 1 FROM accounts WHERE user_id = NEW.user_id),
+      0
+   );
+   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_insert_account
+BEFORE INSERT ON accounts
+FOR EACH ROW
+EXECUTE FUNCTION set_account_order();
 
 CREATE TABLE accounts_history (
    account_balance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

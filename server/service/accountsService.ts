@@ -51,7 +51,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
       const result = await updateDetails(account.account_id, account);
 
       if (result) {
-         return sendServerResponse(200, "Account details updated");
+         return sendServerResponse(204, "Account details updated");
       } else {
          return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
       }
@@ -70,7 +70,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
          );
 
          if (result) {
-            return sendServerResponse(200, "Account history updated");
+            return sendServerResponse(204, "Account history updated");
          } else {
             return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
          }
