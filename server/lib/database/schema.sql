@@ -11,9 +11,6 @@ CREATE TABLE users (
    UNIQUE (email_normalized)
 );
 
-CREATE INDEX idx_users_username_normalized ON users (username_normalized);
-CREATE INDEX idx_users_email_normalized ON users (email_normalized);
-
 CREATE TABLE accounts (
    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    name VARCHAR(30) NOT NULL,
@@ -50,9 +47,6 @@ CREATE TABLE accounts_history (
    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,
    CONSTRAINT unique_account_year_month UNIQUE (account_id, year, month)
 );
-
-CREATE INDEX idx_accounts_history_last_updated ON accounts_history (last_updated);
-CREATE INDEX idx_accounts_history_year_month ON accounts_history (year, month);
 
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,

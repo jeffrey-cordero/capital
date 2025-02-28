@@ -18,7 +18,6 @@ import { addNotification } from "@/redux/slices/notifications";
 export default function Register() {
    const dispatch = useDispatch();
    const navigate = useNavigate();
-
    const {
       control,
       handleSubmit,
@@ -31,10 +30,6 @@ export default function Register() {
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      dispatch(addNotification({
-         type: "Success",
-         message: "Welcome"
-      }));
       const registration = {
          username: data.username.trim(),
          name: data.name.trim(),

@@ -37,9 +37,10 @@ const ExpandMore = styled(({ expand, ...other }: ExpandMoreProps) => { // eslint
    ]
 }));
 
-function StoryItem({ author, description, link, pubDate, title, ...rest }: Story) {
+function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
+   const author = rest["dc:creator"] ?? ["No Author"];
    const image = rest["media:content"]?.[0]?.$.url || "/svg/backup.svg";
 
    return (
@@ -49,8 +50,8 @@ function StoryItem({ author, description, link, pubDate, title, ...rest }: Story
             {
                width: {
                   sm: "100%",
-                  md: 350,
-                  lg: "70%"
+                  md: 300,
+                  lg: "100%"
                },
                maxWidth: "95%",
                margin: "auto",
@@ -64,7 +65,7 @@ function StoryItem({ author, description, link, pubDate, title, ...rest }: Story
                   aria-label = "recipe"
                   sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
-                  { author?.[0].charAt(0).toUpperCase() ?? "N" }
+                  { author[0].charAt(0).toUpperCase() }
                </Avatar>
             }
             title = {
@@ -77,7 +78,7 @@ function StoryItem({ author, description, link, pubDate, title, ...rest }: Story
                         sx = { { whiteSpace: "nowrap", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" } }
                         variant = "subtitle2"
                      >
-                        { author?.join(", ") ?? "No Author" }
+                        { author.join(", ") }
                      </Typography>
                      <Typography variant = "caption">
                         { timeSinceLastUpdate(pubDate[0] ?? new Date().toISOString()) }

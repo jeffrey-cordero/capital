@@ -38,7 +38,7 @@ export default function Page() {
             width = { { xs: "90%" } }
          >
             <Grid
-               columnSpacing = { 0 }
+               columnSpacing = { 4 }
                container = { true }
                sx = { { width: "100%", height: "100%" } }
             >
@@ -64,7 +64,7 @@ export default function Page() {
                      </Grid>
                   </Box>
                </Grid>
-               <Grid size = { { xs: 12, xl: 4 } }>
+               <Grid size = { { xs: 12, lg: 4 } }>
                   <Stories data = { financialNews } />
                </Grid>
                <Grid size = { { xs: 12 } }>

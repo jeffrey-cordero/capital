@@ -3,6 +3,28 @@ import { z } from 'zod';
 export const images = ["property", "bank", "cash", "credit", "investment", "loan", "retirement", "savings"] as const;
 export const types = ["Checking", "Savings", "Credit Card", "Retirement", "Investment", "Loan", "Property", "Other"] as const;
 
+enum AccountType {
+   Checking = "Checking",
+   Savings = "Savings",
+   CreditCard = "Credit Card",
+   Retirement = "Retirement",
+   Investment = "Investment",
+   Loan = "Loan",
+   Property = "Property",
+   Other = "Other",
+}
+
+enum ImageType {
+   Property = "property",
+   Bank = "bank",
+   Cash = "cash",
+   Credit = "credit",
+   Investment = "investment",
+   Loan = "loan",
+   Retirement = "retirement",
+   Savings = "savings",
+}
+
 export type Account = {
    account_id: string | null;
    name: string;
@@ -14,7 +36,7 @@ export type Account = {
 }
 
 export type AccountHistory = {
-   balance: number; 
+   balance: number;
    last_updated: Date;
 }
 
@@ -43,8 +65,8 @@ export const accountSchema = z.object({
    }).max(99999999999.99, {
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
-   type: z.enum(types, {
+   type: z.nativeEnum(types, {
       message: "Type must be one of: Checking, Savings, Credit Card, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.union([z.enum(images), z.string().url()]).optional()
+   image: z.nativeEnum(images).or(z.string().url()).optional()
 });

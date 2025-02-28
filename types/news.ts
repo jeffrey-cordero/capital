@@ -17,7 +17,7 @@ export type News = {
 }
 
 export type Story = {
-   "author": string[];
+   "dc:creator": string[];
    "description": string[];
    "link": string[];
    "pubDate": string[];

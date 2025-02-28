@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type Account, images } from "capital-types/accounts";
+import { type Account } from "capital-types/accounts";
 
 import AccountCard from "@/components/dashboard/accounts/account";
 
@@ -23,31 +23,21 @@ export default function Accounts({ accounts }: {accounts: Account[]}) {
             spacing = { 3 }
          >
             {
-               images.map((image, index) => {
+               accounts.map((account) => {
                   return (
                      <AccountCard
-                        account = {
-                           {
-                              account_id: String(index),
-                              account_order: index,
-                              name: image,
-                              type: "asset",
-                              image: `/images/${image}.png`,
-                              balance: 1000,
-                              history: [
-                                 {
-                                    balance: 1000,
-                                    last_updated: new Date("01/01/2023")
-                                 }
-                              ]
-                           }
-                        }
-                        key = { index }
+                        account = { account }
+                        key = { account.account_id }
                      />
                   );
                })
             }
          </Grid>
+         <Box>
+            <AccountCard
+               account = { undefined }
+            />
+         </Box>
       </Box>
    );
 }
