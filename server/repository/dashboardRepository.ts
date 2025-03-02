@@ -20,10 +20,10 @@ export async function updateMarketTrends(time: Date, data: string): Promise<void
 
    try {
       await client.query("BEGIN");
-
       await client.query("DELETE FROM market_trends_api_cache;");
-      await client.query("INSERT INTO market_trends_api_cache (time, data) VALUES ($1, $2);", [time, data]);
-
+      await client.query(
+         "INSERT INTO market_trends_api_cache (time, data) VALUES ($1, $2);", [time, data]
+      );
       await client.query("COMMIT");
    } catch (error) {
       // Handle transactional rollback on error

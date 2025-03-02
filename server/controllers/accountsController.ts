@@ -22,8 +22,11 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       return submitServiceRequest(() => updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[]), res);
    } else {
       // Update account details or history
+      const account = req.body as Partial<Account & AccountHistory>;
+      account.account_id = req.params.id;
+
       return submitServiceRequest(
-         () => updateAccount(req.body.last_updated ? "history" : "details", user_id,  req.body as Partial<Account & AccountHistory>), res
+         () => updateAccount(account.last_updated ? "history" : "details", user_id,  account), res
       );
    }
 });

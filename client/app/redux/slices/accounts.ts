@@ -7,6 +7,9 @@ const authenticationSlice = createSlice({
       value: [] as Account[]
    },
    reducers: {
+      setAccounts(state, action: PayloadAction<Account[]>) {
+         state.value = action.payload;
+      },
       addAccount(state, action: PayloadAction<Account>) {
          state.value.push(action.payload);
       },
@@ -23,5 +26,5 @@ const authenticationSlice = createSlice({
    }
 });
 
-export const { addAccount, updateAccount, removeAccount } = authenticationSlice.actions;
+export const { setAccounts, addAccount, updateAccount, removeAccount } = authenticationSlice.actions;
 export default authenticationSlice.reducer;

@@ -2,30 +2,36 @@ import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQuery } from "@tanstack/react-query";
 import type { Account } from "capital-types/accounts";
-import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Accounts from "@/components/dashboard/accounts/accounts";
 import Transactions from "@/components/dashboard/accounts/transactions";
 import Loading from "@/components/global/loading";
+import { setAccounts } from "@/redux/slices/accounts";
+import type { RootState } from "@/redux/store";
 import { fetchAccounts } from "@/tanstack/queries/dashboard";
 
 export default function Page() {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
-
-   const { data, isLoading } = useQuery({
+   const dispatch = useDispatch(), navigate = useNavigate();
+   const { data, isLoading, isError } = useQuery({
       queryKey: ["dashboard"],
       queryFn: () => fetchAccounts(dispatch, navigate),
       staleTime: 1 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000
    });
+   const accounts = useSelector((root: RootState) => root.accounts.value) as Account[];
+
+   useEffect(() => {
+      if (!isLoading && !isError) {
+         dispatch(setAccounts(data as Account[]));
+      }
+   }, [isLoading, isError, data]);
 
    if (isLoading || data === null) {
       return <Loading />;
    } else {
-      const accounts = data as Account[];
-
       return (
          <Stack
             direction = "column"

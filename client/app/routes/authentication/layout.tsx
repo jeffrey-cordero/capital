@@ -7,8 +7,7 @@ import { fetchAuthentication } from "@/tanstack/queries/authentication";
 
 export default function Layout() {
    // Potentially redirect logged in users to the dashboard
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isLoading } = useQuery({
       queryKey: ["authentication"],
       queryFn: () => fetchAuthentication(dispatch, navigate)

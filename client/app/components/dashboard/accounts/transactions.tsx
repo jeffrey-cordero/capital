@@ -11,11 +11,11 @@ export default function Transactions() {
                className = "floating"
                component = "img"
                src = "/svg/transactions.svg"
-               sx = { { width: 400, height: "auto", mb: 6 } }
+               sx = { { width: 350, height: "auto", mt: 8, mb: 2 } }
             />
          </Box>
          <Box>
-            <h1>Awaiting Implementation</h1>
+            <h3>Awaiting Implementation</h3>
          </Box>
       </Box>
    );

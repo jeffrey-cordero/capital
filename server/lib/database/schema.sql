@@ -40,12 +40,10 @@ EXECUTE FUNCTION set_account_order();
 CREATE TABLE accounts_history (
    account_balance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    balance DECIMAL(13, 2) NOT NULL,
-   last_updated TIMESTAMP NOT NULL,
+   last_updated DATE NOT NULL,
    account_id UUID NOT NULL,
-   year INT NOT NULL GENERATED ALWAYS AS (EXTRACT(YEAR FROM last_updated)) STORED,
-   month INT NOT NULL GENERATED ALWAYS AS (EXTRACT(MONTH FROM last_updated)) STORED,
    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,
-   CONSTRAINT unique_account_year_month UNIQUE (account_id, year, month)
+   CONSTRAINT unique_account_year_month UNIQUE (account_id, last_updated)
 );
 
 CREATE TABLE market_trends_api_cache (

@@ -40,7 +40,7 @@
     "util": "^0.12.5",
     "xml2js": "^0.6.2",
     "yamljs": "^0.3.0",
-    "zod": "^3.24.1"
+    "zod": "^3.22.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

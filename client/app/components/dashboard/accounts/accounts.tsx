@@ -15,7 +15,7 @@ export default function Accounts({ accounts }: {accounts: Account[]}) {
                className = "floating"
                component = "img"
                src = "/svg/accounts.svg"
-               sx = { { width: 250, height: "auto", mb: 6 } }
+               sx = { { width: 350, height: "auto", mb: 6 } }
             />
          </Box>
          <Grid

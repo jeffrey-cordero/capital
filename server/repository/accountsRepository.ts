@@ -149,10 +149,9 @@ export async function updateHistory(account_id: string, balance: number, last_up
    const updateHistory = `
       INSERT INTO accounts_history (account_id, balance, last_updated)
       VALUES ($1, $2, $3)
-      ON CONFLICT (account_id, year, month) 
+      ON CONFLICT (account_id, last_updated)
       DO UPDATE SET
-         balance = EXCLUDED.balance,
-         last_updated = EXCLUDED.last_updated
+         balance = EXCLUDED.balance
       RETURNING account_id;
    `;
 

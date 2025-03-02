@@ -1,6 +1,5 @@
 import { faEye, faEyeSlash, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
@@ -13,6 +12,7 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
+import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
 
 const loginSchema = z.object({
@@ -21,29 +21,35 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
-
+   const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,
       handleSubmit,
       setError,
       formState: { isSubmitting, errors }
-   } = useForm({
-      resolver: zodResolver(loginSchema)
-   });
+   } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      const credentials = {
-         username: data.username.trim(),
-         password: data.password.trim()
-      };
+      const fields = loginSchema.safeParse(data);
 
-      const result = await sendApiRequest("authentication/login", "POST", credentials, dispatch, navigate, setError);
+      if (!fields.success) {
+         // Display invalid username and/or password inputs
+         handleValidationErrors(fields, setError);
+      } else {
+         // Submit login credentials
+         const credentials = {
+            username: data.username.trim(),
+            password: data.password.trim()
+         };
 
-      if (result === 200) {
-         dispatch(authenticate(true));
+         const result = await sendApiRequest(
+            "authentication/login", "POST", credentials, dispatch, navigate, setError
+         );
+
+         if (result === 200) {
+            dispatch(authenticate(true));
+         }
       }
    };
 

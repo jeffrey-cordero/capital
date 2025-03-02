@@ -15,9 +15,7 @@ import Loading from "@/components/global/loading";
 import { fetchDashboard } from "@/tanstack/queries/dashboard";
 
 export default function Page() {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
-
+   const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isLoading } = useQuery({
       queryKey: ["dashboard"],
       queryFn: () => fetchDashboard(dispatch, navigate),

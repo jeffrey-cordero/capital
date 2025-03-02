@@ -1,6 +1,5 @@
 import { faEye, faEyeSlash, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital-types/user";
@@ -12,41 +11,48 @@ import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
+import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 export default function Register() {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,
       handleSubmit,
       setError,
       formState: { isSubmitting, errors }
-   } = useForm({
-      resolver: zodResolver(userSchema)
-   });
+   } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      const registration = {
-         username: data.username.trim(),
-         name: data.name.trim(),
-         password: data.password.trim(),
-         verifyPassword: data.verifyPassword.trim(),
-         email: data.email.trim()
-      };
+      const fields = userSchema.safeParse(data);
 
-      const result = await sendApiRequest("users", "POST", registration, dispatch, navigate, setError);
+      if (!fields.success) {
+         handleValidationErrors(fields, setError);
+      } else {
+         // Submit fields for registration
+         const registration = {
+            username: data.username.trim(),
+            name: data.name.trim(),
+            password: data.password.trim(),
+            verifyPassword: data.verifyPassword.trim(),
+            email: data.email.trim()
+         };
 
-      if (result === 201) {
-         dispatch(addNotification({
-            type: "Success",
-            message: "Welcome"
-         }));
+         const result = await sendApiRequest(
+            "users", "POST", registration, dispatch, navigate, setError
+         );
 
-         dispatch(authenticate(true));
+         if (result === 201) {
+            dispatch(addNotification({
+               type: "Success",
+               message: "Welcome"
+            }));
+
+            dispatch(authenticate(true));
+         }
       }
    };
 

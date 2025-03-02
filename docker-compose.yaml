@@ -54,7 +54,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "npm install --legacy-peer-deps && npm run dev"
+    command: sh -c "npm uninstall bcrypt && npm install bcrypt && npm run dev"
     container_name: capital_server
 
   postgres: 

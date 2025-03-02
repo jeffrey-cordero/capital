@@ -14,7 +14,7 @@ export async function sendApiRequest(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
-): Promise<object | number | null> {
+): Promise<Record<string, any> | number | null> {
    const login = window.location.pathname.includes("/login");
 
    return await fetch(`${SERVER_URL}/${path}`, {

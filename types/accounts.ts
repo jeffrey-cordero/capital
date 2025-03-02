@@ -1,29 +1,10 @@
 import { z } from 'zod';
 
-export const images = ["property", "bank", "cash", "credit", "investment", "loan", "retirement", "savings"] as const;
-export const types = ["Checking", "Savings", "Credit Card", "Retirement", "Investment", "Loan", "Property", "Other"] as const;
+export const images = new Set(["property", "bank", "cash", "credit", "investment", "loan", "retirement", "savings"]);
+export const types = new Set(["Checking", "Savings", "Credit Card", "Retirement", "Investment", "Loan", "Property", "Other"]);
 
-enum AccountType {
-   Checking = "Checking",
-   Savings = "Savings",
-   CreditCard = "Credit Card",
-   Retirement = "Retirement",
-   Investment = "Investment",
-   Loan = "Loan",
-   Property = "Property",
-   Other = "Other",
-}
-
-enum ImageType {
-   Property = "property",
-   Bank = "bank",
-   Cash = "cash",
-   Credit = "credit",
-   Investment = "investment",
-   Loan = "loan",
-   Retirement = "retirement",
-   Savings = "savings",
-}
+const imageRegex = /^(property|bank|cash|credit|investment|loan|retirement|savings)$/;
+const typeRegex = /^(Checking|Savings|Credit Card|Retirement|Investment|Loan|Property|Other)$/;
 
 export type Account = {
    account_id: string | null;
@@ -65,8 +46,9 @@ export const accountSchema = z.object({
    }).max(99999999999.99, {
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
-   type: z.nativeEnum(types, {
+   type: z.string().regex(typeRegex, {
       message: "Type must be one of: Checking, Savings, Credit Card, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.nativeEnum(images).or(z.string().url()).optional()
-});
+   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable(),
+   history: z.array(accountHistorySchema).optional()
+}).passthrough();

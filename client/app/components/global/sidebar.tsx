@@ -170,8 +170,7 @@ interface SideBarContentProps {
 };
 
 function SideBarContent({ links, onClose } : SideBarContentProps) {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate();
    const theme = useTheme();
    const location = useLocation();
 
