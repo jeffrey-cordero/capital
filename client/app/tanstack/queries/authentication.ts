@@ -5,7 +5,9 @@ import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
 
 export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean | null> {
-   const confirmation = await sendApiRequest("authentication", "GET", null, dispatch, navigate) as { authenticated: boolean };
+   const confirmation = await sendApiRequest(
+      "authentication", "GET", null, dispatch, navigate
+   ) as { authenticated: boolean };
 
    if (confirmation !== null) {
       dispatch(authenticate(confirmation.authenticated));
@@ -15,7 +17,9 @@ export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: Nav
 };
 
 export async function clearAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<void> {
-   const logout = await sendApiRequest("authentication/logout", "POST", null, dispatch, navigate);
+   const logout = await sendApiRequest(
+      "authentication/logout", "POST", null, dispatch, navigate
+   );
 
    if (logout !== null) {
       dispatch(authenticate(false));

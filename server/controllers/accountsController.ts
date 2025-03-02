@@ -28,7 +28,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       return submitServiceRequest(
          () => updateAccount(account.last_updated ? "history" : "details", user_id,  account), res
       );
-}
+   }
 });
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) =>

@@ -9,7 +9,6 @@ import { useNavigate } from "react-router";
 import AccountCard from "@/components/dashboard/accounts/account";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
-import { addNotification } from "@/redux/slices/notifications";
 
 export default function Accounts({ accounts }: { accounts: Account[] }) {
    // Drag and drop for accounts
@@ -57,14 +56,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
             const ordering = newAccounts.map(account => account.account_id);
             sendApiRequest(
                "dashboard/accounts/ordering", "POST", { accounts: ordering }, dispatch, navigate
-            ).then((result) => {
-               if (result !== 204) {
-                  dispatch(addNotification({
-                     type: "Error",
-                     message:"There was an issue updating your account ordering"
-                  }));
-               }
-            });
+            );
          }
       }
    };

@@ -13,7 +13,6 @@ import { z } from "zod";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
-import { authenticate } from "@/redux/slices/authentication";
 
 const loginSchema = z.object({
    username: userSchema.shape.username,
@@ -48,7 +47,7 @@ export default function Login() {
          );
 
          if (result === 200) {
-            dispatch(authenticate(true));
+            navigate("/dashboard");
          }
       }
    };

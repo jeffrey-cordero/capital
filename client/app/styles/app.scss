@@ -86,6 +86,14 @@ a {
     }
   }
 
+  &.error {
+    color: $error;
+
+    &::before {
+      background-color: $error;
+    }
+  }
+
   &.snackbar {
     color: white;
 

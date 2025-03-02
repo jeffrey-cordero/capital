@@ -12,7 +12,6 @@ import { useNavigate } from "react-router";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
-import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 export default function Register() {
@@ -46,12 +45,12 @@ export default function Register() {
          );
 
          if (result === 201) {
+            navigate("/dashboard");
+
             dispatch(addNotification({
                type: "Success",
                message: "Welcome"
             }));
-
-            dispatch(authenticate(true));
          }
       }
    };

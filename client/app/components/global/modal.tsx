@@ -16,7 +16,9 @@ const ModalContent = styled("div")(
      transform: translate(-50%, -50%);
      flex-direction: column;
      gap: 8px;
-     overflow: hidden;
+     max-height: 90%;
+     overflow-x: hidden;
+     overflow-y: scroll;
      background-color: ${theme.palette.mode === "dark" ? "#2B2B2B" : "#fff"};
      border-radius: 8px;
      border: 1px solid ${theme.palette.mode === "dark" ? gray[700] : gray[200]};
