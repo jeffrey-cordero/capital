@@ -11,7 +11,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    const cache = await redisClient.get(`accounts:${user_id}`);
 
    if (cache) {
-      return sendServerResponse(200, "Accounts", JSON.parse(cache));
+      return sendServerResponse(200, "Accounts", { accounts: JSON.parse(cache) });
    } else {
       // Fetch accounts from the database repository
       const result = await findByUserId(user_id);
@@ -51,6 +51,8 @@ export async function updateAccount(type: "details" | "history", user_id: string
       const result = await updateDetails(account.account_id, account);
 
       if (result) {
+         await redisClient.del(`accounts:${user_id}`);
+
          return sendServerResponse(204, "Account details updated");
       } else {
          return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
@@ -70,6 +72,8 @@ export async function updateAccount(type: "details" | "history", user_id: string
          );
 
          if (result) {
+            await redisClient.del(`accounts:${user_id}`);
+
             return sendServerResponse(204, "Account history updated");
          } else {
             return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });

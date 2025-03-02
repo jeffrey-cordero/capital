@@ -27,7 +27,7 @@ export default function Page() {
       if (!isLoading && !isError) {
          dispatch(setAccounts(data as Account[]));
       }
-   }, [isLoading, isError, data]);
+   }, [isLoading, isError, data, dispatch]);
 
    if (isLoading || data === null) {
       return <Loading />;

@@ -49,6 +49,6 @@ export const accountSchema = z.object({
    type: z.string().regex(typeRegex, {
       message: "Type must be one of: Checking, Savings, Credit Card, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable(),
+   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional(),
    history: z.array(accountHistorySchema).optional()
 }).passthrough();

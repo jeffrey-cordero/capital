@@ -13,13 +13,17 @@ interface Dashboard {
 }
 
 export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | null> {
-   const dashboard = await sendApiRequest("dashboard", "GET", null, dispatch, navigate) as Dashboard;
+   const dashboard = await sendApiRequest(
+      "dashboard", "GET", null, dispatch, navigate
+   ) as Dashboard;
 
    return dashboard ?? null;
 }
 
 export async function fetchAccounts(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Account[] | null> {
-   const accounts = await sendApiRequest("dashboard/accounts", "GET", null, dispatch, navigate) as Account[];
+   const accounts = await sendApiRequest(
+      "dashboard/accounts", "GET", null, dispatch, navigate
+   ) as { accounts: Account[] };
 
-   return accounts ? accounts : null;
+   return accounts ? accounts.accounts : null;
 }

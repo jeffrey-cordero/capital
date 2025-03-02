@@ -17,7 +17,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    // Handle accounting ordering or details/history updates
    const user_id = res.locals.user.user_id;
 
-   if (req.path.endsWith("/order")) {
+   if (req.params.id === "ordering") {
       // Update accounts ordering
       return submitServiceRequest(() => updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[]), res);
    } else {
@@ -28,9 +28,9 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       return submitServiceRequest(
          () => updateAccount(account.last_updated ? "history" : "details", user_id,  account), res
       );
-   }
+}
 });
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(() => deleteAccount(res.locals.user.user_id, req.body.account_id), res)
+   submitServiceRequest(() => deleteAccount(res.locals.user.user_id, req.params.id), res)
 );

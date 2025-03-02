@@ -133,16 +133,20 @@ export async function updateDetails(account_id: string, updates: Partial<Account
       await updateHistory(account_id, updates.balance, new Date());
    }
 
-   values.push(account_id);
+   if (fields.length > 0) {
+      values.push(account_id);
 
-   const updateQuery = `
-      UPDATE accounts
-      SET ${fields.join(", ")}
-      WHERE account_id = $${params}
-      RETURNING account_id;
-   `;
+      const updateQuery = `
+         UPDATE accounts
+         SET ${fields.join(", ")}
+         WHERE account_id = $${params}
+         RETURNING account_id;
+      `;
 
-   return (await query(updateQuery, values) as Account[]).length > 0;
+      return (await query(updateQuery, values) as Account[]).length > 0;
+   }
+
+   return true;
 }
 
 export async function updateHistory(account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {

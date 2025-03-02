@@ -15,7 +15,7 @@ CREATE TABLE accounts (
    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    name VARCHAR(30) NOT NULL,
    type VARCHAR(20) CHECK (type IN ('Checking', 'Savings', 'Credit Card', 'Retirement', 'Investment', 'Loan', 'Property', 'Other')) NOT NULL,
-   image VARCHAR(255),
+   image CHARACTER VARYING,
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL,
    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
