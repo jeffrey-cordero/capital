@@ -8,7 +8,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Finances from "@/components/dashboard/finances";
-import { Indicators } from "@/components/dashboard/indicators";
+import Markets from "@/components/dashboard/markets";
 import Stories from "@/components/dashboard/news";
 import Quotes from "@/components/dashboard/quotes";
 import Loading from "@/components/global/loading";
@@ -58,7 +58,7 @@ export default function Page() {
                         <Finances accounts = { accounts } />
                      </Grid>
                      <Grid size = { { xs: 12 } }>
-                        <Indicators data = { marketTrends } />
+                        <Markets data = { marketTrends } />
                      </Grid>
                   </Box>
                </Grid>

@@ -1,4 +1,4 @@
-import { faCircleLeft, faCircleRight, faImages, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
+import { faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Box, Button, FormControl, FormHelperText, InputLabel, MobileStepper, OutlinedInput, Stack } from "@mui/material";
 import { accountSchema, images } from "capital-types/accounts";
@@ -53,7 +53,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, pb: 8} }
+            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, pb: 8 } }
          >
             <Stack spacing = { 1 }>
                <Stack
@@ -61,17 +61,18 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                   sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
                >
                   <Avatar
-                     onClick = { () => {
-                        clearErrors("image");
-                        setValue("image", imagesArray[activeStep]);
-                     } }
+                     onClick = {
+                        () => {
+                           clearErrors("image");
+                           setValue("image", imagesArray[activeStep]);
+                        }
+                     }
                      src = { `/images/${imagesArray[activeStep]}.png` }
                      sx = {
                         {
                            width: "100%",
                            height: 500,
-                           mt: 4,
-                           mb: 2,
+                           my: 2,
                            cursor: "pointer",
                            border: value === imagesArray[activeStep] ? "3px solid" : "none",
                            borderColor: "primary.main"
@@ -107,8 +108,8 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      }
                      position = "bottom"
                      steps = { imagesArray.length }
+                     sx = { { backgroundColor: "transparent", px: 2 } }
                      variant = "progress"
-                     sx = {{ backgroundColor: "transparent", px: 2 }}
                   />
                </Stack>
                <Controller

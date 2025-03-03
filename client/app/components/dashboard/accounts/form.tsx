@@ -1,8 +1,8 @@
-import { faCheck, faPenToSquare, faPlus, faThumbsUp } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, NativeSelect, OutlinedInput, Stack } from "@mui/material";
 import { type Account, accountSchema, types } from "capital-types/accounts";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -118,7 +118,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          open = { open }
          sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%" }, maxWidth: "90%" } }
       >
-         <Box>
+         <Box sx = {{mt: 1}}>
             <Divider>
                <Chip label = "Details" />
             </Divider>
@@ -171,7 +171,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               <OutlinedInput
                                  { ...field }
                                  aria-label = "Balance"
-                                 autoFocus = { true }
                                  disabled = { isSubmitting }
                                  id = "balance"
                                  label = "Balance"
@@ -231,10 +230,10 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                      spacing = { 1 }
                   >
                      <AccountImage
+                        clearErrors = { clearErrors }
                         control = { control }
                         disabled = { isSubmitting }
                         errors = { errors }
-                        clearErrors = { clearErrors }
                         setError = { setError }
                         setValue = { setValue }
                         value = { watch("image") }

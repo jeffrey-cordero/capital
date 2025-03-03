@@ -10,6 +10,12 @@ export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
+export const months = Object.fromEntries(
+   Array.from({ length: 12 }, (_, i) => [i, new Date(0, i).toLocaleString('default', { month: 'long' })])
+); 
+
+export const years = Array.from({ length: new Date().getFullYear() - 1800 + 1 }, (_, i) => 1800 + i);
+
 export function getDaysInMonth(month: number, year: number) {
    const days = [];
    const date = new Date(year, month, 0);

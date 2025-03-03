@@ -50,16 +50,19 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
             aria-labelledby = "alert-dialog-title"
             onClose = { () => setOpen(false) }
             open = { open }
-            sx = {{ 
-               width: { xs: "80%", md: "60%", lg: "50%" }, 
-               maxWidth: "80%", 
-               mx: "auto"
-            }}
+            sx = {
+               {
+                  width: { xs: "85%", md: "65%", lg: "60%" },
+                  maxWidth: "85%",
+                  mx: "auto"
+               }
+            }
          >
+            <Box sx ={{p: 1}}>
             <DialogTitle id = "alert-dialog-title">
                Delete Account?
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx = {{pb: 1}}>
                <DialogContentText id = "alert-dialog-description">
                   Are you sure you want to delete your account? This action will permanently erase all your account history.
                   However, any transactions linked to your account will be detached, but not deleted.
@@ -67,20 +70,24 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
                </DialogContentText>
             </DialogContent>
             <DialogActions>
-               <form onSubmit={handleSubmit(onSubmit)}>
-                  <Button onClick = { () => setOpen(false) } disabled = { isSubmitting || disabled }>
+               <form onSubmit = { handleSubmit(onSubmit) }>
+                  <Button
+                     disabled = { isSubmitting || disabled }
+                     onClick = { () => setOpen(false) }
+                  >
                      No
                   </Button>
                   <Button
                      autoFocus = { true }
                      disabled = { isSubmitting || disabled }
-                     loading={isSubmitting}
-                     type="submit"
+                     loading = { isSubmitting }
+                     type = "submit"
                   >
                      Yes
                   </Button>
                </form>
             </DialogActions>
+            </Box>
          </Dialog>
       </Box>
    );
