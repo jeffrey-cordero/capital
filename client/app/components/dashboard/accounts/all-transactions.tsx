@@ -2,9 +2,7 @@ import { Box } from "@mui/material";
 
 export default function Transactions() {
    return (
-      <Box
-         id = "transactions"
-      >
+      <Box>
          <Box className = "animation-container">
             <Box
                alt = "Transactions"

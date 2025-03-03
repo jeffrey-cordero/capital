@@ -85,7 +85,7 @@ export async function create(user_id: string, account: Account): Promise<Account
          account_order: account.account_order,
          history: [{
             balance: account.balance,
-            last_updated: new Date(insertion[0].last_updated)
+            last_updated: insertion[0].last_updated
          }]
       };
    } catch (error) {

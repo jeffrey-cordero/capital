@@ -47,6 +47,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
 
          if (oldIndex !== undefined && newIndex !== undefined) {
             // Optimistic ordering update
+            const oldAccounts = accounts.map(account => ({ ...account }));
             const newAccounts = arrayMove(accounts, oldIndex, newIndex).map(
                (account, index) => ({ ...account, account_order: index })
             );
@@ -56,7 +57,12 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
             const ordering = newAccounts.map(account => account.account_id);
             sendApiRequest(
                "dashboard/accounts/ordering", "POST", { accounts: ordering }, dispatch, navigate
-            );
+            ).then((result) => {
+               // Revert back the optimistic update
+               if (result !== 204) dispatch(setAccounts(oldAccounts));
+            }).catch((error) => {
+               console.error(error);
+            });
          }
       }
    };

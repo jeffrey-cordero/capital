@@ -19,11 +19,11 @@ const ModalContent = styled("div")(
      max-height: 90%;
      overflow-x: hidden;
      overflow-y: scroll;
-     background-color: ${theme.palette.mode === "dark" ? "#2B2B2B" : "#fff"};
+     background-color: ${theme.palette.mode === "dark" ? "#2B2B2B" : "#ffffff"};
      border-radius: 8px;
      border: 1px solid ${theme.palette.mode === "dark" ? gray[700] : gray[200]};
      box-shadow: 0 4px 12px
-       ${theme.palette.mode === "dark" ? "rgb(0 0 0 / 0.5)" : "rgb(0 0 0 / 0.2)"};
+      ${theme.palette.mode === "dark" ? "rgb(0 0 0 / 0.5)" : "rgb(0 0 0 / 0.2)"};
      padding: 24px;
      color: ${theme.palette.mode === "dark" ? gray[50] : gray[900]};
  

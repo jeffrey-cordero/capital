@@ -38,7 +38,6 @@ FOR EACH ROW
 EXECUTE FUNCTION set_account_order();
 
 CREATE TABLE accounts_history (
-   account_balance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    balance DECIMAL(13, 2) NOT NULL,
    last_updated DATE NOT NULL,
    account_id UUID NOT NULL,

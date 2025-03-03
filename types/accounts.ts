@@ -18,7 +18,7 @@ export type Account = {
 
 export type AccountHistory = {
    balance: number;
-   last_updated: Date;
+   last_updated: string;
 }
 
 export const accountHistorySchema = z.object({
@@ -29,7 +29,11 @@ export const accountHistorySchema = z.object({
    }).max(99999999999.99, {
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
-   last_updated: z.coerce.date()
+   last_updated: z.coerce.date().min(new Date("1800-01-01"), {
+      message: "Update cannot be earlier than the year 1800"
+   }).max(new Date(new Date().getTime() + 24 * 60 * 60 * 1000), {
+      message: "Update cannot be in the future"
+   })
 });
 
 export const accountSchema = z.object({

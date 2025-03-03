@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Accounts from "@/components/dashboard/accounts/accounts";
-import Transactions from "@/components/dashboard/accounts/transactions";
+import Transactions from "@/components/dashboard/accounts/all-transactions";
 import Loading from "@/components/global/loading";
 import { setAccounts } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
