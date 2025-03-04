@@ -71,7 +71,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      onClick = {
                         () => {
                            clearErrors("image");
-                           setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep]);
+                           setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep], { shouldDirty: true });
                         }
                      }
                      src = { `/images/${imagesArray[activeStep]}.png` }
@@ -125,7 +125,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                   render = {
                      ({ field }) => (
                         <FormControl error = { Boolean(errors.image) }>
-                           <InputLabel htmlFor = "url">
+                           <InputLabel htmlFor = "image">
                               URL
                            </InputLabel>
                            <OutlinedInput
@@ -133,9 +133,9 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                               aria-label = "URL"
                               id = "image"
                               label = "URL"
-                              onFocus = { () => images.has(value) && setValue("image", "") }
+                              onFocus = { () => images.has(value) && setValue("image", "", { shouldDirty: true }) }
                               type = "text"
-                              value = { images.has(field.value) ? "" : field.value }
+                              value = { images.has(field.value) || !field.value ? "" : field.value }
                            />
                            {
                               errors.image && (

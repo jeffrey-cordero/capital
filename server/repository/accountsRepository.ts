@@ -230,6 +230,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
 
    try {
       await client.query("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+
       // Disable final record removal trigger
       await client.query("ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;");
 
@@ -245,7 +246,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
 
       // Enable final record removal trigger and commit the changes
       await client.query("ALTER TABLE accounts_history ENABLE TRIGGER prevent_last_history_record_delete_trigger;");
-      await client.query("COMMIT;")
+      await client.query("COMMIT;");
 
       return result.length > 0;
    } catch (error) {

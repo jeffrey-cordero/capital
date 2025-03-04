@@ -60,7 +60,8 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      }
                      src = {
                         images.has(account.image) ? `/images/${account.image}.png`
-                           : !isResourceError && account.image !== "" ? account.image : "/images/empty.png"
+                           : !isResourceError && account.image
+                              ? account.image : "/images/empty.png"
                      }
                      sx = {
                         {

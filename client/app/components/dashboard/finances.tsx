@@ -6,8 +6,10 @@ import Grid from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import { BarChart } from "@mui/x-charts";
 import type { Account } from "capital/accounts";
+import { useMemo } from "react";
 
 import { Trend, type TrendProps } from "@/components/global/trend";
+import { constructDate, formatDate, getLastSixMonths, today } from "@/lib/dates";
 
 const data: TrendProps[] = [
    {
@@ -42,13 +44,61 @@ const data: TrendProps[] = [
    }
 ];
 
-function AccountsParChart() {
-   const theme = useTheme();
-   const colorPalette = [
-      theme.palette.primary.dark,
-      theme.palette.primary.main,
-      theme.palette.primary.light
-   ];
+function AccountsParChart({ accounts }: { accounts: Account[] }) {
+   const historicalAccounts = useMemo(() => {
+      return accounts.map((account) => {
+         // Format the history array into the proper types
+         const history = account.history.map(entry => ({
+            date: formatDate(entry.last_updated),
+            balance: Number(entry.balance || 0)
+         }));
+
+         // Generate 6 months of historical data
+         let lastValidBalance = Number(account.balance || 0);
+         const historicalData = [];
+
+         for (let i = 0; i < 6; i++) {
+            // Calculate the date for this month, handling year rollover
+            const monthDate = new Date(
+               today.getUTCFullYear(),
+               today.getUTCMonth() - i + 1,
+               0
+            );
+
+            // Adjust for year rollover if we've crossed into the previous year
+            if (monthDate.getUTCMonth() < 0) {
+               monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
+               monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
+            }
+
+            // Find the most recent historical record for this month
+            const matchingRecord = history.find(
+               entry => {
+                  return entry.date.getTime() <= monthDate.getTime();
+               }
+            );
+
+            // Use the most recent balance or the last known balance
+            const balance = matchingRecord ? Number(matchingRecord.balance) : lastValidBalance;
+
+            historicalData.unshift({
+               date: monthDate,
+               balance: balance
+            });
+
+            // Update last valid balance, ensuring it's a non-zero value
+            if (balance !== 0) {
+               lastValidBalance = balance;
+            }
+         }
+
+         return historicalData;
+      });
+   }, [accounts]);
+
+   const total = useMemo(() => {
+      return accounts.reduce((acc, record) => acc + Number(record.balance || 0), 0);
+   }, [accounts]);
 
    return (
       <Card
@@ -79,48 +129,35 @@ function AccountsParChart() {
                      component = "p"
                      variant = "h4"
                   >
-                     1.3M
+                     ${
+                        new Intl.NumberFormat("en-US", {
+                           minimumFractionDigits: 2, maximumFractionDigits: 2
+                        }).format(total)
+                     }
                   </Typography>
-                  <Chip
-                     color = "error"
-                     label = "-8%"
-                     size = "small"
-                  />
                </Stack>
                <Typography
                   sx = { { color: "text.secondary" } }
                   variant = "caption"
                >
-                  Account values for the last 6 months
+                  Account balances for the last 6 months
                </Typography>
             </Stack>
             <BarChart
                borderRadius = { 8 }
-               colors = { colorPalette }
+               colors = { ["hsl(210, 98%, 48%)"] }
                grid = { { horizontal: true } }
                height = { 250 }
                margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
                series = {
-                  [
-                     {
-                        id: "account1",
-                        label: "Account 1",
-                        data: [2234, 3872, 2998, 4125, 3357, 2789, 2998],
-                        stack: "A"
-                     },
-                     {
-                        id: "account2",
-                        label: "Account 2",
-                        data: [3098, 4215, 2384, 2101, 4752, 3593, 2384],
-                        stack: "B"
-                     },
-                     {
-                        id: "account3",
-                        label: "Account 3",
-                        data: [4051, 2275, 3129, 4693, 3904, 2038, 2275],
-                        stack: "C"
+                  accounts.map((account, index) => {
+                     return {
+                        id: account.account_id || "" + index,
+                        label: account.name,
+                        data: historicalAccounts[index].map((account) => account.balance),
+                        stack: String(index)
                      }
-                  ]
+                  })
                }
                slotProps = {
                   {
@@ -134,7 +171,7 @@ function AccountsParChart() {
                      {
                         scaleType: "band",
                         categoryGapRatio: 0.5,
-                        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+                        data: getLastSixMonths()
                      }
                   ] as any
                }
@@ -181,7 +218,7 @@ function BudgetBarChart() {
                      component = "p"
                      variant = "h4"
                   >
-                     100K
+                     $0.00
                   </Typography>
                   <Chip
                      color = "success"
@@ -232,7 +269,7 @@ function BudgetBarChart() {
                      {
                         scaleType: "band",
                         categoryGapRatio: 0.5,
-                        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+                        data: getLastSixMonths()
                      }
                   ] as any
                }
@@ -242,11 +279,7 @@ function BudgetBarChart() {
    );
 }
 
-interface FinancesProps {
-   accounts: Account[]
-}
-
-export default function Finances({ accounts }: FinancesProps) {
+export default function Finances({ accounts }: { accounts: Account[] }) {
    return (
       <Box
          id = "marketTrends"
@@ -280,7 +313,7 @@ export default function Finances({ accounts }: FinancesProps) {
                         />
                      </Box>
                      <Grid size = { 12 }>
-                        <AccountsParChart />
+                        <AccountsParChart accounts = { accounts } />
                      </Grid>
                      <Grid size = { 12 }>
                         <BudgetBarChart />

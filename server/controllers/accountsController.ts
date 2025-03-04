@@ -36,7 +36,7 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    const user_id = res.locals.user.user_id;
    const account_id = req.params.id;
 
-   console.log(user_id, account_id)
+   console.log(user_id, account_id);
 
    if (req.body.last_updated) {
       const { last_updated } = req.body;

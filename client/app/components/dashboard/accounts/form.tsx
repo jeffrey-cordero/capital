@@ -2,7 +2,7 @@ import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, NativeSelect, OutlinedInput, Stack } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -11,6 +11,7 @@ import AccountTransactions from "@/components/dashboard/accounts/account-transac
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
+import ExitWarning from "@/components/global/exit-warning";
 import Modal from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { today } from "@/lib/dates";
@@ -25,6 +26,7 @@ interface AccountFormProps {
 
 export default function AccountForm({ account, open, onClose }: AccountFormProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
+   const [exitWarning, setExitWarning] = useState<boolean>(false);
    const updating = account !== undefined;
 
    const {
@@ -61,11 +63,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
                   return acc;
                }, {});
-
-               // Add image as it's not captured fully within the dirtyFields record
-               if (data.image !== account.image) {
-                  updatedFields.image = data.image;
-               }
 
                // Only send request for actual changes
                if (Object.keys(updatedFields).length > 0) {
@@ -122,7 +119,16 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
    return (
       <Modal
-         onClose = { onClose }
+         onClose = {
+            () => {
+               if (Object.keys(dirtyFields).length > 0) {
+                  setExitWarning(true);
+                  return;
+               } else {
+                  onClose();
+               }
+            }
+         }
          open = { open }
          sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%" }, p: 4, maxWidth: "90%" } }
       >
@@ -273,6 +279,16 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               />
                            )
                         }
+                        <ExitWarning
+                           onCancel = { () => setExitWarning(false) }
+                           onClose = {
+                              () => {
+                                 setExitWarning(false);
+                                 onClose();
+                              }
+                           }
+                           open = { exitWarning }
+                        />
                      </Stack>
                   </Stack>
                </form>

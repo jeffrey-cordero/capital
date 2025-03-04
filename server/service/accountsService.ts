@@ -11,7 +11,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    const cache = await redisClient.get(`accounts:${user_id}`);
 
    if (cache) {
-      return sendServerResponse(200, "Accounts", { accounts: JSON.parse(cache) });
+      return sendServerResponse(200, "Accounts", JSON.parse(cache) as Account[]);
    } else {
       // Fetch accounts from the database repository
       const result = await findByUserId(user_id);
@@ -19,7 +19,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
       // Cache the result for 5 minutes
       await redisClient.setex(`accounts:${user_id}`, 5 * 60, JSON.stringify(result));
 
-      return sendServerResponse(200, "Accounts", { accounts: result });
+      return sendServerResponse(200, "Accounts", result as Account[]);
    }
 }
 

@@ -23,7 +23,7 @@ export async function fetchDashboard(dispatch: Dispatch<any>, navigate: Navigate
 export async function fetchAccounts(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Account[] | null> {
    const accounts = await sendApiRequest(
       "dashboard/accounts", "GET", null, dispatch, navigate
-   ) as { accounts: Account[] };
+   ) as Account[];
 
-   return accounts ? accounts.accounts : null;
+   return accounts ?? null;
 }

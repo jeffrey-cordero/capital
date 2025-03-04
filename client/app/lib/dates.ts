@@ -1,3 +1,5 @@
+export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
+
 export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    if (view === "MTD") {
       const [month, year] = date.split("/");
@@ -10,13 +12,11 @@ export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
-export function formatDate(date: string) {
+export function formatDate(date: string): Date {
    return new Date(new Date(date).setUTCHours(0, 0, 0, 0));
 }
 
-export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
-
-export function getDaysInMonth(month: number, year: number) {
+export function getDaysInMonth(month: number, year: number): string[] {
    const days = [];
    const date = new Date(year, month, 0);
 
@@ -32,7 +32,36 @@ export function getDaysInMonth(month: number, year: number) {
       days.push(`${monthName} ${i}`);
       i += 1;
    }
+
    return days;
+}
+
+export function getLastSixMonths(referenceDate = today): string[] {
+   const months = [
+      'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', 
+      'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'
+   ];
+
+   const sixMonths = [];
+   
+   for (let i = 0; i < 6; i++) {
+      // Calculate the date for the last day of each month
+      const monthDate = new Date(
+         referenceDate.getUTCFullYear(), 
+         referenceDate.getUTCMonth() - i + 1, 
+         0
+      );
+
+      // Adjust for year rollover if we've crossed into the previous year
+      if (monthDate.getUTCMonth() < 0) {
+         monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
+         monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
+      }
+
+      sixMonths.unshift(months[monthDate.getUTCMonth()]);
+   }
+
+   return sixMonths;
 }
 
 export function timeSinceLastUpdate(date: string) {
