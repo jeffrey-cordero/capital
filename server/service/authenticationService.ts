@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital-types/server";
+import { ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 

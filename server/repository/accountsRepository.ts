@@ -1,4 +1,4 @@
-import { Account, AccountHistory } from "capital-types/accounts";
+import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
 import { pool, query  } from "@/lib/database/client";
@@ -17,28 +17,28 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    const accounts = await query(search, [user_id]) as (Account & AccountHistory)[];
 
    // Group by account's and collect their history of balances,
-   return accounts.reduce((acc: Account[], row: Account & AccountHistory) => {
+   return accounts.reduce((acc: Account[], record: Account & AccountHistory) => {
       // Assume accounts are ordered by `account_order` DESC then `last_updated` ASC
-      const existing = positions[row.account_id as string];
+      const existing = positions[record.account_id as string];
 
-      if (row.account_id as string in positions) {
+      if (record.account_id as string in positions) {
          acc[existing].history?.push({
-            balance: row.balance,
-            last_updated: row.last_updated
+            balance: record.balance,
+            last_updated: record.last_updated
          });
       } else {
-         positions[row.account_id as string] = acc.length;
+         positions[record.account_id as string] = acc.length;
 
          acc.push({
-            account_id: row.account_id,
-            name: row.name,
-            type: row.type,
-            image: row.image,
-            balance: row.balance,
-            account_order: row.account_order,
+            account_id: record.account_id,
+            name: record.name,
+            type: record.type,
+            image: record.image,
+            balance: record.balance,
+            account_order: record.account_order,
             history: [{
-               balance: row.balance,
-               last_updated: row.last_updated
+               balance: record.balance,
+               last_updated: record.last_updated
             }]
          });
       }
@@ -162,6 +162,51 @@ export async function updateHistory(account_id: string, balance: number, last_up
    return (await query(updateHistory, [account_id, balance, last_updated]) as any[])?.length > 0;
 }
 
+export async function removeHistory(account_id: string, last_updated: Date): Promise<"conflict" | "success" | "missing">  {
+   const client: PoolClient | null = await pool.connect();
+
+   try {
+      await client.query("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+      const records = `
+         SELECT COUNT(*)
+         FROM accounts_history
+         WHERE account_id = $1;
+      `;
+      const total = (await client.query(records, [account_id])).rows as { count:number }[];
+
+      if (total[0].count <= 1) {
+         // All accounts must have at least one history record in the database
+         return "conflict";
+      } else {
+         const removal = `
+            DELETE FROM accounts_history
+            WHERE account_id = $1
+            AND last_updated = $2
+            RETURNING account_id;
+         `;
+
+         const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
+
+         await client.query("COMMIT;");
+
+         if (removals === 1) {
+            // Matching history record removed
+            return "success";
+         } else {
+            // No matching history record
+            return "missing";
+         }
+      }
+   } catch (error) {
+      console.error(error);
+      await client?.query("ROLLBACK");
+
+      throw error;
+   } finally {
+      client?.release();
+   }
+}
+
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
    // Flatten array of parameters
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
@@ -181,10 +226,34 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
-   const deleteQuery = `
-      DELETE FROM accounts
-      WHERE account_id = $1 AND user_id = $2
-      RETURNING account_id;
-   `;
-   return (await query(deleteQuery, [account_id, user_id]) as any[]).length > 0;
+   const client: PoolClient | null = await pool.connect();
+
+   try {
+      await client.query("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+      // Disable final record removal trigger
+      await client.query("ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;");
+
+      // Remove the account with the respective history records through cascading
+      const deleteQuery = `
+         DELETE FROM accounts
+         WHERE user_id = $1 
+         AND account_id = $2
+         RETURNING account_id;
+      `;
+
+      const result = (await client.query(deleteQuery, [user_id, account_id])).rows as { account_id: string }[];
+
+      // Enable final record removal trigger and commit the changes
+      await client.query("ALTER TABLE accounts_history ENABLE TRIGGER prevent_last_history_record_delete_trigger;");
+      await client.query("COMMIT;")
+
+      return result.length > 0;
+   } catch (error) {
+      console.error(error);
+      await client?.query("ROLLBACK");
+
+      throw error;
+   } finally {
+      client?.release();
+   }
 }

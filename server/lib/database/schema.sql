@@ -45,6 +45,22 @@ CREATE TABLE accounts_history (
    CONSTRAINT unique_account_year_month UNIQUE (account_id, last_updated)
 );
 
+CREATE OR REPLACE FUNCTION prevent_last_history_record_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT COUNT(*) FROM accounts_history WHERE account_id = OLD.account_id) = 1 THEN
+      RAISE EXCEPTION 'At least one history record must remain for account %', OLD.account_id;
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_last_history_record_delete_trigger
+BEFORE DELETE ON accounts_history
+FOR EACH ROW
+EXECUTE FUNCTION prevent_last_history_record_delete();
+
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,
    data JSONB NOT NULL

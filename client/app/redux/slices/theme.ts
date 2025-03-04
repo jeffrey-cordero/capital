@@ -8,7 +8,7 @@ const saveLocalTheme = (theme: "light" | "dark") => {
 const themeSlice = createSlice({
    name: "theme",
    initialState: {
-      value: "dark" as "light" | "dark"
+      value: "light" as "light" | "dark"
    },
    reducers: {
       setTheme(state, action: PayloadAction<"light" | "dark">) {

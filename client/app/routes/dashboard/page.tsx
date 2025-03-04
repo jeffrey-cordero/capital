@@ -1,16 +1,15 @@
 import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQuery } from "@tanstack/react-query";
-import type { Account } from "capital-types/accounts";
-import { type MarketTrends } from "capital-types/marketTrends";
-import { type News } from "capital-types/news";
+import type { Account } from "capital/accounts";
+import { type MarketTrends } from "capital/marketTrends";
+import { type News } from "capital/news";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Finances from "@/components/dashboard/finances";
 import Markets from "@/components/dashboard/markets";
 import Stories from "@/components/dashboard/news";
-import Quotes from "@/components/dashboard/quotes";
 import Loading from "@/components/global/loading";
 import { fetchDashboard } from "@/tanstack/queries/dashboard";
 
@@ -64,9 +63,6 @@ export default function Page() {
                </Grid>
                <Grid size = { { xs: 12, lg: 4 } }>
                   <Stories data = { financialNews } />
-               </Grid>
-               <Grid size = { { xs: 12 } }>
-                  <Quotes />
                </Grid>
             </Grid>
          </Box>

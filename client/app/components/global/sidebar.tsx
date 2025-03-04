@@ -1,4 +1,4 @@
-import { faBank, faBarsStaggered, faChartLine, faGauge, faGears, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import { faBarsStaggered, faBusinessTime, faChartSimple, faGears, faMoneyCheckDollar, faNewspaper, faPieChart, faPlaneArrival, faRankingStar, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -31,27 +31,27 @@ const landing = [{
 const dashboard = [{
    path: "/dashboard",
    title: "Dashboard",
-   icon: faGauge
+   icon: faChartSimple
 }, {
    path: "/dashboard/accounts",
    title: "Accounts",
-   icon: faBank
+   icon: faMoneyCheckDollar
 }, {
    path: "/dashboard/budget",
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/dashboard#indicators",
-   title: "Indicators",
-   icon: faChartLine
+   path: "/dashboard#goals",
+   title: "Goals",
+   icon: faRankingStar
+}, {
+   path: "/dashboard#markets",
+   title: "Markets",
+   icon: faBusinessTime
 }, {
    path: "/dashboard#news",
    title: "News",
    icon: faNewspaper
-}, {
-   path: "/dashboard#quotes",
-   title: "Quotes",
-   icon: faQuoteLeft
 }, {
    path: "/settings",
    title: "Settings",

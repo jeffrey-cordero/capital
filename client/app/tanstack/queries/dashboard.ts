@@ -1,7 +1,7 @@
 import type { Dispatch } from "@reduxjs/toolkit";
-import type { Account } from "capital-types/accounts";
-import type { MarketTrends } from "capital-types/marketTrends";
-import type { News } from "capital-types/news";
+import type { Account } from "capital/accounts";
+import type { MarketTrends } from "capital/marketTrends";
+import type { News } from "capital/news";
 import type { NavigateFunction } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";

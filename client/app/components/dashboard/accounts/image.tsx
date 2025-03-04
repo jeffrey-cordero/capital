@@ -1,7 +1,7 @@
 import { faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Button, FormControl, FormHelperText, InputLabel, MobileStepper, OutlinedInput, Stack } from "@mui/material";
-import { accountSchema, images } from "capital-types/accounts";
+import { Avatar, Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, MobileStepper, OutlinedInput, Stack } from "@mui/material";
+import { accountSchema, images } from "capital/accounts";
 import { useState } from "react";
 import { type Control, Controller, type FieldErrors, type FieldValues, type UseFormClearErrors, type UseFormSetError, type UseFormSetValue } from "react-hook-form";
 
@@ -41,7 +41,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
       <Box>
          <Button
             className = "btn-primary"
-            color = "secondary"
+            color = "info"
             disabled = { disabled }
             fullWidth = { true }
             onClick = { () => setOpen(true) }
@@ -53,9 +53,16 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, pb: 8 } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, maxHeight: "80%" } }
          >
+            <Divider>
+               <Chip
+                  color = "success"
+                  label = "Image"
+               />
+            </Divider>
             <Stack spacing = { 1 }>
+
                <Stack
                   direction = "column"
                   sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
@@ -64,14 +71,14 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      onClick = {
                         () => {
                            clearErrors("image");
-                           setValue("image", imagesArray[activeStep]);
+                           setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep]);
                         }
                      }
                      src = { `/images/${imagesArray[activeStep]}.png` }
                      sx = {
                         {
                            width: "100%",
-                           height: 500,
+                           height: 400,
                            my: 2,
                            cursor: "pointer",
                            border: value === imagesArray[activeStep] ? "3px solid" : "none",
@@ -106,10 +113,10 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                            />
                         </Button>
                      }
-                     position = "bottom"
+                     position = "static"
                      steps = { imagesArray.length }
                      sx = { { backgroundColor: "transparent", px: 2 } }
-                     variant = "progress"
+                     variant = "dots"
                   />
                </Stack>
                <Controller

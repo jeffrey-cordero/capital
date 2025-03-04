@@ -1,41 +1,13 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, type IconButtonProps, Slide, Stack, styled, Tooltip, Typography } from "@mui/material";
-import { type News, type Story } from "capital-types/news";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, Slide, Stack, Tooltip, Typography } from "@mui/material";
+import { type News, type Story } from "capital/news";
 import { useRef, useState } from "react";
 
+import { Expand } from "@/components/global/expand";
 import { timeSinceLastUpdate } from "@/lib/dates";
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
-
-interface ExpandMoreProps extends IconButtonProps {
-   expand: boolean;
-}
-
-const ExpandMore = styled(({ expand, ...other }: ExpandMoreProps) => { // eslint-disable-line
-   return <IconButton { ...other } />;
-})(({ theme }) => ({
-   margin: "0",
-   padding: "0 8px",
-   transition: theme.transitions.create("transform", {
-      duration: theme.transitions.duration.standard,
-      easing: theme.transitions.easing.easeInOut
-   }),
-   variants: [
-      {
-         props: ({ expand }) => !expand,
-         style: {
-            transform: "rotate(0deg)"
-         }
-      },
-      {
-         props: ({ expand }) => !!expand,
-         style: {
-            transform: "rotate(180deg)"
-         }
-      }
-   ]
-}));
 
 function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
@@ -149,9 +121,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                placement = "top"
                title = "Description"
             >
-               <ExpandMore
-                  aria-expanded = { expanded }
-                  aria-label = "show more"
+               <Expand
                   expand = { expanded }
                   onClick = { () => setExpanded(!expanded) }
                >
@@ -159,7 +129,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                      icon = { faCaretDown }
                      style = { { padding: "0 5px" } }
                   />
-               </ExpandMore>
+               </Expand>
             </Tooltip>
          </CardActions>
          <Collapse

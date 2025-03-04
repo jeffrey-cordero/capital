@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital-types/server";
+import { ServerResponse } from "capital/server";
 import { Response } from "express";
 
 import { sendErrors, sendSuccess } from "@/lib/api/response";

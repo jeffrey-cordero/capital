@@ -1,4 +1,4 @@
-import { User } from "capital-types/user";
+import { User } from "capital/user";
 
 import { query } from "@/lib/database/client";
 

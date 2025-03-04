@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useQuery } from "@tanstack/react-query";
-import type { Account } from "capital-types/accounts";
+import type { Account } from "capital/accounts";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";

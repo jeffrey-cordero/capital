@@ -2,7 +2,7 @@ import { faEye, faEyeSlash, faUserPlus } from "@fortawesome/free-solid-svg-icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { userSchema } from "capital-types/user";
+import { userSchema } from "capital/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";

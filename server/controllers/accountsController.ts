@@ -1,9 +1,9 @@
-import { type Account, AccountHistory } from "capital-types/accounts";
+import { type Account, AccountHistory } from "capital/accounts";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/api/controllers";
-import { createAccount, deleteAccount, fetchAccounts, updateAccount, updateAccountsOrdering } from "@/service/accountsService";
+import { createAccount, deleteAccount, deleteAccountHistory, fetchAccounts, updateAccount, updateAccountsOrdering } from "@/service/accountsService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(() => fetchAccounts(res.locals.user.user_id), res)
@@ -31,6 +31,18 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    }
 });
 
-export const DELETE = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(() => deleteAccount(res.locals.user.user_id, req.params.id), res)
-);
+export const DELETE = asyncHandler(async(req: Request, res: Response) => {
+   // Handle deleting account history records or the entire account
+   const user_id = res.locals.user.user_id;
+   const account_id = req.params.id;
+
+   console.log(user_id, account_id)
+
+   if (req.body.last_updated) {
+      const { last_updated } = req.body;
+
+      return submitServiceRequest(() => deleteAccountHistory(user_id, account_id, last_updated), res);
+   } else {
+      return submitServiceRequest(() => deleteAccount(user_id, account_id), res);
+   }
+});

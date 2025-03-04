@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital-types/server";
+import { ServerResponse } from "capital/server";
 import { SafeParseReturnType } from "zod";
 
 // Shared service logic for sending validation errors based on Zod schemas

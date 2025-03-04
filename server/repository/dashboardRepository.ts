@@ -1,4 +1,4 @@
-import { MarketTrends } from "capital-types/marketTrends";
+import { MarketTrends } from "capital/marketTrends";
 import { PoolClient } from "pg";
 
 import { pool, query } from "@/lib/database/client";

@@ -1,5 +1,5 @@
-import { ServerResponse } from "capital-types/server";
-import { User, userSchema } from "capital-types/user";
+import { ServerResponse } from "capital/server";
+import { User, userSchema } from "capital/user";
 import { Request, Response } from "express";
 
 import { sendServerResponse, sendValidationErrors } from "@/lib/api/service";
@@ -36,16 +36,16 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          const normalizedUsername = user.username.toLowerCase().trim();
          const normalizedEmail = user.email.toLowerCase().trim();
 
-         const errors = result.reduce((account, user) => {
-            if (user.username.toLowerCase().trim() === normalizedUsername) {
-               account.username = "Username already exists";
+         const errors = result.reduce((acc, record) => {
+            if (record.username.toLowerCase().trim() === normalizedUsername) {
+               acc.username = "Username already exists";
             }
 
-            if (user.email.toLowerCase().trim() === normalizedEmail) {
-               account.email = "Email already exists";
+            if (record.email.toLowerCase().trim() === normalizedEmail) {
+               acc.email = "Email already exists";
             }
 
-            return account;
+            return acc;
          }, {} as Record<string, string>);
 
          return sendServerResponse(409, "Invalid user fields", undefined, errors);

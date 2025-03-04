@@ -1,4 +1,4 @@
-import { User } from "capital-types/user";
+import { User } from "capital/user";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 

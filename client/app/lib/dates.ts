@@ -6,22 +6,23 @@ export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(`${date}T00:00:00`);
+      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
    }
 }
 
-export const months = Object.fromEntries(
-   Array.from({ length: 12 }, (_, i) => [i, new Date(0, i).toLocaleString('default', { month: 'long' })])
-); 
+export function formatDate(date: string) {
+   return new Date(new Date(date).setUTCHours(0, 0, 0, 0));
+}
 
-export const years = Array.from({ length: new Date().getFullYear() - 1800 + 1 }, (_, i) => 1800 + i);
+export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
 export function getDaysInMonth(month: number, year: number) {
    const days = [];
    const date = new Date(year, month, 0);
 
    const monthName = date.toLocaleDateString("en-US", {
-      month: "short"
+      month: "short",
+      timeZone: "UTC"
    });
    const daysInMonth = date.getDate();
 

@@ -1,10 +1,10 @@
-import { Account, AccountHistory, accountHistorySchema, accountSchema } from "capital-types/accounts";
-import { ServerResponse } from "capital-types/server";
+import { Account, AccountHistory, accountHistorySchema, accountSchema } from "capital/accounts";
+import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
 import { redisClient } from "@/app";
 import { sendServerResponse, sendValidationErrors } from "@/lib/api/service";
-import {  create,  deleteAccount as removeAccount, findByUserId, updateDetails, updateHistory as updateAccountHistory, updateOrdering } from "@/repository/accountsRepository";
+import {  create,  deleteAccount as removeAccount, findByUserId, removeHistory, updateDetails, updateHistory as updateAccountHistory, updateOrdering } from "@/repository/accountsRepository";
 
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Validate account fields
@@ -58,17 +58,13 @@ export async function updateAccount(type: "details" | "history", user_id: string
          return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
       }
    } else {
-      if (!account.balance) {
-         return sendValidationErrors(null, "Balance is required for updating account history", { balance: "Missing balance" });
-      }
-
       const fields = accountHistorySchema.safeParse(account as AccountHistory);
 
       if (!fields.success) {
          return sendValidationErrors(fields, "Invalid account history fields");
       } else {
          const result = await updateAccountHistory(
-            account.account_id, account.balance, account.last_updated ? new Date(account.last_updated) : new Date()
+            account.account_id, account.balance as number, account.last_updated ? new Date(account.last_updated) : new Date()
          );
 
          if (result) {
@@ -107,6 +103,24 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       await redisClient.del(`accounts:${user_id}`);
 
       return sendServerResponse(204, "Account ordering updated");
+   }
+}
+
+export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
+   const result = await removeHistory(account_id, new Date(last_updated));
+
+   if (result === "missing") {
+      return sendServerResponse(404, "Account history record not found", undefined,
+         { history: "Account history does not exist based on the provided date" }
+      );
+   } else if (result === "conflict") {
+      return sendServerResponse(409, "Account history record conflicts", undefined,
+         { history: "At least one history record must remain for this account" }
+      );
+   } else {
+      await redisClient.del(`accounts:${user_id}`);
+
+      return sendServerResponse(204, "Account history record deleted");
    }
 }
 

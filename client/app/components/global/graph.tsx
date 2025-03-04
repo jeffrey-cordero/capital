@@ -1,5 +1,5 @@
 import { Card, CardContent, Chip, FormControl, InputLabel, NativeSelect, Stack, TextField, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { type Theme, useTheme } from "@mui/material/styles";
 import { BarChart } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useMemo } from "react";
@@ -11,12 +11,33 @@ import { constructDate } from "@/lib/dates";
 interface GraphProps {
    title: string;
    card: boolean;
+   average: boolean;
    indicators: boolean;
    defaultOption: string;
    data: Record<string, { date: string, value: string }[]>;
 }
 
-export default function Graph({ title, card, defaultOption, indicators, data }: GraphProps) {
+export function getGraphColor(theme: Theme, value: number) {
+   if (value === 0) {
+      return theme.palette.text.primary;
+   } else if (value > 0) {
+      return theme.palette.success.main;
+   } else {
+      return theme.palette.error.main;
+   }
+};
+
+export function getChipColor(trend: number) {
+   if (trend === 0) {
+      return "default" as const;
+   } else if (trend > 0) {
+      return "success" as const;
+   } else {
+      return "error" as const;
+   }
+};
+
+export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps) {
    const theme = useTheme();
    const {
       watch,
@@ -50,29 +71,48 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
          case "YTD": {
             // Format the yearly view (YYYY)
             const years = Array.from(
-               new Set(range.map(d => constructDate(d.date).getFullYear()))
+               new Set(range.map(d => constructDate(d.date).getUTCFullYear()))
             );
 
             const yearlyData = years.map((year) => {
-               // Bucket the data by year and calculate the average value for each year
-               const data = range.filter(d => constructDate(d.date).getFullYear() === year);
-               const average = data.length > 0 ? data.reduce((sum, d) => sum + Number(d.value), 0) / data.length : 0;
+               // Bucket the data by year and calculate the average or fetch the last value for each year
+               const data = range.filter(d => constructDate(d.date).getUTCFullYear() === year);
+               const value = data.length > 0 ?
+                  average ?
+                     data.reduce((acc, record) => acc + Number(record.value), 0) / data.length
+                     : data[data.length - 1].value
+                  : 0;
 
                return {
                   date: year.toString(),
-                  value: data.length > 0 ? average : 0
+                  value: data.length > 0 ? value : 0
                };
             });
+
+            if (yearlyData.length === 1 && graph !== "Bar") {
+               // Append the same value for the next year to prevent an empty LineChart component
+               yearlyData.push({
+                  date: String(Number(yearlyData[0].date) + 1),
+                  value: yearlyData[0].value
+               });
+            }
 
             return yearlyData;
          }
          case "MTD": {
             // Format the monthly view (MM/YYYY)
-            const monthlyData = range.reduce((acc: { date: string, value: string }[], d) => {
-               const date = constructDate(d.date);
-               const title = (date.getMonth() + 1).toString().padStart(2, "0") + "/" + (date.getFullYear().toString());
+            const buckets: Record<string, number> = {};
+            const monthlyData = range.reduce((acc: { date: string, value: string }[], record) => {
+               const date = constructDate(record.date);
+               const title = (date.getUTCMonth() + 1).toString().padStart(2, "0") + "/" + (date.getUTCFullYear().toString());
+               // Each bucket represents the final value in the dataset tied to that time period
+               if (title in buckets) {
+                  acc[buckets[title]].value = record.value;
+               } else {
+                  buckets[title] = acc.length;
+                  acc.push({ date: title, value: record.value });
+               }
 
-               acc.push({ date: title, value: d.value });
                return acc;
             }, []);
 
@@ -82,17 +122,7 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
             return range;
          }
       }
-   }, [view, range]);
-
-   const getColor = (value: number) => {
-      if (value === 0) {
-         return theme.palette.text.primary;
-      } else if (value > 0) {
-         return theme.palette.success.main;
-      } else {
-         return theme.palette.error.main;
-      }
-   };
+   }, [view, range, graph, average]);
 
    const filtered = getFiltered.length > 0 ? getFiltered : [{ date: constructDate(new Date().toISOString(), view), value: 0 }];
 
@@ -102,8 +132,8 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
       / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100) : (0);
 
    // Coloring parameters
-   const color = getColor(trend);
-   const chip = trend > 0 ? "success" : trend < 0 ? "error" : "default";
+   const color = getGraphColor(theme, trend);
+   const chip = getChipColor(trend);
 
    // Range parameters
    const fromValue = from === "" ? range[0].date : from;
@@ -114,13 +144,13 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
    return (
       <Card
          elevation = { card ? 3 : 0 }
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2, position: "relative" } }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2, position: "relative", background: "transparent" } }
          variant = "elevation"
       >
-         <CardContent>
+         <CardContent sx = { { p:0 } }>
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 1 : 0, px: 1 } }
+               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: 1, px: 1 } }
             >
                {
                   indicators && (
@@ -165,8 +195,9 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                   name = "view"
                   render = {
                      ({ field }) => (
-                        <FormControl 
-                           sx = { { width: { xs: "100%", sm: "auto" } } }>
+                        <FormControl
+                           sx = { { width: { xs: "100%", sm: "auto" } } }
+                        >
                            <InputLabel
                               htmlFor = "view"
                               variant = "standard"
@@ -191,7 +222,8 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                   render = {
                      ({ field }) => (
                         <FormControl
-                           sx = { { width: { xs: "100%", sm: "auto" } } }>
+                           sx = { { width: { xs: "100%", sm: "auto" } } }
+                        >
                            <InputLabel
                               htmlFor = "graph"
                               variant = "standard"
@@ -229,7 +261,7 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                   >
                      { option === "GDP" || !indicators ? "$" : "" }
                      {
-                        option === "GDP" ? (
+                        option === "GDP" || !indicators ? (
                            new Intl.NumberFormat().format(Number(filtered[filtered.length - 1].value))
                         ) : (
                            Number(filtered[filtered.length - 1].value).toFixed(2)
@@ -239,7 +271,7 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                   </Typography>
                   <Chip
                      color = { chip }
-                     label = { `${trend.toFixed(2)}%` }
+                     label = { `${new Intl.NumberFormat().format(Number(trend.toFixed(2)))}%` }
                      size = "small"
                   />
                </Stack>
@@ -248,6 +280,7 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                graph === "Line" ? (
                   <LineChart
                      colors = { [color] }
+                     experimentalMarkRendering = { true }
                      grid = { { horizontal: true } }
                      height = { 250 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
@@ -298,6 +331,7 @@ export default function Graph({ title, card, defaultOption, indicators, data }: 
                      grid = { { horizontal: true } }
                      height = { 250 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
                      series = {
                         [
                            {

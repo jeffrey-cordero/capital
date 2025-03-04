@@ -1,7 +1,7 @@
 import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
-import { type Account } from "capital-types/accounts";
+import { type Account } from "capital/accounts";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
@@ -58,35 +58,35 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
                }
             }
          >
-            <Box sx ={{p: 1}}>
-            <DialogTitle id = "alert-dialog-title">
-               Delete Account?
-            </DialogTitle>
-            <DialogContent sx = {{pb: 1}}>
-               <DialogContentText id = "alert-dialog-description">
-                  Are you sure you want to delete your account? This action will permanently erase all your account history.
-                  However, any transactions linked to your account will be detached, but not deleted.
-                  Once deleted, this action cannot be undone.
-               </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-               <form onSubmit = { handleSubmit(onSubmit) }>
-                  <Button
-                     disabled = { isSubmitting || disabled }
-                     onClick = { () => setOpen(false) }
-                  >
-                     No
-                  </Button>
-                  <Button
-                     autoFocus = { true }
-                     disabled = { isSubmitting || disabled }
-                     loading = { isSubmitting }
-                     type = "submit"
-                  >
-                     Yes
-                  </Button>
-               </form>
-            </DialogActions>
+            <Box sx = { { p: 1 } }>
+               <DialogTitle id = "alert-dialog-title">
+                  Delete Account?
+               </DialogTitle>
+               <DialogContent sx = { { pb: 1 } }>
+                  <DialogContentText id = "alert-dialog-description">
+                     Are you sure you want to delete your account? This action will permanently erase all your account history.
+                     However, any transactions linked to your account will be detached, but not deleted.
+                     Once deleted, this action cannot be undone.
+                  </DialogContentText>
+               </DialogContent>
+               <DialogActions>
+                  <form onSubmit = { handleSubmit(onSubmit) }>
+                     <Button
+                        disabled = { isSubmitting || disabled }
+                        onClick = { () => setOpen(false) }
+                     >
+                        No
+                     </Button>
+                     <Button
+                        autoFocus = { true }
+                        disabled = { isSubmitting || disabled }
+                        loading = { isSubmitting }
+                        type = "submit"
+                     >
+                        Yes
+                     </Button>
+                  </form>
+               </DialogActions>
             </Box>
          </Dialog>
       </Box>

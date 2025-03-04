@@ -3,7 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { faPencil, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Box, Button, Card, CardContent, Fab, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { type Account, images } from "capital-types/accounts";
+import { type Account, images } from "capital/accounts";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -58,7 +58,10 @@ export default function AccountCard({ account }: { account: Account | undefined 
                            (e.target as HTMLImageElement).src = "";
                         }
                      }
-                     src = { images.has(account.image) ? `/images/${account.image}.png` : account.image }
+                     src = {
+                        images.has(account.image) ? `/images/${account.image}.png`
+                           : !isResourceError && account.image !== "" ? account.image : "/images/empty.png"
+                     }
                      sx = {
                         {
                            height: 225,
@@ -98,7 +101,11 @@ export default function AccountCard({ account }: { account: Account | undefined 
                         sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }
                         variant = "h6"
                      >
-                        ${ new Intl.NumberFormat().format(account.balance) }
+                        ${
+                           new Intl.NumberFormat("en-US", {
+                              minimumFractionDigits: 2, maximumFractionDigits: 2
+                           }).format(account.balance)
+                        }
                      </Typography>
                      <Typography variant = "subtitle2">
                         { account.type }
@@ -106,7 +113,14 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      <Typography
                         variant = "subtitle2"
                      >
-                        Updated { new Date(account.history[0].last_updated).toLocaleDateString() }
+                        {
+                           new Date(account.history[0].last_updated).toLocaleDateString("en-us", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                              timeZone: "UTC"
+                           })
+                        }
                      </Typography>
                      <AccountForm
                         account = { account }

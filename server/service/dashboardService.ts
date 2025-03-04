@@ -1,8 +1,8 @@
 const fs = require("fs").promises;
 
-import { IndicatorTrend, MarketTrends, StockTrends } from "capital-types/marketTrends";
-import { News } from "capital-types/news";
-import { ServerResponse } from "capital-types/server";
+import { IndicatorTrend, MarketTrends, StockTrends } from "capital/marketTrends";
+import { News } from "capital/news";
+import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";

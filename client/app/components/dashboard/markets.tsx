@@ -1,18 +1,12 @@
 import { Box, Card, CardContent, Chip, Link, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "capital-types/marketTrends";
+import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "capital/marketTrends";
 
-import Graph from "@/components/global/graph";
+import Graph, { getChipColor } from "@/components/global/graph";
 import { timeSinceLastUpdate } from "@/lib/dates";
 
 function Stocks({ data }: { data: StockTrends }) {
    const { top_gainers, top_losers, most_actively_traded } = data;
-
-   const colors = {
-      up: "success" as const,
-      down: "error" as const,
-      neutral: "default" as const
-   };
 
    // Helper function to render a single stock trend
    const renderTrend = (
@@ -21,8 +15,6 @@ function Stocks({ data }: { data: StockTrends }) {
       trend: "up" | "down" | "neutral",
       image: string
    ) => {
-      const color = colors[trend];
-
       return (
          <Card
             elevation = { 3 }
@@ -69,7 +61,7 @@ function Stocks({ data }: { data: StockTrends }) {
                               </Link>
                            </Typography>
                            <Chip
-                              color = { color }
+                              color = { getChipColor(parseFloat(stock.change_percentage)) }
                               label = { parseFloat(stock.change_percentage).toFixed(2) + "%" }
                               size = "small"
                            />
@@ -91,7 +83,7 @@ function Stocks({ data }: { data: StockTrends }) {
                               fontWeight = "600"
                               variant = "body2"
                            >
-                              { new Intl.NumberFormat().format(parseInt(stock.volume)) } transactions
+                              { new Intl.NumberFormat().format(parseInt(stock.volume)) } shares
                            </Typography>
                         </Stack>
                      </Stack>
@@ -121,7 +113,7 @@ function Stocks({ data }: { data: StockTrends }) {
                { renderTrend("Top Losers", top_losers, "down", "/svg/loss.svg") }
             </Grid>
             <Grid size = { { xs: 12, lg: 4 } }>
-               { renderTrend("Most Actively Traded", most_actively_traded, "neutral", "/svg/active.svg") }
+               { renderTrend("Most Active", most_actively_traded, "neutral", "/svg/active.svg") }
             </Grid>
          </Grid>
       </Stack>
@@ -130,8 +122,9 @@ function Stocks({ data }: { data: StockTrends }) {
 
 export default function Markets({ data }: { data: MarketTrends }) {
    const indicators = Object.keys(data).filter(key => key !== "Stocks")
-      .reduce((acc: { [key: string]: IndicatorTrend[] }, key) => {
-         acc[key] = data[key] as IndicatorTrend[];
+      .reduce((acc: { [key: string]: IndicatorTrend[] }, record) => {
+         acc[record] = data[record] as IndicatorTrend[];
+
          return acc;
       }, {});
    const stocks = data["Stocks"] as StockTrends;
@@ -141,7 +134,7 @@ export default function Markets({ data }: { data: MarketTrends }) {
    return (
       <Stack
          direction = "column"
-         id = "indicators"
+         id = "markets"
       >
          <Box className = "animation-container">
             <Box
@@ -163,6 +156,7 @@ export default function Markets({ data }: { data: MarketTrends }) {
             </Typography>
          </Box>
          <Graph
+            average = { true }
             card = { true }
             data = { indicators }
             defaultOption = "GDP"

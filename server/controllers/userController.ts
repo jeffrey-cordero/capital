@@ -1,4 +1,4 @@
-import { User } from "capital-types/user";
+import { User } from "capital/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 

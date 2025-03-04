@@ -5,7 +5,7 @@ import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import { BarChart } from "@mui/x-charts";
-import type { Account } from "capital-types/accounts";
+import type { Account } from "capital/accounts";
 
 import { Trend, type TrendProps } from "@/components/global/trend";
 

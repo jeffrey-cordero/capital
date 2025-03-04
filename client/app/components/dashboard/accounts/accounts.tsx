@@ -2,7 +2,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, 
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Box, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type Account } from "capital-types/accounts";
+import { type Account } from "capital/accounts";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 

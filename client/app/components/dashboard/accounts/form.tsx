@@ -1,7 +1,7 @@
 import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, NativeSelect, OutlinedInput, Stack } from "@mui/material";
-import { type Account, accountSchema, types } from "capital-types/accounts";
+import { type Account, accountSchema, types } from "capital/accounts";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
@@ -13,6 +13,7 @@ import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
 import Modal from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
+import { today } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 
@@ -55,8 +56,8 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             // Determine if this is an update or create operation
             if (updating) {
                // Send dirty fields for updates to minimize data sent
-               const updatedFields = Object.keys(dirtyFields).reduce((acc: any, key) => {
-                  acc[key] = data[key];
+               const updatedFields = Object.keys(dirtyFields).reduce((acc: any, record) => {
+                  acc[record] = data[record];
 
                   return acc;
                }, {});
@@ -75,10 +76,17 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   );
 
                   if (result === 204) {
+                     // Update account details, potentially updating most recent record in the history array
                      dispatch(updateAccount({
-                        ...account,
-                        ...updatedFields
-                     } as Account));
+                        account: {
+                           ...account,
+                           ...updatedFields
+                        },
+                        history: updatedFields.balance ? {
+                           balance: updatedFields.balance,
+                           last_updated: today.toISOString()
+                        } : undefined
+                     }));
                   }
                }
             } else {
@@ -116,169 +124,176 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       <Modal
          onClose = { onClose }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%" }, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%" }, p: 4, maxWidth: "90%" } }
       >
-         <Box sx = {{mt: 1}}>
-            <Divider>
-               <Chip label = "Details" />
-            </Divider>
-            <form onSubmit = { handleSubmit(onSubmit) }>
-               <Stack
-                  direction = "column"
-                  spacing = { 2 }
-                  sx = { { mt: 3 } }
-               >
-                  <Controller
-                     control = { control }
-                     name = "name"
-                     render = {
-                        ({ field }) => (
-                           <FormControl error = { Boolean(errors.name) }>
-                              <InputLabel htmlFor = "name">
-                                 Name
-                              </InputLabel>
-                              <OutlinedInput
-                                 { ...field }
-                                 aria-label = "Name"
-                                 autoComplete = "none"
-                                 autoFocus = { true }
-                                 disabled = { isSubmitting }
-                                 id = "name"
-                                 label = "Name"
-                                 type = "text"
-                                 value = { field.value || "" }
-                              />
-                              {
-                                 errors.name && (
-                                    <FormHelperText>
-                                       { errors.name?.message?.toString() }
-                                    </FormHelperText>
-                                 )
-                              }
-                           </FormControl>
-                        )
-                     }
+         <Stack
+            direction = "column"
+            spacing = { 3 }
+         >
+            <Box>
+               <Divider>
+                  <Chip
+                     color = "success"
+                     label = "Details"
                   />
-                  <Controller
-                     control = { control }
-                     name = "balance"
-                     render = {
-                        ({ field }) => (
-                           <FormControl error = { Boolean(errors.balance) }>
-                              <InputLabel htmlFor = "balance">
-                                 Balance
-                              </InputLabel>
-                              <OutlinedInput
-                                 { ...field }
-                                 aria-label = "Balance"
-                                 disabled = { isSubmitting }
-                                 id = "balance"
-                                 label = "Balance"
-                                 type = "number"
-                                 value = { field.value || "" }
-                              />
-                              {
-                                 errors.balance && (
-                                    <FormHelperText>
-                                       { errors.balance?.message?.toString() }
-                                    </FormHelperText>
-                                 )
-                              }
-                           </FormControl>
-                        )
-                     }
-                  />
-                  <Controller
-                     control = { control }
-                     defaultValue = "Checking"
-                     name = "type"
-                     render = {
-                        ({ field }) => (
-                           <FormControl
-                              disabled = { isSubmitting }
-                              error = { Boolean(errors.type) }
-                              sx = { { px: 0.75 } }
-                           >
-                              <InputLabel
-                                 htmlFor = "type"
-                                 sx = { { px: 0.75 } }
-                                 variant = "standard"
-                              >
-                                 Type
-                              </InputLabel>
-                              <NativeSelect
-                                 { ...field }
-                                 id = "type"
-                              >
-                                 {
-                                    Array.from(types).map((key) => (
-                                       <option
-                                          key = { key }
-                                          value = { key }
-                                       >
-                                          { key }
-                                       </option>
-                                    ))
-                                 }
-                              </NativeSelect>
-                           </FormControl>
-                        )
-                     }
-                  />
+               </Divider>
+               <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
-                     spacing = { 1 }
+                     spacing = { 2 }
+                     sx = { { mt: 3 } }
                   >
-                     <AccountImage
-                        clearErrors = { clearErrors }
+                     <Controller
                         control = { control }
-                        disabled = { isSubmitting }
-                        errors = { errors }
-                        setError = { setError }
-                        setValue = { setValue }
-                        value = { watch("image") }
+                        name = "name"
+                        render = {
+                           ({ field }) => (
+                              <FormControl error = { Boolean(errors.name) }>
+                                 <InputLabel htmlFor = "name">
+                                    Name
+                                 </InputLabel>
+                                 <OutlinedInput
+                                    { ...field }
+                                    aria-label = "Name"
+                                    autoComplete = "none"
+                                    autoFocus = { true }
+                                    disabled = { isSubmitting }
+                                    id = "name"
+                                    label = "Name"
+                                    type = "text"
+                                    value = { field.value || "" }
+                                 />
+                                 {
+                                    errors.name && (
+                                       <FormHelperText>
+                                          { errors.name?.message?.toString() }
+                                       </FormHelperText>
+                                    )
+                                 }
+                              </FormControl>
+                           )
+                        }
                      />
-                     <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        disabled = { isSubmitting }
-                        fullWidth = { true }
-                        loading = { isSubmitting }
-                        startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
-                        type = "submit"
-                        variant = "contained"
+                     <Controller
+                        control = { control }
+                        name = "balance"
+                        render = {
+                           ({ field }) => (
+                              <FormControl error = { Boolean(errors.balance) }>
+                                 <InputLabel htmlFor = "balance">
+                                    Balance
+                                 </InputLabel>
+                                 <OutlinedInput
+                                    { ...field }
+                                    aria-label = "Balance"
+                                    disabled = { isSubmitting }
+                                    id = "balance"
+                                    label = "Balance"
+                                    type = "number"
+                                    value = { field.value || "" }
+                                 />
+                                 {
+                                    errors.balance && (
+                                       <FormHelperText>
+                                          { errors.balance?.message?.toString() }
+                                       </FormHelperText>
+                                    )
+                                 }
+                              </FormControl>
+                           )
+                        }
+                     />
+                     <Controller
+                        control = { control }
+                        defaultValue = "Checking"
+                        name = "type"
+                        render = {
+                           ({ field }) => (
+                              <FormControl
+                                 disabled = { isSubmitting }
+                                 error = { Boolean(errors.type) }
+                                 sx = { { px: 0.75 } }
+                              >
+                                 <InputLabel
+                                    htmlFor = "type"
+                                    sx = { { px: 0.75 } }
+                                    variant = "standard"
+                                 >
+                                    Type
+                                 </InputLabel>
+                                 <NativeSelect
+                                    { ...field }
+                                    id = "type"
+                                 >
+                                    {
+                                       Array.from(types).map((key) => (
+                                          <option
+                                             key = { key }
+                                             value = { key }
+                                          >
+                                             { key }
+                                          </option>
+                                       ))
+                                    }
+                                 </NativeSelect>
+                              </FormControl>
+                           )
+                        }
+                     />
+                     <Stack
+                        direction = "column"
+                        spacing = { 1 }
                      >
-                        { updating ? "Update" : "Create" }
-                     </Button>
-                     {
-                        updating && (
-                           <AccountDeletion
-                              account = { account }
-                              disabled = { isSubmitting }
-                           />
-                        )
-                     }
+                        <AccountImage
+                           clearErrors = { clearErrors }
+                           control = { control }
+                           disabled = { isSubmitting }
+                           errors = { errors }
+                           setError = { setError }
+                           setValue = { setValue }
+                           value = { watch("image") }
+                        />
+                        <Button
+                           className = "btn-primary"
+                           color = "primary"
+                           disabled = { isSubmitting }
+                           fullWidth = { true }
+                           loading = { isSubmitting }
+                           startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
+                           type = "submit"
+                           variant = "contained"
+                        >
+                           { updating ? "Update" : "Create" }
+                        </Button>
+                        {
+                           updating && (
+                              <AccountDeletion
+                                 account = { account }
+                                 disabled = { isSubmitting }
+                              />
+                           )
+                        }
+                     </Stack>
                   </Stack>
-               </Stack>
-            </form>
-         </Box>
-         {
-            updating && (
-               <Stack
-                  direction = "column"
-                  spacing = { 2 }
-                  sx = { { mt: 2, textAlign: "center" } }
-               >
-                  <AccountHistory
-                     account = { account }
-                     disabled = { isSubmitting }
-                  />
-                  <AccountTransactions
-                     account = { account }
-                  />
-               </Stack>
-            )
-         }
+               </form>
+            </Box>
+            {
+               updating && (
+                  <Stack
+                     direction = "column"
+                     spacing = { 3 }
+                  >
+                     <AccountHistory
+                        account = { account }
+                        disabled = { isSubmitting }
+                     />
+                     <AccountTransactions
+                        account = { account }
+                     />
+                  </Stack>
+               )
+            }
+         </Stack>
       </Modal>
    );
 }

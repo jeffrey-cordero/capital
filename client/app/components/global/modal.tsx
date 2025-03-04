@@ -62,7 +62,7 @@ export default function Modal({ open, onClose, children, sx }: ModalProps) {
                   icon = { faXmark }
                   onClick = { onClose }
                   size = "xl"
-                  style = { { position: "absolute", top: -16, right: -12, cursor: "pointer", color: "red" } }
+                  style = { { position: "absolute", top: -20, right: -15, cursor: "pointer", color: "red" } }
                />
                { children }
             </Box>
