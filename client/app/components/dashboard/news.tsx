@@ -23,7 +23,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                width: {
                   sm: "100%",
                   md: 300,
-                  lg: "100%"
+                  lg: "90%"
                },
                maxWidth: "95%",
                margin: "auto",

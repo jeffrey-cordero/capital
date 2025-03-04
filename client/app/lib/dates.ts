@@ -38,17 +38,17 @@ export function getDaysInMonth(month: number, year: number): string[] {
 
 export function getLastSixMonths(referenceDate = today): string[] {
    const months = [
-      'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', 
-      'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'
+      "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
+      "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
    ];
 
    const sixMonths = [];
-   
+
    for (let i = 0; i < 6; i++) {
       // Calculate the date for the last day of each month
       const monthDate = new Date(
-         referenceDate.getUTCFullYear(), 
-         referenceDate.getUTCMonth() - i + 1, 
+         referenceDate.getUTCFullYear(),
+         referenceDate.getUTCMonth() - i + 1,
          0
       );
 

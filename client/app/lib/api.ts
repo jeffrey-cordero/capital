@@ -16,6 +16,7 @@ export async function sendApiRequest(
    setError?: UseFormSetError<any>
 ): Promise<Record<string, any> | number | null> {
    const login = window.location.pathname.includes("/login");
+   const authenticating = path === "authentication";
 
    return await fetch(`${SERVER_URL}/${path}`, {
       method: method,
@@ -41,7 +42,7 @@ export async function sendApiRequest(
          throw new Error(response.statusText);
       }
 
-      if (response.status === 201 || response.status === 204 || (response.status === 200 && login)) {
+      if (response.status === 201 || response.status === 204 || (response.status === 200 && login && !authenticating)) {
          // No content required on successful actions
          return response.status;
       }

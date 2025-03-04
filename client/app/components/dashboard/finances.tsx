@@ -9,7 +9,7 @@ import type { Account } from "capital/accounts";
 import { useMemo } from "react";
 
 import { Trend, type TrendProps } from "@/components/global/trend";
-import { constructDate, formatDate, getLastSixMonths, today } from "@/lib/dates";
+import { formatDate, getLastSixMonths, today } from "@/lib/dates";
 
 const data: TrendProps[] = [
    {
@@ -156,7 +156,7 @@ function AccountsParChart({ accounts }: { accounts: Account[] }) {
                         label: account.name,
                         data: historicalAccounts[index].map((account) => account.balance),
                         stack: String(index)
-                     }
+                     };
                   })
                }
                slotProps = {
