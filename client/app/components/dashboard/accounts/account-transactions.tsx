@@ -12,7 +12,7 @@ export default function AccountTransactions({ account }: { account: Account} ) {
          </Divider>
          <Typography
             fontWeight = "bold"
-            sx = { { mt: 2 } }
+            sx = { { mt: 2, textAlign: "center" } }
             variant = "subtitle2"
          >
             Coming Soon

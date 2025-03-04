@@ -58,7 +58,6 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                   </Stack>
                   <IconButton
                      aria-label = "Read More"
-                     className = "news"
                      href = { link[0] ?? "#" }
                      size = "small"
                      target = "_blank"

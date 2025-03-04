@@ -1,4 +1,4 @@
-import { faCalendarDay, faCalendarDays, faCaretDown, faClockRotateLeft, faCloudArrowUp, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarDay, faCalendarDays, faCaretDown, faClockRotateLeft, faCloudArrowUp, faPen, faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Chip, Collapse, Divider, FormControl, FormHelperText, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, OutlinedInput, Stack, TextField } from "@mui/material";
 import { type Account, type AccountHistory, accountHistorySchema } from "capital/accounts";
@@ -98,17 +98,25 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                   history.map((history) => {
                      return (
                         <ListItemButton
-                           disableRipple = { true }
-                           disableTouchRipple = { true }
-                           key = { account.account_id + history.last_updated }
-                           sx = { { pl: 4, flexWrap: "wrap", justifyContent: "center" } }
+                           disableRipple={true}
+                           disableTouchRipple={true}
+                           key={account.account_id + history.last_updated}
+                           sx={{
+                              pl: 4,
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                              cursor: "default",
+                              "&:hover": {
+                                 backgroundColor: "transparent"
+                              },
+                           }}
                         >
                            <ListItemIcon sx = { { mr: -3.5 } }>
                               <FontAwesomeIcon icon = { faCalendarDay } />
                            </ListItemIcon>
                            <ListItemText
                               primary = {
-                                 new Intl.NumberFormat("en-US", {
+                                 "$" + new Intl.NumberFormat("en-US", {
                                     minimumFractionDigits: 2, maximumFractionDigits: 2
                                  }).format(history.balance)
                               }
@@ -120,24 +128,15 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                                     timeZone: "UTC"
                                  })
                               }
-                              title = "de"
+                              sx = {{ userSelect: "text", cursor: "text" }}
                            />
-                           <Stack
-                              direction = "row"
-                              spacing = { 1 }
-                           >
-                              <Link
-                                 className = "error"
-                                 onClick = { () => deleteAccountHistory(history.last_updated) }
-                                 to = "#"
-                              >
-                                 <FontAwesomeIcon
-                                    color = "hsl(0, 90%, 50%)"
-                                    fontSize = "15px"
-                                    icon = { faTrashCan }
-                                 />
-                              </Link>
-                           </Stack>
+                           <FontAwesomeIcon
+                              color = "hsl(0, 90%, 50%)"
+                              fontSize = "15px"
+                              icon = { faTrashCan }
+                              onClick = { () => deleteAccountHistory(history.last_updated) }
+                              style={{ cursor: "pointer" }}
+                           />
                         </ListItemButton>
                      );
                   })
@@ -337,7 +336,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                         disabled = { isSubmitting || disabled }
                         fullWidth = { true }
                         loading = { isSubmitting }
-                        startIcon = { <FontAwesomeIcon icon = { faCloudArrowUp } /> }
+                        startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                         type = "submit"
                         variant = "contained"
                      >

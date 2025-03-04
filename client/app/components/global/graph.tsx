@@ -90,7 +90,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             });
 
             if (yearlyData.length === 1 && graph !== "Bar") {
-               // Append the same value for the next year to prevent an empty LineChart component
+               // Append the same value for the next previous to prevent an empty LineChart component
                yearlyData.unshift({
                   date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
@@ -115,6 +115,25 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
                return acc;
             }, []);
+
+            if (monthlyData.length === 1 && graph !== "Bar") {
+               // Append the same value for the next previous to prevent an empty LineChart component
+               const monthYear = monthlyData[0].date.split("/");
+
+               // Account for rotating to the previous year
+               if (monthYear[0] !== "01") {
+                  monthlyData.unshift({
+                     date: (Number(monthYear[0]) - 1).toString().padStart(2, "0") + "/" + monthYear[1],
+                     value: monthlyData[0].value
+                  });
+               } else {
+                  monthlyData.unshift({
+                     date: "12/" + (Number(monthYear[1]) - 1),
+                     value: monthlyData[0].value
+                  });
+               }
+
+            }
 
             return monthlyData;
          }
