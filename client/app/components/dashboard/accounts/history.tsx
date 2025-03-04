@@ -228,7 +228,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          <Modal
             onClose = { () => setOpen(false) }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, maxHeight: "80%" } }
          >
             <form onSubmit = { handleSubmit(onSubmit) }>
                <Stack

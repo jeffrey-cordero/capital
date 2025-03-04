@@ -103,6 +103,12 @@ a {
     }
   }
 
+  &.component {
+    &::before {
+      bottom: -2px;
+    }
+  }
+
   &.news {
     &::before {
       background-color: transparent;

@@ -18,7 +18,7 @@ export const components: Components = {
    MuiOutlinedInput: {
       styleOverrides: {
          root: {
-            borderRadius: "12px",
+            borderRadius: "10px",
             fontSize: "0.95rem",
             borderColor: "primary.main",
             overflow: "hidden"

@@ -91,8 +91,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
             if (yearlyData.length === 1 && graph !== "Bar") {
                // Append the same value for the next year to prevent an empty LineChart component
-               yearlyData.push({
-                  date: String(Number(yearlyData[0].date) + 1),
+               yearlyData.unshift({
+                  date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
                });
             }
@@ -147,7 +147,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2, position: "relative", background: "transparent" } }
          variant = "elevation"
       >
-         <CardContent sx = { { p: card ? 2 : 0} }>
+         <CardContent sx = { { p: card ? 2 : 0 } }>
             <Stack
                direction = { { xs: "column", sm: "row" } }
                sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: 1, px: 1 } }

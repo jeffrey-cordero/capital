@@ -59,10 +59,7 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
             }
          >
             <Box sx = { { p: 1 } }>
-               <DialogTitle id = "alert-dialog-title">
-                  Delete Account?
-               </DialogTitle>
-               <DialogContent sx = { { pb: 1 } }>
+               <DialogContent sx = { { pb: 0 } }>
                   <DialogContentText id = "alert-dialog-description">
                      Are you sure you want to delete your account? This action will permanently erase all your account history.
                      However, any transactions linked to your account will be detached, but not deleted.

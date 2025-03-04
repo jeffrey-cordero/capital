@@ -101,7 +101,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                               in = { true }
                               key = { `grow-${account.account_id}` }
                               mountOnEnter = { true }
-                              timeout = { 500 + index * 550 }
+                              timeout = { 200 + index * 200 }
                               unmountOnExit = { true }
                            >
                               <Grid

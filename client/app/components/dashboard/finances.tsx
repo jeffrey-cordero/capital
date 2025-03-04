@@ -112,7 +112,7 @@ function AccountsParChart({ accounts }: { accounts: Account[] }) {
                gutterBottom = { true }
                variant = "subtitle2"
             >
-               Accounts
+               Net Worth
             </Typography>
             <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
@@ -128,6 +128,7 @@ function AccountsParChart({ accounts }: { accounts: Account[] }) {
                   <Typography
                      component = "p"
                      variant = "h4"
+                     sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }
                   >
                      ${
                         new Intl.NumberFormat("en-US", {

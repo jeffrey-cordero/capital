@@ -42,7 +42,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                variant = { undefined }
             >
                <Typography
-                  className = { isResourceError ? "error" : "primary" }
+                  className = { isResourceError ? "error" : "primary component" }
                   component = "a"
                   href = "#"
                   onClick = { () => setState("update") }
@@ -91,16 +91,24 @@ export default function AccountCard({ account }: { account: Account | undefined 
                   </Fab>
                </Tooltip>
                <CardContent sx = { { p: 3, pt: 2 } }>
-                  <Typography variant = "h5">
-                     { account.name }
-                  </Typography>
+               <Typography 
+                  variant="h6" 
+                  sx={{ 
+                     pr: 4, 
+                     whiteSpace: "nowrap", 
+                     overflow: "hidden", 
+                     textOverflow: "ellipsis" 
+                  }}
+               >
+                  {account.name}
+               </Typography>
                   <Stack
                      direction = "column"
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
                      <Typography
-                        sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }
-                        variant = "h6"
+                        sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pr: 3 } }
+                        variant = "subtitle2"
                      >
                         ${
                            new Intl.NumberFormat("en-US", {
@@ -108,11 +116,11 @@ export default function AccountCard({ account }: { account: Account | undefined 
                            }).format(account.balance)
                         }
                      </Typography>
-                     <Typography variant = "subtitle2">
+                     <Typography variant = "caption">
                         { account.type }
                      </Typography>
                      <Typography
-                        variant = "subtitle2"
+                        variant = "caption"
                      >
                         {
                            new Date(account.history[0].last_updated).toLocaleDateString("en-us", {
@@ -139,6 +147,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                color = "primary"
                onClick = { () => setState("create") }
                startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+               sx = {{ p: 3 }}
                variant = "contained"
             >
                Add Account

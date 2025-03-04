@@ -53,7 +53,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "55%" }, maxWidth: "85%", p: 4, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, maxHeight: "80%" } }
          >
             <Divider>
                <Chip
@@ -78,7 +78,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      sx = {
                         {
                            width: "100%",
-                           height: 400,
+                           height: { xs: "auto", sm: 350, md: 400, lg: 450 },
                            my: 2,
                            cursor: "pointer",
                            border: value === imagesArray[activeStep] ? "3px solid" : "none",
@@ -115,7 +115,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      }
                      position = "static"
                      steps = { imagesArray.length }
-                     sx = { { backgroundColor: "transparent", px: 2 } }
+                     sx = { { backgroundColor: "transparent", px: 2, py: 0 } }
                      variant = "dots"
                   />
                </Stack>

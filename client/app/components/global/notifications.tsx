@@ -18,7 +18,7 @@ export default function Notifications() {
                      anchorOrigin = { { vertical: "top", horizontal: "center" } }
                      key = { index }
                      open = { true }
-                     sx = { { mt: index * 8 } }
+                     sx = { { mt: index * 9 } }
                   >
                      <Alert
                         onClose = { () => dispatch(removeNotification(index)) }

@@ -1,5 +1,3 @@
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, css, Modal as MuiModal, styled, type SxProps } from "@mui/material";
 
 import { gray } from "@/styles/mui/colors";
@@ -9,7 +7,7 @@ const ModalContent = styled("div")(
      font-family: 'IBM Plex Sans', sans-serif;
      font-weight: 500;
      text-align: start;
-     position: relative;
+     position: fixed;
      display: flex;
      top: 50%;
      left: 50%;
@@ -58,16 +56,9 @@ export default function Modal({ open, onClose, children, sx }: ModalProps) {
       >
          <ModalContent sx = { sx }>
             <Box sx = { { position: "relative" } }>
-               <FontAwesomeIcon
-                  icon = { faXmark }
-                  onClick = { onClose }
-                  size = "xl"
-                  style = { { position: "absolute", top: -20, right: -15, cursor: "pointer", color: "red" } }
-               />
                { children }
             </Box>
          </ModalContent>
-
       </MuiModal>
    );
 }

@@ -56,24 +56,20 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                         { timeSinceLastUpdate(pubDate[0] ?? new Date().toISOString()) }
                      </Typography>
                   </Stack>
-                  <Tooltip
-                     placement = "top"
-                     title = "Read More"
+                  <IconButton
+                     aria-label = "Read More"
+                     className = "news"
+                     href = { link[0] ?? "#" }
+                     size = "small"
+                     target = "_blank"
+                     disableRipple
                   >
-                     <IconButton
-                        aria-label = "Read More"
-                        className = "news"
-                        href = { link[0] ?? "#" }
-                        size = "small"
-                        target = "_blank"
-                     >
-                        <FontAwesomeIcon
-                           className = "primary"
-                           icon = { faUpRightFromSquare }
-                           style = { { padding: "0 7px" } }
-                        />
-                     </IconButton>
-                  </Tooltip>
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faUpRightFromSquare }
+                        style = { { padding: "0 7px" } }
+                     />
+                  </IconButton>
                </Stack>
             }
          />
@@ -117,20 +113,16 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
             </Typography>
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
-            <Tooltip
-               placement = "top"
-               title = "Description"
+            <Expand
+               expand = { expanded }
+               onClick = { () => setExpanded(!expanded) }
+               disableRipple
             >
-               <Expand
-                  expand = { expanded }
-                  onClick = { () => setExpanded(!expanded) }
-               >
-                  <FontAwesomeIcon
-                     icon = { faCaretDown }
-                     style = { { padding: "0 5px" } }
-                  />
-               </Expand>
-            </Tooltip>
+               <FontAwesomeIcon
+                  icon = { faCaretDown }
+                  style = { { padding: "0 5px" } }
+               />
+            </Expand>
          </CardActions>
          <Collapse
             in = { expanded }

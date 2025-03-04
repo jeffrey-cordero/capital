@@ -130,7 +130,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             }
          }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%" }, p: 4, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "55%" }, p: 3, maxWidth: "90%" } }
       >
          <Stack
             direction = "column"

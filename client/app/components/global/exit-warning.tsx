@@ -20,10 +20,7 @@ export default function ExitWarning({ open, onClose, onCancel }: ExitWarningProp
          }
       >
          <Box sx = { { p: 1 } }>
-            <DialogTitle id = "alert-dialog-title">
-               Save changes?
-            </DialogTitle>
-            <DialogContent sx = { { pb: 1 } }>
+            <DialogContent sx = { { pb: 0 } }>
                <DialogContentText>
                   Are you sure you want to exit? Any unsaved changes will be lost.
                </DialogContentText>
