@@ -39,20 +39,20 @@ app.use(session({
    }
 }));
 
-// Rate limiting configurations
+// Rate limiting
 app.use(rateLimit({
    max: 250,
    windowMs: 15 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later."
 }));
 
-// Trust proxy to obtain real client IP address when behind proxy/load balancer
+// Trust proxy to obtain real client IP address
 app.set("trust proxy", 1);
 
 // Cookie parsing middleware
 app.use(cookieParser());
 
-// CORS configurations
+// CORS
 app.use(cors({
    origin: process.env.CLIENT_URL || "http://localhost:3000",
    methods: "GET,POST,PUT,DELETE",
@@ -60,7 +60,7 @@ app.use(cors({
    credentials: true
 }));
 
-// Content security policy configurations
+// Content security policies
 app.use(
    helmet.contentSecurityPolicy({
       directives: {
@@ -80,7 +80,7 @@ app.use(helmet.xssFilter());
 // Prevent browsers from interpreting files as a different MIME type via Helmet
 app.use(helmet.noSniff());
 
-// Log requests in development mode
+// Development mode request logging
 app.use(requests("dev"));
 
 // Parse incoming URL-encoded data and JSON payloads
@@ -97,23 +97,22 @@ app.use("/users", userRouter);
 app.use("/dashboard", dashboardRouter);
 app.use("/authentication", authenticationRouter);
 
-// 404 Handler
+// Error Handlers
 app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, "Internal Server Error", { System: "The requested resource could not be found" });
+   return sendErrors(res, 404, "Internal Server Error",
+      { System: "The requested resource could not be found" }
+   );
 });
 
-// Error Handler
 app.use(function(error: any, req: Request, res: Response) {
-   // console.error(error);
    logger.error(error);
-
    const status: number = error.status || 500;
    const message: string = error.message || "An unknown error occurred";
 
    return sendErrors(res, status, "Internal Server Error", { System: message });
 });
 
-// Logging configurations
+// Logging
 const fileTransport = new DailyRotateFile({
    level: "error",
    maxSize: "20m",
@@ -128,17 +127,17 @@ const consoleTransport = new transports.Console({
       format.colorize(),
       format.simple(),
       format.printf(({ timestamp, message }) => {
-         return `   ${timestamp}   \n${message}\n${"=".repeat(32)}`;
+         return `   ${timestamp}   \n\n$${message}\n\n${"=".repeat(32)}`;
       })
    )
 });
 
 const logger = winston.createLogger({
-   level: "info",
+   level: "error",
    format: format.combine(
       format.timestamp(),
       format.printf(({ timestamp, message }) => {
-         return `   ${timestamp}   \n${message}\n${"=".repeat(32)}`;
+         return `   ${timestamp}   \n\n${message}\n\n${"=".repeat(32)}`;
       })
    ),
    transports: [fileTransport, consoleTransport]
