@@ -1,8 +1,7 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
-import { pool, query  } from "@/lib/database";
-import { logger } from "@/lib/logger";
+import { query, transaction  } from "@/lib/database";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
@@ -48,13 +47,8 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    }, []);
 }
 
-export async function create(user_id: string, account: Account): Promise<Account> {
-   const client: PoolClient | null = await pool.connect();
-
-   try {
-      // Transactional insertion queries to create account and its history for data integrity
-      await client.query("BEGIN");
-
+export async function create(user_id: string, account: Account): Promise<string> {
+   return await transaction(async (client: PoolClient) => {
       // Create the account
       const creation = `
          INSERT INTO accounts (user_id, name, type, image)
@@ -71,39 +65,17 @@ export async function create(user_id: string, account: Account): Promise<Account
          VALUES ($1, $2, CURRENT_TIMESTAMP)
          RETURNING last_updated;
       `;
-      const insertion = (
-         await client.query(history, [result[0].account_id, account.balance])
-      )?.rows as { last_updated: string }[];
+      await client.query(history, [result[0].account_id, account.balance]);
 
-      await client.query("COMMIT");
-
-      return {
-         account_id: result[0].account_id,
-         name: account.name,
-         type: account.type,
-         image: account.image,
-         balance: account.balance,
-         account_order: account.account_order,
-         history: [{
-            balance: account.balance,
-            last_updated: insertion[0].last_updated
-         }]
-      };
-   } catch (error) {
-      console.error(error);
-      await client?.query("ROLLBACK");
-
-      throw error;
-   } finally {
-      client?.release();
-   }
+      return result;
+   }) as string; 
 }
 
-export async function updateDetails(account_id: string, updates: Partial<Account & AccountHistory>): Promise<boolean> {
+export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account & AccountHistory>): Promise<boolean> {
    // Update only the provided fields
    const fields: string[] = [];
    const values: any[] = [];
-   let params = 1;
+   let params = 2;
 
    if (updates.name) {
       fields.push(`name = $${params}`);
@@ -131,16 +103,17 @@ export async function updateDetails(account_id: string, updates: Partial<Account
 
    // Handle updating most-recent balance
    if (updates.balance) {
-      await updateHistory(account_id, updates.balance, new Date());
+      await updateHistory(user_id, account_id, updates.balance, new Date());
    }
 
    if (fields.length > 0) {
-      values.push(account_id);
+      values.concat([user_id, account_id]);
 
       const updateQuery = `
          UPDATE accounts
          SET ${fields.join(", ")}
-         WHERE account_id = $${params}
+         WHERE user_id = $${params - 1}
+         AND account_id = ${params}
          RETURNING account_id;
       `;
 
@@ -150,31 +123,41 @@ export async function updateDetails(account_id: string, updates: Partial<Account
    return true;
 }
 
-export async function updateHistory(account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {
+export async function updateHistory(user_id: string, account_id: string, balance: number, last_updated: Date = new Date()): Promise<boolean> {
    const updateHistory = `
+      WITH valid_account AS (
+         SELECT 1
+         FROM accounts
+         WHERE user_id = $1 
+         AND account_id = $2
+      )
       INSERT INTO accounts_history (account_id, balance, last_updated)
-      VALUES ($1, $2, $3)
+      SELECT $2, $3, $4
+      FROM valid_account
+      WHERE EXISTS (SELECT 1 FROM valid_account)
       ON CONFLICT (account_id, last_updated)
       DO UPDATE SET
          balance = EXCLUDED.balance
       RETURNING account_id;
    `;
 
-   return (await query(updateHistory, [account_id, balance, last_updated]) as any[])?.length > 0;
+   return (await query(updateHistory, [user_id, account_id, balance, last_updated]) as { account_id: string }[])?.length > 0;
 }
 
-export async function removeHistory(account_id: string, last_updated: Date): Promise<"conflict" | "success" | "missing">  {
-   const client: PoolClient | null = await pool.connect();
-
-   try {
-      await client.query("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+export async function removeHistory(user_id: string, account_id: string, last_updated: Date): Promise<"conflict" | "success" | "missing">  {
+   return await transaction(async (client: PoolClient) => {
+      // Fetch all the existing account records
       const records = `
          SELECT COUNT(*)
-         FROM accounts_history
-         WHERE account_id = $1;
+         FROM accounts AS a
+         INNER JOIN accounts_history as ah
+         ON a.account_id = ah.account_id
+         WHERE a.user_id = $1
+         AND a.account_id = $2
+         LIMIT 2;
       `;
 
-      const total = await client.query(records, [account_id]);
+      const total = await client.query(records, [user_id, account_id]);
 
       if (total.rows[0].count <= 1) {
          return "conflict";
@@ -188,8 +171,6 @@ export async function removeHistory(account_id: string, last_updated: Date): Pro
 
          const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
 
-         await client.query("COMMIT;");
-
          if (removals === 1) {
             // Matching history record removed
             return "success";
@@ -198,15 +179,7 @@ export async function removeHistory(account_id: string, last_updated: Date): Pro
             return "missing";
          }
       }
-   } catch (error: any) {
-      // Handle expected conflicts in removing final record or potential unexpected exceptions
-      logger.error(error.stack);
-      await client?.query("ROLLBACK");
-
-      throw error;
-   } finally {
-      client?.release();
-   }
+   }, "SERIALIZABLE") as "conflict" | "success" | "missing"; 
 }
 
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
@@ -224,15 +197,11 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       RETURNING accounts.user_id;
    `;
 
-   return (await query(update, [...params, user_id]) as any[]).length > 0;
+   return (await query(update, [...params, user_id]) as { account_id: string }[]).length > 0;
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
-   const client: PoolClient | null = await pool.connect();
-
-   try {
-      await client.query("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
-
+   return await transaction(async (client: PoolClient) => {
       // Disable final record removal trigger
       await client.query("ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;");
 
@@ -246,17 +215,9 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
 
       const result = (await client.query(deleteQuery, [user_id, account_id])).rows as { account_id: string }[];
 
-      // Enable final record removal trigger and commit the changes
+      // Enable final record removal trigger
       await client.query("ALTER TABLE accounts_history ENABLE TRIGGER prevent_last_history_record_delete_trigger;");
-      await client.query("COMMIT;");
 
       return result.length > 0;
-   } catch (error) {
-      console.error(error);
-      await client?.query("ROLLBACK");
-
-      throw error;
-   } finally {
-      client?.release();
-   }
+   }, "SERIALIZABLE") as boolean;
 }

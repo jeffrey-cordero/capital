@@ -50,10 +50,10 @@ export async function createAccount(user_id: string, account: Account): Promise<
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid account fields");
    } else {
-      const creation = await create(user_id, account);
+      const account_id = await create(user_id, account);
       clearRedisCache(user_id);
 
-      return sendServerResponse(200, "Account created", { account_id: creation.account_id });
+      return sendServerResponse(200, "Account created", { account_id: account_id });
    }
 }
 
@@ -68,7 +68,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
    }
 
    if (type === "details") {
-      const result = await updateDetails(account.account_id, account);
+      const result = await updateDetails(user_id, account.account_id, account);
 
       if (result) {
          clearRedisCache(user_id);
@@ -84,7 +84,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
          return sendValidationErrors(fields, "Invalid account history fields");
       } else {
          const result = await updateAccountHistory(
-            account.account_id, account.balance as number, account.last_updated ? new Date(account.last_updated) : new Date()
+            user_id, account.account_id, account.balance as number, account.last_updated ? new Date(account.last_updated) : new Date()
          );
 
          if (result) {
@@ -127,7 +127,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 }
 
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-   const result = await removeHistory(account_id, new Date(last_updated));
+const result = await removeHistory(user_id, account_id, new Date(last_updated));
 
    if (result === "missing") {
       return sendServerResponse(404, "Account history record not found", undefined,
