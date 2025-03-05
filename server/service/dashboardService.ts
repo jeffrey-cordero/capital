@@ -97,7 +97,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       const backup = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"));
 
       if (!String(error?.message).startsWith("Thank you for using Alpha Vantage!")) {
-         console.error(error);
+         logger.error(error);
       }
 
       return sendServerResponse(200, "Market Trends", backup as MarketTrends);
@@ -135,7 +135,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
       }
    } catch (error: any) {
       // Use backup XML news file
-      console.error(error);
+      logger.error(error);
 
       const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss as News;
 
@@ -157,7 +157,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
          accounts: accounts.data
       });
    } catch (error: any) {
-      console.error(error);
+      logger.error(error);
 
       return sendServerResponse(500, "Internal Server Error", undefined, { System: error.message });
    }

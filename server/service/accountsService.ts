@@ -127,7 +127,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 }
 
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-const result = await removeHistory(user_id, account_id, new Date(last_updated));
+   const result = await removeHistory(user_id, account_id, new Date(last_updated));
 
    if (result === "missing") {
       return sendServerResponse(404, "Account history record not found", undefined,

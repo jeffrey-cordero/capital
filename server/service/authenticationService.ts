@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
 import { compare } from "@/lib/cryptography";
+import { logger } from "@/lib/logger";
 import { configureToken } from "@/lib/middleware";
 import { sendServerResponse } from "@/lib/service";
 import { findByUsername } from "@/repository/userRepository";
@@ -21,7 +22,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 
          return sendServerResponse(200, "Invalid Token", { authenticated: false });
       } else {
-         console.error(error);
+         logger.error(error);
 
          return sendServerResponse(500, "Internal Server Error", undefined, { System: error.message });
       }

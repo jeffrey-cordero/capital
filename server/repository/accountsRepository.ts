@@ -48,7 +48,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
 }
 
 export async function create(user_id: string, account: Account): Promise<string> {
-   return await transaction(async (client: PoolClient) => {
+   return await transaction(async(client: PoolClient) => {
       // Create the account
       const creation = `
          INSERT INTO accounts (user_id, name, type, image)
@@ -68,7 +68,7 @@ export async function create(user_id: string, account: Account): Promise<string>
       await client.query(history, [result[0].account_id, account.balance]);
 
       return result;
-   }) as string; 
+   }) as string;
 }
 
 export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account & AccountHistory>): Promise<boolean> {
@@ -145,7 +145,7 @@ export async function updateHistory(user_id: string, account_id: string, balance
 }
 
 export async function removeHistory(user_id: string, account_id: string, last_updated: Date): Promise<"conflict" | "success" | "missing">  {
-   return await transaction(async (client: PoolClient) => {
+   return await transaction(async(client: PoolClient) => {
       // Fetch all the existing account records
       const records = `
          SELECT COUNT(*)
@@ -179,7 +179,7 @@ export async function removeHistory(user_id: string, account_id: string, last_up
             return "missing";
          }
       }
-   }, "SERIALIZABLE") as "conflict" | "success" | "missing"; 
+   }, "SERIALIZABLE") as "conflict" | "success" | "missing";
 }
 
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
@@ -201,7 +201,7 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
-   return await transaction(async (client: PoolClient) => {
+   return await transaction(async(client: PoolClient) => {
       // Disable final record removal trigger
       await client.query("ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;");
 

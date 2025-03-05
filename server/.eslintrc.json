@@ -35,7 +35,7 @@
     "keyword-spacing": ["error", { "after": true }],
     "no-multiple-empty-lines": ["error", { "max": 1 }],
     "space-before-function-paren": ["error", "never"],
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "no-console": ["error"]
   },
   "overrides": [
     {

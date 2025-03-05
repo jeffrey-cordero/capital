@@ -1,6 +1,7 @@
 import { ServerResponse } from "capital/server";
 import { Response } from "express";
 
+import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 // Shared controller logic for sending service requests, handling responses, and internal errors
@@ -18,7 +19,7 @@ export async function submitServiceRequest(serviceMethod: () => Promise<ServerRe
       }
    } catch (error: any) {
       // Internal server error handling
-      console.error(error);
+      logger.error(error);
 
       return sendErrors(res, 500, "Internal Server Error", { System: error.message });
    }

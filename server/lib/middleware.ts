@@ -2,6 +2,7 @@ import { User } from "capital/user";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
+import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
 // Token Generation
@@ -45,7 +46,7 @@ export function authenticateToken(required: boolean) {
             // Proceed to the next middleware or route handler
             next();
          } catch (error) {
-            console.error(error);
+            logger.error(error);
 
             if (error instanceof jwt.TokenExpiredError) {
                // Clear the expired token from the client

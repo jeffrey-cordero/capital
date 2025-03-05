@@ -13,16 +13,11 @@ const pool = new Pool({
 });
 
 export async function query(query: string, parameters: any[]): Promise<unknown> {
-   // Submit the query and return the rows, if possible, otherwise throw the respective error
-   try {
-      const result = await pool.query(query, parameters);
+   // Submit the query and return the resulting rows
+   const result = await pool.query(query, parameters);
 
-      return result.rows;
-   } catch (error: any) {
-      throw error;
-   }
+   return result.rows;
 }
-
 
 export async function transaction(statements: (client: PoolClient) => Promise<unknown>, isolation = "READ COMMITTED"): Promise<unknown> {
    let client: PoolClient | null = null;
@@ -37,7 +32,7 @@ export async function transaction(statements: (client: PoolClient) => Promise<un
       // Set the isolation level for the transaction
       await client.query(`SET TRANSACTION ISOLATION LEVEL ${isolation}`);
 
-      // Run a series of statements, 
+      // Run a series of statements,
       const result = await statements(client) as any;
 
       // Commit the transaction
