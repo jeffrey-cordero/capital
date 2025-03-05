@@ -67,7 +67,7 @@ export async function create(user_id: string, account: Account): Promise<string>
       `;
       await client.query(history, [result[0].account_id, account.balance]);
 
-      return result;
+      return result[0].account_id;
    }) as string;
 }
 
