@@ -1,4 +1,11 @@
-import { Box, css, Fade, Modal as MuiModal, styled, type SxProps } from "@mui/material";
+import {
+   Box,
+   css,
+   Fade,
+   Modal as MuiModal,
+   styled,
+   type SxProps
+} from "@mui/material";
 
 import { gray } from "@/styles/mui/colors";
 

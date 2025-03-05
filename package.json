@@ -1,14 +1,10 @@
 {
-   "name": "capital",
-   "version": "1.0.0",
-   "private": true,
-   "scripts": {
-     "install:all": "npm install && npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install  --legacy-peer-deps",
-     "build": "npm --prefix client run build && npm --prefix server run build",
-     "lint": "npm --prefix client run lint && npm --prefix server run lint",
-     "start": "concurrently \"npm --prefix client start\" \"npm --prefix server start\""
-   },
-   "dependencies": {
-     "concurrently": "^8.0.0"
-   }
- }
+  "name": "capital",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install  --legacy-peer-deps",
+    "build:all": "npm --prefix client run build && npm --prefix server run build",
+    "lint:all": "npm --prefix client run lint && npm --prefix server run lint"
+  }
+}

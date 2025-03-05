@@ -1,6 +1,12 @@
 import { alpha, type PaletteOptions } from "@mui/material";
 
-import { brand, gray, green, orange, red } from "@/styles/mui/colors";
+import {
+   brand,
+   gray,
+   green,
+   orange,
+   red
+} from "@/styles/mui/colors";
 
 export const palette: PaletteOptions = {
    primary: {
@@ -30,7 +36,7 @@ export const palette: PaletteOptions = {
    },
    success: {
       main: green[400],
-      dark: green[300],
+      dark: green[600],
       contrastText: green[50]
    },
    divider: alpha(gray[300], 0.4),

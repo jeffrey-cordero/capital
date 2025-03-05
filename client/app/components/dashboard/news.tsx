@@ -1,6 +1,20 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, Slide, Stack, Typography } from "@mui/material";
+import {
+   Avatar,
+   Box,
+   Card,
+   CardActions,
+   CardContent,
+   CardHeader,
+   CardMedia,
+   Collapse,
+   Fade,
+   IconButton,
+   Slide,
+   Stack,
+   Typography
+} from "@mui/material";
 import { type News, type Story } from "capital/news";
 import { useRef, useState } from "react";
 

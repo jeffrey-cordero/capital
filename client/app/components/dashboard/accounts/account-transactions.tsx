@@ -15,7 +15,7 @@ export default function AccountTransactions({ account }: { account: Account} ) {
             sx = { { mt: 2, textAlign: "center" } }
             variant = "subtitle2"
          >
-            Coming Soon
+            Coming Soon - { account.name }
          </Typography>
       </Box>
    );

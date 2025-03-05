@@ -1,6 +1,30 @@
-import { faCalendarDay, faCalendarDays, faCaretDown, faClockRotateLeft, faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import {
+   faCalendarDay,
+   faCalendarDays,
+   faCaretDown,
+   faClockRotateLeft,
+   faPenToSquare,
+   faTrashCan
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Chip, Collapse, Divider, FormControl, FormHelperText, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, OutlinedInput, Stack, TextField, useTheme } from "@mui/material";
+import {
+   Box,
+   Button,
+   Chip,
+   Collapse,
+   Divider,
+   FormControl,
+   FormHelperText,
+   InputLabel,
+   List,
+   ListItemButton,
+   ListItemIcon,
+   ListItemText,
+   OutlinedInput,
+   Stack,
+   TextField,
+   useTheme
+} from "@mui/material";
 import { type Account, type AccountHistory, accountHistorySchema } from "capital/accounts";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -211,7 +235,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
       <Box>
          <Button
             className = "btn-primary"
-            color = "primary"
+            color = "info"
             disabled = { isSubmitting || disabled }
             fullWidth = { true }
             loading = { isSubmitting }
@@ -375,6 +399,7 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
          </Divider>
          <Stack
             direction = "column"
+            spacing = { 1 }
             sx = { { mt: 1, px: 1 } }
          >
             <Graph

@@ -2,7 +2,18 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { faPencil, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Button, Card, CardContent, Fab, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import {
+   Avatar,
+   Box,
+   Button,
+   Card,
+   CardContent,
+   Fab,
+   Stack,
+   Tooltip,
+   Typography,
+   useTheme
+} from "@mui/material";
 import { type Account, images } from "capital/accounts";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";

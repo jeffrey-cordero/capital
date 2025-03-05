@@ -64,22 +64,22 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
 
    return (
       <Card
-         elevation={3}
-         sx={{ height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 }}
-         variant="elevation"
+         elevation = { 3 }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
+         variant = "elevation"
       >
          <CardContent>
             <Typography
-               component="h2"
-               gutterBottom={true}
-               variant="subtitle2"
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
             >
                Net Worth
             </Typography>
-            <Stack sx={{ justifyContent: "space-between" }}>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
-                  direction="row"
-                  sx={
+                  direction = "row"
+                  sx = {
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -88,27 +88,27 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
                   }
                >
                   <Typography
-                     component="p"
-                     sx={{ ...ellipsis, maxWidth: "95%" }}
-                     variant="h4"
+                     component = "p"
+                     sx = { { ...ellipsis, maxWidth: "95%" } }
+                     variant = "h4"
                   >
-                     {displayCurrency(netWorth)}
+                     { displayCurrency(netWorth) }
                   </Typography>
                </Stack>
                <Typography
-                  sx={{ color: "text.secondary" }}
-                  variant="caption"
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
                >
                   Account balances for the last 6 months
                </Typography>
             </Stack>
             <BarChart
-               borderRadius={8}
-               colors={accounts.map((acc) => decrementingTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)")}
-               grid={{ horizontal: true }}
-               height={250}
-               margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
-               series={
+               borderRadius = { 8 }
+               colors = { accounts.map((acc) => decrementingTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)") }
+               grid = { { horizontal: true } }
+               height = { 250 }
+               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               series = {
                   accounts.map((account, index) => {
                      return {
                         id: account.account_id || "" + index,
@@ -118,14 +118,14 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
                      };
                   })
                }
-               slotProps={
+               slotProps = {
                   {
                      legend: {
                         hidden: true
                      }
                   }
                }
-               xAxis={
+               xAxis = {
                   [
                      {
                         scaleType: "band",

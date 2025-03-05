@@ -6,7 +6,7 @@
     "ecmaVersion": 2020,
     "project": "./tsconfig.json"
   },
-  "plugins": ["@typescript-eslint", "simple-import-sort"],
+  "plugins": ["@typescript-eslint", "simple-import-sort", "import-newlines"],
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "@typescript-eslint/no-require-imports": "off",
@@ -23,6 +23,7 @@
     "no-trailing-spaces": "error",
     "eol-last": ["error", "never"],
     "no-duplicate-imports": "error",
+    "import-newlines/enforce": "error",
     "comma-dangle": ["error", "never"],
     "no-mixed-spaces-and-tabs": ["error"],
     "spaced-comment": ["error", "always"],

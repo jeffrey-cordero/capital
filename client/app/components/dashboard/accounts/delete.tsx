@@ -1,6 +1,13 @@
 import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText } from "@mui/material";
+import {
+   Box,
+   Button,
+   Dialog,
+   DialogActions,
+   DialogContent,
+   DialogContentText
+} from "@mui/material";
 import { type Account } from "capital/accounts";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

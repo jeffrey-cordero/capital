@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const images = new Set(["property", "bank", "cash", "credit", "debt", "investment", "loan", "retirement", "savings"]);
 export const decrementingTypes = new Set(["Debt", "Credit Card", "Loan"]);
+export const images = new Set(["property", "bank", "cash", "credit", "debt", "investment", "loan", "retirement", "savings"]);
 export const types = new Set(["Checking", "Savings", "Credit Card", "Debt", "Retirement", "Investment", "Loan", "Property", "Other"]);
 
 const imageRegex = /^(property|bank|cash|credit|debt|investment|loan|retirement|savings)$/;
@@ -30,7 +30,9 @@ export const accountHistorySchema = z.object({
    }).max(99999999999.99, {
       message: "Balance cannot exceed $99,999,999,999.99"
    }),
-   last_updated: z.coerce.date().min(new Date("1800-01-01"), {
+   last_updated: z.coerce.date({
+      message: "Last updated must be a valid date"
+   }).min(new Date("1800-01-01"), {
       message: "Update cannot be earlier than the year 1800"
    }).max(new Date(new Date().getTime() + 24 * 60 * 60 * 1000), {
       message: "Update cannot be in the future"
@@ -52,8 +54,7 @@ export const accountSchema = z.object({
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
    type: z.string().regex(typeRegex, {
-      message: "Type must be one of: Checking, Savings, Credit Card, Retirement, Investment, Loan, Property, Other"
+      message: "Type must be one of: Checking, Savings, Credit Card, Debt, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional(),
-   history: z.array(accountHistorySchema).optional()
+   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional()
 }).passthrough();

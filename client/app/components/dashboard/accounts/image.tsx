@@ -1,9 +1,29 @@
 import { faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, MobileStepper, OutlinedInput, Stack } from "@mui/material";
+import {
+   Avatar,
+   Box,
+   Button,
+   Chip,
+   Divider,
+   FormControl,
+   FormHelperText,
+   InputLabel,
+   MobileStepper,
+   OutlinedInput,
+   Stack
+} from "@mui/material";
 import { accountSchema, images } from "capital/accounts";
 import { useState } from "react";
-import { type Control, Controller, type FieldErrors, type FieldValues, type UseFormClearErrors, type UseFormSetError, type UseFormSetValue } from "react-hook-form";
+import {
+   type Control,
+   Controller,
+   type FieldErrors,
+   type FieldValues,
+   type UseFormClearErrors,
+   type UseFormSetError,
+   type UseFormSetValue
+} from "react-hook-form";
 
 import Modal from "@/components/global/modal";
 

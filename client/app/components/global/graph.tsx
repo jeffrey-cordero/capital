@@ -1,4 +1,14 @@
-import { Card, CardContent, Chip, FormControl, InputLabel, NativeSelect, Stack, TextField, Typography } from "@mui/material";
+import {
+   Card,
+   CardContent,
+   Chip,
+   FormControl,
+   InputLabel,
+   NativeSelect,
+   Stack,
+   TextField,
+   Typography
+} from "@mui/material";
 import { type Theme, useTheme } from "@mui/material/styles";
 import { BarChart } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";

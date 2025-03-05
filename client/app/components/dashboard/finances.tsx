@@ -1,4 +1,14 @@
-import { Box, Card, CardContent, Chip, Fade, Slide, Stack, Typography, useTheme } from "@mui/material";
+import {
+   Box,
+   Card,
+   CardContent,
+   Chip,
+   Fade,
+   Slide,
+   Stack,
+   Typography,
+   useTheme
+} from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { BarChart } from "@mui/x-charts";
 import { type Account } from "capital/accounts";

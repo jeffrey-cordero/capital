@@ -1,4 +1,12 @@
-import { Box, Card, CardContent, Chip, Link, Stack, Typography } from "@mui/material";
+import {
+   Box,
+   Card,
+   CardContent,
+   Chip,
+   Link,
+   Stack,
+   Typography
+} from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "capital/marketTrends";
 

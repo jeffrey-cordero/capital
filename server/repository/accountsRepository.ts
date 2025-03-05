@@ -1,6 +1,7 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
+import { logger } from "@/app";
 import { pool, query  } from "@/lib/client";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
@@ -172,36 +173,37 @@ export async function removeHistory(account_id: string, last_updated: Date): Pro
          FROM accounts_history
          WHERE account_id = $1;
       `;
-   
-      const removal = `
-         DELETE FROM accounts_history
-         WHERE account_id = $1
-         AND last_updated = $2
-         RETURNING account_id;
-      `;
 
-      const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
+      const total = await client.query(records, [account_id]);
 
-      await client.query("COMMIT;");
-
-      if (removals === 1) {
-         // Matching history record removed
-         return "success";
-      } else {
-         // No matching history record
-         return "missing";
-      }
-      
-   } catch (error: any) {
-      // Handle expected conflicts in removing final record or potential unexpected exceptions
-      await client?.query("ROLLBACK");
-
-      if (error.code === "P0001") {
+      if (total.rows[0].count <= 1) {
          return "conflict";
       } else {
-         console.error(error);
-         throw error;
+         const removal = `
+            DELETE FROM accounts_history
+            WHERE account_id = $1
+            AND last_updated = $2
+            RETURNING account_id;
+         `;
+
+         const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
+
+         await client.query("COMMIT;");
+
+         if (removals === 1) {
+            // Matching history record removed
+            return "success";
+         } else {
+            // No matching history record
+            return "missing";
+         }
       }
+   } catch (error: any) {
+      // Handle expected conflicts in removing final record or potential unexpected exceptions
+      logger.error(error.stack);
+      await client?.query("ROLLBACK");
+
+      throw error;
    } finally {
       client?.release();
    }

@@ -1,4 +1,12 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, Stack } from "@mui/material";
+import {
+   Box,
+   Button,
+   Dialog,
+   DialogActions,
+   DialogContent,
+   DialogContentText,
+   Stack
+} from "@mui/material";
 
 interface ExitWarningProps {
    open: boolean;

@@ -2,9 +2,9 @@ import { ServerResponse } from "capital/server";
 import { User, userSchema } from "capital/user";
 import { Request, Response } from "express";
 
-import { sendServerResponse, sendValidationErrors } from "@/lib/service";
-import { configureToken } from "@/lib/middleware";
 import { hash } from "@/lib/cryptography";
+import { configureToken } from "@/lib/middleware";
+import { sendServerResponse, sendValidationErrors } from "@/lib/service";
 import { create, findConflictingUsers } from "@/repository/userRepository";
 
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {

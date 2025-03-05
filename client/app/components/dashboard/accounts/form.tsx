@@ -1,6 +1,17 @@
 import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Chip, Divider, FormControl, FormHelperText, InputLabel, NativeSelect, OutlinedInput, Stack } from "@mui/material";
+import {
+   Box,
+   Button,
+   Chip,
+   Divider,
+   FormControl,
+   FormHelperText,
+   InputLabel,
+   NativeSelect,
+   OutlinedInput,
+   Stack
+} from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";

@@ -1,4 +1,18 @@
-import { faBarsStaggered, faBusinessTime, faChartSimple, faGears, faMoneyCheckDollar, faNewspaper, faPieChart, faPlaneArrival, faRankingStar, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import {
+   faBarsStaggered,
+   faBusinessTime,
+   faChartSimple,
+   faGears,
+   faMoneyCheckDollar,
+   faNewspaper,
+   faPieChart,
+   faPlaneArrival,
+   faRankingStar,
+   faRightFromBracket,
+   faUnlockKeyhole,
+   faUserPlus,
+   type IconDefinition
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
