@@ -1,7 +1,7 @@
 import { MarketTrends } from "capital/marketTrends";
 import { PoolClient } from "pg";
 
-import { pool, query } from "@/lib/client";
+import { pool, query } from "@/lib/database";
 
 export async function getMarketTrends(): Promise<{ time: string, data: MarketTrends }[]> {
    // Retrieve the latest market trends from the database api cache

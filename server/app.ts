@@ -6,28 +6,24 @@ import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import session from "express-session";
 import helmet from "helmet";
-import Redis from "ioredis";
 import path from "path";
 import serveIndex from "serve-index";
-import winston, { format, transports } from "winston";
 
+import { logger } from "@/lib/logger";
+import { redisStore } from "@/lib/redis";
 import { sendErrors } from "@/lib/response";
 import authenticationRouter from "@/routers/authenticationRouter";
 import dashboardRouter from "@/routers/dashboardRouter";
 import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
-const app = express();
-const redisStore = require("connect-redis").default;
+export const app = express();
+
 const requests = require("morgan");
-const DailyRotateFile = require("winston-daily-rotate-file");
-const redisClient = new Redis(process.env.REDIS_URL || "redis:6379");
 
 // Session management through Redis store
 app.use(session({
-   store: new redisStore({
-      client: redisClient
-   }),
+   store: redisStore || undefined,
    resave: false,
    saveUninitialized: true,
    secret: process.env.SESSION_SECRET || "",
@@ -111,36 +107,3 @@ app.use(function(error: any, req: Request, res: Response) {
 
    return sendErrors(res, status, "Internal Server Error", { System: message });
 });
-
-// Logging
-const fileTransport = new DailyRotateFile({
-   level: "error",
-   maxSize: "20m",
-   maxFiles: "14d",
-   filename: "logs/%DATE%.log",
-   datePattern: "YYYY-MM-DD"
-});
-
-const consoleTransport = new transports.Console({
-   level: "error",
-   format: format.combine(
-      format.colorize(),
-      format.simple(),
-      format.printf(({ timestamp, message }) => {
-         return `   ${timestamp}   \n\n$${message}\n\n${"=".repeat(32)}`;
-      })
-   )
-});
-
-const logger = winston.createLogger({
-   level: "error",
-   format: format.combine(
-      format.timestamp(),
-      format.printf(({ timestamp, message }) => {
-         return `   ${timestamp}   \n\n${message}\n\n${"=".repeat(32)}`;
-      })
-   ),
-   transports: [fileTransport, consoleTransport]
-});
-
-export { app, logger, redisClient };

@@ -1,6 +1,6 @@
 import { User } from "capital/user";
 
-import { query } from "@/lib/client";
+import { query } from "@/lib/database";
 
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
    // Return potential conflicts for username and email

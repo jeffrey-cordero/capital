@@ -5,7 +5,8 @@ import { News } from "capital/news";
 import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
-import { redisClient } from "@/app";
+import { logger } from "@/lib/logger";
+import { redisClient } from "@/lib/redis";
 import { sendServerResponse } from "@/lib/service";
 import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
@@ -44,7 +45,10 @@ async function fetchIndicators(indicator: string): Promise<IndicatorTrend[]> {
 
 export async function fetchMarketTrends(): Promise<ServerResponse> {
    // Fetch market trends from the cache, database, or worst-case scenario, the API to update the cache
-   const cache = await redisClient.get("marketTrends");
+   const cache = await redisClient.get("marketTrends").catch((error) => {
+      logger.error(`redisClient.get(marketTrends): ${error.message}\n\n${error.stack}`);
+      return null;
+   });
 
    try {
       if (cache) {
@@ -76,9 +80,11 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
             const time = new Date();
             const data = JSON.stringify(marketTrends);
 
-            await redisClient.setex("marketTrends", 24 * 60 * 60, data);
-            await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
             await updateMarketTrends(time, data);
+            await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
+            redisClient.setex("marketTrends", 24 * 60 * 60, data).catch((error) => {
+               logger.error(`redisClient.setex(marketTrends): ${error.message}\n\n${error.stack}`);
+            });
 
             return sendServerResponse(200, "Market Trends", marketTrends as MarketTrends);
          } else {
@@ -92,11 +98,6 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
       if (!String(error?.message).startsWith("Thank you for using Alpha Vantage!")) {
          console.error(error);
-      }
-
-      if (await redisClient.get("marketTrends") === null) {
-         // Update cache with backup data in case of API failure for 15 minutes
-         await redisClient.setex("marketTrends", 15 * 60, JSON.stringify(backup));
       }
 
       return sendServerResponse(200, "Market Trends", backup as MarketTrends);
@@ -114,7 +115,9 @@ async function fetchNews(): Promise<News> {
 
 export async function fetchFinancialNews(): Promise<ServerResponse> {
    try {
-      const cache = await redisClient.get("news");
+      const cache = await redisClient.get("news").catch((error) => {
+         logger.error(`redisClient.get(news): ${error.message}\n\n${error.stack}`);
+      });
 
       if (cache) {
          // Cache hit
@@ -124,7 +127,9 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
          const data = await fetchNews();
 
          // Cache the news result for 15 minutes
-         await redisClient.setex("news", 15 * 60, JSON.stringify(data));
+         redisClient.setex("news", 15 * 60, JSON.stringify(data)).catch((error) => {
+            logger.error(`redisClient.setex(news): ${error.message}\n\n${error.stack}`);
+         });
 
          return sendServerResponse(200, "Financial News", data as News);
       }
@@ -133,11 +138,6 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
       console.error(error);
 
       const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss as News;
-
-      if (await redisClient.get("news") === null) {
-         // Update cache with backup news in case of API failure for 5 minutes
-         await redisClient.setex("news", 5 * 60, JSON.stringify(backup));
-      }
 
       return sendServerResponse(200, "Financial News", backup);
    }

@@ -2,7 +2,8 @@ import { Account, AccountHistory, accountHistorySchema, accountSchema } from "ca
 import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
-import { redisClient } from "@/app";
+import { logger } from "@/lib/logger";
+import { redisClient } from "@/lib/redis";
 import { sendServerResponse, sendValidationErrors } from "@/lib/service";
 import {
    create,
@@ -14,9 +15,18 @@ import {
    updateOrdering
 } from "@/repository/accountsRepository";
 
+function clearRedisCache(user_id: string) {
+   redisClient.del(`accounts:${user_id}`).catch((error) => {
+      logger.error(`redisClient.del(accounts:${user_id}): ${error.message}\n\n${error.stack}`);
+   });
+}
+
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Validate account fields
-   const cache = await redisClient.get(`accounts:${user_id}`);
+   const cache = await redisClient.get(`accounts:${user_id}`).catch((error) => {
+      logger.error(`redisClient.get(accounts:${user_id}): ${error.message}\n\n${error.stack}`);
+      return null;
+   });
 
    if (cache) {
       return sendServerResponse(200, "Accounts", JSON.parse(cache) as Account[]);
@@ -25,7 +35,9 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
       const result = await findByUserId(user_id);
 
       // Cache the result for 5 minutes
-      await redisClient.setex(`accounts:${user_id}`, 5 * 60, JSON.stringify(result));
+      redisClient.setex(`accounts:${user_id}`, 10 * 60, JSON.stringify(result)).catch((error) => {
+         logger.error(`redisClient.setex(accounts:${user_id}): ${error.message}\n\n${error.stack}`);
+      });
 
       return sendServerResponse(200, "Accounts", result as Account[]);
    }
@@ -39,7 +51,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
       return sendValidationErrors(fields, "Invalid account fields");
    } else {
       const creation = await create(user_id, account);
-      await redisClient.del(`accounts:${user_id}`);
+      clearRedisCache(user_id);
 
       return sendServerResponse(200, "Account created", { account_id: creation.account_id });
    }
@@ -59,7 +71,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
       const result = await updateDetails(account.account_id, account);
 
       if (result) {
-         await redisClient.del(`accounts:${user_id}`);
+         clearRedisCache(user_id);
 
          return sendServerResponse(204, "Account details updated");
       } else {
@@ -76,7 +88,7 @@ export async function updateAccount(type: "details" | "history", user_id: string
          );
 
          if (result) {
-            await redisClient.del(`accounts:${user_id}`);
+            clearRedisCache(user_id);
 
             return sendServerResponse(204, "Account history updated");
          } else {
@@ -108,7 +120,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    if (!result) {
       return sendServerResponse(404, "Account(s) not found", undefined, { accounts: "No account order's could be updated based on provided ID(s)" });
    } else {
-      await redisClient.del(`accounts:${user_id}`);
+      clearRedisCache(user_id);
 
       return sendServerResponse(204, "Account ordering updated");
    }
@@ -126,7 +138,7 @@ export async function deleteAccountHistory(user_id: string, account_id: string, 
          { history: "At least one history record must remain for this account" }
       );
    } else {
-      await redisClient.del(`accounts:${user_id}`);
+      clearRedisCache(user_id);
 
       return sendServerResponse(204, "Account history record deleted");
    }
@@ -138,7 +150,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
    if (!result) {
       return sendServerResponse(404, "Account not found", undefined, { account: "Account does not exist based on the provided ID" });
    } else {
-      await redisClient.del(`accounts:${user_id}`);
+      clearRedisCache(user_id);
 
       return sendServerResponse(204, "Account deleted");
    }

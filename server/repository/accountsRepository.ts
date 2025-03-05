@@ -1,8 +1,8 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
-import { logger } from "@/app";
-import { pool, query  } from "@/lib/client";
+import { pool, query  } from "@/lib/database";
+import { logger } from "@/lib/logger";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
