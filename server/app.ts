@@ -6,6 +6,7 @@ import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import session from "express-session";
 import helmet from "helmet";
+import morgan from "morgan";
 import path from "path";
 import serveIndex from "serve-index";
 
@@ -18,8 +19,6 @@ import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
 export const app = express();
-
-const requests = require("morgan");
 
 // Session management through Redis store
 app.use(session({
@@ -38,7 +37,7 @@ app.use(session({
 // Rate limiting
 app.use(rateLimit({
    max: 250,
-   windowMs: 15 * 60 * 1000,
+   windowMs: 10 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later."
 }));
 
@@ -76,8 +75,8 @@ app.use(helmet.xssFilter());
 // Prevent browsers from interpreting files as a different MIME type via Helmet
 app.use(helmet.noSniff());
 
-// Development mode request logging
-app.use(requests("dev"));
+// Request logging
+app.use(morgan("dev"));
 
 // Parse incoming URL-encoded data and JSON payloads
 app.use(express.json());

@@ -27,7 +27,7 @@ const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
-   const author = rest["dc:creator"] ?? ["No Author"];
+   const author = rest["dc:creator"] || ["No Author"];
    const image = rest["media:content"]?.[0]?.$.url || "/svg/backup.svg";
 
    return (
@@ -68,13 +68,13 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                         { author.join(", ") }
                      </Typography>
                      <Typography variant = "caption">
-                        { timeSinceLastUpdate(pubDate[0] ?? new Date().toISOString()) }
+                        { timeSinceLastUpdate(pubDate[0] || new Date().toISOString()) }
                      </Typography>
                   </Stack>
                   <IconButton
                      aria-label = "Read More"
                      disableRipple = { true }
-                     href = { link[0] ?? "#" }
+                     href = { link[0] || "#" }
                      size = "small"
                      target = "_blank"
                   >
@@ -123,7 +123,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                }
                variant = "body2"
             >
-               { title?.[0] ?? "No Title" }
+               { title?.[0] || "No Title" }
             </Typography>
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
@@ -148,7 +148,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                   color = "textSecondary"
                   variant = "body2"
                >
-                  { description?.[0] ?? "No Description" }
+                  { description?.[0] || "No Description" }
                </Typography>
             </CardContent>
          </Collapse>
