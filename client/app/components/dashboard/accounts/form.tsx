@@ -73,7 +73,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   );
 
                   if (result === 204) {
-                     // Update account details, potentially updating most recent record in the history array
+                     // Update account details, potentially updating most recent record in the history array)
                      dispatch(updateAccount({
                         account: {
                            ...account,

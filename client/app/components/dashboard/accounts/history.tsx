@@ -1,17 +1,19 @@
-import { faCalendarDay, faCalendarDays, faCaretDown, faClockRotateLeft, faCloudArrowUp, faPen, faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarDay, faCalendarDays, faCaretDown, faClockRotateLeft, faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Chip, Collapse, Divider, FormControl, FormHelperText, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, OutlinedInput, Stack, TextField } from "@mui/material";
+import { Box, Button, Chip, Collapse, Divider, FormControl, FormHelperText, InputLabel, List, ListItemButton, ListItemIcon, ListItemText, OutlinedInput, Stack, TextField, useTheme } from "@mui/material";
 import { type Account, type AccountHistory, accountHistorySchema } from "capital/accounts";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { z } from "zod";
 
 import { Expand } from "@/components/global/expand";
 import Graph from "@/components/global/graph";
 import Modal from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { constructDate } from "@/lib/dates";
+import { displayCurrency, displayDate } from "@/lib/display";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateAccount } from "@/redux/slices/accounts";
 import { addNotification } from "@/redux/slices/notifications";
@@ -20,6 +22,11 @@ const [minDate, maxDate] = [
    new Date("1800-01-01").toISOString().split("T")[0],
    new Date().toISOString().split("T")[0]
 ];
+
+const accountHistoryUpdateSchema = z.object({
+   history_balance: accountHistorySchema.shape.balance,
+   last_updated: accountHistorySchema.shape.last_updated
+});
 
 interface HistoryEditsProps {
    account: Account;
@@ -98,44 +105,35 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                   history.map((history) => {
                      return (
                         <ListItemButton
-                           disableRipple={true}
-                           disableTouchRipple={true}
-                           key={account.account_id + history.last_updated}
-                           sx={{
-                              pl: 4,
-                              flexWrap: "wrap",
-                              justifyContent: "center",
-                              cursor: "default",
-                              "&:hover": {
-                                 backgroundColor: "transparent"
-                              },
-                           }}
+                           disableRipple = { true }
+                           disableTouchRipple = { true }
+                           key = { account.account_id + history.last_updated }
+                           sx = {
+                              {
+                                 pl: 4,
+                                 flexWrap: "wrap",
+                                 justifyContent: "center",
+                                 cursor: "default",
+                                 "&:hover": {
+                                    backgroundColor: "transparent"
+                                 }
+                              }
+                           }
                         >
                            <ListItemIcon sx = { { mr: -3.5 } }>
                               <FontAwesomeIcon icon = { faCalendarDay } />
                            </ListItemIcon>
                            <ListItemText
-                              primary = {
-                                 "$" + new Intl.NumberFormat("en-US", {
-                                    minimumFractionDigits: 2, maximumFractionDigits: 2
-                                 }).format(history.balance)
-                              }
-                              secondary = {
-                                 new Date(history.last_updated).toLocaleDateString("en-us", {
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    year: "numeric",
-                                    timeZone: "UTC"
-                                 })
-                              }
-                              sx = {{ userSelect: "text", cursor: "text" }}
+                              primary = { displayCurrency(history.balance) }
+                              secondary = { displayDate(history.last_updated) }
+                              sx = { { userSelect: "text", cursor: "text" } }
                            />
                            <FontAwesomeIcon
                               color = "hsl(0, 90%, 50%)"
                               fontSize = "15px"
                               icon = { faTrashCan }
                               onClick = { () => deleteAccountHistory(history.last_updated) }
-                              style={{ cursor: "pointer" }}
+                              style = { { cursor: "pointer" } }
                            />
                         </ListItemButton>
                      );
@@ -148,7 +146,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
 }
 
 function HistoryModal({ account, disabled }: { account: Account, disabled: boolean }) {
-   const dispatch = useDispatch(), navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const {
       control,
       setError,
@@ -175,15 +173,15 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
 
    const onSubmit = async(data: any) => {
       try {
-         const update = {
-            balance: data.history_balance,
-            last_updated: constructDate(data.last_updated)
-         };
-         const fields = accountHistorySchema.safeParse(update);
+         const fields = accountHistoryUpdateSchema.safeParse(data);
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
          } else {
+            const update = {
+               balance: data.history_balance,
+               last_updated: constructDate(data.last_updated)
+            };
             const result = await sendApiRequest(
                `dashboard/accounts/${account.account_id}`, "POST", update, dispatch, navigate
             );
@@ -316,6 +314,11 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           }
                                        }
                                     }
+                                    sx = {
+                                       {
+                                          colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                       }
+                                    }
                                     type = "date"
                                     value = { field.value || "" }
                                  />
@@ -372,7 +375,6 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
          </Divider>
          <Stack
             direction = "column"
-            spacing = { -1 }
             sx = { { mt: 1, px: 1 } }
          >
             <Graph

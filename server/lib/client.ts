@@ -1,7 +1,7 @@
 require("dotenv").config();
 import { Pool } from "pg";
 
-// Connection pool for database scalability
+// Connection pool for database connections
 export const pool = new Pool({
    host: process.env.HOST,
    user: process.env.USER,

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { submitServiceRequest } from "@/lib/api/controllers";
+import { submitServiceRequest } from "@/lib/controllers";
 import { fetchDashboard } from "@/service/dashboardService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>

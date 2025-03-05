@@ -1,11 +1,12 @@
 import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, Slide, Stack, Tooltip, Typography } from "@mui/material";
+import { Avatar, Box, Card, CardActions, CardContent, CardHeader, CardMedia, Collapse, Fade, IconButton, Slide, Stack, Typography } from "@mui/material";
 import { type News, type Story } from "capital/news";
 import { useRef, useState } from "react";
 
 import { Expand } from "@/components/global/expand";
 import { timeSinceLastUpdate } from "@/lib/dates";
+import { ellipsis } from "@/lib/display";
 
 const imageRegex = /https:\/\/images\.mktw\.net\/.*/;
 
@@ -47,7 +48,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                >
                   <Stack spacing = { 0 }>
                      <Typography
-                        sx = { { whiteSpace: "nowrap", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" } }
+                        sx = { { ...ellipsis, maxWidth: "150px" } }
                         variant = "subtitle2"
                      >
                         { author.join(", ") }
@@ -58,10 +59,10 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                   </Stack>
                   <IconButton
                      aria-label = "Read More"
+                     disableRipple = { true }
                      href = { link[0] ?? "#" }
                      size = "small"
                      target = "_blank"
-                     disableRipple
                   >
                      <FontAwesomeIcon
                         className = "primary"
@@ -113,9 +114,9 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
             <Expand
+               disableRipple = { true }
                expand = { expanded }
                onClick = { () => setExpanded(!expanded) }
-               disableRipple
             >
                <FontAwesomeIcon
                   icon = { faCaretDown }

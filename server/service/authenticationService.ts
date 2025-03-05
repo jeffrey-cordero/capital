@@ -2,9 +2,9 @@ import { ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
-import { sendServerResponse } from "@/lib/api/service";
-import { configureToken } from "@/lib/authentication/middleware";
-import { compare } from "@/lib/database/cryptography";
+import { sendServerResponse } from "@/lib/service";
+import { configureToken } from "@/lib/middleware";
+import { compare } from "@/lib/cryptography";
 import { findByUsername } from "@/repository/userRepository";
 
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {

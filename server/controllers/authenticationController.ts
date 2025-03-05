@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { submitServiceRequest } from "@/lib/api/controllers";
+import { submitServiceRequest } from "@/lib/controllers";
 import { authenticateUser, getAuthentication, logoutUser } from "@/service/authenticationService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>

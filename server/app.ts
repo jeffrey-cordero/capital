@@ -6,11 +6,11 @@ import express, { Request, Response } from "express";
 import session from "express-session";
 import helmet from "helmet";
 import Redis from "ioredis";
-import logger from "morgan";
+import logger  from "morgan";
 import path from "path";
 import serveIndex from "serve-index";
 
-import { sendErrors } from "@/lib/api/response";
+import { sendErrors } from "@/lib/response";
 import authenticationRouter from "@/routers/authenticationRouter";
 import dashboardRouter from "@/routers/dashboardRouter";
 import indexRouter from "@/routers/indexRouter";
@@ -27,8 +27,8 @@ app.use(session({
       client: redisClient
    }),
    secret: process.env.SESSION_SECRET || "",
-   resave:false,
-   saveUninitialized:true,
+   resave: false,
+   saveUninitialized: true,
    cookie: {
       httpOnly: true,
       sameSite: false,
@@ -61,12 +61,12 @@ app.use("/users", userRouter);
 app.use("/authentication", authenticationRouter);
 
 // Catch 404 and forward to error handler
-app.use(function(req: Request, res: Response) {
+app.use(function (req: Request, res: Response) {
    return sendErrors(res, 404, "Internal Server Error", { System: "The requested resource could not be found" });
 });
 
 // Error handler
-app.use(function(error: any, req: Request, res: Response) {
+app.use(function (error: any, req: Request, res: Response) {
    console.error(error);
 
    const status: number = error.status || 500;

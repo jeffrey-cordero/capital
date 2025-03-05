@@ -2,7 +2,7 @@ import { type Account, AccountHistory } from "capital/accounts";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import { submitServiceRequest } from "@/lib/api/controllers";
+import { submitServiceRequest } from "@/lib/controllers";
 import { createAccount, deleteAccount, deleteAccountHistory, fetchAccounts, updateAccount, updateAccountsOrdering } from "@/service/accountsService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>

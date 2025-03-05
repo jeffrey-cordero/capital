@@ -1,7 +1,7 @@
 import { ServerResponse } from "capital/server";
 import { Response } from "express";
 
-import { sendErrors, sendSuccess } from "@/lib/api/response";
+import { sendErrors, sendSuccess } from "@/lib/response";
 
 // Shared controller logic for sending service requests, handling responses, and internal errors
 export async function submitServiceRequest(serviceMethod: () => Promise<ServerResponse>, res: Response) {

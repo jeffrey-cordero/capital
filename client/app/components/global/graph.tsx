@@ -7,6 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { AreaGradient } from "@/components/global/graphs";
 import { constructDate } from "@/lib/dates";
+import { displayNumeric, displayPercentage } from "@/lib/display";
 
 interface GraphProps {
    title: string;
@@ -279,18 +280,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      variant = "h4"
                   >
                      { option === "GDP" || !indicators ? "$" : "" }
-                     {
-                        option === "GDP" || !indicators ? (
-                           new Intl.NumberFormat().format(Number(filtered[filtered.length - 1].value))
-                        ) : (
-                           Number(filtered[filtered.length - 1].value).toFixed(2)
-                        )
-                     }
+                     { displayNumeric(Number(filtered[filtered.length - 1].value)) }
                      { indicators ? option === "GDP" ? "B" : "%" : "" }
                   </Typography>
                   <Chip
                      color = { chip }
-                     label = { `${new Intl.NumberFormat().format(Number(trend.toFixed(2)))}%` }
+                     label = { displayPercentage(Number(trend.toFixed(2))) }
                      size = "small"
                   />
                </Stack>
@@ -413,7 +408,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                                     }
                                  }
                               }
-                              sx = { { mt: 1 } }
+                              sx = {
+                                 {
+                                    mt: 1,
+                                    colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                 }
+                              }
                               type = "date"
                               value = { fromValue }
                            />
@@ -443,7 +443,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                                  }
                               }
                            }
-                           sx = { { mt: 1 } }
+                           sx = {
+                              {
+                                 mt: 1,
+                                 colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                              }
+                           }
                            type = "date"
                            value = { toValue }
                         />

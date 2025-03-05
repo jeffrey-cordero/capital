@@ -1,10 +1,11 @@
 import { z } from 'zod';
 
-export const images = new Set(["property", "bank", "cash", "credit", "investment", "loan", "retirement", "savings"]);
-export const types = new Set(["Checking", "Savings", "Credit Card", "Retirement", "Investment", "Loan", "Property", "Other"]);
+export const images = new Set(["property", "bank", "cash", "credit", "debt", "investment", "loan", "retirement", "savings"]);
+export const decrementingTypes = new Set(["Debt", "Credit Card", "Loan"]);
+export const types = new Set(["Checking", "Savings", "Credit Card", "Debt", "Retirement", "Investment", "Loan", "Property", "Other"]);
 
-const imageRegex = /^(property|bank|cash|credit|investment|loan|retirement|savings)$/;
-const typeRegex = /^(Checking|Savings|Credit Card|Retirement|Investment|Loan|Property|Other)$/;
+const imageRegex = /^(property|bank|cash|credit|debt|investment|loan|retirement|savings)$/;
+const typeRegex = /^(Checking|Savings|Credit Card|Debt|Retirement|Investment|Loan|Property|Other)$/;
 
 export type Account = {
    account_id: string | null;
@@ -25,9 +26,9 @@ export const accountHistorySchema = z.object({
    balance: z.coerce.number({
       message: "Balance must be a valid number"
    }).min(0, {
-      message: "Balance must be at least 0"
+      message: "Balance must be at least $0"
    }).max(99999999999.99, {
-      message: "Balance cannot exceed 99,999,999,999.99"
+      message: "Balance cannot exceed $99,999,999,999.99"
    }),
    last_updated: z.coerce.date().min(new Date("1800-01-01"), {
       message: "Update cannot be earlier than the year 1800"

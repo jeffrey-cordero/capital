@@ -1,8 +1,7 @@
 {
-  "name": "capital",
+  "name": "capital-types",
   "version": "1.0.0",
-  "author": "Jeffrey Cordero",
-  "license": "MIT",
+  "private": true,
   "dependencies": {
     "zod": "^3.22.2"
   }

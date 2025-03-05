@@ -3,7 +3,7 @@ import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
 import { redisClient } from "@/app";
-import { sendServerResponse, sendValidationErrors } from "@/lib/api/service";
+import { sendServerResponse, sendValidationErrors } from "@/lib/service";
 import {  create,  deleteAccount as removeAccount, findByUserId, removeHistory, updateDetails, updateHistory as updateAccountHistory, updateOrdering } from "@/repository/accountsRepository";
 
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {

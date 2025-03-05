@@ -4,6 +4,7 @@ import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "c
 
 import Graph, { getChipColor } from "@/components/global/graph";
 import { timeSinceLastUpdate } from "@/lib/dates";
+import { displayNumeric } from "@/lib/display";
 
 function Stocks({ data }: { data: StockTrends }) {
    const { top_gainers, top_losers, most_actively_traded } = data;
@@ -83,7 +84,7 @@ function Stocks({ data }: { data: StockTrends }) {
                               fontWeight = "600"
                               variant = "body2"
                            >
-                              { new Intl.NumberFormat().format(parseInt(stock.volume)) } shares
+                              { displayNumeric(parseInt(stock.volume), false) } shares
                            </Typography>
                         </Stack>
                      </Stack>

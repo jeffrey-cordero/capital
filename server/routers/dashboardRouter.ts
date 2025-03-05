@@ -2,7 +2,7 @@ import express from "express";
 
 import * as accountsController from "@/controllers/accountsController";
 import * as dashboardController from "@/controllers/dashboardController";
-import { authenticateToken } from "@/lib/authentication/middleware";
+import { authenticateToken } from "@/lib/middleware";
 
 const dashboardRouter = express.Router();
 

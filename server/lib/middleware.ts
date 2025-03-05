@@ -2,7 +2,7 @@ import { User } from "capital/user";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
-import { sendErrors } from "@/lib/api/response";
+import { sendErrors } from "@/lib/response";
 
 // Token Generation
 export function configureToken(res: Response, user: User): void {

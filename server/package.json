@@ -1,7 +1,7 @@
 {
   "name": "capital-server",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
   "scripts": {
     "build": "npx tsc",
     "start": "npm run build && node -r module-alias/register ./bin/www.ts",

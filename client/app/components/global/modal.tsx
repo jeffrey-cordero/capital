@@ -1,4 +1,4 @@
-import { Box, css, Modal as MuiModal, styled, type SxProps } from "@mui/material";
+import { Box, css, Fade, Modal as MuiModal, styled, type SxProps } from "@mui/material";
 
 import { gray } from "@/styles/mui/colors";
 
@@ -53,12 +53,26 @@ export default function Modal({ open, onClose, children, sx }: ModalProps) {
       <MuiModal
          onClose = { onClose }
          open = { open }
+         slotProps = {
+            {
+               backdrop: {
+                  timeout: 350
+               }
+            }
+         }
       >
-         <ModalContent sx = { sx }>
-            <Box sx = { { position: "relative" } }>
-               { children }
-            </Box>
-         </ModalContent>
+         <Fade
+            in = { open }
+            mountOnEnter = { true }
+            timeout = { 350 }
+            unmountOnExit = { true }
+         >
+            <ModalContent sx = { sx }>
+               <Box sx = { { position: "relative" } }>
+                  { children }
+               </Box>
+            </ModalContent>
+         </Fade>
       </MuiModal>
    );
 }

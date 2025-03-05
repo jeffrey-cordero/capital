@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import AccountForm from "@/components/dashboard/accounts/form";
+import { displayCurrency, displayDate, ellipsis } from "@/lib/display";
 import { addNotification } from "@/redux/slices/notifications";
 
 export default function AccountCard({ account }: { account: Account | undefined }) {
@@ -42,7 +43,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                variant = { undefined }
             >
                <Typography
-                  className = { isResourceError ? "error" : "primary component" }
+                  className = { isResourceError ? "error" : "primary" }
                   component = "a"
                   href = "#"
                   onClick = { () => setState("update") }
@@ -91,30 +92,21 @@ export default function AccountCard({ account }: { account: Account | undefined 
                   </Fab>
                </Tooltip>
                <CardContent sx = { { p: 3, pt: 2 } }>
-               <Typography 
-                  variant="h6" 
-                  sx={{ 
-                     pr: 4, 
-                     whiteSpace: "nowrap", 
-                     overflow: "hidden", 
-                     textOverflow: "ellipsis" 
-                  }}
-               >
-                  {account.name}
-               </Typography>
+                  <Typography
+                     sx = { { ...ellipsis, pr: 4 } }
+                     variant = "h6"
+                  >
+                     { account.name }
+                  </Typography>
                   <Stack
                      direction = "column"
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
                      <Typography
-                        sx = { { maxWidth: "95%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pr: 3 } }
+                        sx = { { ...ellipsis, maxWidth: "95%", pr: 3 } }
                         variant = "subtitle2"
                      >
-                        ${
-                           new Intl.NumberFormat("en-US", {
-                              minimumFractionDigits: 2, maximumFractionDigits: 2
-                           }).format(account.balance)
-                        }
+                        { displayCurrency(account.balance) }
                      </Typography>
                      <Typography variant = "caption">
                         { account.type }
@@ -122,14 +114,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      <Typography
                         variant = "caption"
                      >
-                        {
-                           new Date(account.history[0].last_updated).toLocaleDateString("en-us", {
-                              month: "2-digit",
-                              day: "2-digit",
-                              year: "numeric",
-                              timeZone: "UTC"
-                           })
-                        }
+                        { displayDate(account.history[0].last_updated) }
                      </Typography>
                      <AccountForm
                         account = { account }
@@ -147,7 +132,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                color = "primary"
                onClick = { () => setState("create") }
                startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-               sx = {{ p: 3 }}
+               sx = { { p: 3 } }
                variant = "contained"
             >
                Add Account

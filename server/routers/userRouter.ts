@@ -1,7 +1,7 @@
 import express from "express";
 
 import * as controller from "@/controllers/userController";
-import { authenticateToken } from "@/lib/authentication/middleware";
+import { authenticateToken } from "@/lib/middleware";
 
 const usersRouter = express.Router();
 

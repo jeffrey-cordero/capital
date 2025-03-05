@@ -1,7 +1,7 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
-import { pool, query  } from "@/lib/database/client";
+import { pool, query  } from "@/lib/client";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
@@ -172,36 +172,36 @@ export async function removeHistory(account_id: string, last_updated: Date): Pro
          FROM accounts_history
          WHERE account_id = $1;
       `;
-      const total = (await client.query(records, [account_id])).rows as { count:number }[];
+   
+      const removal = `
+         DELETE FROM accounts_history
+         WHERE account_id = $1
+         AND last_updated = $2
+         RETURNING account_id;
+      `;
 
-      if (total[0].count <= 1) {
-         // All accounts must have at least one history record in the database
-         return "conflict";
+      const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
+
+      await client.query("COMMIT;");
+
+      if (removals === 1) {
+         // Matching history record removed
+         return "success";
       } else {
-         const removal = `
-            DELETE FROM accounts_history
-            WHERE account_id = $1
-            AND last_updated = $2
-            RETURNING account_id;
-         `;
-
-         const removals = (await client.query(removal, [account_id, last_updated])).rows.length;
-
-         await client.query("COMMIT;");
-
-         if (removals === 1) {
-            // Matching history record removed
-            return "success";
-         } else {
-            // No matching history record
-            return "missing";
-         }
+         // No matching history record
+         return "missing";
       }
-   } catch (error) {
-      console.error(error);
+      
+   } catch (error: any) {
+      // Handle expected conflicts in removing final record or potential unexpected exceptions
       await client?.query("ROLLBACK");
 
-      throw error;
+      if (error.code === "P0001") {
+         return "conflict";
+      } else {
+         console.error(error);
+         throw error;
+      }
    } finally {
       client?.release();
    }

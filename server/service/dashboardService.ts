@@ -6,7 +6,7 @@ import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
 import { redisClient } from "@/app";
-import { sendServerResponse } from "@/lib/api/service";
+import { sendServerResponse } from "@/lib/service";
 import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 
