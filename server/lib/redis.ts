@@ -3,34 +3,55 @@ require("dotenv").config();
 import session from "express-session";
 import Redis from "ioredis";
 
-const connectRedis = require("connect-redis").default;
+import { logger } from "@/lib/logger";
 
-export const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
-   maxRetriesPerRequest: 3,
-   retryStrategy: (times) => {
-      if (times >= 3) {
-         // Stop retrying after 3 attempts
-         return null;
-      } else {
-         // Retry connection in 3 seconds
-         return 3000;
-      }
-   }
-});
+const connectRedis = require("connect-redis").default;
 
 // Set up the session store conditionally
 export let redisStore: session.Store | undefined = undefined;
 
-// Initialize the session store when Redis is ready
+const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
+   retryStrategy: (times) => {
+      // Retry connection at most once with a single second interval
+      if (times <= 1) {
+         return 1000;
+      } else {
+         return null;
+      }
+   }
+});
+
 redisClient.on("ready", () => {
+   // Initialize the session store when the client is ready for connections
    redisStore = new connectRedis({ client: redisClient });
 });
 
-// Fallback to undefined store until the Redis client is ready
-redisClient.on("reconnecting", () => {
-   redisStore = undefined;
+redisClient.on("error", (error: any) => {
+   // Fallback to an undefined Redis store until the client is ready
+   if (error.code === "ECONNREFUSED") {
+      redisStore = undefined;
+   }
 });
 
-redisClient.on("error", () => {
-   redisStore = undefined;
-});
+// Helper methods to handle Redis operations with logging and graceful recovery
+export async function getCacheValue(key: string): Promise<string | null> {
+   try {
+      return await redisClient.get(key);
+   } catch (error: any) {
+      logger.error(`redisClient.get(${key}): ${error.message}\n\n${error.stack}`);
+
+      return null;
+   }
+}
+
+export function setCacheValue(key: string, time: number, value: string): void {
+   redisClient.setex(key, time, value).catch((error: any) => {
+      logger.error(`redisClient.setex(${key}): ${error.message}\n\n${error.stack}`);
+   });
+}
+
+export function removeCacheValue(key: string): void {
+   redisClient.del(key).catch((error: any) => {
+      logger.error(`redisClient.del(${key}): ${error.message}\n\n${error.stack}`);
+   });
+}

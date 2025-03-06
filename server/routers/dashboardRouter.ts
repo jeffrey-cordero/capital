@@ -6,11 +6,16 @@ import { authenticateToken } from "@/lib/middleware";
 
 const dashboardRouter = express.Router();
 
+// JWT Middleware for token validation
+dashboardRouter.use(authenticateToken(true));
+
+// Dashboard
 dashboardRouter.get("/", authenticateToken(true), dashboardController.GET);
 
-dashboardRouter.get("/accounts", authenticateToken(true), accountsController.GET);
-dashboardRouter.post("/accounts", authenticateToken(true), accountsController.POST);
-dashboardRouter.post("/accounts/:id", authenticateToken(true), accountsController.PUT);
-dashboardRouter.delete("/accounts/:id", authenticateToken(true), accountsController.DELETE);
+// Accounts
+dashboardRouter.get("/accounts", accountsController.GET);
+dashboardRouter.post("/accounts", accountsController.POST);
+dashboardRouter.post("/accounts/:id", accountsController.PUT);
+dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 
 export default dashboardRouter;

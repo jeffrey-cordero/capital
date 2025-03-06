@@ -21,7 +21,7 @@ const consoleTransport = new transports.Console({
 });
 
 export const logger = winston.createLogger({
-   level: "error",
+   level: "info",
    format: format.combine(
       format.timestamp(),
       format.printf(({ timestamp, message }) => {

@@ -22,7 +22,7 @@ export const app = express();
 
 // Session management through Redis store
 app.use(session({
-   store: redisStore || undefined,
+   store: redisStore,
    resave: false,
    saveUninitialized: true,
    secret: process.env.SESSION_SECRET || "",
@@ -34,11 +34,16 @@ app.use(session({
    }
 }));
 
-// Rate limiting
+// Rate limiting with logging for further investigations
 app.use(rateLimit({
    max: 250,
    windowMs: 10 * 60 * 1000,
-   message: "Too many requests from this IP. Please try again later."
+   message: "Too many requests from this IP. Please try again later.",
+   handler: (req: Request, res: Response) => {
+      logger.error(`Rate limited request from IP: ${req.ip}`);
+
+      return sendErrors(res, 249, "Too many requests. Please try again later.");
+   }
 }));
 
 // Trust proxy to obtain real client IP address
@@ -101,8 +106,8 @@ app.use(function(req: Request, res: Response) {
 
 app.use(function(error: any, req: Request, res: Response) {
    logger.error(error);
-   const status: number = error.status || 500;
-   const message: string = error.message || "An unknown error occurred";
 
-   return sendErrors(res, status, "Internal Server Error", { System: message });
+   return sendErrors(res, error.status || 500, "Internal Server Error",
+      { System: error.message || "An unknown error occurred" }
+   );
 });
