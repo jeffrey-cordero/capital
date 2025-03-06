@@ -6,5 +6,5 @@ import { submitServiceRequest } from "@/lib/services";
 import { createUser } from "@/service/userService";
 
 export const POST = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, () => createUser(req, res, req.body as User))
+   submitServiceRequest(res, async() => createUser(req, res, req.body as User))
 );

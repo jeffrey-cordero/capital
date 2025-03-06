@@ -8,7 +8,7 @@ import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import { create, findConflictingUsers } from "@/repository/userRepository";
 
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
-   // Validate user fields and uniqueness before insertion
+   // Validate user fields
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
@@ -20,23 +20,23 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          verifyPassword: "Passwords do not match"
       });
    } else {
-      // Handle user uniqueness
-      const result = await findConflictingUsers(user.username, user.email);
+      // Validate user uniqueness
+      const result: User[] = await findConflictingUsers(user.username, user.email);
 
       if (result.length === 0) {
          // User does not exist with same username and/or email
-         const creation = await create({ ...user, password: await hash(user.password) });
+         const creation: User[] = await create({ ...user, password: await hash(user.password) });
 
          // Configure JWT token for authentication purposes
          configureToken(res, creation[0]);
 
          return sendServiceResponse(201, "Successfully registered");
       } else {
-         // User exists with same username and/or email
+         // User(s) already exist with same username and/or email
          const normalizedUsername = user.username.toLowerCase().trim();
          const normalizedEmail = user.email.toLowerCase().trim();
 
-         const errors = result.reduce((acc, record) => {
+         const errors = result.reduce((acc: Record<string, string>, record: User) => {
             if (record.username.toLowerCase().trim() === normalizedUsername) {
                acc.username = "Username already exists";
             }

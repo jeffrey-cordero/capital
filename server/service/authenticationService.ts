@@ -1,6 +1,7 @@
 import { ServerResponse } from "capital/server";
+import { User } from "capital/user";
 import { Request, Response } from "express";
-import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 import { compare } from "@/lib/cryptography";
 import { logger } from "@/lib/logger";
@@ -10,15 +11,16 @@ import { findByUsername } from "@/repository/userRepository";
 
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
-      // Verify the JWT token, which will throw an error if invalid
+      // Verify the JWT token, handling expected thrown errors
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
       return sendServiceResponse(200, "Authenticated Status", { authenticated: true });
    } catch (error: any) {
       // Handle JWT verification errors
-      if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
-         // Clear the JWT cookie from the client
+      if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
+         // Clear the expired or invalid authentication token and express-session cookies
          res.clearCookie("token");
+         res.clearCookie("connect.sid");
 
          return sendServiceResponse(200, "Invalid Token", { authenticated: false });
       } else {
@@ -32,8 +34,8 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 }
 
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
-   // Authenticate user based on existing username and valid password through hashing
-   const user = await findByUsername(username);
+   // Authenticate user based on the provided credentials
+   const user: User[] = await findByUsername(username);
 
    if (user.length === 0 || !(await compare(password, user[0].password))) {
       return sendServiceResponse(401, "Invalid Credentials", undefined, {
@@ -55,7 +57,9 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
 
    // Destroy the express-session
    req.session.destroy((error: any) => {
-      if (error) throw error;
+      if (error) {
+         throw error;
+      }
    });
 
    return sendServiceResponse(200, "Successfully logged out");
