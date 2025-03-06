@@ -11,7 +11,6 @@ import path from "path";
 import serveIndex from "serve-index";
 
 import { logger } from "@/lib/logger";
-import { redisStore } from "@/lib/redis";
 import { sendErrors } from "@/lib/response";
 import authenticationRouter from "@/routers/authenticationRouter";
 import dashboardRouter from "@/routers/dashboardRouter";
@@ -22,7 +21,6 @@ export const app = express();
 
 // Session management through Redis store
 app.use(session({
-   store: redisStore,
    resave: false,
    saveUninitialized: true,
    secret: process.env.SESSION_SECRET || "",
@@ -40,7 +38,7 @@ app.use(rateLimit({
    windowMs: 10 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
-      logger.error(`Rate limited request from IP: ${req.ip}`);
+      logger.info(`Rate limited request from IP: ${req.ip}`);
 
       return sendErrors(res, 249, "Too many requests. Please try again later.");
    }
@@ -105,7 +103,7 @@ app.use(function(req: Request, res: Response) {
 });
 
 app.use(function(error: any, req: Request, res: Response) {
-   logger.error(error);
+   logger.error(error.stack || "An unknown error occurred");
 
    return sendErrors(res, error.status || 500, "Internal Server Error",
       { System: error.message || "An unknown error occurred" }

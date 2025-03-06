@@ -5,56 +5,51 @@ import jwt from "jsonwebtoken";
 import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
-// Token Generation
 export function configureToken(res: Response, user: User): void {
-   // Generate JWT token
-   const secret: string = process.env.SESSION_SECRET || "";
-   const token = jwt.sign({ user_id: user.user_id, username: user.username }, secret, { expiresIn: "24h" });
+   // Generate the JWT token
+   const token = jwt.sign({ user_id: user.user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
-   // Store JWT token in client cookies
+   // Store the JWT token in the client cookies
    res.cookie("token", token, {
       httpOnly: true,
-      sameSite: false,
+      sameSite: "strict",
       maxAge: 1000 * 60 * 60 * 24,
       secure: process.env.NODE_ENV === "production"
    });
 }
 
-// Token Middleware
 export function authenticateToken(required: boolean) {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
-      // Get the token from the session or cookies
+      // Fetch the token from the request cookies
       const token = req.cookies.token;
 
-      // If token is required but missing, return 401 (Unauthorized)
       if (!token && required) {
+         // Token present for this endpoint, but not provided
          return sendErrors(res, 401, "Access Denied: No Token Provided");
       } else if (token && !required) {
-         // If token is not required but provided, return 403 (Forbidden)
+         // Token not required at this endpoint, but provided
          return sendErrors(res, 403, "Access Denied: Token Not Required");
       } else if (required) {
          try {
-            const secret: string = process.env.SESSION_SECRET || "";
-
             // Verify the JWT token, handling expected thrown errors
-            const decoded = jwt.verify(token, secret);
+            const user = jwt.verify(token, process.env.SESSION_SECRET || "") as any;
 
-            // Attach decoded user data to req.user for subsequent handlers
-            res.locals.user = decoded;
+            // Attach the user ID for further request handlers
+            res.locals.user_id = user.user_id;
 
-            // Proceed to the next middleware or route handler
+            // Proceed to the next request handler
             next();
-         } catch (error) {
-            logger.error(error);
-
-            if (error instanceof jwt.TokenExpiredError) {
-               // Clear the expired token from the client
+         } catch (error: any) {
+            if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
+               // Clear the expired or invalid token from the client
                res.clearCookie("token");
                res.clearCookie("connect.sid");
+            } else {
+               // Unexpected JWT verification errors
+               logger.error(error.stack);
             }
 
-            // If the token is invalid, return 403 (Forbidden)
             return sendErrors(res, 403, "Access Denied: Invalid Token");
          }
       } else {

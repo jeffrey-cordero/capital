@@ -51,7 +51,7 @@ export async function sendApiRequest(
       const result = await response.json();
       dispatch(authenticate(window.location.pathname.startsWith("/dashboard")));
 
-      if (result.status === "Success") {
+      if (result.code === 200) {
          // Successful response
          return result.data ?? {};
       } else {

@@ -5,7 +5,7 @@ import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { compare } from "@/lib/cryptography";
 import { logger } from "@/lib/logger";
 import { configureToken } from "@/lib/middleware";
-import { sendServerResponse } from "@/lib/service";
+import { sendServiceResponse } from "@/lib/services";
 import { findByUsername } from "@/repository/userRepository";
 
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
@@ -13,18 +13,18 @@ export async function getAuthentication(res: Response, token: string): Promise<S
       // Verify the JWT token, which will throw an error if invalid
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
-      return sendServerResponse(200, "Authenticated Status", { authenticated: true });
+      return sendServiceResponse(200, "Authenticated Status", { authenticated: true });
    } catch (error: any) {
       // Handle JWT verification errors
       if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
          // Clear the JWT cookie from the client
          res.clearCookie("token");
 
-         return sendServerResponse(200, "Invalid Token", { authenticated: false });
+         return sendServiceResponse(200, "Invalid Token", { authenticated: false });
       } else {
-         logger.error(error);
+         logger.error(error.stack);
 
-         return sendServerResponse(500, "Internal Server Error", undefined, { System: error.message });
+         return sendServiceResponse(500, "Internal Server Error", undefined, { System: error.message });
       }
    }
 }
@@ -34,7 +34,7 @@ export async function authenticateUser(res: Response, username: string, password
    const user = await findByUsername(username);
 
    if (user.length === 0 || !(await compare(password, user[0].password))) {
-      return sendServerResponse(401, "Invalid Credentials", undefined, {
+      return sendServiceResponse(401, "Invalid Credentials", undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
       });
@@ -42,7 +42,7 @@ export async function authenticateUser(res: Response, username: string, password
       // Configure JWT token for authentication purposes
       configureToken(res, user[0]);
 
-      return sendServerResponse(200, "Successfully logged in");
+      return sendServiceResponse(200, "Successfully logged in");
    }
 }
 
@@ -56,5 +56,5 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
       if (error) throw error;
    });
 
-   return sendServerResponse(200, "Successfully logged out");
+   return sendServiceResponse(200, "Successfully logged out");
 }

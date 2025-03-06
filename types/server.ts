@@ -1,5 +1,5 @@
 export type ServerResponse = {
-   status: number;
+   code: number;
    message: string;
    data?: any;
    errors?: Record<string, string>;

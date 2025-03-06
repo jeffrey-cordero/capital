@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 
 import { hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
-import { sendServerResponse, sendValidationErrors } from "@/lib/service";
+import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import { create, findConflictingUsers } from "@/repository/userRepository";
 
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
@@ -30,7 +30,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          // Configure JWT token for authentication purposes
          configureToken(res, creation[0]);
 
-         return sendServerResponse(201, "Successfully registered");
+         return sendServiceResponse(201, "Successfully registered");
       } else {
          // User exists with same username and/or email
          const normalizedUsername = user.username.toLowerCase().trim();
@@ -48,7 +48,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
             return acc;
          }, {} as Record<string, string>);
 
-         return sendServerResponse(409, "Invalid user fields", undefined, errors);
+         return sendServiceResponse(409, "Invalid user fields", undefined, errors);
       }
    }
 }

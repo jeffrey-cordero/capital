@@ -6,8 +6,8 @@ import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
 import { logger } from "@/lib/logger";
-import { getCacheValue, setCacheValue, removeCacheValue } from "@/lib/redis";
-import { sendServerResponse } from "@/lib/service";
+import { getCacheValue, setCacheValue } from "@/lib/redis";
+import { sendServiceResponse } from "@/lib/services";
 import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 
@@ -49,7 +49,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
    try {
       if (cache) {
-         return sendServerResponse(200, "Market Trends", JSON.parse(cache) as MarketTrends);
+         return sendServiceResponse(200, "Market Trends", JSON.parse(cache) as MarketTrends);
       } else {
          const stored = await getMarketTrends();
 
@@ -81,10 +81,10 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
             await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
             setCacheValue("marketTrends", 24 * 60 * 60, data);
 
-            return sendServerResponse(200, "Market Trends", marketTrends as MarketTrends);
+            return sendServiceResponse(200, "Market Trends", marketTrends as MarketTrends);
          } else {
             // Return existing database cache that is still valid
-            return sendServerResponse(200, "Market Trends", stored[0].data as MarketTrends);
+            return sendServiceResponse(200, "Market Trends", stored[0].data as MarketTrends);
          }
       }
    } catch (error: any) {
@@ -92,10 +92,10 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       const backup = JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8"));
 
       if (!String(error?.message).startsWith("Thank you for using Alpha Vantage!")) {
-         logger.error(error);
+         logger.error(error.stack);
       }
 
-      return sendServerResponse(200, "Market Trends", backup as MarketTrends);
+      return sendServiceResponse(200, "Market Trends", backup as MarketTrends);
    }
 }
 
@@ -114,7 +114,7 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
 
       if (cache) {
          // Cache hit
-         return sendServerResponse(200, "Financial News", JSON.parse(cache) as News);
+         return sendServiceResponse(200, "Financial News", JSON.parse(cache) as News);
       } else {
          // Handle cache miss
          const data = await fetchNews();
@@ -122,15 +122,15 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
          // Cache the news result for 15 minutes
          setCacheValue("news", 15 * 60, JSON.stringify(data));
 
-         return sendServerResponse(200, "Financial News", data as News);
+         return sendServiceResponse(200, "Financial News", data as News);
       }
    } catch (error: any) {
       // Use backup XML news file
-      logger.error(error);
+      logger.error(error.stack);
 
       const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss as News;
 
-      return sendServerResponse(200, "Financial News", backup);
+      return sendServiceResponse(200, "Financial News", backup);
    }
 }
 
@@ -142,14 +142,14 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
          fetchAccounts(user_id)
       ]);
 
-      return sendServerResponse(200, "Dashboard", {
+      return sendServiceResponse(200, "Dashboard", {
          marketTrends: marketTrends.data,
          financialNews: financialNews.data,
          accounts: accounts.data
       });
    } catch (error: any) {
-      logger.error(error);
+      logger.error(error.stack);
 
-      return sendServerResponse(500, "Internal Server Error", undefined, { System: error.message });
+      return sendServiceResponse(500, "Internal Server Error", undefined, { System: error.message });
    }
 }

@@ -1,14 +1,8 @@
 require("dotenv").config();
 
-import session from "express-session";
 import Redis from "ioredis";
 
 import { logger } from "@/lib/logger";
-
-const connectRedis = require("connect-redis").default;
-
-// Set up the session store conditionally
-export let redisStore: session.Store | undefined = undefined;
 
 const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
    retryStrategy: (times) => {
@@ -21,15 +15,10 @@ const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
    }
 });
 
-redisClient.on("ready", () => {
-   // Initialize the session store when the client is ready for connections
-   redisStore = new connectRedis({ client: redisClient });
-});
-
 redisClient.on("error", (error: any) => {
-   // Fallback to an undefined Redis store until the client is ready
    if (error.code === "ECONNREFUSED") {
-      redisStore = undefined;
+      // Log connection errors while method handler's will log more specific errors
+      logger.error(`redisClient.connect(): ${error.message}\n\n${error.stack}`);
    }
 });
 
