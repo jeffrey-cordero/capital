@@ -56,5 +56,8 @@ export const accountSchema = z.object({
    type: z.string().regex(typeRegex, {
       message: "Type must be one of: Checking, Savings, Credit Card, Debt, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional()
-}).passthrough();
+   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional(),
+   account_order: z.coerce.number().min(0, {
+      message: "Account order must be at least 0"
+   })
+}).partial();

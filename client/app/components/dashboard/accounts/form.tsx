@@ -15,7 +15,7 @@ import {
 import { type Account, accountSchema, types } from "capital/accounts";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import AccountTransactions from "@/components/dashboard/accounts/account-transactions";
@@ -28,6 +28,7 @@ import { sendApiRequest } from "@/lib/api";
 import { today } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
+import type { RootState } from "@/redux/store";
 
 interface AccountFormProps {
    account: Account | undefined;
@@ -38,6 +39,7 @@ interface AccountFormProps {
 export default function AccountForm({ account, open, onClose }: AccountFormProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const [exitWarning, setExitWarning] = useState<boolean>(false);
+   const accounts = useSelector((root: RootState) => root.accounts.value);
    const updating = account !== undefined;
 
    const {
@@ -102,14 +104,15 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   name: data.name.trim(),
                   balance: data.balance,
                   type: data.type,
-                  image: data.image !== "" ? data.image : undefined
+                  image: data.image.trim() !== "" ? data.image : undefined,
+                  account_order: accounts.length
                };
 
                const result = await sendApiRequest(
-                  "dashboard/accounts", "POST", creation, dispatch, navigate
+                  "dashboard/accounts", "POST", creation, dispatch, navigate, setError
                ) as Record<string, string>;
 
-               if (result.account_id) {
+               if (result?.account_id) {
                   dispatch(addAccount({
                      ...creation,
                      account_id: result.account_id,

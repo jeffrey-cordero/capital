@@ -51,13 +51,13 @@ export async function create(user_id: string, account: Account): Promise<string>
    return await transaction(async(client: PoolClient) => {
       // Create the account
       const creation = `
-         INSERT INTO accounts (user_id, name, type, image)
-         VALUES ($1, $2, $3, $4)
+         INSERT INTO accounts (user_id, name, type, image, account_order)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING account_id;
       `;
-      const result = (
-         await client.query(creation, [user_id, account.name, account.type, account.image])
-      )?.rows as { account_id: string }[];
+      const result: { account_id: string }[] = (
+         await client.query(creation, [user_id, account.name, account.type, account.image, account.account_order])
+      )?.rows;
 
       // Initialize the account's history
       const history = `
@@ -78,25 +78,25 @@ export async function updateDetails(user_id: string, account_id: string, updates
    let params = 2;
 
    if (updates.name) {
-      fields.push(`name = $${params}`);
+      fields.push(`name = $${params - 1}`);
       values.push(updates.name);
       params++;
    }
 
    if (updates.type) {
-      fields.push(`type = $${params}`);
+      fields.push(`type = $${params - 1}`);
       values.push(updates.type);
       params++;
    }
 
    if (updates.image) {
-      fields.push(`image = $${params}`);
+      fields.push(`image = $${params - 1}`);
       values.push(updates.image);
       params++;
    }
 
    if (updates.account_order) {
-      fields.push(`account_order = $${params}`);
+      fields.push(`account_order = $${params - 1}`);
       values.push(updates.account_order);
       params++;
    }
@@ -113,7 +113,7 @@ export async function updateDetails(user_id: string, account_id: string, updates
          UPDATE accounts
          SET ${fields.join(", ")}
          WHERE user_id = $${params - 1}
-         AND account_id = ${params}
+         AND account_id = $${params}
          RETURNING account_id;
       `;
 
