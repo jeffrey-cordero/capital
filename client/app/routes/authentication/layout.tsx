@@ -10,7 +10,8 @@ export default function Layout() {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isLoading } = useQuery({
       queryKey: ["authentication"],
-      queryFn: () => fetchAuthentication(dispatch, navigate)
+      queryFn: () => fetchAuthentication(dispatch, navigate),
+      staleTime: Infinity
    });
 
    if (isLoading || data === null) {

@@ -59,6 +59,8 @@ export async function submitServiceRequest(res: Response, serviceMethod: () => P
    } catch (error: any) {
       logger.error(error.stack);
 
-      return sendErrors(res, 500, "Internal Server Error", { System: error.message });
+      return sendErrors(res, 500, "Internal Server Error",
+         { server: error.message || error.code || "An unknown error occurred" }
+      );
    }
 }

@@ -37,9 +37,8 @@ export async function sendApiRequest(
          navigate("/dashboard");
 
          return null;
-      } else if (response.status === 500) {
-         // Internal server errors
-         throw new Error(response.statusText);
+      } else if (response.status === 500 || response.status === 429) {
+         throw new Error((await response.json())?.errors?.server || "An unknown error occurred");
       }
 
       if (response.status === 201 || response.status === 204 || (response.status === 200 && login && !authenticating)) {
@@ -62,7 +61,7 @@ export async function sendApiRequest(
 
          return null;
       }
-   }).catch((error) => {
+   }).catch((error: any) => {
       console.error(error);
 
       dispatch(

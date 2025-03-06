@@ -42,7 +42,7 @@ export function authenticateToken(required: boolean) {
             next();
          } catch (error: any) {
             if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-               // Clear the expired or invalid token from the client
+               // Clear the expired or invalid authentication token and express-session cookies
                res.clearCookie("token");
                res.clearCookie("connect.sid");
             } else {

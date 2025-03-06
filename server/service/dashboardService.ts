@@ -128,28 +128,22 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
       // Use backup XML news file
       logger.error(error.stack);
 
-      const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss as News;
+      const backup = (await parseStringPromise(await fs.readFile("resources/news.xml", "utf8")))?.rss;
 
-      return sendServiceResponse(200, "Financial News", backup);
+      return sendServiceResponse(200, "Financial News", backup as News);
    }
 }
 
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   try {
-      const [marketTrends, financialNews, accounts] = await Promise.all([
-         fetchMarketTrends(),
-         fetchFinancialNews(),
-         fetchAccounts(user_id)
-      ]);
+   const [marketTrends, financialNews, accounts] = await Promise.all([
+      fetchMarketTrends(),
+      fetchFinancialNews(),
+      fetchAccounts(user_id)
+   ]);
 
-      return sendServiceResponse(200, "Dashboard", {
-         marketTrends: marketTrends.data,
-         financialNews: financialNews.data,
-         accounts: accounts.data
-      });
-   } catch (error: any) {
-      logger.error(error.stack);
-
-      return sendServiceResponse(500, "Internal Server Error", undefined, { System: error.message });
-   }
+   return sendServiceResponse(200, "Dashboard", {
+      marketTrends: marketTrends.data,
+      financialNews: financialNews.data,
+      accounts: accounts.data
+   });
 }

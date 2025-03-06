@@ -24,7 +24,9 @@ export async function getAuthentication(res: Response, token: string): Promise<S
       } else {
          logger.error(error.stack);
 
-         return sendServiceResponse(500, "Internal Server Error", undefined, { System: error.message });
+         return sendServiceResponse(500, "Internal Server Error", undefined,
+            { server: error.message || error.code || "An unknown error occurred" }
+         );
       }
    }
 }
@@ -47,7 +49,7 @@ export async function authenticateUser(res: Response, username: string, password
 }
 
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
-   // Clear the cookies
+   // Clear the authentication token and express-session cookies
    res.clearCookie("token");
    res.clearCookie("connect.sid");
 

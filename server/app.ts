@@ -34,13 +34,15 @@ app.use(session({
 
 // Rate limiting with logging for further investigations
 app.use(rateLimit({
-   max: 250,
+   max: 500,
    windowMs: 10 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
       logger.info(`Rate limited request from IP: ${req.ip}`);
 
-      return sendErrors(res, 249, "Too many requests. Please try again later.");
+      return sendErrors(res, 429, "Internal Server Error",
+         { server: "Too many requests. Please try again later." }
+      );
    }
 }));
 
@@ -79,7 +81,7 @@ app.use(helmet.xssFilter());
 app.use(helmet.noSniff());
 
 // Request logging
-app.use(morgan("dev"));
+app.use(morgan("short"));
 
 // Parse incoming URL-encoded data and JSON payloads
 app.use(express.json());
@@ -98,7 +100,7 @@ app.use("/authentication", authenticationRouter);
 // Error Handlers
 app.use(function(req: Request, res: Response) {
    return sendErrors(res, 404, "Internal Server Error",
-      { System: "The requested resource could not be found" }
+      { server: "The requested resource could not be found" }
    );
 });
 
@@ -106,6 +108,6 @@ app.use(function(error: any, req: Request, res: Response) {
    logger.error(error.stack || "An unknown error occurred");
 
    return sendErrors(res, error.status || 500, "Internal Server Error",
-      { System: error.message || "An unknown error occurred" }
+      { server: error.message || error.code || "An unknown error occurred" }
    );
 });
