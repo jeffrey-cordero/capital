@@ -8,7 +8,7 @@ const imageRegex = /^(property|bank|cash|credit|debt|investment|loan|retirement|
 const typeRegex = /^(Checking|Savings|Credit Card|Debt|Retirement|Investment|Loan|Property|Other)$/;
 
 export type Account = {
-   account_id: string | null;
+   account_id: string;
    name: string;
    type: string;
    image: string;
@@ -59,5 +59,7 @@ export const accountSchema = z.object({
    image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional(),
    account_order: z.coerce.number().min(0, {
       message: "Account order must be at least 0"
-   })
-}).partial();
+   }).max(Number.MAX_SAFE_INTEGER, 
+      { message: `Account order must be at most ${Number.MAX_SAFE_INTEGER}` }
+   )
+});

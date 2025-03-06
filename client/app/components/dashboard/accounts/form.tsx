@@ -62,8 +62,10 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    }, [account, reset, open]);
 
    const onSubmit = async(data: any) => {
+      const account_order: number = account?.account_order || accounts.length;
+
       try {
-         const fields = accountSchema.safeParse(data);
+         const fields = accountSchema.safeParse({ ...data, account_order });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -104,7 +106,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   name: data.name.trim(),
                   balance: data.balance,
                   type: data.type,
-                  image: data.image.trim() !== "" ? data.image : undefined,
+                  image: data.image?.trim() !== "" ? data.image : undefined,
                   account_order: accounts.length
                };
 

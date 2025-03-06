@@ -53,19 +53,21 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
          return sendServiceResponse(200, "Market Trends", JSON.parse(cache) as MarketTrends);
       } else {
          // Fetch from the database, where if the data is stale, update the content using the external API
-         const stored: { time: string, data: MarketTrends }[] = await getMarketTrends();
-         const isStale: boolean = stored.length === 0 || new Date(stored[0].time) < new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+         const stored: { time: string, data: MarketTrends } | null = await getMarketTrends();
+         const isStale: boolean = !stored || new Date(stored.time) < new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
 
          if (isStale) {
             // Acquire the mutex
             await mutex.acquire();
 
             // Check if any valid updates have been made since being potentially blocked
-            const updates: { time: string; data: MarketTrends; }[] = await getMarketTrends();
+            const updates: { time: string; data: MarketTrends; } | null = await getMarketTrends();
 
-            if (updates.length > 0) {
+            if (updates) {
                // API processing has already been handled by another request handler
-               return sendServiceResponse(200, "Market Trends", JSON.stringify(updates[0].data as MarketTrends));
+               return sendServiceResponse(200, "Market Trends",
+                  JSON.stringify(updates.data as MarketTrends)
+               );
             } else {
                // Fetch the API data
                const marketTrends: MarketTrends = {};
@@ -97,7 +99,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
             }
          } else {
             // Return the existing non-stale database content
-            return sendServiceResponse(200, "Market Trends", stored[0].data as MarketTrends);
+            return sendServiceResponse(200, "Market Trends", stored?.data as MarketTrends);
          }
       }
    } catch (error: any) {

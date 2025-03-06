@@ -29,7 +29,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
 
    // Drag and drop identifier measures
    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-      id: account?.account_id ?? "",
+      id: account?.account_id || "",
       disabled: state !== "view"
    });
 

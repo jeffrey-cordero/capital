@@ -1,13 +1,12 @@
-import { User } from "capital/user";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
-export function configureToken(res: Response, user: User): void {
+export function configureToken(res: Response, user_id: string): void {
    // Generate the JWT token
-   const token = jwt.sign({ user_id: user.user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
+   const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
    // Store the JWT token in the client cookies
    res.cookie("token", token, {

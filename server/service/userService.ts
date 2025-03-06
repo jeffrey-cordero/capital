@@ -24,11 +24,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       const result: User[] = await findConflictingUsers(user.username, user.email);
 
       if (result.length === 0) {
-         // User does not exist with same username and/or email
-         const creation: User[] = await create({ ...user, password: await hash(user.password) });
+         // Create the new user
+         const user_id: string = await create({ ...user, password: await hash(user.password) });
 
-         // Configure JWT token for authentication purposes
-         configureToken(res, creation[0]);
+         // Configure their JWT token for authentication purposes
+         configureToken(res, user_id);
 
          return sendServiceResponse(201, "Successfully registered");
       } else {

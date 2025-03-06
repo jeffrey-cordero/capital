@@ -3,10 +3,11 @@ import { User } from "capital/user";
 import { query } from "@/lib/database";
 
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
-   // Return potential conflicts for username and email
+   // Conflicts based on existing username and/or email
    const conflicts = `
       SELECT * FROM users 
-      WHERE username_normalized = $1 OR email_normalized = $2;
+      WHERE username_normalized = $1 
+      OR email_normalized = $2;
    `;
    const normalizedUsername = username.toLowerCase().trim();
    const normalizedEmail = email.toLowerCase().trim();
@@ -14,33 +15,27 @@ export async function findConflictingUsers(username: string, email: string): Pro
    return await query(conflicts, [normalizedUsername, normalizedEmail]) as User[];
 }
 
-export async function findById(id: string): Promise<User[]> {
-   // Return user by their unique ID
-   const search = `
-      SELECT * FROM users 
-      WHERE id = $1;
-   `;
-
-   return await query(search, [id]) as User[];
-}
-
-export async function findByUsername(username: string): Promise<User[]> {
-   // Return user by their unique username
+export async function findByUsername(username: string): Promise<User | null> {
+   // Find user by their unique username
    const search = `
       SELECT * FROM users 
       WHERE username = $1;
    `;
+   const result: User[] = await query(search, [username]);
 
-   return await query(search, [username]) as User[];
+   return result.length > 0 ? result[0] : null;
 }
 
-export async function create(user: User): Promise<User[]> {
-   // Create new user with provided fields
+export async function create(user: User): Promise<string> {
+   // Create the new user with provided fields
    const insert = `
       INSERT INTO users (username, name, password, email) 
       VALUES ($1, $2, $3, $4)
-      RETURNING *;
+      RETURNING user_id;
    `;
+   const result: { user_id: string }[] = await query(
+      insert, [user.username, user.name, user.password, user.email]
+   );
 
-   return await query(insert, [user.username, user.name, user.password, user.email]) as User[];
+   return result[0].user_id;
 }

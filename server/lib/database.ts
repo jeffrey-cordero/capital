@@ -28,19 +28,19 @@ export async function transaction(
       client = await pool.connect();
 
       // Begin the transaction with the proper isolation level
-      await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel}`);
+      await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
 
       // Run a series of statements,
       const result = await statements(client) as unknown;
 
       // Commit the transaction
-      await client.query("COMMIT");
+      await client.query("COMMIT;");
 
       // Return the potential results of the transaction
       return result;
    } catch (error: any) {
       // Rollback any change
-      await client?.query("ROLLBACK");
+      await client?.query("ROLLBACK;");
 
       throw error;
    } finally {

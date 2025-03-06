@@ -35,16 +35,16 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
    // Authenticate user based on the provided credentials
-   const user: User[] = await findByUsername(username);
+   const user: User | null = await findByUsername(username);
 
-   if (user.length === 0 || !(await compare(password, user[0].password))) {
+   if (!user || !(await compare(password, user.password))) {
       return sendServiceResponse(401, "Invalid Credentials", undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
       });
    } else {
       // Configure JWT token for authentication purposes
-      configureToken(res, user[0]);
+      configureToken(res, user?.user_id as string);
 
       return sendServiceResponse(200, "Successfully logged in");
    }
@@ -55,7 +55,7 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
    res.clearCookie("token");
    res.clearCookie("connect.sid");
 
-   // Destroy the express-session
+   // Destroy the express-session instance
    req.session.destroy((error: any) => {
       if (error) {
          throw error;
