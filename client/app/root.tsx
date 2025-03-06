@@ -30,11 +30,10 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
    useEffect(() => {
-      // Fetch preferred theme
+      // Fetch theme from localStorage or preferred color scheme for Redux store
       const preferredTheme: string | undefined = localStorage.theme;
       const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
 
-      // Set initial theme state based on localStorage or system preferences
       store.dispatch({
          type: "theme/setTheme",
          payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"

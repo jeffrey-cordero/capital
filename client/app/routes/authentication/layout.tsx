@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { Outlet, useNavigate } from "react-router";
 
 import Loading from "@/components/global/loading";
-import { fetchAuthentication } from "@/tanstack/queries/authentication";
+import { fetchAuthentication } from "@/tanstack/queries/authenticationQueries";
 
 export default function Layout() {
    // Potentially redirect logged in users to the dashboard

@@ -11,7 +11,7 @@ import Finances from "@/components/dashboard/finances";
 import Markets from "@/components/dashboard/markets";
 import Stories from "@/components/dashboard/news";
 import Loading from "@/components/global/loading";
-import { fetchDashboard } from "@/tanstack/queries/dashboard";
+import { fetchDashboard } from "@/tanstack/queries/dashboardQueries";
 
 export default function Page() {
    const dispatch = useDispatch(), navigate = useNavigate();

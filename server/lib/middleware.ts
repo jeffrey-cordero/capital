@@ -28,7 +28,7 @@ export function authenticateToken(required: boolean) {
          return sendErrors(res, 401, "Access Denied: No Token Provided");
       } else if (token && !required) {
          // Token not required at this endpoint, but provided
-         return sendErrors(res, 403, "Access Denied: Token Not Required");
+         return sendErrors(res, 302, "Access Denied: Token Not Required");
       } else if (required) {
          try {
             // Verify the JWT token, handling expected thrown errors

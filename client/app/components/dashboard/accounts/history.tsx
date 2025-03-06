@@ -80,13 +80,13 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
             if (account.history.length === 1) {
                // All accounts must have at least one history record
                dispatch(addNotification({
-                  type: "Error",
+                  type: "error",
                   message: "At least one history record must remain for this account"
                }));
             } else {
                // Mismatches between local and server state
                dispatch(addNotification({
-                  type: "Error",
+                  type: "error",
                   message: "There was an error removing your record. Please try again later."
                }));
             }

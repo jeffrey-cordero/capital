@@ -14,15 +14,15 @@ const authenticationSlice = createSlice({
          state.value.push(action.payload);
       },
       updateAccount(state, action: PayloadAction<{account: Account, history?: AccountHistory }>) {
-         const account = { ...action.payload.account };
-         const history = action.payload.history;
+         const account: Account = { ...action.payload.account };
+         const history: AccountHistory | undefined = action.payload.history;
 
          if (history) {
             // Update the history records array if a record is supplied
+            const update: Date = new Date(history.last_updated);
             let found: boolean = false;
-            const update = new Date(history.last_updated);
 
-            account.history = account.history.reduce((acc: AccountHistory[], record) => {
+            account.history = account.history.reduce((acc: AccountHistory[], record: AccountHistory) => {
                const current = new Date(record.last_updated);
 
                if (!found && update.getTime() >= current.getTime()) {
@@ -32,7 +32,7 @@ const authenticationSlice = createSlice({
                      last_updated: update.toISOString()
                   });
 
-                  // Insert the old non-updating record for different date
+                  // Insert the old record with a different date
                   if (update.getTime() !== current.getTime()) {
                      acc.push({ ...record });
                   }
@@ -46,7 +46,7 @@ const authenticationSlice = createSlice({
                return acc;
             }, []);
 
-            // Append new history record
+            // New history record to append
             if (!found) {
                account.history.push({
                   balance: history.balance,
@@ -56,9 +56,9 @@ const authenticationSlice = createSlice({
          }
 
          state.value = state.value.map((acc) => {
+            // Ensure the current balance matches the latest history record for each update
             return account.account_id ===  acc.account_id ? {
                ...account,
-               // Ensure the current balance matches the latest history record
                balance: account.history[0].balance
             } : acc;
          });

@@ -64,7 +64,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                         (e) => {
                            setIsResourceError(true);
                            dispatch(addNotification({
-                              type: "Error",
+                              type: "error",
                               message: `There was an issue fetching the image for ${account.name}`
                            }));
                            (e.target as HTMLImageElement).src = "";

@@ -11,11 +11,15 @@ import { constructTheme } from "@/styles/mui/theme";
 export default function Router() {
    // Handle authentication-based routing
    const navigate = useNavigate();
-   const theme = useSelector((state: RootState) => state.theme.value);
-   const authenticated = useSelector((state: RootState) => state.authentication.value);
+   const theme: "light" | "dark" = useSelector(
+      (state: RootState) => state.theme.value
+   );
+   const authenticated: boolean | undefined = useSelector(
+      (state: RootState) => state.authentication.value
+   );
 
    useEffect(() => {
-      if (authenticated === undefined) return; // Ignore initial state
+      if (authenticated === undefined) return; // Initial state
 
       const dashboard = window.location.pathname.startsWith("/dashboard");
       const redirect = authenticated && !dashboard || !authenticated && dashboard;

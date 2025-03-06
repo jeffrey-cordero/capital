@@ -58,7 +58,7 @@ export default function Register() {
             navigate("/dashboard");
 
             dispatch(addNotification({
-               type: "Success",
+               type: "success",
                message: "Welcome"
             }));
          }

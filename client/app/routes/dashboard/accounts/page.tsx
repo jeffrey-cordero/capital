@@ -11,7 +11,7 @@ import Transactions from "@/components/dashboard/accounts/all-transactions";
 import Loading from "@/components/global/loading";
 import { setAccounts } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
-import { fetchAccounts } from "@/tanstack/queries/dashboard";
+import { fetchAccounts } from "@/tanstack/queries/dashboardQueries";
 
 export default function Page() {
    const dispatch = useDispatch(), navigate = useNavigate();

@@ -26,7 +26,7 @@ import { useLocation, useNavigate } from "react-router";
 
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import { clearAuthentication } from "@/tanstack/queries/authentication";
+import { clearAuthentication } from "@/tanstack/queries/authenticationQueries";
 
 const landing = [{
    path: "/",

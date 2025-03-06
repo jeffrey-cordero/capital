@@ -12,7 +12,10 @@ interface Dashboard {
    marketTrends: MarketTrends;
 }
 
-export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | null> {
+export async function fetchDashboard(
+   dispatch: Dispatch<any>,
+   navigate: NavigateFunction
+): Promise<Dashboard | null> {
    const dashboard = await sendApiRequest(
       "dashboard", "GET", null, dispatch, navigate
    ) as Dashboard;
@@ -20,7 +23,10 @@ export async function fetchDashboard(dispatch: Dispatch<any>, navigate: Navigate
    return dashboard ?? null;
 }
 
-export async function fetchAccounts(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Account[] | null> {
+export async function fetchAccounts(
+   dispatch: Dispatch<any>,
+   navigate: NavigateFunction
+): Promise<Account[] | null> {
    const accounts = await sendApiRequest(
       "dashboard/accounts", "GET", null, dispatch, navigate
    ) as Account[];

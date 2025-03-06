@@ -5,6 +5,14 @@ import type { NavigateFunction } from "react-router";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
+const HTTP_STATUS = {
+   OK: 200,
+   CREATED: 201,
+   NO_CONTENT: 204,
+   REDIRECT: 302,
+   UNAUTHORIZED: 401,
+   INTERNAL_SERVER_ERROR: 500
+};
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export async function sendApiRequest(
@@ -14,9 +22,9 @@ export async function sendApiRequest(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
-): Promise<Record<string, any> | number | null> {
-   const login = window.location.pathname.includes("/login");
-   const authenticating = path === "authentication";
+): Promise<object | number | null> {
+   const authenticating: boolean = path === "authentication";
+   const login: boolean = window.location.pathname.includes("/login");
 
    return await fetch(`${SERVER_URL}/${path}`, {
       method: method,
@@ -26,35 +34,42 @@ export async function sendApiRequest(
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include"
    }).then(async(response) => {
-      if (response.status === 401 && !login) {
-         // Unauthorized access
+      if (response.status === HTTP_STATUS.UNAUTHORIZED && !login) {
+         // Unauthorized endpoint access
          dispatch(authenticate(false));
          navigate("/login");
 
          return null;
-      } else if (response.status === 403) {
+      } else if (response.status === HTTP_STATUS.REDIRECT) {
          // Navigate back to the dashboard
          navigate("/dashboard");
 
          return null;
-      } else if (response.status === 500 || response.status === 429) {
-         throw new Error((await response.json())?.errors?.server || "An unknown error occurred");
+      } else if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+         // Internal Server Error
+         throw new Error(
+            (await response.json())?.errors?.server || "An unknown error occurred"
+         );
       }
 
-      if (response.status === 201 || response.status === 204 || (response.status === 200 && login && !authenticating)) {
-         // No content required on successful actions
+      if (response.status === HTTP_STATUS.CREATED
+            || response.status === HTTP_STATUS.NO_CONTENT
+            || (response.status === HTTP_STATUS.OK && login && !authenticating)) {
+         // No data required other than the status code for confirmation
          return response.status;
       }
 
-      // Handle valid JSON response
-      const result = await response.json();
-      dispatch(authenticate(window.location.pathname.startsWith("/dashboard")));
+      // Update the current authentication state
+      if (!authenticating) {
+         dispatch(authenticate(window.location.pathname.startsWith("/dashboard")));
+      }
 
-      if (result.code === 200) {
-         // Successful response
+      // Handle the required JSON response for returned data or server errors
+      const result = await response.json();
+
+      if (result.code === HTTP_STATUS.OK) {
          return result.data ?? {};
       } else {
-         // Handle validation errors
          Object.entries(result.errors ?? {}).forEach(
             ([field, message]) => setError?.(field, { type: "server", message: message as string })
          );
@@ -66,7 +81,7 @@ export async function sendApiRequest(
 
       dispatch(
          addNotification({
-            type: "Error",
+            type: "error",
             message: "Internal Server Error"
          })
       );
