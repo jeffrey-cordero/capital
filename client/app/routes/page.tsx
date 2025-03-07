@@ -1,5 +1,6 @@
 import { Box, Container, Link, Typography } from "@mui/material";
 import Stack from "@mui/material/Stack";
+import { useNavigate } from "react-router";
 
 export function meta() {
    return [
@@ -9,6 +10,8 @@ export function meta() {
 }
 
 export default function Page() {
+   const navigate = useNavigate();
+
    return (
       <Container className = "center">
          <Box className = "animation-container">
@@ -47,8 +50,8 @@ export default function Page() {
             >
                <Link
                   fontWeight = "bold"
-                  href = "/login"
                   id = "login"
+                  onClick = { () => navigate("/login") }
                   underline = "none"
                   variant = "button"
                >
@@ -58,8 +61,8 @@ export default function Page() {
                   className = "success"
                   color = "success"
                   fontWeight = "bold"
-                  href = "/register"
                   id = "register"
+                  onClick = { () => navigate("/register") }
                   underline = "none"
                   variant = "button"
                >

@@ -60,6 +60,7 @@ a {
   position: relative;
   color: $primary;
   text-decoration: none;
+  cursor: pointer;
 
   &::before {
     content: "";

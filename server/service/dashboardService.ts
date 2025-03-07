@@ -65,9 +65,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
             if (updates) {
                // API processing has already been handled by another request handler
-               return sendServiceResponse(200, "Market Trends",
-                  JSON.stringify(updates.data as MarketTrends)
-               );
+               return sendServiceResponse(200, "Market Trends", updates.data as MarketTrends);
             } else {
                // Fetch the API data
                const marketTrends: MarketTrends = {};

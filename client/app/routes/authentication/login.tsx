@@ -116,7 +116,7 @@ export default function Login() {
                                     value = { field.value || "" }
                                  />
                                  <FormHelperText>
-                                    { errors.username?.message?.toString() || "" }
+                                    { errors.username?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )
@@ -149,7 +149,7 @@ export default function Login() {
                                     value = { field.value || "" }
                                  />
                                  <FormHelperText>
-                                    { errors.password?.message?.toString() || "" }
+                                    { errors.password?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )
@@ -177,7 +177,8 @@ export default function Login() {
                            className = "success"
                            color = "success"
                            fontWeight = "bold"
-                           href = "/register"
+                           id = "register"
+                           onClick = { () => navigate("/register") }
                            underline = "none"
                         >
                            Register

@@ -63,7 +63,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    };
 
    const sorted = useMemo(() => {
-      return data[option].sort(
+      return [...data[option]].sort(
          (a, b) => normalizeDate(a.date).getTime() - normalizeDate(b.date).getTime()
       );
    }, [data, option]);

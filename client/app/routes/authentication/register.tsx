@@ -38,6 +38,7 @@ export default function Register() {
       const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
+         // Invalid user fields
          handleValidationErrors(fields, setError);
       } else {
          // Submit fields for registration
@@ -109,7 +110,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Name"
                                     autoComplete = "name"
                                     autoFocus = { true }
                                     disabled = { isSubmitting }
@@ -118,13 +118,9 @@ export default function Register() {
                                     type = "text"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.name && (
-                                       <FormHelperText>
-                                          { errors.name?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.name?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -140,7 +136,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Username"
                                     autoComplete = "none"
                                     disabled = { isSubmitting }
                                     id = "username"
@@ -148,13 +143,9 @@ export default function Register() {
                                     type = "text"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.username && (
-                                       <FormHelperText>
-                                          { errors.username?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.username?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -170,7 +161,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Password"
                                     autoComplete = "new-password"
                                     disabled = { isSubmitting }
                                     endAdornment = {
@@ -186,13 +176,9 @@ export default function Register() {
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.password && (
-                                       <FormHelperText>
-                                          { errors.password?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.password?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -208,7 +194,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Verify Password"
                                     autoComplete = "new-password"
                                     disabled = { isSubmitting }
                                     endAdornment = {
@@ -224,13 +209,9 @@ export default function Register() {
                                     type = { showVerifyPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.verifyPassword && (
-                                       <FormHelperText>
-                                          { errors.verifyPassword?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.verifyPassword?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -246,21 +227,16 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Email"
                                     autoComplete = "email"
                                     disabled = { isSubmitting }
                                     id = "email"
-                                    label = "Email"
+                                    label = "email"
                                     type = "email"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.email && (
-                                       <FormHelperText>
-                                          { errors.email?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.email?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -286,7 +262,7 @@ export default function Register() {
                         <Link
                            color = "primary"
                            fontWeight = "bold"
-                           href = "/login"
+                           onClick = { () => navigate("/login") }
                            underline = "none"
                         >
                            Login

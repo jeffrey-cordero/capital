@@ -21,7 +21,6 @@ function Stocks({ data }: { data: StockTrends }) {
    const renderTrend = (
       title: string,
       data: StockIndictor[],
-      trend: "up" | "down" | "neutral",
       image: string
    ) => {
       return (
@@ -116,13 +115,13 @@ function Stocks({ data }: { data: StockTrends }) {
             sx = { { width: "100%", mt: 2 } }
          >
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Gainers", top_gainers, "up", "/svg/rocket.svg") }
+               { renderTrend("Top Gainers", top_gainers,  "/svg/rocket.svg") }
             </Grid>
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Losers", top_losers, "down", "/svg/loss.svg") }
+               { renderTrend("Top Losers", top_losers, "/svg/loss.svg") }
             </Grid>
             <Grid size = { { xs: 12, lg: 4 } }>
-               { renderTrend("Most Active", most_actively_traded, "neutral", "/svg/active.svg") }
+               { renderTrend("Most Active", most_actively_traded, "/svg/active.svg") }
             </Grid>
          </Grid>
       </Stack>
