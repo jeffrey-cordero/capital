@@ -36,7 +36,7 @@ import { Expand } from "@/components/global/expand";
 import Graph from "@/components/global/graph";
 import Modal from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
-import { constructDate } from "@/lib/dates";
+import { normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayDate } from "@/lib/display";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateAccount } from "@/redux/slices/accounts";
@@ -65,7 +65,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
    const deleteAccountHistory = async(last_updated: string) => {
       try {
          const removal = { last_updated: last_updated };
-         const result = await sendApiRequest(
+         const result: number = await sendApiRequest(
             `dashboard/accounts/${account.account_id}`, "DELETE", { last_updated }, dispatch, navigate
          );
 
@@ -204,9 +204,9 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          } else {
             const update = {
                balance: data.history_balance,
-               last_updated: constructDate(data.last_updated)
+               last_updated: normalizeDate(data.last_updated)
             };
-            const result = await sendApiRequest(
+            const result: number = await sendApiRequest(
                `dashboard/accounts/${account.account_id}`, "POST", update, dispatch, navigate
             );
 

@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
 export const decrementingTypes = new Set(["Debt", "Credit Card", "Loan"]);
-export const images = new Set(["property", "bank", "cash", "credit", "debt", "investment", "loan", "retirement", "savings"]);
 export const types = new Set(["Checking", "Savings", "Credit Card", "Debt", "Retirement", "Investment", "Loan", "Property", "Other"]);
-
-const imageRegex = /^(property|bank|cash|credit|debt|investment|loan|retirement|savings)$/;
-const typeRegex = /^(Checking|Savings|Credit Card|Debt|Retirement|Investment|Loan|Property|Other)$/;
+export const images = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 
 export type Account = {
    account_id: string;
@@ -50,16 +47,16 @@ export const accountSchema = z.object({
       message: "Balance must be a valid number"
    }).min(0, {
       message: "Balance must be at least 0"
-   }).max(99999999999.99, {
+   }).max(99_999_999_999.99, {
       message: "Balance cannot exceed 99,999,999,999.99"
    }),
-   type: z.string().regex(typeRegex, {
+   type: z.enum(Array.from(types) as any, {
       message: "Type must be one of: Checking, Savings, Credit Card, Debt, Retirement, Investment, Loan, Property, Other"
    }),
-   image: z.string().regex(imageRegex).or(z.string().url()).or(z.literal("")).nullable().optional(),
+   image: z.enum(Array.from(images) as any).or(z.string().url()).or(z.literal("")).nullable().optional(),
    account_order: z.coerce.number().min(0, {
       message: "Account order must be at least 0"
-   }).max(Number.MAX_SAFE_INTEGER, 
-      { message: `Account order must be at most ${Number.MAX_SAFE_INTEGER}` }
+   }).max(2_147_483_647, 
+      { message: "Account order must be at most 2,147,483,647" }
    )
 });

@@ -16,7 +16,7 @@ import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { AreaGradient } from "@/components/global/graphs";
-import { constructDate } from "@/lib/dates";
+import { normalizeDate } from "@/lib/dates";
 import { displayNumeric, displayPercentage } from "@/lib/display";
 
 interface GraphProps {
@@ -64,16 +64,16 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
    const sorted = useMemo(() => {
       return data[option].sort(
-         (a, b) => constructDate(a.date).getTime() - constructDate(b.date).getTime()
+         (a, b) => normalizeDate(a.date).getTime() - normalizeDate(b.date).getTime()
       );
    }, [data, option]);
 
    const range = useMemo(() => {
       return sorted.filter((a) => {
-         const date = constructDate(a.date);
+         const date = normalizeDate(a.date);
 
-         return (from !== "" ? date >= constructDate(from) : true)
-            && (to !== "" ? date <= constructDate(to) : true);
+         return (from !== "" ? date >= normalizeDate(from) : true)
+            && (to !== "" ? date <= normalizeDate(to) : true);
       });
    }, [sorted, from, to]);
 
@@ -82,12 +82,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          case "YTD": {
             // Format the yearly view (YYYY)
             const years = Array.from(
-               new Set(range.map(d => constructDate(d.date).getUTCFullYear()))
+               new Set(range.map(d => normalizeDate(d.date).getUTCFullYear()))
             );
 
             const yearlyData = years.map((year) => {
                // Bucket the data by year and calculate the average or fetch the last value for each year
-               const data = range.filter(d => constructDate(d.date).getUTCFullYear() === year);
+               const data = range.filter(d => normalizeDate(d.date).getUTCFullYear() === year);
                const value = data.length > 0 ?
                   average ?
                      data.reduce((acc, record) => acc + Number(record.value), 0) / data.length
@@ -114,7 +114,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             // Format the monthly view (MM/YYYY)
             const buckets: Record<string, number> = {};
             const monthlyData = range.reduce((acc: { date: string, value: string }[], record) => {
-               const date = constructDate(record.date);
+               const date = normalizeDate(record.date);
                const title = (date.getUTCMonth() + 1).toString().padStart(2, "0") + "/" + (date.getUTCFullYear().toString());
                // Each bucket represents the final value in the dataset tied to that time period
                if (title in buckets) {
@@ -154,7 +154,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       }
    }, [view, range, graph, average]);
 
-   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: constructDate(new Date().toISOString(), view), value: 0 }];
+   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }];
 
    // Growth from start to end of range
    const trend = filtered.length > 0 ? (
@@ -168,8 +168,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    // Range parameters
    const fromValue = from === "" ? range[0].date : from;
    const toValue = to === "" ? range[range.length - 1].date : to;
-   const minDate = constructDate(sorted[0].date).toISOString().split("T")[0];
-   const maxDate = constructDate(sorted[sorted.length - 1].date).toISOString().split("T")[0];
+   const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0];
+   const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0];
 
    return (
       <Card
@@ -343,6 +343,13 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                            }
                         ]
                      }
+                     yAxis = {
+                        [
+                           {
+                              domainLimit: "nice"
+                           }
+                        ]
+                     }
                   >
                      <AreaGradient
                         color = { color }
@@ -355,7 +362,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      grid = { { horizontal: true } }
                      height = { 250 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
-                     resolveSizeBeforeRender = { true }
                      series = {
                         [
                            {
@@ -382,6 +388,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      }
                      yAxis = {
                         [{
+                           domainLimit: "nice",
                            colorMap: {
                               type: "piecewise",
                               thresholds: [0],

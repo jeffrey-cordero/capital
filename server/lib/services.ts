@@ -13,14 +13,14 @@ export function sendValidationErrors(
 ): ServerResponse {
    if (fields !== null) {
       // Zod schema validation errors
-      const errors = fields.error?.flatten().fieldErrors;
+      const errors: Record<string, string[] | undefined> = fields.error?.flatten().fieldErrors || {};
 
       return {
          code: 400,
          message: message,
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
-               field, errors?.[0] || "Unknown error"
+               field, errors?.at(0) || "Unknown error"
             ])
          )
       };
@@ -35,10 +35,10 @@ export function sendValidationErrors(
 }
 
 // Shared service logic for sending server responses
-export function sendServiceResponse(code: number, message: string, data?: any, errors?: Record<string, string>): ServerResponse {
+export function sendServiceResponse(code: number, message?: string, data?: any, errors?: Record<string, string>): ServerResponse {
    return {
       code: code,
-      message: message,
+      message: message || undefined,
       data: data ?? undefined,
       errors: errors || undefined
    };

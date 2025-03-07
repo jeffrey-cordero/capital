@@ -2,14 +2,14 @@ import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { type Account, decrementingTypes } from "capital/accounts";
 
-import { formatDate, getLastSixMonths, today } from "@/lib/dates";
+import { getLastSixMonths, normalizeDate, today } from "@/lib/dates";
 import { displayCurrency, ellipsis } from "@/lib/display";
 
 export default function AccountTrends({ accounts }: { accounts: Account[] }) {
    const historicalAccounts = accounts.map((account) => {
       // Format the history array into the proper types
       const history = account.history.map(entry => ({
-         date: formatDate(entry.last_updated),
+         date: normalizeDate(entry.last_updated.split("T")[0]),
          balance: Number(entry.balance || 0)
       }));
 

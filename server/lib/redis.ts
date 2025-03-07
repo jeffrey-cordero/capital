@@ -6,9 +6,9 @@ import { logger } from "@/lib/logger";
 
 const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
    retryStrategy: (times) => {
-      // Retry connection at most once with a single second interval
+      // Retry connection at most once within 150ms
       if (times <= 1) {
-         return 1000;
+         return 150;
       } else {
          return null;
       }

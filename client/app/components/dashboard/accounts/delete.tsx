@@ -25,7 +25,7 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
 
    const onSubmit = async() => {
       try {
-         const result = await sendApiRequest(
+         const result: number = await sendApiRequest(
             `dashboard/accounts/${account.account_id}`, "DELETE", undefined, dispatch, navigate
          );
 

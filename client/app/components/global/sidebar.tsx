@@ -280,31 +280,6 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                {
                   links === dashboard ? (
                      <Box>
-                        <Box
-                           sx = {
-                              {
-                                 display: "flex",
-                                 justifyContent: "center",
-                                 alignItems: "center",
-                                 mb: 1
-                              }
-                           }
-                        >
-                           <Box
-                              alt = "Profile"
-                              component = "img"
-                              src = "/svg/logo.svg"
-                              sx = {
-                                 {
-                                    width: 58,
-                                    height: 58,
-                                    borderRadius: "50%",
-                                    border: `2px solid ${theme.palette.primary.main}`,
-                                    background: "white"
-                                 }
-                              }
-                           />
-                        </Box>
                         <Stack
                            direction = "column"
                            sx = {

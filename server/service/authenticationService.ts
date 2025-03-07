@@ -46,7 +46,7 @@ export async function authenticateUser(res: Response, username: string, password
       // Configure JWT token for authentication purposes
       configureToken(res, user?.user_id as string);
 
-      return sendServiceResponse(200, "Successfully logged in");
+      return sendServiceResponse(200, "Successfully logged in", { success: true });
    }
 }
 
@@ -62,5 +62,5 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
       }
    });
 
-   return sendServiceResponse(200, "Successfully logged out");
+   return sendServiceResponse(200, "Successfully logged out", { success: true });
 }

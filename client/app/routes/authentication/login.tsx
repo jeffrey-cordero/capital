@@ -52,11 +52,11 @@ export default function Login() {
             password: data.password.trim()
          };
 
-         const result = await sendApiRequest(
+         const result: { success: boolean } = await sendApiRequest(
             "authentication/login", "POST", credentials, dispatch, navigate, setError
          );
 
-         if (result === 200) {
+         if (result?.success) {
             navigate("/dashboard");
          }
       }

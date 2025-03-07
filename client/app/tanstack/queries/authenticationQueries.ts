@@ -8,9 +8,10 @@ export async function fetchAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<boolean | null> {
-   const status = await sendApiRequest(
+   // Fetch authentication status within the landing pages
+   const status: { authenticated: boolean } = await sendApiRequest(
       "authentication", "GET", null, dispatch, navigate
-   ) as { authenticated: boolean };
+   );
 
    if (status !== null) {
       dispatch(authenticate(status.authenticated));
@@ -23,11 +24,12 @@ export async function clearAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<void> {
-   const logout = await sendApiRequest(
+   // Navigate back to the login page on a successful response
+   const logout: { success: boolean } = await sendApiRequest(
       "authentication/logout", "POST", null, dispatch, navigate
    );
 
-   if (logout !== null) {
-      dispatch(authenticate(false));
+   if (logout?.success) {
+      navigate("/login");
    }
 };

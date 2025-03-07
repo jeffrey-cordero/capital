@@ -16,9 +16,9 @@ export async function fetchDashboard(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<Dashboard | null> {
-   const dashboard = await sendApiRequest(
+   const dashboard: Dashboard = await sendApiRequest(
       "dashboard", "GET", null, dispatch, navigate
-   ) as Dashboard;
+   );
 
    return dashboard ?? null;
 }
@@ -27,9 +27,9 @@ export async function fetchAccounts(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<Account[] | null> {
-   const accounts = await sendApiRequest(
+   const accounts: Account[] = await sendApiRequest(
       "dashboard/accounts", "GET", null, dispatch, navigate
-   ) as Account[];
+   );
 
    return accounts ?? null;
 }

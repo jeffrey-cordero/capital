@@ -22,9 +22,9 @@ export async function sendApiRequest(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
-): Promise<object | number | null> {
+): Promise<number | any | null> {
+   const login: boolean = path === "authentication/login";
    const authenticating: boolean = path === "authentication";
-   const login: boolean = window.location.pathname.includes("/login");
 
    return await fetch(`${SERVER_URL}/${path}`, {
       method: method,
@@ -34,43 +34,44 @@ export async function sendApiRequest(
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include"
    }).then(async(response) => {
-      if (response.status === HTTP_STATUS.UNAUTHORIZED && !login) {
+      if (!login && response.status === HTTP_STATUS.UNAUTHORIZED) {
          // Unauthorized endpoint access
-         dispatch(authenticate(false));
          navigate("/login");
 
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
-         // Navigate back to the dashboard
+         // Navigate back to the authorized endpoint
          navigate("/dashboard");
 
          return null;
       } else if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
-         // Internal Server Error
-         throw new Error(
-            (await response.json())?.errors?.server || "An unknown error occurred"
-         );
+         // Server error
+         const error: string = (await response.json())?.errors?.server || "An unknown error occurred";
+
+         throw new Error(error);
       }
 
-      if (response.status === HTTP_STATUS.CREATED
-            || response.status === HTTP_STATUS.NO_CONTENT
-            || (response.status === HTTP_STATUS.OK && login && !authenticating)) {
+      // Update the authentication state to match the server state
+      if (!authenticating) {
+         const loggedIn: boolean = login && response.status === HTTP_STATUS.OK;
+         const dashboard: boolean = path.startsWith("dashboard");
+
+         dispatch(authenticate(loggedIn || dashboard));
+      }
+
+      if (response.status === HTTP_STATUS.NO_CONTENT) {
          // No data required other than the status code for confirmation
          return response.status;
-      }
+      } else if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
+         // Successful response
+         const data: any = (await response.json())?.data ?? {};
 
-      // Update the current authentication state
-      if (!authenticating) {
-         dispatch(authenticate(window.location.pathname.startsWith("/dashboard")));
-      }
-
-      // Handle the required JSON response for returned data or server errors
-      const result = await response.json();
-
-      if (result.code === HTTP_STATUS.OK) {
-         return result.data ?? {};
+         return data;
       } else {
-         Object.entries(result.errors ?? {}).forEach(
+         // Errors returned from the server
+         const errors: Record<string, string> = (await response.json())?.errors || {};
+
+         Object.entries(errors).forEach(
             ([field, message]) => setError?.(field, { type: "server", message: message as string })
          );
 

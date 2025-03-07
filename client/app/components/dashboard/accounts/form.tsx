@@ -83,7 +83,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                if (Object.keys(updatedFields).length > 0) {
                   updatedFields.account_id = account.account_id;
 
-                  const result = await sendApiRequest(
+                  const result: number = await sendApiRequest(
                      `dashboard/accounts/${account.account_id}`, "POST", updatedFields, dispatch, navigate
                   );
 
@@ -110,9 +110,9 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   account_order: accounts.length
                };
 
-               const result = await sendApiRequest(
+               const result: { account_id: string } = await sendApiRequest(
                   "dashboard/accounts", "POST", creation, dispatch, navigate, setError
-               ) as Record<string, string>;
+               );
 
                if (result?.account_id) {
                   dispatch(addAccount({

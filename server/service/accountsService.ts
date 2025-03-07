@@ -40,7 +40,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
       const account_id: string = await create(user_id, account);
       removeCacheValue(`accounts:${user_id}`);
 
-      return sendServiceResponse(200, "Account created", { account_id: account_id });
+      return sendServiceResponse(201, "Account created", { account_id: account_id });
    }
 }
 
@@ -66,7 +66,7 @@ export async function updateAccount(
       if (result) {
          removeCacheValue(`accounts:${user_id}`);
 
-         return sendServiceResponse(204, "Account details updated");
+         return sendServiceResponse(204);
       } else {
          return sendServiceResponse(404, "Account not found", undefined,
             { account: "Account does not exist based on the provided ID" }
@@ -85,7 +85,7 @@ export async function updateAccount(
          if (result) {
             removeCacheValue(`accounts:${user_id}`);
 
-            return sendServiceResponse(204, "Account history updated");
+            return sendServiceResponse(204);
          } else {
             return sendServiceResponse(404, "Account not found", undefined,
                { account: "Account does not exist based on the provided ID" }
@@ -121,7 +121,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    if (result) {
       removeCacheValue(`accounts:${user_id}`);
 
-      return sendServiceResponse(204, "Account ordering updated");
+      return sendServiceResponse(204);
    } else {
       return sendServiceResponse(404, "Invalid account ordering fields", undefined,
          { accounts: "No possible ordering updates based on provided account ID's" }
@@ -143,7 +143,7 @@ export async function deleteAccountHistory(user_id: string, account_id: string, 
    } else {
       removeCacheValue(`accounts:${user_id}`);
 
-      return sendServiceResponse(204, "Account history record deleted");
+      return sendServiceResponse(204);
    }
 }
 
@@ -153,7 +153,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
    if (result) {
       removeCacheValue(`accounts:${user_id}`);
 
-      return sendServiceResponse(204, "Account deleted");
+      return sendServiceResponse(204);
    } else {
       return sendServiceResponse(404, "Account not found", undefined,
          { account: "Account does not exist based on the provided ID" }

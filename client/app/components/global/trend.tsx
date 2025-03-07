@@ -9,7 +9,7 @@ import { areaElementClasses } from "@mui/x-charts/LineChart";
 import { SparkLineChart } from "@mui/x-charts/SparkLineChart";
 
 import { AreaGradient } from "@/components/global/graphs";
-import { getDaysInMonth } from "@/lib/dates";
+import { getLastMonth } from "@/lib/dates";
 
 export type TrendProps = {
    title: string;
@@ -21,7 +21,7 @@ export type TrendProps = {
 
 export function Trend({ title, value, interval, trend, data }: TrendProps) {
    const theme = useTheme();
-   const daysInWeek = getDaysInMonth(4, 2024);
+   const daysInWeek = getLastMonth(4, 2024);
 
    const trendColors = {
       up:

@@ -1,6 +1,7 @@
 export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
-export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
+export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
+   // Construction assumes string is in YYYY-MM-DD format
    if (view === "MTD") {
       const [month, year] = date.split("/");
 
@@ -8,15 +9,12 @@ export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
+      return new Date(`${date}T00:00:00`);
    }
 }
 
-export function formatDate(date: string): Date {
-   return new Date(new Date(date).setUTCHours(0, 0, 0, 0));
-}
-
-export function getDaysInMonth(month: number, year: number): string[] {
+export function getLastMonth(month: number, year: number): string[] {
+   // Format an array of days within the past month
    const days = [];
    const date = new Date(year, month, 0);
 
@@ -37,6 +35,7 @@ export function getDaysInMonth(month: number, year: number): string[] {
 }
 
 export function getLastSixMonths(referenceDate = today): string[] {
+   // Format the 6-month array to "MM YYYY" format
    const months = [
       "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
       "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
@@ -58,14 +57,14 @@ export function getLastSixMonths(referenceDate = today): string[] {
          monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
       }
 
-      sixMonths.unshift(months[monthDate.getUTCMonth()]);
+      sixMonths.unshift(months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear());
    }
 
    return sixMonths;
 }
 
 export function timeSinceLastUpdate(date: string) {
-   // Calculate the difference in milliseconds
+   // Calculate the time difference in milliseconds
    const difference = new Date().getTime() - new Date(date).getTime();
 
    // Convert to time units

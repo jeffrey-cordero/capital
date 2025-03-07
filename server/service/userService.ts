@@ -30,7 +30,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
          // Configure their JWT token for authentication purposes
          configureToken(res, user_id);
 
-         return sendServiceResponse(201, "Successfully registered");
+         return sendServiceResponse(201, "Successfully registered", { success: true });
       } else {
          // User(s) already exist with same username and/or email
          const normalizedUsername = user.username.toLowerCase().trim();
