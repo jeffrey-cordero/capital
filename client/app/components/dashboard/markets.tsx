@@ -35,7 +35,7 @@ function Stocks({ data }: { data: StockTrends }) {
                      alt = "Stock"
                      component = "img"
                      src = { image }
-                     sx = { { width: 125, height: "auto", mx: "auto", my: 0 } }
+                     sx = { { width: 200, height: "auto", mx: "auto", my: 0 } }
                   />
                   <Typography
                      sx = { { mb: 3, fontWeight: "bold" } }
@@ -115,7 +115,7 @@ function Stocks({ data }: { data: StockTrends }) {
             sx = { { width: "100%", mt: 2 } }
          >
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Gainers", top_gainers,  "/svg/rocket.svg") }
+               { renderTrend("Top Gainers", top_gainers,  "/svg/winners.svg") }
             </Grid>
             <Grid size = { { xs: 12, md: 6, lg: 4 } }>
                { renderTrend("Top Losers", top_losers, "/svg/loss.svg") }
@@ -149,18 +149,24 @@ export default function Markets({ data }: { data: MarketTrends }) {
                alt = "Stocks"
                className = "floating"
                component = "img"
-               src = "/svg/stocks.svg"
-               sx = { { width: 400, height: "auto", mx: "auto" } }
+               src = "/svg/economy.svg"
+               sx = { { width: 420, height: "auto", mx: "auto" } }
             />
          </Box>
-         <Box>
+         <Box sx = { { mt: -3, mb: 3 } }>
             <Typography
-               fontStyle = "italic"
                fontWeight = "bold"
-               sx = { { mb: 2, mt: -5, px: 2 } }
+               sx = { { px: 2 } }
                variant = "subtitle2"
             >
-               Last updated { timeSinceLastUpdated }
+               Last updated
+            </Typography>
+            <Typography
+               fontWeight = "bold"
+               sx = { { px: 2 } }
+               variant = "subtitle2"
+            >
+               { timeSinceLastUpdated }
             </Typography>
          </Box>
          <Graph

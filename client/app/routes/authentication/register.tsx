@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
+   Container,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -66,7 +67,7 @@ export default function Register() {
    };
 
    return (
-      <div className = "center">
+      <Container className = "center">
          <Callout
             sx = { { width: "100%", my: 12 } }
             type = "primary"
@@ -83,7 +84,7 @@ export default function Register() {
                      alt = "Logo"
                      component = "img"
                      src = "/svg/logo.svg"
-                     sx = { { width: 200, height: "auto", p: 0, m: 0 } }
+                     sx = { { width: 175, height: "auto", p: 0, m: 0 } }
                   />
                   <Typography
                      color = "primary"
@@ -272,6 +273,6 @@ export default function Register() {
                </form>
             </Stack>
          </Callout>
-      </div>
+      </Container>
    );
 }

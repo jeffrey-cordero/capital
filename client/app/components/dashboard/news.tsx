@@ -9,12 +9,11 @@ import {
    CardHeader,
    CardMedia,
    Collapse,
-   Fade,
    IconButton,
-   Slide,
    Stack,
    Typography
 } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import { type News, type Story } from "capital/news";
 import { useRef, useState } from "react";
 
@@ -33,18 +32,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
    return (
       <Card
          elevation = { 3 }
-         sx = {
-            {
-               width: {
-                  sm: "100%",
-                  md: 300,
-                  lg: "90%"
-               },
-               maxWidth: "95%",
-               margin: "auto",
-               borderRadius: 2
-            }
-         }
+         sx = { { margin: "auto", borderRadius: 2 } }
       >
          <CardHeader
             avatar = {
@@ -62,7 +50,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                >
                   <Stack spacing = { 0 }>
                      <Typography
-                        sx = { { ...ellipsis, maxWidth: "150px" } }
+                        sx = { { ...ellipsis, maxWidth: { xs: "300px", sm: "200px", md: "300px" } } }
                         variant = "subtitle2"
                      >
                         { author.join(", ") }
@@ -98,8 +86,8 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                      objectFit: "cover",
                      objectPosition: "center center",
                      height: {
-                        sm: "auto",
-                        md: "200px"
+                        xs: "300px",
+                        sm: "200px"
                      },
                      backgroundColor: "white"
                   }
@@ -115,7 +103,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                      WebkitBoxOrient: "vertical",
                      overflow: "hidden",
                      WebkitLineClamp: 3,
-                     minHeight: "60.5px",
+                     minHeight: { sm: "none", md: "60.5px" },
                      textOverflow: "ellipsis",
                      fontWeight: "medium",
                      mr: 2
@@ -160,59 +148,49 @@ export default function Stories({ data }: { data: News }) {
    const containerRef = useRef<HTMLDivElement>(null);
 
    return (
-      <Fade
-         in = { true }
-         mountOnEnter = { true }
-         timeout = { 1000 }
-         unmountOnExit = { true }
+      <Box
+         id = "news"
+         ref = { containerRef }
+         sx = { { textAlign: "center" } }
       >
-         <Box>
-            <Slide
-               direction = "up"
-               in = { true }
-               mountOnEnter = { true }
-               timeout = { 1000 }
-               unmountOnExit = { true }
-            >
+         <Stack
+            direction = "column"
+            sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
+         >
+            <Box className = "animation-container">
                <Box
-                  id = "news"
-                  ref = { containerRef }
-                  sx = { { textAlign: "center" } }
-               >
-                  <Stack
-                     direction = "column"
-                     sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
-                  >
-                     <Box className = "animation-container">
-                        <Box
-                           alt = "News"
-                           className = "floating"
-                           component = "img"
-                           src = "/svg/news.svg"
-                           sx = { { width: 225, height: "auto", mx: "auto" } }
-                        />
-                     </Box>
-                     <Stack
-                        direction = { { xs: "row", lg: "column" } }
-                        sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
-                     >
-                        {
-                           data?.channel[0]?.item.map(
-                              (item: Story, index: number) => {
-                                 return (
-                                    <StoryItem
-                                       { ...item }
-                                       key = { index }
-                                    />
-                                 );
-                              }
-                           )
-                        }
-                     </Stack>
-                  </Stack>
-               </Box>
-            </Slide>
-         </Box>
-      </Fade>
+                  alt = "News"
+                  className = "floating"
+                  component = "img"
+                  src = "/svg/news.svg"
+                  sx = { { width: 225, height: "auto", mx: "auto" } }
+               />
+            </Box>
+            <Grid
+               columnSpacing = { 3.1 }
+               container = { true }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
+            >
+               {
+                  data?.channel[0]?.item.map(
+                     (item: Story, index: number) => {
+                        return (
+                           <Grid
+                              key = { `news-${index}` }
+                              size = { { xs: 12, sm: 6, lg: 12 } }
+                           >
+                              <StoryItem
+                                 { ...item }
+
+                              />
+                           </Grid>
+                        );
+                     }
+                  )
+               }
+            </Grid>
+         </Stack>
+      </Box>
+
    );
 }

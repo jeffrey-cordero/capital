@@ -80,7 +80,7 @@ export default function Login() {
                      alt = "Logo"
                      component = "img"
                      src = "/svg/logo.svg"
-                     sx = { { width: 200, height: "auto", p: 0, m: 0 } }
+                     sx = { { width: 175, height: "auto", p: 0, m: 0 } }
                   />
                   <Typography
                      color = "primary"

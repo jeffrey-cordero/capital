@@ -36,7 +36,7 @@ export const palette: PaletteOptions = {
    },
    success: {
       main: green[400],
-      dark: green[600],
+      dark: green[500],
       contrastText: green[50]
    },
    divider: alpha(gray[300], 0.4),

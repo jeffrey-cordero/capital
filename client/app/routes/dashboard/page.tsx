@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Container, Grow, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { Account } from "capital/accounts";
 import { useSelector } from "react-redux";
@@ -17,41 +17,47 @@ export default function Page() {
    ) as Account[];
 
    return (
-      <Box
-         sx = { { margin: "auto", py: 6 } }
-         width = { { xs: "90%" } }
+      <Container
+         maxWidth = "xl"
+         sx = { { py: 4 } }
       >
          <Grid
             columnSpacing = { 4 }
             container = { true }
             sx = { { width: "100%", height: "100%" } }
          >
-            <Grid size = { { xs: 12, lg: 8 } }>
-               <Box
-                  sx = {
-                     {
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "start",
-                        alignItems: "center",
-                        height: "100%",
-                        gap: "2rem",
-                        textAlign: "center"
-                     }
-                  }
-               >
-                  <Grid size = { { xs: 12 } }>
-                     <Finances accounts = { accounts } />
-                  </Grid>
-                  <Grid size = { { xs: 12 } }>
-                     <Markets data = { marketTrends } />
-                  </Grid>
-               </Box>
-            </Grid>
-            <Grid size = { { xs: 12, lg: 4 } }>
-               <Stories data = { financialNews } />
-            </Grid>
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12, lg: 8 } }>
+                  <Stack
+                     direction = "column"
+                     spacing = { 1 }
+                     sx = { { textAlign: "center" } }
+                  >
+                     <Grid size = { { xs: 12 } }>
+                        <Finances accounts = { accounts } />
+                     </Grid>
+                     <Grid size = { { xs: 12 } }>
+                        <Markets data = { marketTrends } />
+                     </Grid>
+                  </Stack>
+               </Grid>
+            </Grow>
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12, lg: 4 } }>
+                  <Stories data = { financialNews } />
+               </Grid>
+            </Grow>
          </Grid>
-      </Box>
+      </Container>
    );
 }

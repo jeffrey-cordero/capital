@@ -3,8 +3,6 @@ import {
    Card,
    CardContent,
    Chip,
-   Fade,
-   Slide,
    Stack,
    Typography,
    useTheme
@@ -154,60 +152,43 @@ export default function Finances({ accounts }: { accounts: Account[] }) {
          id = "marketTrends"
          sx = { { width: "100%" } }
       >
-         <Fade
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
+         <Stack
+            direction = "column"
+            sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
          >
-            <Box>
-               <Slide
-                  direction = "up"
-                  in = { true }
-                  mountOnEnter = { true }
-                  timeout = { 1000 }
-                  unmountOnExit = { true }
-               >
-                  <Stack
-                     direction = "column"
-                     sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
-                  >
-                     <Box className = "animation-container">
-                        <Box
-                           alt = "Finances"
-                           className = "floating"
-                           component = "img"
-                           src = "/svg/finances.svg"
-                           sx = { { width: 435, height: "auto" } }
-                        />
-                     </Box>
-                     <Grid size = { 12 }>
-                        <AccountTrends accounts = { accounts } />
-                     </Grid>
-                     <Grid size = { 12 }>
-                        <BudgetBarChart />
-                     </Grid>
-                     <Grid
-                        container = { true }
-                        direction = "column"
-                        spacing = { 2 }
-                        sx = { { width: "100%" } }
-                     >
-                        {
-                           data.map((card, index) => (
-                              <Grid
-                                 key = { `stat-${index}` }
-                                 size = { { xs: 12 } }
-                              >
-                                 <Trend { ...card } />
-                              </Grid>
-                           ))
-                        }
-                     </Grid>
-                  </Stack>
-               </Slide>
+            <Box className = "animation-container">
+               <Box
+                  alt = "Finances"
+                  className = "floating"
+                  component = "img"
+                  src = "/svg/finances.svg"
+                  sx = { { width: 360, height: "auto" } }
+               />
             </Box>
-         </Fade>
+            <Grid size = { 12 }>
+               <AccountTrends accounts = { accounts } />
+            </Grid>
+            <Grid size = { 12 }>
+               <BudgetBarChart />
+            </Grid>
+            <Grid
+               container = { true }
+               direction = "column"
+               spacing = { 2 }
+               sx = { { width: "100%" } }
+            >
+               {
+                  data.map((card, index) => (
+                     <Grid
+                        key = { `stat-${index}` }
+                        size = { { xs: 12 } }
+                     >
+                        <Trend { ...card } />
+                     </Grid>
+                  ))
+               }
+            </Grid>
+         </Stack>
       </Box>
    );
 }

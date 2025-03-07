@@ -1,4 +1,4 @@
-import { Stack } from "@mui/material";
+import { Container } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { Account } from "capital/accounts";
 import { useSelector } from "react-redux";
@@ -8,21 +8,21 @@ import Transactions from "@/components/dashboard/accounts/all-transactions";
 import type { RootState } from "@/redux/store";
 
 export default function Page() {
-   const accounts = useSelector(
+   const accounts: Account[] = useSelector(
       (root: RootState) => root.accounts.value
-   ) as Account[];
+   );
 
    return (
-      <Stack
-         direction = "column"
-         sx = { {  width: { xs: "90%" }, margin: "auto", py: 6, textAlign: "center" } }
+      <Container
+         maxWidth = "lg"
+         sx = { { textAlign: "center", py: 4 } }
       >
-         <Grid size = { { xs: 12, xl: 8 } }>
+         <Grid size = { { xs: 12 } }>
             <Accounts accounts = { accounts } />
          </Grid>
-         <Grid size = { { xs: 12, xl: 4 } }>
+         <Grid size = { { xs: 12 } }>
             <Transactions />
          </Grid>
-      </Stack>
+      </Container>
    );
 }

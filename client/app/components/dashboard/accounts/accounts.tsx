@@ -8,7 +8,7 @@ import {
    useSensors
 } from "@dnd-kit/core";
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Box, Grow } from "@mui/material";
+import { Box, Grow, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
 import { useDispatch } from "react-redux";
@@ -85,13 +85,14 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                className = "floating"
                component = "img"
                src = "/svg/accounts.svg"
-               sx = { { width: 400, height: "auto", mb: 6 } }
+               sx = { { width: 350, height: "auto", mb: 6 } }
             />
          </Box>
          <Grid
             container = { true }
             justifyContent = "center"
             spacing = { 3 }
+            sx = { { mt: -3 } }
          >
             <DndContext
                collisionDetection = { closestCenter }
@@ -103,7 +104,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                   strategy = { rectSortingStrategy }
                >
                   {
-                     accounts.map((account, index) => {
+                     accounts.length > 0 ? accounts.map((account, index) => {
                         return (
                            <Grow
                               in = { true }
@@ -113,7 +114,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                               unmountOnExit = { true }
                            >
                               <Grid
-                                 size = { { xs: 12, md: 4, lg: 3 } }
+                                 size = { { xs: 12, sm: 6, md: 4  } }
                               >
                                  <AccountCard
                                     account = { account }
@@ -121,13 +122,20 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                               </Grid>
                            </Grow>
                         );
-                     })
+                     }) : (
+                        <Typography
+                           fontWeight = "bold"
+                           variant = "body1"
+                        >
+                           No available accounts
+                        </Typography>
+                     )
                   }
                </SortableContext>
             </DndContext>
 
          </Grid>
-         <Box sx = { { mt: 4 } }>
+         <Box sx = { { mt: 8 } }>
             <AccountCard
                account = { undefined }
             />

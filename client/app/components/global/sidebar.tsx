@@ -142,7 +142,8 @@ export function SideBar() {
                {
                   position: "absolute",
                   top: 10,
-                  left: 5
+                  left: 5,
+                  zIndex: 2
                }
             }
          >
@@ -160,7 +161,7 @@ export function SideBar() {
                      width: "250px",
                      borderColor: alpha(theme.palette.grey[500], 0.08),
                      backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
-                     zIndex: 1101
+                     zIndex: 3
                   }
                }
             }

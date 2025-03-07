@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 export default function Transactions() {
    return (
@@ -9,11 +9,16 @@ export default function Transactions() {
                className = "floating"
                component = "img"
                src = "/svg/transactions.svg"
-               sx = { { width: 350, height: "auto", mt: 8, mb: 2 } }
+               sx = { { width: 300, height: "auto", mt:8, mb: 5 } }
             />
          </Box>
          <Box>
-            <h3>Awaiting Implementation</h3>
+            <Typography
+               fontWeight = "bold"
+               variant = "body1"
+            >
+               Coming Soon
+            </Typography>
          </Box>
       </Box>
    );
