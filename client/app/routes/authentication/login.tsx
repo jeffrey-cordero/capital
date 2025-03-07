@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
+   Container,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -11,7 +12,6 @@ import {
    Stack,
    Typography
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital/user";
 import clsx from "clsx";
 import { useState } from "react";
@@ -43,7 +43,7 @@ export default function Login() {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Display invalid username and/or password inputs
+         // Invalid credentials
          handleValidationErrors(fields, setError);
       } else {
          // Submit login credentials
@@ -63,7 +63,7 @@ export default function Login() {
    };
 
    return (
-      <div className = "center">
+      <Container className = "center">
          <Callout
             sx = { { width: "100%" } }
             type = "primary"
@@ -72,39 +72,25 @@ export default function Login() {
                direction = "column"
                spacing = { 3 }
             >
-               <Grid
-                  container = { true }
-                  direction = "column"
-                  sx = { { justifyContent: "center", alignItems: "center" } }
+               <Stack
+                  alignItems = "center"
+                  justifyContent = "center"
                >
-                  <Grid>
-                     <Stack
-                        alignItems = "center"
-                        justifyContent = "center"
-                     >
-                        <Box
-                           alt = "Logo"
-                           component = "img"
-                           src = "/svg/logo.svg"
-                           sx = { { width: 150, height: "auto", p: 0, m: 0 } }
-                        />
-                        <Typography
-                           color = "primary.main"
-                           sx = { { fontWeight: "bold", marginBottom: "2px" } }
-                           variant = "h4"
-                        >
-                           Welcome Back
-                        </Typography>
-                        <Typography
-                           color = "text.secondary"
-                           sx = { { fontSize: "16px", textAlign: "center" } }
-                           variant = "subtitle2"
-                        >
-                           Enter your credentials to continue
-                        </Typography>
-                     </Stack>
-                  </Grid>
-               </Grid>
+                  <Box
+                     alt = "Logo"
+                     component = "img"
+                     src = "/svg/logo.svg"
+                     sx = { { width: 200, height: "auto", p: 0, m: 0 } }
+                  />
+                  <Typography
+                     color = "primary"
+                     fontWeight = "bold"
+                     sx = { { mt: -1 } }
+                     variant = "h3"
+                  >
+                     Login
+                  </Typography>
+               </Stack>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
@@ -121,7 +107,6 @@ export default function Login() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Username"
                                     autoComplete = "username"
                                     autoFocus = { true }
                                     disabled = { isSubmitting }
@@ -130,13 +115,9 @@ export default function Login() {
                                     type = "text"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.username && (
-                                       <FormHelperText>
-                                          { errors.username?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.username?.message?.toString() || "" }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -152,7 +133,6 @@ export default function Login() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Password"
                                     autoComplete = "current-password"
                                     disabled = { isSubmitting }
                                     endAdornment = {
@@ -168,13 +148,9 @@ export default function Login() {
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.password && (
-                                       <FormHelperText>
-                                          { errors.password?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.password?.message?.toString() || "" }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -191,26 +167,26 @@ export default function Login() {
                      >
                         Login
                      </Button>
+                     <Typography
+                        align = "center"
+                        fontWeight = "bold"
+                        variant = "body2"
+                     >
+                        Don&apos;t have an account?{ " " }
+                        <Link
+                           className = "success"
+                           color = "success"
+                           fontWeight = "bold"
+                           href = "/register"
+                           underline = "none"
+                        >
+                           Register
+                        </Link>
+                     </Typography>
                   </Stack>
                </form>
-               <Typography
-                  align = "center"
-                  sx = { { fontWeight: "bold" } }
-                  variant = "body2"
-               >
-                  Don&apos;t have an account?{ " " }
-                  <Link
-                     className = "success"
-                     color = "success"
-                     fontWeight = "bold"
-                     href = "/register"
-                     underline = "none"
-                  >
-                     Register
-                  </Link>
-               </Typography>
             </Stack>
          </Callout>
-      </div>
+      </Container>
    );
 };

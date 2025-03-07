@@ -30,6 +30,6 @@ export async function clearAuthentication(
    );
 
    if (logout?.success) {
-      navigate("/login");
+      window.location.pathname = "/login";
    }
 };

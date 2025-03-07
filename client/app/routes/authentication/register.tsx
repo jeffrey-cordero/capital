@@ -11,7 +11,6 @@ import {
    Stack,
    Typography
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import { userSchema } from "capital/user";
 import clsx from "clsx";
 import { useState } from "react";
@@ -75,39 +74,25 @@ export default function Register() {
                direction = "column"
                spacing = { 3 }
             >
-               <Grid
-                  container = { true }
-                  direction = "column"
-                  sx = { { justifyContent: "center", alignItems: "center" } }
+               <Stack
+                  alignItems = "center"
+                  justifyContent = "center"
                >
-                  <Grid>
-                     <Stack
-                        alignItems = "center"
-                        justifyContent = "center"
-                     >
-                        <Box
-                           alt = "Logo"
-                           component = "img"
-                           src = "/svg/logo.svg"
-                           sx = { { width: 150, height: "auto", p: 0, m: 0 } }
-                        />
-                        <Typography
-                           color = "primary.main"
-                           sx = { { fontWeight: "bold", marginBottom: "2px" } }
-                           variant = "h4"
-                        >
-                           Join Us
-                        </Typography>
-                        <Typography
-                           color = "text.secondary"
-                           sx = { { fontSize: "16px", textAlign: "center" } }
-                           variant = "subtitle2"
-                        >
-                           Enter your details to create an account and get started
-                        </Typography>
-                     </Stack>
-                  </Grid>
-               </Grid>
+                  <Box
+                     alt = "Logo"
+                     component = "img"
+                     src = "/svg/logo.svg"
+                     sx = { { width: 200, height: "auto", p: 0, m: 0 } }
+                  />
+                  <Typography
+                     color = "primary"
+                     fontWeight = "bold"
+                     sx = { { mt: -1 } }
+                     variant = "h3"
+                  >
+                     Register
+                  </Typography>
+               </Stack>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
@@ -292,23 +277,23 @@ export default function Register() {
                      >
                         Register
                      </Button>
+                     <Typography
+                        align = "center"
+                        fontWeight = "bold"
+                        variant = "body2"
+                     >
+                        Already have an account?{ " " }
+                        <Link
+                           color = "primary"
+                           fontWeight = "bold"
+                           href = "/login"
+                           underline = "none"
+                        >
+                           Login
+                        </Link>
+                     </Typography>
                   </Stack>
                </form>
-               <Typography
-                  align = "center"
-                  sx = { { fontWeight: "bold" } }
-                  variant = "body2"
-               >
-                  Already have an account?{ " " }
-                  <Link
-                     color = "primary"
-                     fontWeight = "bold"
-                     href = "/login"
-                     underline = "none"
-                  >
-                     Login
-                  </Link>
-               </Typography>
             </Stack>
          </Callout>
       </div>

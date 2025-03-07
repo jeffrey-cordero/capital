@@ -225,8 +225,12 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                         >
                            <ListItemButton
                               disableGutters = { true }
-                              href = { link.path }
-                              onClick = { onClose }
+                              onClick = {
+                                 () => {
+                                    navigate(link.path);
+                                    onClose();
+                                 }
+                              }
                               sx = {
                                  {
                                     pl: 1.5,

@@ -5,6 +5,7 @@ import type { News } from "capital/news";
 import type { NavigateFunction } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
+import { setAccounts } from "@/redux/slices/accounts";
 
 interface Dashboard {
    accounts: Account[];
@@ -20,16 +21,7 @@ export async function fetchDashboard(
       "dashboard", "GET", null, dispatch, navigate
    );
 
+   dispatch(setAccounts(dashboard.accounts as Account[]));
+
    return dashboard ?? null;
-}
-
-export async function fetchAccounts(
-   dispatch: Dispatch<any>,
-   navigate: NavigateFunction
-): Promise<Account[] | null> {
-   const accounts: Account[] = await sendApiRequest(
-      "dashboard/accounts", "GET", null, dispatch, navigate
-   );
-
-   return accounts ?? null;
 }

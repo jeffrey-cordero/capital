@@ -36,7 +36,7 @@ export async function sendApiRequest(
    }).then(async(response) => {
       if (!login && response.status === HTTP_STATUS.UNAUTHORIZED) {
          // Unauthorized endpoint access
-         navigate("/login");
+         window.location.pathname = "/login";
 
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {

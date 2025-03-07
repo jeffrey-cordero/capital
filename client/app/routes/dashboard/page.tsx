@@ -4,28 +4,31 @@ import { useQuery } from "@tanstack/react-query";
 import type { Account } from "capital/accounts";
 import { type MarketTrends } from "capital/marketTrends";
 import { type News } from "capital/news";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Finances from "@/components/dashboard/finances";
 import Markets from "@/components/dashboard/markets";
 import Stories from "@/components/dashboard/news";
 import Loading from "@/components/global/loading";
+import type { RootState } from "@/redux/store";
 import { fetchDashboard } from "@/tanstack/queries/dashboardQueries";
 
 export default function Page() {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { data, isLoading } = useQuery({
+   const accounts: Account[] = useSelector(
+      (root: RootState) => root.accounts.value
+   ) as Account[];
+   const { data, isError, isLoading } = useQuery({
       queryKey: ["dashboard"],
       queryFn: () => fetchDashboard(dispatch, navigate),
-      staleTime: 15 * 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000
+      staleTime: 15 * 1000,
+      gcTime: 30 * 60 * 60 * 1000
    });
 
-   if (isLoading || data === null) {
+   if (isLoading || isError || data === null) {
       return <Loading />;
    } else {
-      const accounts = data?.accounts as Account[];
       const marketTrends = data?.marketTrends as MarketTrends;
       const financialNews = data?.financialNews as News;
 

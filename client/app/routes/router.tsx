@@ -9,7 +9,7 @@ import type { RootState } from "@/redux/store";
 import { constructTheme } from "@/styles/mui/theme";
 
 export default function Router() {
-   // Handle authentication-based routing
+   // Authentication-based routing and MUI baselines
    const navigate = useNavigate();
    const theme: "light" | "dark" = useSelector(
       (state: RootState) => state.theme.value
@@ -17,14 +17,13 @@ export default function Router() {
    const authenticated: boolean | undefined = useSelector(
       (state: RootState) => state.authentication.value
    );
-
    useEffect(() => {
-      if (authenticated === undefined) return; // Initial state
+      if (authenticated === undefined) return; // Ignore the initial state
 
-      const dashboard = window.location.pathname.startsWith("/dashboard");
-      const redirect = authenticated && !dashboard || !authenticated && dashboard;
+      const dashboard: boolean = window.location.pathname.startsWith("/dashboard");
+      const redirecting: boolean = authenticated && !dashboard || !authenticated && dashboard;
 
-      if (redirect) {
+      if (redirecting) {
          navigate(authenticated ? "/dashboard" : "/");
       }
    }, [navigate, authenticated]);

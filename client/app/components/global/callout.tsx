@@ -13,10 +13,10 @@ export default function Callout({ type, children, sx }: CalloutProps) {
          container = { true }
          sx = { { justifyContent: "center", ...sx } }
       >
-         <Grid size = { { xs:10, md: 7, lg: 5 } }>
+         <Grid size = { { xs: 11, md: 8, lg: 6 } }>
             <Paper
                elevation = { 3 }
-               sx = { { p: 3, borderTop: 8,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "8px" } }
+               sx = { { p: 3, borderTop: 10,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "6px" } }
             >
                { children }
             </Paper>
