@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
-import session from "express-session";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
@@ -18,19 +17,6 @@ import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
 export const app = express();
-
-// Session management through Redis store
-app.use(session({
-   resave: false,
-   saveUninitialized: true,
-   secret: process.env.SESSION_SECRET || "",
-   cookie: {
-      httpOnly: true,
-      sameSite: "strict",
-      maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === "production"
-   }
-}));
 
 // Rate limiting with logging for further investigations
 app.use(rateLimit({

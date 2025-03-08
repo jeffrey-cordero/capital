@@ -41,9 +41,8 @@ export function authenticateToken(required: boolean) {
             next();
          } catch (error: any) {
             if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-               // Clear the expired or invalid authentication token and express-session cookies
+               // Clear the expired or invalid authentication token cookies
                res.clearCookie("token");
-               res.clearCookie("connect.sid");
             } else {
                // Unexpected JWT verification errors
                logger.error(error.stack);

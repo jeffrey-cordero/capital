@@ -18,9 +18,8 @@ export async function getAuthentication(res: Response, token: string): Promise<S
    } catch (error: any) {
       // Handle JWT verification errors
       if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-         // Clear the expired or invalid authentication token and express-session cookies
+         // Clear the expired or invalid authentication token cookies
          res.clearCookie("token");
-         res.clearCookie("connect.sid");
 
          return sendServiceResponse(200, "Invalid Token", { authenticated: false });
       } else {
@@ -51,16 +50,8 @@ export async function authenticateUser(res: Response, username: string, password
 }
 
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
-   // Clear the authentication token and express-session cookies
+   // Clear the authentication token cookies
    res.clearCookie("token");
-   res.clearCookie("connect.sid");
-
-   // Destroy the express-session instance
-   req.session.destroy((error: any) => {
-      if (error) {
-         throw error;
-      }
-   });
 
    return sendServiceResponse(200, "Successfully logged out", { success: true });
 }
