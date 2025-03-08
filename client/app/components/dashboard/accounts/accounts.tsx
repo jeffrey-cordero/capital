@@ -92,7 +92,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
             container = { true }
             justifyContent = "center"
             spacing = { 3 }
-            sx = { { mt: -3 } }
+            sx = { { mt: -6 } }
          >
             <DndContext
                collisionDetection = { closestCenter }

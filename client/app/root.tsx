@@ -30,13 +30,14 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
    useEffect(() => {
-      // Fetch theme from localStorage or preferred color scheme for Redux store
+      // Initialize the theme based on localStorage or preferred color scheme
       const preferredTheme: string | undefined = localStorage.theme;
       const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+      const darkMode: boolean = preferredTheme === "dark" || (!preferredTheme && prefersDarkMode);
 
       store.dispatch({
          type: "theme/setTheme",
-         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode)  ? "dark" : "light"
+         payload: darkMode ? "dark" : "light"
       });
    }, []);
 
@@ -51,10 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Meta />
             <Links />
          </head>
-         <body
-            data-dark = { store.getState().theme.value === "dark" }
-            suppressHydrationWarning = { true }
-         >
+         <body suppressHydrationWarning = { true }>
             { children }
             <ScrollRestoration />
             <Scripts />
