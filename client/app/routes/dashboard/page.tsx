@@ -1,6 +1,8 @@
 import { Container, Grow, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { Account } from "capital/accounts";
+import type { MarketTrends } from "capital/marketTrends";
+import type { News } from "capital/news";
 import { useSelector } from "react-redux";
 
 import Finances from "@/components/dashboard/finances";
@@ -9,9 +11,9 @@ import Stories from "@/components/dashboard/news";
 import type { RootState } from "@/redux/store";
 
 export default function Page() {
-   const { news, marketTrends } = useSelector(
-      (root: RootState) => root.economy
-   );
+   const { news, trends } = useSelector(
+      (root: RootState) => root.markets
+   ) as { news: News, trends: MarketTrends };
    const accounts: Account[] = useSelector(
       (root: RootState) => root.accounts.value
    ) as Account[];
@@ -45,7 +47,7 @@ export default function Page() {
                         <Finances accounts = { accounts } />
                      </Grid>
                      <Grid size = { { xs: 12 } }>
-                        <Markets data = { marketTrends } />
+                        <Markets data = { trends } />
                      </Grid>
                   </Stack>
                </Grid>

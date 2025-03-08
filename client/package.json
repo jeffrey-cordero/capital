@@ -7,7 +7,7 @@
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
-    "lint": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' && npx stylelint npx stylelint 'app/styles/**/*.scss' --fix",
+    "lint": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' && npx stylelint npx stylelint '**/*.scss' --fix",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
@@ -64,6 +64,7 @@
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-spellcheck": "^0.0.20",
     "globals": "^15.14.0",
     "postcss": "^8.4.49",
     "sass": "1.77.6",

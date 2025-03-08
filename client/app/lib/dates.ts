@@ -1,7 +1,7 @@
 export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
-   // Construction assumes string is in YYYY-MM-DD format
+   // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
       const [month, year] = date.split("/");
 
@@ -13,29 +13,8 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
-export function getLastMonth(month: number, year: number): string[] {
-   // Format an array of days within the past month
-   const days = [];
-   const date = new Date(year, month, 0);
-
-   const monthName = date.toLocaleDateString("en-US", {
-      month: "short",
-      timeZone: "UTC"
-   });
-   const daysInMonth = date.getDate();
-
-   let i = 1;
-
-   while (days.length < daysInMonth) {
-      days.push(`${monthName} ${i}`);
-      i += 1;
-   }
-
-   return days;
-}
-
 export function getLastSixMonths(referenceDate = today): string[] {
-   // Format the 6-month array to "MM YYYY" format
+   // Format the 6-month array to "MM. YYYY" format
    const months = [
       "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
       "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
@@ -51,13 +30,15 @@ export function getLastSixMonths(referenceDate = today): string[] {
          0
       );
 
-      // Adjust for year rollover if we've crossed into the previous year
+      // Adjust for year rollovers
       if (monthDate.getUTCMonth() < 0) {
          monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
          monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
       }
 
-      sixMonths.unshift(months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear());
+      sixMonths.unshift(
+         months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear()
+      );
    }
 
    return sixMonths;

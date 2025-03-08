@@ -14,6 +14,7 @@ export async function fetchAuthentication(
    );
 
    if (status !== null) {
+      // Set the global authentication state for routing purposes
       dispatch(authenticate(status.authenticated));
    }
 
@@ -24,12 +25,12 @@ export async function clearAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<void> {
-   // Navigate back to the login page on a successful response
    const logout: { success: boolean } = await sendApiRequest(
       "authentication/logout", "POST", null, dispatch, navigate
    );
 
    if (logout?.success) {
+      // Navigate to the login page to reset the global state
       window.location.pathname = "/login";
    }
 };

@@ -8,7 +8,7 @@ import {
    Typography
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "capital/marketTrends";
+import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/marketTrends";
 
 import Graph, { getChipColor } from "@/components/global/graph";
 import { timeSinceLastUpdate } from "@/lib/dates";
@@ -20,7 +20,7 @@ function Stocks({ data }: { data: StockTrends }) {
    // Helper function to render a single stock trend
    const renderTrend = (
       title: string,
-      data: StockIndictor[],
+      data: StockIndicator[],
       image: string
    ) => {
       return (

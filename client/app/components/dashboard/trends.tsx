@@ -1,5 +1,4 @@
 import {
-   Box,
    Card,
    CardContent,
    Chip,
@@ -72,22 +71,22 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
 
    return (
       <Card
-         elevation={3}
-         sx={{ textAlign: "left", borderRadius: 2 }}
-         variant="elevation"
+         elevation = { 3 }
+         sx = { { textAlign: "left", borderRadius: 2 } }
+         variant = "elevation"
       >
-         <CardContent sx={{ p: 2.5 }}>
+         <CardContent sx = { { p: 2.5 } }>
             <Typography
-               component="h2"
-               gutterBottom={true}
-               variant="subtitle2"
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
             >
                Net Worth
             </Typography>
-            <Stack sx={{ justifyContent: "space-between" }}>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
-                  direction="row"
-                  sx={
+                  direction = "row"
+                  sx = {
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -96,16 +95,16 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
                   }
                >
                   <Typography
-                     component="p"
-                     sx={{ ...ellipsis, maxWidth: "95%" }}
-                     variant="h4"
+                     component = "p"
+                     sx = { { ...ellipsis, maxWidth: "95%" } }
+                     variant = "h4"
                   >
-                     {displayCurrency(netWorth)}
+                     { displayCurrency(netWorth) }
                   </Typography>
                </Stack>
                <Typography
-                  sx={{ color: "text.secondary" }}
-                  variant="caption"
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
                >
                   Account balances for the last 6 months
                </Typography>
@@ -113,16 +112,16 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
             {
                historicalAccounts.length > 0 ? (
                   <BarChart
-                     borderRadius={8}
-                     colors={
+                     borderRadius = { 8 }
+                     colors = {
                         accounts.map((acc) =>
                            decrementingTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)")
                      }
-                     grid={{ horizontal: true }}
-                     height={300}
-                     margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
-                     resolveSizeBeforeRender={true}
-                     series={
+                     grid = { { horizontal: true } }
+                     height = { 300 }
+                     margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
+                     series = {
                         accounts.map((account, index) => {
                            return {
                               id: account.account_id || "" + index,
@@ -132,14 +131,14 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
                            };
                         })
                      }
-                     slotProps={
+                     slotProps = {
                         {
                            legend: {
                               hidden: true
                            }
                         }
                      }
-                     xAxis={
+                     xAxis = {
                         [
                            {
                               scaleType: "band",
@@ -148,7 +147,7 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
                            }
                         ] as any
                      }
-                     yAxis={
+                     yAxis = {
                         [{
                            domainLimit: "nice",
                            valueFormatter: (value) => displayVolume(value)
@@ -156,10 +155,10 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
                      }
                   />
                ) : (
-                  <Stack sx = {{ justifyContent: "center", textAlign: "center", height: "300px" }}>
+                  <Stack sx = { { justifyContent: "center", textAlign: "center", height: "300px" } }>
                      <Typography
-                        fontWeight="bold"
-                        variant="body1"
+                        fontWeight = "bold"
+                        variant = "body1"
                      >
                         No available accounts
                      </Typography>
@@ -181,22 +180,22 @@ export function BudgetTrends() {
 
    return (
       <Card
-         elevation={3}
-         sx={{ height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 }}
-         variant="elevation"
+         elevation = { 3 }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
+         variant = "elevation"
       >
-         <CardContent sx={{ p: 2.5 }}>
+         <CardContent sx = { { p: 2.5 } }>
             <Typography
-               component="h2"
-               gutterBottom={true}
-               variant="subtitle2"
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
             >
                Budget
             </Typography>
-            <Stack sx={{ justifyContent: "space-between" }}>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
-                  direction="row"
-                  sx={
+                  direction = "row"
+                  sx = {
                      {
                         alignContent: { xs: "center", sm: "flex-start" },
                         alignItems: "center",
@@ -205,32 +204,32 @@ export function BudgetTrends() {
                   }
                >
                   <Typography
-                     component="p"
-                     variant="h4"
+                     component = "p"
+                     variant = "h4"
                   >
                      $0.00
                   </Typography>
                   <Chip
-                     color="success"
-                     label="+52%"
-                     size="small"
+                     color = "success"
+                     label = "+52%"
+                     size = "small"
                   />
                </Stack>
                <Typography
-                  sx={{ color: "text.secondary" }}
-                  variant="caption"
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
                >
                   Income vs. Expenses for the last 6 months
                </Typography>
             </Stack>
             <BarChart
-               borderRadius={8}
-               colors={colorPalette}
-               grid={{ horizontal: true }}
-               height={300}
-               margin={{ left: 50, right: 0, top: 20, bottom: 20 }}
-               resolveSizeBeforeRender={true}
-               series={
+               borderRadius = { 8 }
+               colors = { colorPalette }
+               grid = { { horizontal: true } }
+               height = { 300 }
+               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               resolveSizeBeforeRender = { true }
+               series = {
                   [
                      {
                         id: "income",
@@ -248,14 +247,14 @@ export function BudgetTrends() {
                      }
                   ]
                }
-               slotProps={
+               slotProps = {
                   {
                      legend: {
                         hidden: true
                      }
                   }
                }
-               xAxis={
+               xAxis = {
                   [
                      {
                         scaleType: "band",
@@ -264,7 +263,7 @@ export function BudgetTrends() {
                      }
                   ] as any
                }
-               yAxis={
+               yAxis = {
                   [{
                      domainLimit: "nice",
                      valueFormatter: (value) => displayVolume(value)

@@ -85,12 +85,11 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
                   marketTrends[indicator.key] = trends[index] as any;
                });
 
-               // Store in the data in the database, local backup file, and cache
+               // Store in the data in the database and cache
                const time = new Date();
                const data = JSON.stringify(marketTrends);
 
                await updateMarketTrends(time, data);
-               await fs.writeFile("resources/marketTrends.json", JSON.stringify(marketTrends, null, 3));
                setCacheValue("marketTrends", 24 * 60 * 60, data);
 
                return sendServiceResponse(200, "Market Trends", marketTrends as MarketTrends);
@@ -153,7 +152,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
 
    return sendServiceResponse(200, "Dashboard", {
       accounts: accounts.data,
-      marketTrends: marketTrends.data,
+      trends: marketTrends.data,
       news: news.data
    });
 }

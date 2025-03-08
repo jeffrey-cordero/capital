@@ -1,4 +1,4 @@
-// Utility functions to ensure consistent formatting of server-provided values across the UI
+// Utility methods to ensure consistent formatting for values across the various components
 export const ellipsis = {
    whiteSpace: "nowrap",
    overflow: "hidden",
@@ -14,7 +14,7 @@ export function displayCurrency(value: number): string {
    return value < 0 ? `-$${currency}` : `$${currency}`;
 }
 
-export function displayNumeric(value: number, decimals = true): string {
+export function displayNumeric(value: number, decimals: boolean = true): string {
    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: decimals ? 2 : 0,
       maximumFractionDigits: decimals ? 2 : 0
@@ -32,9 +32,9 @@ export function displayVolume(volume: number): string {
       return (volume / 1_000_000).toFixed(1) + "M";
    } else if (volume >= 1_000) {
       return (volume / 1_000).toFixed(1) + "K";
+   } else {
+      return volume.toString();
    }
-
-   return volume.toString();
 }
 
 export function displayDate(date: string): string {

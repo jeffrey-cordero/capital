@@ -19,14 +19,16 @@ const authenticationSlice = createSlice({
 
          if (history) {
             // Update the history records array if a record is supplied
-            const update: Date = new Date(history.last_updated);
             let found: boolean = false;
+            const update: Date = new Date(history.last_updated);
 
             account.history = account.history.reduce((acc: AccountHistory[], record: AccountHistory) => {
                const current = new Date(record.last_updated);
 
                if (!found && update.getTime() >= current.getTime()) {
                   // Insert the new history record
+                  found = true;
+
                   acc.push({
                      balance: history.balance,
                      last_updated: update.toISOString()
@@ -36,8 +38,6 @@ const authenticationSlice = createSlice({
                   if (update.getTime() !== current.getTime()) {
                      acc.push({ ...record });
                   }
-
-                  found = true;
                } else {
                   // Insert the old history record
                   acc.push({ ...record });
@@ -56,7 +56,6 @@ const authenticationSlice = createSlice({
          }
 
          state.value = state.value.map((acc) => {
-            // Ensure the current balance matches the latest history record for each update
             return account.account_id ===  acc.account_id ? {
                ...account,
                balance: account.history[0].balance

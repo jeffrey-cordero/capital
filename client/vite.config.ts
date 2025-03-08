@@ -24,5 +24,18 @@ export default defineConfig({
    },
    optimizeDeps: {
       exclude: ["chunk-HR3LP2OW"]
+   },
+   ssr: {
+   noExternal:
+      process.env.NODE_ENV === 'production'
+         ? [
+            '@mui/system',
+            '@mui/material',
+            '@mui/x-internals',
+            '@mui/x-charts',
+            '@mui/utils',
+            '@mui/x-data-grid',
+            '@mui/styled-engine'
+         ] : []
    }
 });

@@ -6,12 +6,12 @@ import type { NavigateFunction } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
-import { setEconomy } from "@/redux/slices/economy";
+import { setMarkets } from "@/redux/slices/markets";
 
 interface Dashboard {
-   accounts: Account[];
    news: News;
-   marketTrends: MarketTrends;
+   trends: MarketTrends;
+   accounts: Account[];
 }
 
 export async function fetchDashboard(
@@ -23,9 +23,9 @@ export async function fetchDashboard(
    );
 
    dispatch(setAccounts(dashboard.accounts));
-   dispatch(setEconomy({
+   dispatch(setMarkets({
       news: dashboard.news,
-      marketTrends: dashboard.marketTrends
+      trends: dashboard.trends
    }));
 
    return dashboard ?? null;

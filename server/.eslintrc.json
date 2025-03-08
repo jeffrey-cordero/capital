@@ -6,7 +6,7 @@
     "ecmaVersion": 2020,
     "project": "./tsconfig.json"
   },
-  "plugins": ["@typescript-eslint", "simple-import-sort", "import-newlines"],
+  "plugins": ["@typescript-eslint", "simple-import-sort", "import-newlines", "spellcheck"],
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "@typescript-eslint/no-require-imports": "off",

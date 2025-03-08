@@ -35,7 +35,7 @@ export async function sendApiRequest(
       credentials: "include"
    }).then(async(response) => {
       if (!login && response.status === HTTP_STATUS.UNAUTHORIZED) {
-         // Unauthorized endpoint access
+         // Unauthorized endpoint access, which requires a global state reset
          window.location.pathname = "/login";
 
          return null;
@@ -45,7 +45,7 @@ export async function sendApiRequest(
 
          return null;
       } else if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
-         // Server error
+         // Caught server error
          const error: string = (await response.json())?.errors?.server || "An unknown error occurred";
 
          throw new Error(error);
@@ -53,8 +53,8 @@ export async function sendApiRequest(
 
       // Update the authentication state to match the server state
       if (!authenticating) {
-         const loggedIn: boolean = login && response.status === HTTP_STATUS.OK;
          const dashboard: boolean = path.startsWith("dashboard");
+         const loggedIn: boolean = login && response.status === HTTP_STATUS.OK;
 
          dispatch(authenticate(loggedIn || dashboard));
       }
@@ -72,7 +72,9 @@ export async function sendApiRequest(
          const errors: Record<string, string> = (await response.json())?.errors || {};
 
          Object.entries(errors).forEach(
-            ([field, message]) => setError?.(field, { type: "server", message: message as string })
+            ([field, message]) => setError?.(field, {
+               type: "server", message: message as string
+            })
          );
 
          return null;
