@@ -26,7 +26,7 @@ import {
    useTheme
 } from "@mui/material";
 import { type Account, type AccountHistory, accountHistorySchema } from "capital/accounts";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -231,6 +231,10 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
       }
    };
 
+   const closeHistoryModal = useCallback(() => {
+      setOpen(false);
+   }, []);
+
    return (
       <Box>
          <Button
@@ -247,7 +251,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
             History
          </Button>
          <Modal
-            onClose = { () => setOpen(false) }
+            onClose = { closeHistoryModal }
             open = { open }
             sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, maxHeight: "80%" } }
          >
@@ -399,8 +403,8 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
          </Divider>
          <Stack
             direction = "column"
-            spacing = { 1 }
-            sx = { { mt: 1, px: 1 } }
+            spacing = { -1 }
+            sx = { { mt: 1, pt: 1, px: 1 } }
          >
             <Graph
                average = { false }

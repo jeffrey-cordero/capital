@@ -9,7 +9,7 @@ import Stories from "@/components/dashboard/news";
 import type { RootState } from "@/redux/store";
 
 export default function Page() {
-   const { financialNews, marketTrends } = useSelector(
+   const { news, marketTrends } = useSelector(
       (root: RootState) => root.economy
    );
    const accounts: Account[] = useSelector(
@@ -19,7 +19,7 @@ export default function Page() {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { py: 4 } }
+         sx = { { py: 4, px: 2 } }
       >
          <Grid
             columnSpacing = { 4 }
@@ -32,11 +32,14 @@ export default function Page() {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               <Grid size = { { xs: 12, lg: 8 } }>
+               <Grid
+                  size = { { xs: 12, lg: 8 } }
+                  sx = { { height: "100%" } }
+               >
                   <Stack
                      direction = "column"
                      spacing = { 1 }
-                     sx = { { textAlign: "center" } }
+                     sx = { { height:"100%", textAlign: "center", justifyContent: "space-between" } }
                   >
                      <Grid size = { { xs: 12 } }>
                         <Finances accounts = { accounts } />
@@ -53,8 +56,11 @@ export default function Page() {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               <Grid size = { { xs: 12, lg: 4 } }>
-                  <Stories data = { financialNews } />
+               <Grid
+                  size = { { xs: 12, lg: 4 } }
+                  sx = { { height: "100%" } }
+               >
+                  <Stories data = { news } />
                </Grid>
             </Grow>
          </Grid>

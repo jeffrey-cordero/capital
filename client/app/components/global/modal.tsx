@@ -1,11 +1,18 @@
 import {
    Box,
+   Button,
    css,
+   Dialog,
+   DialogActions,
+   DialogContent,
+   DialogContentText,
    Fade,
    Modal as MuiModal,
+   Stack,
    styled,
    type SxProps
 } from "@mui/material";
+import { useCallback, useState } from "react";
 
 import { gray } from "@/styles/mui/colors";
 
@@ -48,17 +55,85 @@ const ModalContent = styled("div")(
    `
 );
 
+interface WarningProps {
+   open: boolean;
+   onClose: () => void;
+   onCancel: () => void;
+}
+
+function Warning({ open, onClose, onCancel }: WarningProps) {
+   return (
+      <Dialog
+         onClose = { onCancel }
+         open = { open }
+         sx = {
+            {
+               width: { xs: "85%", md: "65%", lg: "60%" },
+               maxWidth: "85%",
+               mx: "auto"
+            }
+         }
+      >
+         <Box sx = { { p: 1 } }>
+            <DialogContent sx = { { pb: 0 } }>
+               <DialogContentText>
+                  Are you sure you want to exit? Any unsaved changes will be lost.
+               </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+               <Stack
+                  direction = "row"
+                  spacing = { 1 }
+               >
+                  <Button
+                     onClick = { onCancel }
+                  >
+                     No
+                  </Button>
+                  <Button
+                     autoFocus = { true }
+                     onClick = { onClose }
+                     type = "submit"
+                  >
+                     Yes
+                  </Button>
+               </Stack>
+            </DialogActions>
+         </Box>
+      </Dialog>
+   );
+}
+
 interface ModalProps {
    open: boolean;
    onClose: () => void;
    children: React.ReactNode;
    sx?: SxProps<any>;
+   displayWarning?: boolean;
 }
 
-export default function Modal({ open, onClose, children, sx }: ModalProps) {
+export default function Modal({ open, onClose, children, sx, displayWarning }: ModalProps) {
+   const [warningOpen, setWarningOpen] = useState<boolean>(false);
+
+   const closeModal = useCallback(() => {
+      if (displayWarning) {
+         setWarningOpen(true);
+      } else {
+         onClose();
+      }
+   }, [displayWarning, onClose]);
+
+   const confirmCloseModal = useCallback((confirmed: boolean) => {
+      setWarningOpen(false);
+
+      if (confirmed) {
+         onClose();
+      }
+   }, [onClose]);
+
    return (
       <MuiModal
-         onClose = { onClose }
+         onClose = { closeModal }
          open = { open }
          slotProps = {
             {
@@ -77,6 +152,11 @@ export default function Modal({ open, onClose, children, sx }: ModalProps) {
             <ModalContent sx = { sx }>
                <Box sx = { { position: "relative" } }>
                   { children }
+                  <Warning
+                     onCancel = { () => confirmCloseModal(false) }
+                     onClose = { () => confirmCloseModal(true) }
+                     open = { warningOpen }
+                  />
                </Box>
             </ModalContent>
          </Fade>

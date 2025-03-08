@@ -12,7 +12,7 @@ import type { IndicatorTrend, MarketTrends, StockIndictor, StockTrends } from "c
 
 import Graph, { getChipColor } from "@/components/global/graph";
 import { timeSinceLastUpdate } from "@/lib/dates";
-import { displayNumeric } from "@/lib/display";
+import { displayVolume } from "@/lib/display";
 
 function Stocks({ data }: { data: StockTrends }) {
    const { top_gainers, top_losers, most_actively_traded } = data;
@@ -26,7 +26,7 @@ function Stocks({ data }: { data: StockTrends }) {
       return (
          <Card
             elevation = { 3 }
-            sx = { { textAlign: "left", borderRadius: 2, mb: 2, px: 2 } }
+            sx = { { textAlign: "left", borderRadius: 2, px: 1 } }
             variant = "elevation"
          >
             <CardContent>
@@ -91,7 +91,7 @@ function Stocks({ data }: { data: StockTrends }) {
                               fontWeight = "600"
                               variant = "body2"
                            >
-                              { displayNumeric(parseInt(stock.volume), false) } shares
+                              { displayVolume(parseInt(stock.volume)) } shares
                            </Typography>
                         </Stack>
                      </Stack>
@@ -114,13 +114,13 @@ function Stocks({ data }: { data: StockTrends }) {
             spacing = { 2 }
             sx = { { width: "100%", mt: 2 } }
          >
-            <Grid size = { { xs: 12, md: 6, lg: 4 } }>
-               { renderTrend("Top Gainers", top_gainers,  "/svg/winners.svg") }
+            <Grid size = { { xs: 12, sm: 6, md: 4 } }>
+               { renderTrend("Top Gainers", top_gainers, "/svg/winners.svg") }
             </Grid>
-            <Grid size = { { xs: 12, md: 6, lg: 4 } }>
+            <Grid size = { { xs: 12, sm: 6, md: 4 } }>
                { renderTrend("Top Losers", top_losers, "/svg/loss.svg") }
             </Grid>
-            <Grid size = { { xs: 12, lg: 4 } }>
+            <Grid size = { { xs: 12, md: 4 } }>
                { renderTrend("Most Active", most_actively_traded, "/svg/active.svg") }
             </Grid>
          </Grid>
@@ -143,6 +143,7 @@ export default function Markets({ data }: { data: MarketTrends }) {
       <Stack
          direction = "column"
          id = "markets"
+         sx = { { justifyContent: "space-between" } }
       >
          <Box className = "animation-container">
             <Box
@@ -150,7 +151,7 @@ export default function Markets({ data }: { data: MarketTrends }) {
                className = "floating"
                component = "img"
                src = "/svg/economy.svg"
-               sx = { { width: 420, height: "auto", mx: "auto" } }
+               sx = { { width: 416, height: "auto", mx: "auto" } }
             />
          </Box>
          <Box sx = { { mt: -3, mb: 3 } }>

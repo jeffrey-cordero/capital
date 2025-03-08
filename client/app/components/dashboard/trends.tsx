@@ -1,11 +1,18 @@
-import { Card, CardContent, Stack, Typography } from "@mui/material";
+import {
+   Card,
+   CardContent,
+   Chip,
+   Stack,
+   Typography,
+   useTheme
+} from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { type Account, decrementingTypes } from "capital/accounts";
 
 import { getLastSixMonths, normalizeDate, today } from "@/lib/dates";
-import { displayCurrency, ellipsis } from "@/lib/display";
+import { displayCurrency, displayVolume, ellipsis } from "@/lib/display";
 
-export default function AccountTrends({ accounts }: { accounts: Account[] }) {
+export function AccountTrends({ accounts }: { accounts: Account[] }) {
    const historicalAccounts = accounts.map((account) => {
       // Format the history array into the proper types
       const history = account.history.map(entry => ({
@@ -65,10 +72,10 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
    return (
       <Card
          elevation = { 3 }
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
+         sx = { { textAlign: "left", borderRadius: 2 } }
          variant = "elevation"
       >
-         <CardContent>
+         <CardContent sx = { { p: 2.5 } }>
             <Typography
                component = "h2"
                gutterBottom = { true }
@@ -104,10 +111,14 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
             </Stack>
             <BarChart
                borderRadius = { 8 }
-               colors = { accounts.map((acc) => decrementingTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)") }
+               colors = {
+                  accounts.map((acc) =>
+                     decrementingTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)")
+               }
                grid = { { horizontal: true } }
-               height = { 250 }
+               height = { 300 }
                margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               resolveSizeBeforeRender = { true }
                series = {
                   accounts.map((account, index) => {
                      return {
@@ -133,6 +144,117 @@ export default function AccountTrends({ accounts }: { accounts: Account[] }) {
                         data: getLastSixMonths()
                      }
                   ] as any
+               }
+               yAxis = {
+                  [{
+                     domainLimit: "nice",
+                     valueFormatter: (value) => displayVolume(value)
+                  }]
+               }
+            />
+         </CardContent>
+      </Card>
+   );
+}
+
+export function BudgetTrends() {
+   const theme = useTheme();
+   const colorPalette = [
+      theme.palette.primary.dark,
+      theme.palette.primary.main,
+      theme.palette.primary.light
+   ];
+
+   return (
+      <Card
+         elevation = { 3 }
+         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2 } }
+         variant = "elevation"
+      >
+         <CardContent sx = { { p: 2.5 } }>
+            <Typography
+               component = "h2"
+               gutterBottom = { true }
+               variant = "subtitle2"
+            >
+               Budget
+            </Typography>
+            <Stack sx = { { justifyContent: "space-between" } }>
+               <Stack
+                  direction = "row"
+                  sx = {
+                     {
+                        alignContent: { xs: "center", sm: "flex-start" },
+                        alignItems: "center",
+                        gap: 1
+                     }
+                  }
+               >
+                  <Typography
+                     component = "p"
+                     variant = "h4"
+                  >
+                     $0.00
+                  </Typography>
+                  <Chip
+                     color = "success"
+                     label = "+52%"
+                     size = "small"
+                  />
+               </Stack>
+               <Typography
+                  sx = { { color: "text.secondary" } }
+                  variant = "caption"
+               >
+                  Income vs. Expenses for the last 6 months
+               </Typography>
+            </Stack>
+            <BarChart
+               borderRadius = { 8 }
+               colors = { colorPalette }
+               grid = { { horizontal: true } }
+               height = { 300 }
+               margin = { { left: 50, right: 0, top: 20, bottom: 20 } }
+               resolveSizeBeforeRender = { true }
+               series = {
+                  [
+                     {
+                        id: "income",
+                        label: "Income",
+                        data: [45234, 33872, 29198, 49125, 41317, 27389, 29398],
+                        stack: "A",
+                        color: theme.palette.success.main
+                     },
+                     {
+                        id: "expenses",
+                        label: "Expenses",
+                        data: [45234, 33872, 29198, 42125, 51317, 27389, 29398],
+                        stack: "B",
+                        color: theme.palette.error.main
+                     }
+                  ]
+               }
+               slotProps = {
+                  {
+                     legend: {
+                        hidden: true
+                     }
+                  }
+               }
+               xAxis = {
+                  [
+                     {
+                        scaleType: "band",
+                        categoryGapRatio: 0.5,
+                        data: getLastSixMonths()
+                     }
+                  ] as any
+               }
+               yAxis = {
+                  [{
+                     domainLimit: "nice",
+                     valueFormatter: (value) => displayVolume(value)
+                  }]
                }
             />
          </CardContent>

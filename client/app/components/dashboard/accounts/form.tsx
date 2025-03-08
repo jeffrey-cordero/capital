@@ -13,7 +13,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -22,7 +22,6 @@ import AccountTransactions from "@/components/dashboard/accounts/account-transac
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
-import ExitWarning from "@/components/global/exit-warning";
 import Modal from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { today } from "@/lib/dates";
@@ -38,7 +37,6 @@ interface AccountFormProps {
 
 export default function AccountForm({ account, open, onClose }: AccountFormProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const [exitWarning, setExitWarning] = useState<boolean>(false);
    const accounts = useSelector((root: RootState) => root.accounts.value);
    const updating = account !== undefined;
 
@@ -135,16 +133,8 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
    return (
       <Modal
-         onClose = {
-            () => {
-               if (Object.keys(dirtyFields).length > 0) {
-                  setExitWarning(true);
-                  return;
-               } else {
-                  onClose();
-               }
-            }
-         }
+         displayWarning = { Object.keys(dirtyFields).length > 0 }
+         onClose = { onClose }
          open = { open }
          sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "55%" }, p: 3, maxWidth: "90%" } }
       >
@@ -295,16 +285,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               />
                            )
                         }
-                        <ExitWarning
-                           onCancel = { () => setExitWarning(false) }
-                           onClose = {
-                              () => {
-                                 setExitWarning(false);
-                                 onClose();
-                              }
-                           }
-                           open = { exitWarning }
-                        />
                      </Stack>
                   </Stack>
                </form>

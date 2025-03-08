@@ -10,7 +10,7 @@ import { setEconomy } from "@/redux/slices/economy";
 
 interface Dashboard {
    accounts: Account[];
-   financialNews: News;
+   news: News;
    marketTrends: MarketTrends;
 }
 
@@ -24,7 +24,7 @@ export async function fetchDashboard(
 
    dispatch(setAccounts(dashboard.accounts));
    dispatch(setEconomy({
-      financialNews: dashboard.financialNews,
+      news: dashboard.news,
       marketTrends: dashboard.marketTrends
    }));
 

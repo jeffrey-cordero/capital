@@ -25,6 +25,18 @@ export function displayPercentage(percentage: number): string {
    return new Intl.NumberFormat().format(Number(percentage.toFixed(2))) + "%";
 }
 
+export function displayVolume(volume: number): string {
+   if (volume >= 1_000_000_000) {
+      return (volume / 1_000_000_000).toFixed(1) + "B";
+   } else if (volume >= 1_000_000) {
+      return (volume / 1_000_000).toFixed(1) + "M";
+   } else if (volume >= 1_000) {
+      return (volume / 1_000).toFixed(1) + "K";
+   }
+
+   return volume.toString();
+}
+
 export function displayDate(date: string): string {
    return new Date(date).toLocaleDateString("en-us", {
       month: "2-digit",

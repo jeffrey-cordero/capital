@@ -5,12 +5,12 @@ import type { News } from "capital/news";
 const economySlice = createSlice({
    name: "economy",
    initialState: {
-      financialNews: {} as News,
+      news: {} as News,
       marketTrends: {} as MarketTrends
    },
    reducers: {
-      setEconomy: (state, action: PayloadAction<{ financialNews: News; marketTrends: MarketTrends }>) => {
-         state.financialNews = action.payload.financialNews;
+      setEconomy: (state, action: PayloadAction<{ news: News; marketTrends: MarketTrends }>) => {
+         state.news = action.payload.news;
          state.marketTrends = action.payload.marketTrends;
       }
    }

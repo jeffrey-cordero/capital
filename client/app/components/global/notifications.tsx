@@ -1,5 +1,6 @@
 import { Alert, Link, Stack } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { type Notification, removeNotification } from "@/redux/slices/notifications";
@@ -8,6 +9,10 @@ import type { RootState } from "@/redux/store";
 export default function Notifications() {
    const dispatch = useDispatch();
    const notifications: Notification[] = useSelector((state: RootState) => state.notifications.value);
+
+   const closeNotification = useCallback((index: number) => {
+      dispatch(removeNotification(index));
+   }, [dispatch]);
 
    return (
       notifications.length > 0 && (
@@ -21,7 +26,7 @@ export default function Notifications() {
                      sx = { { mt: index * 9 } }
                   >
                      <Alert
-                        onClose = { () => dispatch(removeNotification(index)) }
+                        onClose = { () => closeNotification(index) }
                         severity = { notification.type }
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }
                         variant = "filled"

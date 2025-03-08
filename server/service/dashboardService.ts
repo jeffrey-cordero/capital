@@ -113,7 +113,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
    }
 }
 
-async function fetchNews(): Promise<News> {
+async function fetchRSSFeed(): Promise<News> {
    // Retrieve the latest financial news from the Dow Jones RSS feed
    const response = await fetch(
       "https://feeds.content.dowjones.io/public/rss/mw_topstories"
@@ -122,14 +122,14 @@ async function fetchNews(): Promise<News> {
    return await (await parseStringPromise(response))?.rss as News;
 }
 
-export async function fetchFinancialNews(): Promise<ServerResponse> {
+export async function fetchNews(): Promise<ServerResponse> {
    try {
       const cache = await getCacheValue("news");
 
       if (cache) {
          return sendServiceResponse(200, "Financial News", JSON.parse(cache) as News);
       } else {
-         const data = await fetchNews();
+         const data = await fetchRSSFeed();
          setCacheValue("news", 15 * 60, JSON.stringify(data));
 
          return sendServiceResponse(200, "Financial News", data as News);
@@ -145,15 +145,15 @@ export async function fetchFinancialNews(): Promise<ServerResponse> {
 }
 
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   const [marketTrends, financialNews, accounts] = await Promise.all([
+   const [marketTrends, news, accounts] = await Promise.all([
       fetchMarketTrends(),
-      fetchFinancialNews(),
+      fetchNews(),
       fetchAccounts(user_id)
    ]);
 
    return sendServiceResponse(200, "Dashboard", {
       accounts: accounts.data,
       marketTrends: marketTrends.data,
-      financialNews: financialNews.data
+      news: news.data
    });
 }

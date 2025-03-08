@@ -9,7 +9,7 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(`${date}T00:00:00`);
+      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
    }
 }
 

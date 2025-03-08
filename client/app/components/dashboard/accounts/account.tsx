@@ -15,7 +15,7 @@ import {
    useTheme
 } from "@mui/material";
 import { type Account, images } from "capital/accounts";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import AccountForm from "@/components/dashboard/accounts/form";
@@ -42,6 +42,14 @@ export default function AccountCard({ account }: { account: Account | undefined 
       setIsResourceError(false);
    }, [account?.image]);
 
+   const openAccountModal = useCallback(() => {
+      setState(account?.account_id ? "update" : "create");
+   }, [account?.account_id]);
+
+   const closeAccountModal = useCallback(() => {
+      setState("view");
+   }, []);
+
    return (
       account ? (
          <div
@@ -56,8 +64,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                <Typography
                   className = { isResourceError ? "error" : "primary" }
                   component = "a"
-                  href = "#"
-                  onClick = { () => setState("update") }
+                  onClick = { openAccountModal }
                >
                   <Avatar
                      onError = {
@@ -77,7 +84,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      }
                      sx = {
                         {
-                           height: 225,
+                           height: { xs: 250, sm: 215 },
                            width: "100%",
                            cursor: "grab",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
@@ -89,7 +96,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                   />
                </Typography>
                <Tooltip
-                  onClick = { () => setState("update") }
+                  onClick = { openAccountModal }
                   title = "Edit Account"
                >
                   <Fab
@@ -129,7 +136,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      </Typography>
                      <AccountForm
                         account = { account }
-                        onClose = { () => setState("view") }
+                        onClose = { closeAccountModal }
                         open = { state === "update" }
                      />
                   </Stack>
@@ -141,16 +148,16 @@ export default function AccountCard({ account }: { account: Account | undefined 
             <Button
                className = "btn-primary"
                color = "primary"
-               onClick = { () => setState("create") }
+               onClick = { openAccountModal }
                startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-               sx = { { p: 3 } }
+               sx = { { p: 2.8 } }
                variant = "contained"
             >
                Add Account
             </Button>
             <AccountForm
                account = { account }
-               onClose = { () => setState("view") }
+               onClose = { closeAccountModal }
                open = { state === "create" }
             />
          </Box>

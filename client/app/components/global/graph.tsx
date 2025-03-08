@@ -17,7 +17,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { AreaGradient } from "@/components/global/graphs";
 import { normalizeDate } from "@/lib/dates";
-import { displayNumeric, displayPercentage } from "@/lib/display";
+import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
 
 interface GraphProps {
    title: string;
@@ -56,7 +56,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    } = useForm();
    const { option, view, graph, from, to } = {
       option: watch("option", defaultOption),
-      view: watch("view", "YTD"),
+      view: watch("view", "Year"),
       graph: watch("graph", "Line"),
       from: watch("from", ""),
       to: watch("to", "")
@@ -79,7 +79,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
    const getFiltered = useMemo(() => {
       switch (view) {
-         case "YTD": {
+         case "Year": {
             // Format the yearly view (YYYY)
             const years = Array.from(
                new Set(range.map(d => normalizeDate(d.date).getUTCFullYear()))
@@ -110,7 +110,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
             return yearlyData;
          }
-         case "MTD": {
+         case "Month": {
             // Format the monthly view (MM/YYYY)
             const buckets: Record<string, number> = {};
             const monthlyData = range.reduce((acc: { date: string, value: string }[], record) => {
@@ -177,10 +177,10 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2, position: "relative", background: "transparent" } }
          variant = "elevation"
       >
-         <CardContent sx = { { p: card ? 2 : 0 } }>
+         <CardContent sx = { { p: card ? 2.5 : 0 } }>
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: 1, px: 1 } }
+               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: 1 } }
             >
                {
                   indicators && (
@@ -239,8 +239,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               id = "view"
                               value = { view }
                            >
-                              <option value = "MTD">MTD</option>
-                              <option value = "YTD">YTD</option>
+                              <option value = "Month">Month</option>
+                              <option value = "Year">Year</option>
                            </NativeSelect>
                         </FormControl>
                      )
@@ -273,14 +273,17 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   }
                />
             </Stack>
-            <Stack sx = { { justifyContent: "space-between", mt: 1, px: 1 } }>
+            <Stack sx = { { justifyContent: "space-between"  } }>
                <Stack
                   direction = "row"
                   sx = {
                      {
+                        justifyContent: { xs: "center", sm: "flex-start" },
                         alignContent: "center",
                         alignItems: "center",
+                        flexWrap: "wrap",
                         gap: 1,
+                        px: 1,
                         mt: { xs: 1, sm: 0 }
                      }
                   }
@@ -306,8 +309,9 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      colors = { [color] }
                      experimentalMarkRendering = { true }
                      grid = { { horizontal: true } }
-                     height = { 250 }
+                     height = { 365 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
                      series = {
                         [
                            {
@@ -344,11 +348,10 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         ]
                      }
                      yAxis = {
-                        [
-                           {
-                              domainLimit: "nice"
-                           }
-                        ]
+                        [{
+                           domainLimit: "nice",
+                           valueFormatter: (value) => displayVolume(value)
+                        }]
                      }
                   >
                      <AreaGradient
@@ -360,8 +363,9 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   <BarChart
                      borderRadius = { 8 }
                      grid = { { horizontal: true } }
-                     height = { 250 }
+                     height = { 375 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
                      series = {
                         [
                            {
@@ -389,6 +393,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      yAxis = {
                         [{
                            domainLimit: "nice",
+                           valueFormatter: (value) => displayVolume(value),
                            colorMap: {
                               type: "piecewise",
                               thresholds: [0],
@@ -401,7 +406,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: 1 } }
+               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: 1, pb: 1 } }
             >
                <Controller
                   control = { control }

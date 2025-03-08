@@ -184,7 +184,7 @@ interface SideBarContentProps {
    onClose: () => void;
 };
 
-function SideBarContent({ links, onClose } : SideBarContentProps) {
+function SideBarContent({ links, onClose }: SideBarContentProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const theme = useTheme();
    const location = useLocation();
@@ -299,7 +299,6 @@ function SideBarContent({ links, onClose } : SideBarContentProps) {
                               checked = { theme.palette.mode === "dark" }
                               id = "theme-switch"
                               onChange = { () => dispatch(toggleTheme()) }
-                              sx = { { m: 1 } }
                            />
                            <IconButton
                               aria-label = "Logout"

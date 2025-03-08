@@ -14,7 +14,7 @@ import {
    Stack
 } from "@mui/material";
 import { accountSchema, images } from "capital/accounts";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
    type Control,
    Controller,
@@ -44,7 +44,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
    const [open, setOpen] = useState<boolean>(false);
    const [activeStep, setActiveStep] = useState<number>(Math.max(imagesArray.indexOf(value), 0));
 
-   const saveImage = () => {
+   const saveImage = useCallback(() => {
       const fields = imageSchema.safeParse(value);
 
       if (!fields.success) {
@@ -55,7 +55,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
       } else {
          setOpen(false);
       }
-   };
+   }, [value, setError]);
 
    return (
       <Box>
@@ -73,7 +73,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
             <Divider>
                <Chip
@@ -99,7 +99,8 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                         {
                            width: "100%",
                            height: { xs: "auto", sm: 350, md: 400, lg: 450 },
-                           my: 2,
+                           mt: 2,
+                           mb: 1,
                            cursor: "pointer",
                            border: value === imagesArray[activeStep] ? "3px solid" : "none",
                            borderColor: "primary.main"
@@ -117,7 +118,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                         >
                            <FontAwesomeIcon
                               icon = { faCircleLeft }
-                              size = "lg"
+                              size = "xl"
                            />
                         </Button>
                      }
@@ -129,7 +130,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                         >
                            <FontAwesomeIcon
                               icon = { faCircleRight }
-                              size = "lg"
+                              size = "xl"
                            />
                         </Button>
                      }
@@ -144,7 +145,10 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                   name = "image"
                   render = {
                      ({ field }) => (
-                        <FormControl error = { Boolean(errors.image) }>
+                        <FormControl
+                           error = { Boolean(errors.image) }
+                           sx = { { mb: 1 } }
+                        >
                            <InputLabel htmlFor = "image">
                               URL
                            </InputLabel>
@@ -157,13 +161,9 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                               type = "text"
                               value = { images.has(field.value) || !field.value ? "" : field.value }
                            />
-                           {
-                              errors.image && (
-                                 <FormHelperText>
-                                    { errors.image?.message?.toString() }
-                                 </FormHelperText>
-                              )
-                           }
+                           <FormHelperText>
+                              { errors.image?.message?.toString() }
+                           </FormHelperText>
                         </FormControl>
                      )
                   }

@@ -114,7 +114,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                               unmountOnExit = { true }
                            >
                               <Grid
-                                 size = { { xs: 12, sm: 6, md: 4  } }
+                                 size = { { xs: 12, sm: 6, md: 4, lg: 3  } }
                               >
                                  <AccountCard
                                     account = { account }
@@ -135,7 +135,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
             </DndContext>
 
          </Grid>
-         <Box sx = { { mt: 8 } }>
+         <Box sx = { { mt: 6 } }>
             <AccountCard
                account = { undefined }
             />

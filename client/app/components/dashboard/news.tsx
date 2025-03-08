@@ -46,14 +46,14 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
             title = {
                <Stack
                   direction = "row"
-                  sx = { { justifyContent: "space-between" } }
+                  sx = { { ...ellipsis, justifyContent: "space-between", flexWrap: "wrap" } }
                >
                   <Stack spacing = { 0 }>
                      <Typography
-                        sx = { { ...ellipsis, maxWidth: { xs: "300px", sm: "200px", md: "300px" } } }
+                        sx = { { ...ellipsis, maxWidth: "225px" } }
                         variant = "subtitle2"
                      >
-                        { author.join(", ") }
+                        { author[0] }
                      </Typography>
                      <Typography variant = "caption">
                         { timeSinceLastUpdate(pubDate[0] || new Date().toISOString()) }
@@ -62,7 +62,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                   <IconButton
                      aria-label = "Read More"
                      disableRipple = { true }
-                     href = { link[0] || "#" }
+                     href = { link[0] || "" }
                      size = "small"
                      target = "_blank"
                   >
@@ -83,27 +83,24 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                onError = { () => setIsResourceError(true) }
                sx = {
                   {
-                     objectFit: "cover",
+                     objectFit: { xs: "contain", md: "cover" },
                      objectPosition: "center center",
-                     height: {
-                        xs: "300px",
-                        sm: "200px"
-                     },
+                     height: { xs: "auto", md: "200px" },
                      backgroundColor: "white"
                   }
                }
                title = "News"
             />
          </Stack>
-         <CardContent>
+         <CardContent sx = { { pb: 1 } }>
             <Typography
                sx = {
                   {
                      display: "-webkit-box",
                      WebkitBoxOrient: "vertical",
                      overflow: "hidden",
-                     WebkitLineClamp: 3,
-                     minHeight: { sm: "none", md: "60.5px" },
+                     WebkitLineClamp: { sm: "none", md: 2 },
+                     minHeight: { sm: "none", md: "20.02px" },
                      textOverflow: "ellipsis",
                      fontWeight: "medium",
                      mr: 2
@@ -114,7 +111,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: Story) {
                { title?.[0] || "No Title" }
             </Typography>
          </CardContent>
-         <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1 } }>
+         <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1, pt: 0 } }>
             <Expand
                disableRipple = { true }
                expand = { expanded }
@@ -163,7 +160,7 @@ export default function Stories({ data }: { data: News }) {
                   className = "floating"
                   component = "img"
                   src = "/svg/news.svg"
-                  sx = { { width: 225, height: "auto", mx: "auto" } }
+                  sx = { { width: 225, height: "auto", mx: "auto", mt: { xs: 3, lg: 0 } } }
                />
             </Box>
             <Grid
@@ -177,7 +174,7 @@ export default function Stories({ data }: { data: News }) {
                         return (
                            <Grid
                               key = { `news-${index}` }
-                              size = { { xs: 12, sm: 6, lg: 12 } }
+                              size = { { xs: 12, md: 6, lg: 12 } }
                            >
                               <StoryItem
                                  { ...item }
