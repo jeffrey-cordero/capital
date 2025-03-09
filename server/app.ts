@@ -46,21 +46,10 @@ app.use(cors({
    credentials: true
 }));
 
-// Content security policies
-app.use(
-   helmet.contentSecurityPolicy({
-      directives: {
-         defaultSrc: ["'self'"],
-         imgSrc: ["'self'", "https://images.mktw.net", "data:"],
-         scriptSrc: ["'self'", "https://cdn.jsdelivr.net"]
-      }
-   })
-);
-
-// Disable the X-Powered-By header for data minimization
+// Disable the X-Powered-By header to hide the tech stack
 app.disable("x-powered-by");
 
-// Prevent potential XSS attacks via Helmet
+// XSS attack mitigations via Helmet
 app.use(helmet.xssFilter());
 
 // Prevent browsers from interpreting files as a different MIME type via Helmet

@@ -10,9 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
-   Chip,
    Collapse,
-   Divider,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -34,7 +32,7 @@ import { z } from "zod";
 
 import { Expand } from "@/components/global/expand";
 import Graph from "@/components/global/graph";
-import Modal from "@/components/global/modal";
+import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayDate } from "@/lib/display";
@@ -207,7 +205,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                last_updated: normalizeDate(data.last_updated)
             };
             const result: number = await sendApiRequest(
-               `dashboard/accounts/${account.account_id}`, "POST", update, dispatch, navigate
+               `dashboard/accounts/${account.account_id}`, "PUT", update, dispatch, navigate
             );
 
             if (result === 204) {
@@ -253,129 +251,127 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          <Modal
             onClose = { closeHistoryModal }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
-            <form onSubmit = { handleSubmit(onSubmit) }>
-               <Stack
-                  direction = "column"
-                  spacing = { 2 }
-                  sx = { { mt : 0 } }
-               >
-                  <Divider>
-                     <Chip
-                        color = "success"
-                        label = "History"
-                     />
-                  </Divider>
-                  {
-                     Object.keys(history).map((month) => {
-                        return (
-                           <HistoryEdits
-                              account = { account }
-                              history = { history[month] }
-                              key = { account.account_id + month }
-                              month = { month }
-                           />
-                        );
-                     })
-                  }
-                  <Stack
-                     direction = "column"
-                     spacing = { 2 }
-                  >
-                     <Controller
-                        control = { control }
-                        name = "history_balance"
-                        render = {
-                           ({ field }) => (
-                              <FormControl error = { Boolean(errors.history_balance) }>
-                                 <InputLabel htmlFor = "history-balance">
-                                    Balance
-                                 </InputLabel>
-                                 <OutlinedInput
-                                    { ...field }
-                                    aria-label = "Balance"
-                                    disabled = { isSubmitting || disabled }
-                                    fullWidth = { true }
-                                    id = "history-balance"
-                                    label = "Balance"
-                                    type = "number"
-                                    value = { field.value || "" }
-                                 />
-                                 {
-                                    errors.history_balance && (
-                                       <FormHelperText>
-                                          { errors.history_balance?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
-                              </FormControl>
-                           )
-                        }
-                     />
-                     <Controller
-                        control = { control }
-                        name = "last_updated"
-                        render = {
-                           ({ field }) => (
-                              <FormControl error = { Boolean(errors.last_updated) }>
-                                 <TextField
-                                    { ...field }
-                                    color = { errors.last_updated ? "error" : "info" }
-                                    disabled = { isSubmitting || disabled }
-                                    error = { Boolean(errors.last_updated) }
-                                    fullWidth = { true }
-                                    id = "balance-date"
-                                    label = "Date"
-                                    size = "small"
-                                    slotProps = {
-                                       {
-                                          htmlInput: {
-                                             min: minDate,
-                                             max: maxDate
-                                          },
-                                          inputLabel: {
-                                             shrink: true
-                                          },
-                                          input: {
-                                             size: "medium"
-                                          }
-                                       }
-                                    }
-                                    sx = {
-                                       {
-                                          colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
-                                       }
-                                    }
-                                    type = "date"
-                                    value = { field.value || "" }
-                                 />
-                                 {
-                                    errors.last_updated && (
-                                       <FormHelperText>
-                                          { errors.last_updated?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
-                              </FormControl>
-                           )
-                        }
-                     />
-                     <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        disabled = { isSubmitting || disabled }
-                        fullWidth = { true }
-                        loading = { isSubmitting }
-                        startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
-                        type = "submit"
-                        variant = "contained"
+            <ModalSection title = "History">
+               <Box>
+                  <form onSubmit = { handleSubmit(onSubmit) }>
+                     <Stack
+                        direction = "column"
+                        spacing = { 2 }
+                        sx = { { mt: 0 } }
                      >
-                        Submit
-                     </Button>
-                  </Stack>
-               </Stack>
-            </form>
+                        {
+                           Object.keys(history).map((month) => {
+                              return (
+                                 <HistoryEdits
+                                    account = { account }
+                                    history = { history[month] }
+                                    key = { account.account_id + month }
+                                    month = { month }
+                                 />
+                              );
+                           })
+                        }
+                        <Stack
+                           direction = "column"
+                           spacing = { 2 }
+                        >
+                           <Controller
+                              control = { control }
+                              name = "history_balance"
+                              render = {
+                                 ({ field }) => (
+                                    <FormControl error = { Boolean(errors.history_balance) }>
+                                       <InputLabel htmlFor = "history-balance">
+                                          Balance
+                                       </InputLabel>
+                                       <OutlinedInput
+                                          { ...field }
+                                          aria-label = "Balance"
+                                          disabled = { isSubmitting || disabled }
+                                          fullWidth = { true }
+                                          id = "history-balance"
+                                          label = "Balance"
+                                          type = "number"
+                                          value = { field.value || "" }
+                                       />
+                                       {
+                                          errors.history_balance && (
+                                             <FormHelperText>
+                                                { errors.history_balance?.message?.toString() }
+                                             </FormHelperText>
+                                          )
+                                       }
+                                    </FormControl>
+                                 )
+                              }
+                           />
+                           <Controller
+                              control = { control }
+                              name = "last_updated"
+                              render = {
+                                 ({ field }) => (
+                                    <FormControl error = { Boolean(errors.last_updated) }>
+                                       <TextField
+                                          { ...field }
+                                          color = { errors.last_updated ? "error" : "info" }
+                                          disabled = { isSubmitting || disabled }
+                                          error = { Boolean(errors.last_updated) }
+                                          fullWidth = { true }
+                                          id = "balance-date"
+                                          label = "Date"
+                                          size = "small"
+                                          slotProps = {
+                                             {
+                                                htmlInput: {
+                                                   min: minDate,
+                                                   max: maxDate
+                                                },
+                                                inputLabel: {
+                                                   shrink: true
+                                                },
+                                                input: {
+                                                   size: "medium"
+                                                }
+                                             }
+                                          }
+                                          sx = {
+                                             {
+                                                colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                             }
+                                          }
+                                          type = "date"
+                                          value = { field.value || "" }
+                                       />
+                                       {
+                                          errors.last_updated && (
+                                             <FormHelperText>
+                                                { errors.last_updated?.message?.toString() }
+                                             </FormHelperText>
+                                          )
+                                       }
+                                    </FormControl>
+                                 )
+                              }
+                           />
+                           <Button
+                              className = "btn-primary"
+                              color = "primary"
+                              disabled = { isSubmitting || disabled }
+                              fullWidth = { true }
+                              loading = { isSubmitting }
+                              startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
+                              type = "submit"
+                              variant = "contained"
+                           >
+                              Submit
+                           </Button>
+                        </Stack>
+                     </Stack>
+                  </form>
+               </Box>
+            </ModalSection>
          </Modal>
       </Box>
    );
@@ -395,12 +391,6 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
 
    return (
       <Box>
-         <Divider>
-            <Chip
-               color = "success"
-               label = "Analytics"
-            />
-         </Divider>
          <Stack
             direction = "column"
             spacing = { -1 }

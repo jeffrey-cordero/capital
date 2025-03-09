@@ -22,7 +22,10 @@ export function displayNumeric(value: number, decimals: boolean = true): string 
 }
 
 export function displayPercentage(percentage: number): string {
-   return new Intl.NumberFormat().format(Number(percentage.toFixed(2))) + "%";
+   return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+   }).format(Number(percentage.toFixed(2))) + "%";
 }
 
 export function displayVolume(volume: number): string {

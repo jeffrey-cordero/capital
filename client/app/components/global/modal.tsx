@@ -1,11 +1,13 @@
 import {
    Box,
    Button,
+   Chip,
    css,
    Dialog,
    DialogActions,
    DialogContent,
    DialogContentText,
+   Divider,
    Fade,
    Modal as MuiModal,
    Stack,
@@ -104,6 +106,20 @@ function Warning({ open, onClose, onCancel }: WarningProps) {
    );
 }
 
+export function ModalSection({ title, children }: { title: string; children: React.ReactNode }) {
+   return (
+      <Box>
+         <Divider>
+            <Chip
+               color = "success"
+               label = { title }
+            />
+         </Divider>
+         { children }
+      </Box>
+   );
+}
+
 interface ModalProps {
    open: boolean;
    onClose: () => void;
@@ -112,7 +128,7 @@ interface ModalProps {
    displayWarning?: boolean;
 }
 
-export default function Modal({ open, onClose, children, sx, displayWarning }: ModalProps) {
+export function Modal({ open, onClose, children, sx, displayWarning }: ModalProps) {
    const [warningOpen, setWarningOpen] = useState<boolean>(false);
 
    const closeModal = useCallback(() => {

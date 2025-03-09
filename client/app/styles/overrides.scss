@@ -1,4 +1,4 @@
-// MUI-related overrides
+// MUI overrides
 input:-webkit-autofill,
 .MuiInputBase-root:has(> input:-webkit-autofill) {
   background-color: $autofill-light;

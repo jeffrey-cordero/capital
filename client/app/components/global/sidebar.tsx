@@ -7,7 +7,6 @@ import {
    faNewspaper,
    faPieChart,
    faPlaneArrival,
-   faRankingStar,
    faRightFromBracket,
    faUnlockKeyhole,
    faUserPlus,
@@ -54,10 +53,6 @@ const dashboard = [{
    path: "/dashboard/budget",
    title: "Budget",
    icon: faPieChart
-}, {
-   path: "/dashboard#goals",
-   title: "Goals",
-   icon: faRankingStar
 }, {
    path: "/dashboard#markets",
    title: "Markets",

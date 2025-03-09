@@ -3,8 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
-   Chip,
-   Divider,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -18,11 +16,11 @@ import { Controller, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import AccountTransactions from "@/components/dashboard/accounts/account-transactions";
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
-import Modal from "@/components/global/modal";
+import Transactions from "@/components/dashboard/accounts/transactions";
+import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { today } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
@@ -82,7 +80,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   updatedFields.account_id = account.account_id;
 
                   const result: number = await sendApiRequest(
-                     `dashboard/accounts/${account.account_id}`, "POST", updatedFields, dispatch, navigate
+                     `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
                   );
 
                   if (result === 204) {
@@ -136,173 +134,173 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          displayWarning = { Object.keys(dirtyFields).length > 0 }
          onClose = { onClose }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "55%" }, p: 3, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "55%" }, p: { xs: 2, sm: 3 }, maxWidth: "90%" } }
       >
          <Stack
             direction = "column"
             spacing = { 3 }
          >
-            <Box>
-               <Divider>
-                  <Chip
-                     color = "success"
-                     label = "Details"
-                  />
-               </Divider>
-               <form onSubmit = { handleSubmit(onSubmit) }>
-                  <Stack
-                     direction = "column"
-                     spacing = { 2 }
-                     sx = { { mt: 3 } }
-                  >
-                     <Controller
-                        control = { control }
-                        name = "name"
-                        render = {
-                           ({ field }) => (
-                              <FormControl error = { Boolean(errors.name) }>
-                                 <InputLabel htmlFor = "name">
-                                    Name
-                                 </InputLabel>
-                                 <OutlinedInput
-                                    { ...field }
-                                    aria-label = "Name"
-                                    autoComplete = "none"
-                                    autoFocus = { true }
-                                    disabled = { isSubmitting }
-                                    id = "name"
-                                    label = "Name"
-                                    type = "text"
-                                    value = { field.value || "" }
-                                 />
-                                 {
-                                    errors.name && (
-                                       <FormHelperText>
-                                          { errors.name?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
-                              </FormControl>
-                           )
-                        }
-                     />
-                     <Controller
-                        control = { control }
-                        name = "balance"
-                        render = {
-                           ({ field }) => (
-                              <FormControl error = { Boolean(errors.balance) }>
-                                 <InputLabel htmlFor = "balance">
-                                    Balance
-                                 </InputLabel>
-                                 <OutlinedInput
-                                    { ...field }
-                                    aria-label = "Balance"
-                                    disabled = { isSubmitting }
-                                    id = "balance"
-                                    label = "Balance"
-                                    type = "number"
-                                    value = { field.value || "" }
-                                 />
-                                 {
-                                    errors.balance && (
-                                       <FormHelperText>
-                                          { errors.balance?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
-                              </FormControl>
-                           )
-                        }
-                     />
-                     <Controller
-                        control = { control }
-                        defaultValue = "Checking"
-                        name = "type"
-                        render = {
-                           ({ field }) => (
-                              <FormControl
-                                 disabled = { isSubmitting }
-                                 error = { Boolean(errors.type) }
-                                 sx = { { px: 0.75 } }
-                              >
-                                 <InputLabel
-                                    htmlFor = "type"
-                                    sx = { { px: 0.75 } }
-                                    variant = "standard"
-                                 >
-                                    Type
-                                 </InputLabel>
-                                 <NativeSelect
-                                    { ...field }
-                                    id = "type"
-                                 >
-                                    {
-                                       Array.from(types).map((key) => (
-                                          <option
-                                             key = { key }
-                                             value = { key }
-                                          >
-                                             { key }
-                                          </option>
-                                       ))
-                                    }
-                                 </NativeSelect>
-                              </FormControl>
-                           )
-                        }
-                     />
+            <ModalSection title = "Details">
+               <Box>
+                  <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
                         direction = "column"
-                        spacing = { 1 }
+                        spacing = { 2 }
+                        sx = { { mt: 3 } }
                      >
-                        <AccountImage
-                           clearErrors = { clearErrors }
+                        <Controller
                            control = { control }
-                           disabled = { isSubmitting }
-                           errors = { errors }
-                           setError = { setError }
-                           setValue = { setValue }
-                           value = { watch("image") }
+                           name = "name"
+                           render = {
+                              ({ field }) => (
+                                 <FormControl error = { Boolean(errors.name) }>
+                                    <InputLabel htmlFor = "name">
+                                       Name
+                                    </InputLabel>
+                                    <OutlinedInput
+                                       { ...field }
+                                       aria-label = "Name"
+                                       autoComplete = "none"
+                                       autoFocus = { true }
+                                       disabled = { isSubmitting }
+                                       id = "name"
+                                       label = "Name"
+                                       type = "text"
+                                       value = { field.value || "" }
+                                    />
+                                    {
+                                       errors.name && (
+                                          <FormHelperText>
+                                             { errors.name?.message?.toString() }
+                                          </FormHelperText>
+                                       )
+                                    }
+                                 </FormControl>
+                              )
+                           }
                         />
-                        <Button
-                           className = "btn-primary"
-                           color = "primary"
-                           disabled = { isSubmitting }
-                           fullWidth = { true }
-                           loading = { isSubmitting }
-                           startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
-                           type = "submit"
-                           variant = "contained"
+                        <Controller
+                           control = { control }
+                           name = "balance"
+                           render = {
+                              ({ field }) => (
+                                 <FormControl error = { Boolean(errors.balance) }>
+                                    <InputLabel htmlFor = "balance">
+                                       Balance
+                                    </InputLabel>
+                                    <OutlinedInput
+                                       { ...field }
+                                       aria-label = "Balance"
+                                       disabled = { isSubmitting }
+                                       id = "balance"
+                                       label = "Balance"
+                                       type = "number"
+                                       value = { field.value || "" }
+                                    />
+                                    {
+                                       errors.balance && (
+                                          <FormHelperText>
+                                             { errors.balance?.message?.toString() }
+                                          </FormHelperText>
+                                       )
+                                    }
+                                 </FormControl>
+                              )
+                           }
+                        />
+                        <Controller
+                           control = { control }
+                           defaultValue = "Checking"
+                           name = "type"
+                           render = {
+                              ({ field }) => (
+                                 <FormControl
+                                    disabled = { isSubmitting }
+                                    error = { Boolean(errors.type) }
+                                    sx = { { px: 0.75 } }
+                                 >
+                                    <InputLabel
+                                       htmlFor = "type"
+                                       sx = { { px: 0.75 } }
+                                       variant = "standard"
+                                    >
+                                       Type
+                                    </InputLabel>
+                                    <NativeSelect
+                                       { ...field }
+                                       id = "type"
+                                    >
+                                       {
+                                          Array.from(types).map((key) => (
+                                             <option
+                                                key = { key }
+                                                value = { key }
+                                             >
+                                                { key }
+                                             </option>
+                                          ))
+                                       }
+                                    </NativeSelect>
+                                 </FormControl>
+                              )
+                           }
+                        />
+                        <Stack
+                           direction = "column"
+                           spacing = { 1 }
                         >
-                           { updating ? "Update" : "Create" }
-                        </Button>
-                        {
-                           updating && (
-                              <AccountDeletion
-                                 account = { account }
-                                 disabled = { isSubmitting }
-                              />
-                           )
-                        }
+                           <AccountImage
+                              clearErrors = { clearErrors }
+                              control = { control }
+                              disabled = { isSubmitting }
+                              errors = { errors }
+                              setError = { setError }
+                              setValue = { setValue }
+                              value = { watch("image") }
+                           />
+                           <Button
+                              className = "btn-primary"
+                              color = "primary"
+                              disabled = { isSubmitting }
+                              fullWidth = { true }
+                              loading = { isSubmitting }
+                              startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
+                              type = "submit"
+                              variant = "contained"
+                           >
+                              { updating ? "Update" : "Create" }
+                           </Button>
+                           {
+                              updating && (
+                                 <AccountDeletion
+                                    account = { account }
+                                    disabled = { isSubmitting }
+                                 />
+                              )
+                           }
+                        </Stack>
                      </Stack>
-                  </Stack>
-               </form>
-            </Box>
+                  </form>
+               </Box>
+            </ModalSection>
             {
                updating && (
-                  <Stack
-                     direction = "column"
-                     spacing = { 3 }
-                  >
+                  <ModalSection title = "Analytics">
                      <AccountHistory
                         account = { account }
                         disabled = { isSubmitting }
                      />
-                     <AccountTransactions
-                        account = { account }
+                  </ModalSection>
+               )
+            }
+            {
+               updating && (
+                  <ModalSection title = "Transactions">
+                     <Transactions
+                        filter = "account"
+                        identifier = { account.account_id }
                      />
-                  </Stack>
+                  </ModalSection>
                )
             }
          </Stack>

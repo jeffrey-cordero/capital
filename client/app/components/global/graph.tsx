@@ -40,7 +40,7 @@ export function getGraphColor(theme: Theme, value: number) {
 
 export function getChipColor(trend: number) {
    if (trend === 0) {
-      return "default" as const;
+      return "info" as const;
    } else if (trend > 0) {
       return "success" as const;
    } else {
@@ -278,19 +278,20 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   direction = "row"
                   sx = {
                      {
-                        justifyContent: { xs: "center", sm: "flex-start" },
+                        justifyContent: "flex-start",
                         alignContent: "center",
                         alignItems: "center",
                         flexWrap: "wrap",
                         gap: 1,
                         px: 1,
-                        mt: { xs: 1, sm: 0 }
+                        my: { xs: 2, sm: 1 }
                      }
                   }
                >
                   <Typography
                      component = "p"
-                     variant = "h4"
+                     sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all" } }
+                     variant = "h5"
                   >
                      { option === "GDP" || !indicators ? "$" : "" }
                      { displayNumeric(Number(filtered[filtered.length - 1].value)) }

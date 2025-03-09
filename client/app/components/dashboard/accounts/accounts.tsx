@@ -64,7 +64,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
             // Send ordering request to the server
             const ordering = newAccounts.map(account => account.account_id);
             sendApiRequest(
-               "dashboard/accounts/ordering", "POST", { accounts: ordering }, dispatch, navigate
+               "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
             ).then((result) => {
                // Revert back the optimistic update
                if (result !== 204) dispatch(setAccounts(oldAccounts));

@@ -40,7 +40,7 @@ export default function Page() {
                   sx = { { margin: "0 auto", maxWidth: "400px", px: 2 } }
                   variant = "body2"
                >
-                  A data-driven finance tracker created for the intelligent acquisition of capital.
+                  A data-driven finance tracker created for the intelligent acquisition of capital
                </Typography>
             </Stack>
             <Stack

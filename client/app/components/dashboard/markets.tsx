@@ -151,7 +151,7 @@ export default function Markets({ data }: { data: MarketTrends }) {
                className = "floating"
                component = "img"
                src = "/svg/economy.svg"
-               sx = { { width: 416, height: "auto", mx: "auto" } }
+               sx = { { width: 406, height: "auto", mx: "auto" } }
             />
          </Box>
          <Box sx = { { mt: -3, mb: 3 } }>

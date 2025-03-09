@@ -60,7 +60,7 @@ export async function sendApiRequest(
       }
 
       if (response.status === HTTP_STATUS.NO_CONTENT) {
-         // No data required other than the status code for confirmation
+         // No data required other than the status code for AccountDeletion
          return response.status;
       } else if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
          // Successful response

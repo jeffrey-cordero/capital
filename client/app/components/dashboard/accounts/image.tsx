@@ -4,8 +4,6 @@ import {
    Avatar,
    Box,
    Button,
-   Chip,
-   Divider,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -25,7 +23,7 @@ import {
    type UseFormSetValue
 } from "react-hook-form";
 
-import Modal from "@/components/global/modal";
+import { Modal, ModalSection } from "@/components/global/modal";
 
 const imageSchema = accountSchema.shape.image;
 const imagesArray = Array.from(images);
@@ -73,102 +71,97 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: 3, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
-            <Divider>
-               <Chip
-                  color = "success"
-                  label = "Image"
-               />
-            </Divider>
-            <Stack spacing = { 1 }>
-
-               <Stack
-                  direction = "column"
-                  sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
-               >
-                  <Avatar
-                     onClick = {
-                        () => {
-                           clearErrors("image");
-                           setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep], { shouldDirty: true });
+            <ModalSection title = "Image">
+               <Stack spacing = { 1 }>
+                  <Stack
+                     direction = "column"
+                     sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
+                  >
+                     <Avatar
+                        onClick = {
+                           () => {
+                              clearErrors("image");
+                              setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep], { shouldDirty: true });
+                           }
                         }
-                     }
-                     src = { `/images/${imagesArray[activeStep]}.png` }
-                     sx = {
-                        {
-                           width: "100%",
-                           height: { xs: "auto", sm: 350, md: 400, lg: 450 },
-                           mt: 2,
-                           mb: 1,
-                           cursor: "pointer",
-                           border: value === imagesArray[activeStep] ? "3px solid" : "none",
-                           borderColor: "primary.main"
+                        src = { `/images/${imagesArray[activeStep]}.png` }
+                        sx = {
+                           {
+                              width: "100%",
+                              height: { xs: "auto", sm: 350, md: 400, lg: 450 },
+                              mt: 2,
+                              mb: 1,
+                              cursor: "pointer",
+                              border: value === imagesArray[activeStep] ? "3px solid" : "none",
+                              borderColor: "primary.main"
+                           }
                         }
+                        variant = "rounded"
+                     />
+                     <MobileStepper
+                        activeStep = { activeStep }
+                        backButton = {
+                           <Button
+                              disabled = { activeStep === 0 }
+                              onClick = { () => setActiveStep(activeStep - 1) }
+                              size = "small"
+                           >
+                              <FontAwesomeIcon
+                                 icon = { faCircleLeft }
+                                 size = "xl"
+                              />
+                           </Button>
+                        }
+                        nextButton = {
+                           <Button
+                              disabled = { activeStep === imagesArray.length - 1 }
+                              onClick = { () => setActiveStep(activeStep + 1) }
+                              size = "small"
+                           >
+                              <FontAwesomeIcon
+                                 icon = { faCircleRight }
+                                 size = "xl"
+                              />
+                           </Button>
+                        }
+                        position = "static"
+                        steps = { imagesArray.length }
+                        sx = { { backgroundColor: "transparent", px: 2, py: 0 } }
+                        variant = "dots"
+                     />
+                  </Stack>
+                  <Controller
+                     control = { control }
+                     name = "image"
+                     render = {
+                        ({ field }) => (
+                           <FormControl
+                              error = { Boolean(errors.image) }
+                              sx = { { mb: 1 } }
+                           >
+                              <InputLabel htmlFor = "image">
+                                 URL
+                              </InputLabel>
+                              <OutlinedInput
+                                 { ...field }
+                                 aria-label = "URL"
+                                 id = "image"
+                                 label = "URL"
+                                 onFocus = { () => images.has(value) && setValue("image", "", { shouldDirty: true }) }
+                                 type = "text"
+                                 value = { images.has(field.value) || !field.value ? "" : field.value }
+                              />
+                              <FormHelperText>
+                                 { errors.image?.message?.toString() }
+                              </FormHelperText>
+                           </FormControl>
+                        )
                      }
-                     variant = "rounded"
-                  />
-                  <MobileStepper
-                     activeStep = { activeStep }
-                     backButton = {
-                        <Button
-                           disabled = { activeStep === 0 }
-                           onClick = { () => setActiveStep(activeStep - 1) }
-                           size = "small"
-                        >
-                           <FontAwesomeIcon
-                              icon = { faCircleLeft }
-                              size = "xl"
-                           />
-                        </Button>
-                     }
-                     nextButton = {
-                        <Button
-                           disabled = { activeStep === imagesArray.length - 1 }
-                           onClick = { () => setActiveStep(activeStep + 1) }
-                           size = "small"
-                        >
-                           <FontAwesomeIcon
-                              icon = { faCircleRight }
-                              size = "xl"
-                           />
-                        </Button>
-                     }
-                     position = "static"
-                     steps = { imagesArray.length }
-                     sx = { { backgroundColor: "transparent", px: 2, py: 0 } }
-                     variant = "dots"
                   />
                </Stack>
-               <Controller
-                  control = { control }
-                  name = "image"
-                  render = {
-                     ({ field }) => (
-                        <FormControl
-                           error = { Boolean(errors.image) }
-                           sx = { { mb: 1 } }
-                        >
-                           <InputLabel htmlFor = "image">
-                              URL
-                           </InputLabel>
-                           <OutlinedInput
-                              { ...field }
-                              aria-label = "URL"
-                              id = "image"
-                              label = "URL"
-                              onFocus = { () => images.has(value) && setValue("image", "", { shouldDirty: true }) }
-                              type = "text"
-                              value = { images.has(field.value) || !field.value ? "" : field.value }
-                           />
-                           <FormHelperText>
-                              { errors.image?.message?.toString() }
-                           </FormHelperText>
-                        </FormControl>
-                     )
-                  }
-               />
-            </Stack>
+            </ModalSection>
          </Modal>
       </Box>
    );

@@ -15,7 +15,7 @@ dashboardRouter.get("/", authenticateToken(true), dashboardController.GET);
 // Accounts
 dashboardRouter.get("/accounts", accountsController.GET);
 dashboardRouter.post("/accounts", accountsController.POST);
-dashboardRouter.post("/accounts/:id", accountsController.PUT);
+dashboardRouter.put("/accounts/:id", accountsController.PUT);
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 
 export default dashboardRouter;
