@@ -6,7 +6,7 @@ import Loading from "@/components/global/loading";
 import { fetchAuthentication } from "@/tanstack/queries/authenticationQueries";
 
 export default function Layout() {
-   // Fetch the authentication status within the landing pages to potentially redirect to the dashboard
+   // Fetch the authentication status within the initial landing pages
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({
       queryKey: ["authentication"],

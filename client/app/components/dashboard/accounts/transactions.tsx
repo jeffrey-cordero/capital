@@ -21,7 +21,7 @@ export default function Transactions({ filter, identifier }: TransactionProps) {
                </Box>
             )
          }
-         <Box>
+         <Box sx = { { mt: 2 } }>
             <Typography
                fontWeight = "bold"
                variant = "body1"

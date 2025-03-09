@@ -68,16 +68,14 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       );
    }, [data, option]);
 
-   const range = useMemo(() => {
-      return sorted.filter((a) => {
-         const date = normalizeDate(a.date);
+   const range = sorted.filter((a) => {
+      const date = normalizeDate(a.date);
 
-         return (from !== "" ? date >= normalizeDate(from) : true)
-            && (to !== "" ? date <= normalizeDate(to) : true);
-      });
-   }, [sorted, from, to]);
+      return (from !== "" ? date >= normalizeDate(from) : true)
+         && (to !== "" ? date <= normalizeDate(to) : true);
+   });
 
-   const getFiltered = useMemo(() => {
+   const constructGraphData = () => {
       switch (view) {
          case "Year": {
             // Format the yearly view (YYYY)
@@ -88,20 +86,18 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             const yearlyData = years.map((year) => {
                // Bucket the data by year and calculate the average or fetch the last value for each year
                const data = range.filter(d => normalizeDate(d.date).getUTCFullYear() === year);
-               const value = data.length > 0 ?
-                  average ?
-                     data.reduce((acc, record) => acc + Number(record.value), 0) / data.length
-                     : data[data.length - 1].value
-                  : 0;
+               const value = data.length === 0 ? 0 
+                  : average ? 
+                     data.reduce((acc, record) => acc + Number(record.value), 0) / data.length : data[data.length - 1].value
 
                return {
                   date: year.toString(),
-                  value: data.length > 0 ? value : 0
+                  value: data.length === 0 ? 0 : Number(value)
                };
             });
 
             if (yearlyData.length === 1 && graph !== "Bar") {
-               // Append the same value for the next previous to prevent an empty LineChart component
+               // Append the same value for the previous year to prevent an empty graph
                yearlyData.unshift({
                   date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
@@ -113,22 +109,23 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          case "Month": {
             // Format the monthly view (MM/YYYY)
             const buckets: Record<string, number> = {};
-            const monthlyData = range.reduce((acc: { date: string, value: string }[], record) => {
+            const monthlyData = range.reduce((acc: { date: string, value: number }[], record) => {
                const date = normalizeDate(record.date);
                const title = (date.getUTCMonth() + 1).toString().padStart(2, "0") + "/" + (date.getUTCFullYear().toString());
-               // Each bucket represents the final value in the dataset tied to that time period
+               
+               // Each monthly bucket represents the final value during that time period
                if (title in buckets) {
-                  acc[buckets[title]].value = record.value;
+                  acc[buckets[title]].value = Number(record.value);
                } else {
                   buckets[title] = acc.length;
-                  acc.push({ date: title, value: record.value });
+                  acc.push({ date: title, value: Number(record.value) });
                }
 
                return acc;
             }, []);
 
             if (monthlyData.length === 1 && graph !== "Bar") {
-               // Append the same value for the next previous to prevent an empty LineChart component
+               // Append the same value for the previous month to prevent an empty graph
                const monthYear = monthlyData[0].date.split("/");
 
                // Account for rotating to the previous year
@@ -152,9 +149,11 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             return range;
          }
       }
-   }, [view, range, graph, average]);
+   };
 
-   const filtered = getFiltered.length > 0 ? getFiltered : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }];
+   const filteredRange: { date: string; value: number; }[]  = constructGraphData();
+   const filtered = filteredRange.length > 0 ? 
+      filteredRange : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }];
 
    // Growth from start to end of range
    const trend = filtered.length > 0 ? (

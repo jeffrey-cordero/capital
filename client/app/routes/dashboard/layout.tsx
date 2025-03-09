@@ -6,7 +6,7 @@ import Loading from "@/components/global/loading";
 import { fetchDashboard } from "@/tanstack/queries/dashboardQueries";
 
 export default function Layout() {
-   // Fetch the dashboard content to be shared amongst all the pages with a 15 minute refresh interval
+   // Fetch the dashboard content to be shared amongst the pages with a 15 minute refresh interval
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({
       queryKey: ["dashboard"],

@@ -39,15 +39,15 @@ export default function Register() {
       const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid user fields
+         // Invalid fields
          handleValidationErrors(fields, setError);
       } else {
-         // Submit fields for registration
+         // Submit fields for user registration
          const registration = {
             username: data.username.trim(),
             name: data.name.trim(),
             password: data.password.trim(),
-            verifyPassword: data.verifyPassword.trim(),
+            verifyPassword: data.verifyPassword?.trim(),
             email: data.email.trim()
          };
 

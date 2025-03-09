@@ -43,10 +43,10 @@ export default function Login() {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid credentials
+         // Invalid fields
          handleValidationErrors(fields, setError);
       } else {
-         // Submit login credentials
+         // Submit the user credentials
          const credentials = {
             username: data.username.trim(),
             password: data.password.trim()
