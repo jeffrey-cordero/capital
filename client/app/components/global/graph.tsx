@@ -196,7 +196,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             { /* Controls for graph type, view and data selection */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0 } }
+               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: card ? 0 : 1 } }
             >
                {
                   indicators && (
@@ -285,7 +285,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                />
             </Stack>
             { /* Current value and trend display */ }
-            <Stack sx = { { justifyContent: "space-between" } }>
+            <Stack sx = { { justifyContent: "space-between", px: card ? 0 : 1 } }>
                <Stack
                   direction = "row"
                   sx = {
@@ -419,7 +419,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             { /* Date range filter controls */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 1, mt: 3, justifyContent: "space-between" } }
+               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: card ? 0 : 1 } }
             >
                <Controller
                   control = { control }

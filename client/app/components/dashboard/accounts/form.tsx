@@ -11,8 +11,8 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -38,6 +38,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    const accounts = useSelector((root: RootState) => root.accounts.value);
    const updating = account !== undefined;
 
+   // Form setup with react-hook-form
    const {
       control,
       setError,
@@ -49,6 +50,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       formState: { isSubmitting, errors, dirtyFields }
    } = useForm();
 
+   // Reset form when modal opens/closes or account changes
    useEffect(() => {
       if (open) {
          reset(account);
@@ -57,75 +59,86 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       }
    }, [account, reset, open]);
 
-   const onSubmit = async(data: any) => {
-      const account_order: number = account?.account_order || accounts.length;
+   // Memoize account types to prevent unnecessary re-renders
+   const accountTypes = useMemo(() => Array.from(types), []);
+
+   const onSubmit = async(data: FieldValues) => {
+      // Handles form submission for both create and update operations
+      if (updating && !account) {
+         // Invalid state, return without submitting
+         return;
+      }
+
+      const account_order: number = account?.account_order ?? accounts.length;
 
       try {
          const fields = accountSchema.safeParse({ ...data, account_order });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
-         } else {
-            // Determine if this is an update or create operation
-            if (updating) {
-               // Send dirty fields for updates to minimize data sent
-               const updatedFields = Object.keys(dirtyFields).reduce((acc: any, record) => {
-                  acc[record] = data[record];
+            return;
+         }
 
-                  return acc;
-               }, {});
+         if (updating) {
+            // For updates, only send modified fields
+            const updatedFields = Object.keys(dirtyFields).reduce((acc: Record<string, any>, record) => {
+               acc[record] = data[record];
 
-               // Only send request for actual changes
-               if (Object.keys(updatedFields).length > 0) {
-                  updatedFields.account_id = account.account_id;
+               return acc;
+            }, {});
 
-                  const result: number = await sendApiRequest(
-                     `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
-                  );
+            // Only proceed if there are actual changes
+            if (Object.keys(updatedFields).length > 0) {
+               updatedFields.account_id = account.account_id;
 
-                  if (result === 204) {
-                     // Update account details, potentially updating most recent record in the history array)
-                     dispatch(updateAccount({
-                        account: {
-                           ...account,
-                           ...updatedFields
-                        },
-                        history: updatedFields.balance ? {
-                           balance: updatedFields.balance,
-                           last_updated: today.toISOString()
-                        } : undefined
-                     }));
-                  }
-               }
-            } else {
-               const creation = {
-                  name: data.name.trim(),
-                  balance: data.balance,
-                  type: data.type,
-                  image: data.image?.trim() !== "" ? data.image : undefined,
-                  account_order: accounts.length
-               };
-
-               const result: { account_id: string } = await sendApiRequest(
-                  "dashboard/accounts", "POST", creation, dispatch, navigate, setError
+               const result = await sendApiRequest(
+                  `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
                );
 
-               if (result?.account_id) {
-                  dispatch(addAccount({
-                     ...creation,
-                     account_id: result.account_id,
-                     history: [{
-                        balance: creation.balance,
-                        last_updated: new Date().toISOString()
-                     }]
-                  } as Account));
-
-                  onClose();
+               if (result === 204) {
+                  // Update account for a valid response
+                  dispatch(updateAccount({
+                     account: {
+                        ...account,
+                        ...updatedFields
+                     },
+                     history: updatedFields.balance ? {
+                        balance: updatedFields.balance,
+                        last_updated: today.toISOString().split("T")[0]
+                     } : undefined
+                  }));
                }
+            }
+         } else {
+            // For new accounts, prepare creation data
+            const creation = {
+               name: data.name.trim(),
+               balance: data.balance,
+               type: data.type,
+               image: data.image?.trim() || undefined,
+               account_order: accounts.length
+            };
+
+            const result = await sendApiRequest(
+               "dashboard/accounts", "POST", creation, dispatch, navigate, setError
+            );
+
+            if (result?.account_id) {
+               // Add new account for a valid response
+               dispatch(addAccount({
+                  ...creation,
+                  account_id: result.account_id,
+                  history: [{
+                     balance: creation.balance,
+                     last_updated: new Date().toISOString()
+                  }]
+               } as Account));
+
+               onClose();
             }
          }
       } catch (error) {
-         console.error(error);
+         console.error("Failed to submit account form:", error);
       }
    };
 
@@ -148,6 +161,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                         spacing = { 2 }
                         sx = { { mt: 3 } }
                      >
+                        { /* Account name input */ }
                         <Controller
                            control = { control }
                            name = "name"
@@ -179,6 +193,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
+                        { /* Account balance input */ }
                         <Controller
                            control = { control }
                            name = "balance"
@@ -193,6 +208,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        aria-label = "Balance"
                                        disabled = { isSubmitting }
                                        id = "balance"
+                                       inputProps = { { min: 0 } }
                                        label = "Balance"
                                        type = "number"
                                        value = { field.value || "" }
@@ -208,6 +224,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
+                        { /* Account type selection */ }
                         <Controller
                            control = { control }
                            defaultValue = "Checking"
@@ -231,7 +248,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        id = "type"
                                     >
                                        {
-                                          Array.from(types).map((key) => (
+                                          accountTypes.map((key) => (
                                              <option
                                                 key = { key }
                                                 value = { key }
@@ -245,6 +262,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
+                        { /* Form actions */ }
                         <Stack
                            direction = "column"
                            spacing = { 1 }
@@ -283,6 +301,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   </form>
                </Box>
             </ModalSection>
+            { /* Additional sections for existing accounts */ }
             {
                updating && (
                   <ModalSection title = "Analytics">
@@ -294,7 +313,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                )
             }
             {
-               updating && (
+               updating && account && (
                   <ModalSection title = "Transactions">
                      <Transactions
                         filter = "account"

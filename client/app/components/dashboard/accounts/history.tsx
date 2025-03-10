@@ -40,16 +40,19 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateAccount } from "@/redux/slices/accounts";
 import { addNotification } from "@/redux/slices/notifications";
 
+// Define date constraints for the date picker
 const [minDate, maxDate] = [
    new Date("1800-01-01").toISOString().split("T")[0],
    new Date().toISOString().split("T")[0]
 ];
 
+// Schema for validating account history updates
 const accountHistoryUpdateSchema = z.object({
    history_balance: accountHistorySchema.shape.balance,
    last_updated: accountHistorySchema.shape.last_updated
 });
 
+// Type definition for the HistoryEdits component props
 interface HistoryEditsProps {
    account: Account;
    month: string;
@@ -60,39 +63,38 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const [expanded, setExpanded] = useState<boolean>(false);
 
-   const deleteAccountHistory = async(last_updated: string) => {
+   const deleteAccountHistory = useCallback(async(last_updated: string) => {
+      // Prevent deletion of the only history record
+      if (account.history.length === 1) {
+         dispatch(addNotification({
+            type: "error",
+            message: "At least one history record must remain for this account"
+         }));
+
+         return;
+      }
+
       try {
-         const removal = { last_updated: last_updated };
          const result: number = await sendApiRequest(
-            `dashboard/accounts/${account.account_id}`, "DELETE", { last_updated }, dispatch, navigate
+            `dashboard/accounts/${account.account_id}`, "DELETE",
+            { last_updated },
+            dispatch,
+            navigate
          );
 
          if (result === 204) {
+            // Update the account state by filtering out the deleted record
             dispatch(updateAccount({
                account: {
                   ...account,
-                  history: account.history.filter((history) => history.last_updated !== removal.last_updated)
+                  history: account.history.filter((record) => record.last_updated !== last_updated)
                }
             }));
-         } else {
-            if (account.history.length === 1) {
-               // All accounts must have at least one history record
-               dispatch(addNotification({
-                  type: "error",
-                  message: "At least one history record must remain for this account"
-               }));
-            } else {
-               // Mismatches between local and server state
-               dispatch(addNotification({
-                  type: "error",
-                  message: "There was an error removing your record. Please try again later."
-               }));
-            }
          }
       } catch (error) {
          console.error(error);
       }
-   };
+   }, [account, dispatch, navigate]);
 
    return (
       <Stack
@@ -124,42 +126,40 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                disablePadding = { true }
             >
                {
-                  history.map((history) => {
-                     return (
-                        <ListItemButton
-                           disableRipple = { true }
-                           disableTouchRipple = { true }
-                           key = { account.account_id + history.last_updated }
-                           sx = {
-                              {
-                                 pl: 4,
-                                 flexWrap: "wrap",
-                                 justifyContent: "center",
-                                 cursor: "default",
-                                 "&:hover": {
-                                    backgroundColor: "transparent"
-                                 }
+                  history.map((historyItem) => (
+                     <ListItemButton
+                        disableRipple = { true }
+                        disableTouchRipple = { true }
+                        key = { `${account.account_id}-${historyItem.last_updated}` }
+                        sx = {
+                           {
+                              pl: 4,
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                              cursor: "default",
+                              "&:hover": {
+                                 backgroundColor: "transparent"
                               }
                            }
-                        >
-                           <ListItemIcon sx = { { mr: -3.5 } }>
-                              <FontAwesomeIcon icon = { faCalendarDay } />
-                           </ListItemIcon>
-                           <ListItemText
-                              primary = { displayCurrency(history.balance) }
-                              secondary = { displayDate(history.last_updated) }
-                              sx = { { userSelect: "text", cursor: "text" } }
-                           />
-                           <FontAwesomeIcon
-                              color = "hsl(0, 90%, 50%)"
-                              fontSize = "15px"
-                              icon = { faTrashCan }
-                              onClick = { () => deleteAccountHistory(history.last_updated) }
-                              style = { { cursor: "pointer" } }
-                           />
-                        </ListItemButton>
-                     );
-                  })
+                        }
+                     >
+                        <ListItemIcon sx = { { mr: -3.5 } }>
+                           <FontAwesomeIcon icon = { faCalendarDay } />
+                        </ListItemIcon>
+                        <ListItemText
+                           primary = { displayCurrency(historyItem.balance) }
+                           secondary = { displayDate(historyItem.last_updated) }
+                           sx = { { userSelect: "text", cursor: "text" } }
+                        />
+                        <FontAwesomeIcon
+                           color = "hsl(0, 90%, 50%)"
+                           fontSize = "15px"
+                           icon = { faTrashCan }
+                           onClick = { () => deleteAccountHistory(historyItem.last_updated) }
+                           style = { { cursor: "pointer" } }
+                        />
+                     </ListItemButton>
+                  ))
                }
             </List>
          </Collapse>
@@ -168,6 +168,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
 }
 
 function HistoryModal({ account, disabled }: { account: Account, disabled: boolean }) {
+   // Allows users to view history records by month and add new history records
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const {
       control,
@@ -178,9 +179,12 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
    } = useForm();
    const [open, setOpen] = useState<boolean>(false);
 
-   const history = useMemo(() => {
+   // Groups account history records by month/year for organized display
+   const historyByMonth = useMemo(() => {
       return account.history.reduce((acc: Record<string, AccountHistory[]>, record) => {
+         // Extract month and year from the date string
          const parts = record.last_updated.split("-");
+         // Format as "MM/YYYY"
          const key = parts[1].padStart(2, "0") + "/" + parts[0];
 
          if (!acc[key]) {
@@ -188,7 +192,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          }
 
          acc[key].push(record);
-
          return acc;
       }, {});
    }, [account.history]);
@@ -204,22 +207,24 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                balance: data.history_balance,
                last_updated: normalizeDate(data.last_updated)
             };
+
             const result: number = await sendApiRequest(
                `dashboard/accounts/${account.account_id}`, "PUT", update, dispatch, navigate
             );
 
             if (result === 204) {
+               // Update the account state with the new history record
                dispatch(updateAccount({
                   account: account,
                   history: {
                      balance: update.balance,
-                     last_updated: update.last_updated.toISOString()
+                     last_updated: update.last_updated.toISOString().split("T")[0]
                   }
                }));
 
-               // Reset the history form for future submissions
+               // Reset the form for future submissions
                reset({
-                  balance: "",
+                  history_balance: "",
                   last_updated: ""
                });
             }
@@ -229,9 +234,15 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
       }
    };
 
+   // Handler to close the modal
    const closeHistoryModal = useCallback(() => {
       setOpen(false);
-   }, []);
+      // Reset form when closing modal to clear any previous input
+      reset({
+         history_balance: "",
+         last_updated: ""
+      });
+   }, [reset]);
 
    return (
       <Box>
@@ -261,18 +272,19 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                         spacing = { 2 }
                         sx = { { mt: 0 } }
                      >
+                        { /* Display history records grouped by month */ }
                         {
-                           Object.keys(history).map((month) => {
-                              return (
-                                 <HistoryEdits
-                                    account = { account }
-                                    history = { history[month] }
-                                    key = { account.account_id + month }
-                                    month = { month }
-                                 />
-                              );
-                           })
+                           Object.keys(historyByMonth).map((month) => (
+                              <HistoryEdits
+                                 account = { account }
+                                 history = { historyByMonth[month] }
+                                 key = { `${account.account_id}-${month}` }
+                                 month = { month }
+                              />
+                           ))
                         }
+
+                        { /* Form for adding new history records */ }
                         <Stack
                            direction = "column"
                            spacing = { 2 }
@@ -292,6 +304,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           disabled = { isSubmitting || disabled }
                                           fullWidth = { true }
                                           id = "history-balance"
+                                          inputProps = { { min: 0 } }
                                           label = "Balance"
                                           type = "number"
                                           value = { field.value || "" }
@@ -378,14 +391,13 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
 }
 
 export default function AccountHistoryView({ account, disabled }: { account: Account, disabled: boolean }) {
+   // Format history data for the graph component
    const historyData = useMemo(() => {
       return {
-         [account.name]: account.history.map((history) => {
-            return {
-               value: history.balance.toString(),
-               date: history.last_updated.split("T")[0]
-            };
-         })
+         [account.name]: account.history.map((historyItem) => ({
+            value: historyItem.balance.toString(),
+            date: historyItem.last_updated.split("T")[0]
+         }))
       };
    }, [account.name, account.history]);
 

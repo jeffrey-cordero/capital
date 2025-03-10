@@ -22,15 +22,22 @@ import AccountForm from "@/components/dashboard/accounts/form";
 import { displayCurrency, displayDate, ellipsis } from "@/lib/display";
 import { addNotification } from "@/redux/slices/notifications";
 
-export default function AccountCard({ account }: { account: Account | undefined }) {
-   const dispatch = useDispatch(), theme = useTheme();
-   const [state, setState] = useState<"view" | "create" | "update">("view");
+interface AccountCardProps {
+   account: Account | undefined;
+}
+
+type AccountState = "view" | "create" | "update";
+
+export default function AccountCard({ account }: AccountCardProps) {
+   const dispatch = useDispatch();
+   const theme = useTheme();
+   const [state, setState] = useState<AccountState>("view");
    const [isResourceError, setIsResourceError] = useState<boolean>(false);
 
-   // Drag and drop identifier measures
+   // Configure drag and drop functionality
    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
       id: account?.account_id || "",
-      disabled: state !== "view"
+      disabled: state !== "view" // Disable dragging when editing
    });
 
    const style = {
@@ -38,10 +45,12 @@ export default function AccountCard({ account }: { account: Account | undefined 
       transition
    };
 
+   // Reset image error state when account image changes
    useEffect(() => {
       setIsResourceError(false);
    }, [account?.image]);
 
+   // Modal control handlers
    const openAccountModal = useCallback(() => {
       setState(account?.account_id ? "update" : "create");
    }, [account?.account_id]);
@@ -50,8 +59,54 @@ export default function AccountCard({ account }: { account: Account | undefined 
       setState("view");
    }, []);
 
-   return (
-      account ? (
+   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+      //  Handles image loading errors and displays notification
+      setIsResourceError(true);
+      dispatch(addNotification({
+         type: "error",
+         message: `There was an issue fetching the image for ${account?.name}`
+      }));
+
+      e.currentTarget.src = "";
+   }, [dispatch, account?.name]);
+
+   const getImageSource = useCallback(() => {
+      // Determines the appropriate image source based on account data and error state
+      if (!account?.image) {
+         return "/images/empty.png";
+      } else if (images.has(account.image)) {
+         return `/images/${account.image}.png`;
+      } else if (!isResourceError) {
+         return account.image;
+      } else {
+         return "/images/empty.png";
+      }
+   }, [account?.image, isResourceError]);
+
+   if (!account) {
+      // Render empty state for account creation
+      return (
+         <Box>
+            <Button
+               className = "btn-primary"
+               color = "primary"
+               onClick = { openAccountModal }
+               startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+               sx = { { p: 2.8 } }
+               variant = "contained"
+            >
+               Add Account
+            </Button>
+            <AccountForm
+               account = { account }
+               onClose = { closeAccountModal }
+               open = { state === "create" }
+            />
+         </Box>
+      );
+   } else {
+      // Render account card with details
+      return (
          <div
             ref = { setNodeRef }
             style = { style }
@@ -61,27 +116,15 @@ export default function AccountCard({ account }: { account: Account | undefined 
                sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
                variant = { undefined }
             >
+               { /* Account image with drag handle */ }
                <Typography
                   className = { isResourceError ? "error" : "primary" }
                   component = "a"
                   onClick = { openAccountModal }
                >
                   <Avatar
-                     onError = {
-                        (e) => {
-                           setIsResourceError(true);
-                           dispatch(addNotification({
-                              type: "error",
-                              message: `There was an issue fetching the image for ${account.name}`
-                           }));
-                           (e.target as HTMLImageElement).src = "";
-                        }
-                     }
-                     src = {
-                        images.has(account.image) ? `/images/${account.image}.png`
-                           : !isResourceError && account.image
-                              ? account.image : "/images/empty.png"
-                     }
+                     onError = { handleImageError }
+                     src = { getImageSource() }
                      sx = {
                         {
                            height: { xs: 250, sm: 215 },
@@ -95,6 +138,7 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      { ...listeners }
                   />
                </Typography>
+               { /* Edit button */ }
                <Tooltip
                   onClick = { openAccountModal }
                   title = "Edit Account"
@@ -104,11 +148,10 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      size = "small"
                      sx = { { bottom: "75px", right: "15px", position: "absolute" } }
                   >
-                     <FontAwesomeIcon
-                        icon = { faPencil }
-                     />
+                     <FontAwesomeIcon icon = { faPencil } />
                   </Fab>
                </Tooltip>
+               { /* Account details */ }
                <CardContent sx = { { p: 3, pt: 2 } }>
                   <Typography
                      sx = { { ...ellipsis, pr: 4 } }
@@ -129,11 +172,10 @@ export default function AccountCard({ account }: { account: Account | undefined 
                      <Typography variant = "caption">
                         { account.type }
                      </Typography>
-                     <Typography
-                        variant = "caption"
-                     >
-                        { displayDate(account.history[0].last_updated) }
+                     <Typography variant = "caption">
+                        { displayDate(account.history[0]?.last_updated) }
                      </Typography>
+                     { /* Account edit form modal */ }
                      <AccountForm
                         account = { account }
                         onClose = { closeAccountModal }
@@ -143,24 +185,6 @@ export default function AccountCard({ account }: { account: Account | undefined 
                </CardContent>
             </Card>
          </div>
-      ) : (
-         <Box>
-            <Button
-               className = "btn-primary"
-               color = "primary"
-               onClick = { openAccountModal }
-               startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-               sx = { { p: 2.8 } }
-               variant = "contained"
-            >
-               Add Account
-            </Button>
-            <AccountForm
-               account = { account }
-               onClose = { closeAccountModal }
-               open = { state === "create" }
-            />
-         </Box>
-      )
-   );
-};
+      );
+   }
+}

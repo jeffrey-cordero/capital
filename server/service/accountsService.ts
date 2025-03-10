@@ -58,6 +58,8 @@ export async function updateAccount(
       return sendValidationErrors(null, "Invalid account fields",
          { account_id: "Missing account ID" }
       );
+   } else if (Object.keys(account).length === 0) {
+      return sendValidationErrors(null, "No account fields to update");
    }
 
    if (type === "details") {

@@ -1,6 +1,7 @@
 import {
    closestCenter,
    DndContext,
+   type DragEndEvent,
    KeyboardSensor,
    PointerSensor,
    TouchSensor,
@@ -11,6 +12,7 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { Box, Grow, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
+import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -18,9 +20,15 @@ import AccountCard from "@/components/dashboard/accounts/account";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 
-export default function Accounts({ accounts }: { accounts: Account[] }) {
-   // Drag and drop for accounts
-   const dispatch = useDispatch(), navigate = useNavigate();
+interface AccountsProps {
+   accounts: Account[];
+}
+
+export default function Accounts({ accounts }: AccountsProps) {
+   const dispatch = useDispatch();
+   const navigate = useNavigate();
+
+   // Configure drag and drop sensors
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -33,52 +41,59 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
       })
    );
 
-   const handleDragEnd = async(event: any) => {
+   const handleDragEnd = useCallback(async(event: DragEndEvent) => {
+      // Handles the end of a drag operation
       const { active, over } = event;
 
+      // Only proceed if dropping on a different position
       if (active.id !== over?.id) {
-         let oldIndex: number | undefined, newIndex: number | undefined;
+         let oldIndex: number | undefined;
+         let newIndex: number | undefined;
 
+         // Find the indices of the dragged and target accounts
          for (let i = 0; i < accounts.length; i++) {
             const account = accounts[i];
-
             if (account.account_id === active.id) {
-               // Original account
                oldIndex = i;
             }
-
             if (account.account_id === over?.id) {
-               // Swapping account
                newIndex = i;
             }
          }
 
+         // Update account order if both indices are found
          if (oldIndex !== undefined && newIndex !== undefined) {
-            // Optimistic ordering update
+            // Create backup of current order in case of failure on the server
             const oldAccounts = accounts.map(account => ({ ...account }));
+
+            // Update order optimistically
             const newAccounts = arrayMove(accounts, oldIndex, newIndex).map(
                (account, index) => ({ ...account, account_order: index })
             );
             dispatch(setAccounts(newAccounts));
 
-            // Send ordering request to the server
-            const ordering = newAccounts.map(account => account.account_id);
-            sendApiRequest(
-               "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
-            ).then((result) => {
-               // Revert back the optimistic update
-               if (result !== 204) dispatch(setAccounts(oldAccounts));
-            }).catch((error) => {
-               console.error(error);
-            });
+            try {
+               // Sync new order with server
+               const ordering = newAccounts.map(account => account.account_id);
+               const result = await sendApiRequest(
+                  "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
+               );
+
+               // Revert optimistic update if server request fails
+               if (result !== 204) {
+                  dispatch(setAccounts(oldAccounts));
+               }
+            } catch (error) {
+               console.error("Failed to update account order:", error);
+               dispatch(setAccounts(oldAccounts));
+            }
          }
       }
-   };
+   }, [accounts, dispatch, navigate]);
 
    return (
-      <Box
-         id = "accounts"
-      >
+      <Box id = "accounts">
+         { /* Header image */ }
          <Box className = "animation-container">
             <Box
                alt = "Accounts"
@@ -88,6 +103,7 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                sx = { { width: 350, height: "auto", mb: 6 } }
             />
          </Box>
+         { /* Accounts grid with drag and drop */ }
          <Grid
             container = { true }
             justifyContent = "center"
@@ -100,12 +116,12 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                sensors = { sensors }
             >
                <SortableContext
-                  items = { accounts.map((account) => account.account_id ?? "") }
+                  items = { accounts.map(account => account.account_id ?? "") }
                   strategy = { rectSortingStrategy }
                >
                   {
-                     accounts.length > 0 ? accounts.map((account, index) => {
-                        return (
+                     accounts.length > 0 ? (
+                        accounts.map((account, index) => (
                            <Grow
                               in = { true }
                               key = { `grow-${account.account_id}` }
@@ -113,16 +129,12 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                               timeout = { 200 + index * 200 }
                               unmountOnExit = { true }
                            >
-                              <Grid
-                                 size = { { xs: 12, sm: 6, md: 4, lg: 3  } }
-                              >
-                                 <AccountCard
-                                    account = { account }
-                                 />
+                              <Grid size = { { xs: 12, sm: 6, md: 4, lg: 3 } }>
+                                 <AccountCard account = { account } />
                               </Grid>
                            </Grow>
-                        );
-                     }) : (
+                        ))
+                     ) : (
                         <Typography
                            fontWeight = "bold"
                            variant = "body1"
@@ -133,12 +145,10 @@ export default function Accounts({ accounts }: { accounts: Account[] }) {
                   }
                </SortableContext>
             </DndContext>
-
          </Grid>
+         { /* Add account button */ }
          <Box sx = { { mt: 6 } }>
-            <AccountCard
-               account = { undefined }
-            />
+            <AccountCard account = { undefined } />
          </Box>
       </Box>
    );

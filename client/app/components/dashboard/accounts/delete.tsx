@@ -29,7 +29,7 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
          disabled = { disabled }
          message = {
             `Are you sure you want to delete your account? This action will permanently erase all your account history. 
-         However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.`
+            However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.`
          }
          onConfirmation = { onSubmit }
       />

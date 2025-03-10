@@ -12,7 +12,7 @@ import {
    Stack
 } from "@mui/material";
 import { accountSchema, images } from "capital/accounts";
-import { useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
    type Control,
    Controller,
@@ -25,7 +25,9 @@ import {
 
 import { Modal, ModalSection } from "@/components/global/modal";
 
+// Extract the image validation schema from the account schema
 const imageSchema = accountSchema.shape.image;
+// Convert the images Set to an array for easier indexing
 const imagesArray = Array.from(images);
 
 interface AccountImageProps {
@@ -38,10 +40,30 @@ interface AccountImageProps {
    disabled: boolean;
 }
 
-export default function AccountImage({ control, errors, setError, clearErrors, disabled, value, setValue }: AccountImageProps) {
+function AccountImage({
+   control,
+   errors,
+   setError,
+   clearErrors,
+   disabled,
+   value,
+   setValue
+}: AccountImageProps) {
+   // Allows users to view and select images from a carousel and input a custom URL
    const [open, setOpen] = useState<boolean>(false);
-   const [activeStep, setActiveStep] = useState<number>(Math.max(imagesArray.indexOf(value), 0));
 
+   // Current position in the image carousel, if applicable
+   const [activeStep, setActiveStep] = useState<number>(
+      Math.max(imagesArray.indexOf(value), 0)
+   );
+
+   // Memoize the current image path to prevent unnecessary re-renders
+   const currentImagePath = useMemo(() =>
+      `/images/${imagesArray[activeStep]}.png`,
+   [activeStep]
+   );
+
+   // Validate and save the image when closing the modal
    const saveImage = useCallback(() => {
       const fields = imageSchema.safeParse(value);
 
@@ -55,6 +77,38 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
       }
    }, [value, setError]);
 
+   // Handle image selection from the carousel
+   const handleImageSelect = useCallback(() => {
+      clearErrors("image");
+      setValue(
+         "image",
+         value === imagesArray[activeStep] ? "" : imagesArray[activeStep],
+         { shouldDirty: true }
+      );
+   }, [clearErrors, setValue, value, activeStep]);
+
+   // Navigate to previous image in carousel
+   const handlePrevImage = useCallback(() => {
+      setActiveStep(prev => prev - 1);
+   }, []);
+
+   // Navigate to next image in carousel
+   const handleNextImage = useCallback(() => {
+      setActiveStep(prev => prev + 1);
+   }, []);
+
+   // Handle opening the modal
+   const handleOpenModal = useCallback(() => {
+      setOpen(true);
+   }, []);
+
+   // Handle custom URL input focus
+   const handleUrlFocus = useCallback(() => {
+      if (images.has(value)) {
+         setValue("image", "", { shouldDirty: true });
+      }
+   }, [value, setValue]);
+
    return (
       <Box>
          <Button
@@ -62,7 +116,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
             color = "info"
             disabled = { disabled }
             fullWidth = { true }
-            onClick = { () => setOpen(true) }
+            onClick = { handleOpenModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }
             variant = "contained"
          >
@@ -80,13 +134,8 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                      sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
                   >
                      <Avatar
-                        onClick = {
-                           () => {
-                              clearErrors("image");
-                              setValue("image", value === imagesArray[activeStep] ? "" : imagesArray[activeStep], { shouldDirty: true });
-                           }
-                        }
-                        src = { `/images/${imagesArray[activeStep]}.png` }
+                        onClick = { handleImageSelect }
+                        src = { currentImagePath }
                         sx = {
                            {
                               width: "100%",
@@ -105,7 +154,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                         backButton = {
                            <Button
                               disabled = { activeStep === 0 }
-                              onClick = { () => setActiveStep(activeStep - 1) }
+                              onClick = { handlePrevImage }
                               size = "small"
                            >
                               <FontAwesomeIcon
@@ -117,7 +166,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                         nextButton = {
                            <Button
                               disabled = { activeStep === imagesArray.length - 1 }
-                              onClick = { () => setActiveStep(activeStep + 1) }
+                              onClick = { handleNextImage }
                               size = "small"
                            >
                               <FontAwesomeIcon
@@ -149,7 +198,7 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
                                  aria-label = "URL"
                                  id = "image"
                                  label = "URL"
-                                 onFocus = { () => images.has(value) && setValue("image", "", { shouldDirty: true }) }
+                                 onFocus = { handleUrlFocus }
                                  type = "text"
                                  value = { images.has(field.value) || !field.value ? "" : field.value }
                               />
@@ -166,3 +215,6 @@ export default function AccountImage({ control, errors, setError, clearErrors, d
       </Box>
    );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(AccountImage);

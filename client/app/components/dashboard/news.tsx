@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type News, type Story } from "capital/news";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Expand } from "@/components/global/expand";
 import { timeSinceLastUpdate } from "@/lib/dates";
@@ -58,110 +58,114 @@ function StoryItem({ description, link, pubDate, title, ...rest }: StoryItemProp
 
    return (
       <Card
-         elevation={3}
-         sx={{ margin: "auto", borderRadius: 2 }}
+         elevation = { 3 }
+         sx = { { margin: "auto", borderRadius: 2 } }
       >
-         {/* Author header with timestamp and external link */}
+         { /* Author header with timestamp and external link */ }
          <CardHeader
-            avatar={
+            avatar = {
                <Avatar
-                  aria-label="author"
-                  sx={{ bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" }}
+                  aria-label = "author"
+                  sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
-                  {authorInitial}
+                  { authorInitial }
                </Avatar>
             }
-            title={
+            title = {
                <Stack
-                  direction="row"
-                  sx={{ ...ellipsis, justifyContent: "space-between", flexWrap: "wrap" }}
+                  direction = "row"
+                  sx = { { ...ellipsis, justifyContent: "space-between", flexWrap: "wrap" } }
                >
-                  <Stack spacing={0}>
+                  <Stack spacing = { 0 }>
                      <Typography
-                        sx={{ ...ellipsis, maxWidth: "225px" }}
-                        variant="subtitle2"
+                        sx = { { ...ellipsis, maxWidth: "225px" } }
+                        variant = "subtitle2"
                      >
-                        {author}
+                        { author }
                      </Typography>
-                     <Typography variant="caption">
-                        {timeSinceLastUpdate(publishDate)}
+                     <Typography variant = "caption">
+                        { timeSinceLastUpdate(publishDate) }
                      </Typography>
                   </Stack>
                   <IconButton
-                     aria-label="Read More"
-                     disableRipple={true}
-                     href={storyLink}
-                     size="small"
-                     target="_blank"
+                     aria-label = "Read More"
+                     disableRipple = { true }
+                     href = { storyLink }
+                     size = "small"
+                     target = "_blank"
                   >
                      <FontAwesomeIcon
-                        className="primary"
-                        icon={faUpRightFromSquare}
-                        style={{ padding: "0 7px" }}
+                        className = "primary"
+                        icon = { faUpRightFromSquare }
+                        style = { { padding: "0 7px" } }
                      />
                   </IconButton>
                </Stack>
             }
          />
-         {/* Story image */}
-         <Stack sx={{ textAlign: "center", justifyContent: "center", alignItems: "center" }}>
+         { /* Story image */ }
+         <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
             <CardMedia
-               alt="Story Image"
-               component="img"
-               image={displayImage}
-               onError={() => setIsResourceError(true)}
-               sx={{
-                  objectFit: { xs: "contain", md: "cover" },
-                  objectPosition: "center center",
-                  height: { xs: "auto", md: "200px" },
-                  backgroundColor: "white"
-               }}
-               title="News"
+               alt = "Story Image"
+               component = "img"
+               image = { displayImage }
+               onError = { () => setIsResourceError(true) }
+               sx = {
+                  {
+                     objectFit: { xs: "contain", md: "cover" },
+                     objectPosition: "center center",
+                     height: { xs: "auto", md: "200px" },
+                     backgroundColor: "white"
+                  }
+               }
+               title = "News"
             />
          </Stack>
-         {/* Story title */}
-         <CardContent sx={{ pb: 1 }}>
+         { /* Story title */ }
+         <CardContent sx = { { pb: 1 } }>
             <Typography
-               sx={{
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  WebkitLineClamp: { sm: "none", md: 2 },
-                  minHeight: { sm: "none", md: "40.031px" },
-                  textOverflow: "ellipsis",
-                  fontWeight: "medium",
-                  mr: 2
-               }}
-               variant="body2"
+               sx = {
+                  {
+                     display: "-webkit-box",
+                     WebkitBoxOrient: "vertical",
+                     overflow: "hidden",
+                     WebkitLineClamp: { sm: "none", md: 2 },
+                     minHeight: { sm: "none", md: "40.031px" },
+                     textOverflow: "ellipsis",
+                     fontWeight: "medium",
+                     mr: 2
+                  }
+               }
+               variant = "body2"
             >
-               {storyTitle}
+               { storyTitle }
             </Typography>
          </CardContent>
-         {/* Expand/collapse controls */}
-         <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1, pt: 0 }}>
+         { /* Expand/collapse controls */ }
+         <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1, pt: 0 } }>
             <Expand
-               disableRipple={true}
-               expand={expanded}
-               onClick={() => setExpanded(!expanded)}
+               disableRipple = { true }
+               expand = { expanded }
+               onClick = { () => setExpanded(!expanded) }
             >
                <FontAwesomeIcon
-                  icon={faCaretDown}
-                  style={{ padding: "0 5px" }}
+                  icon = { faCaretDown }
+                  style = { { padding: "0 5px" } }
                />
             </Expand>
          </CardActions>
-         {/* Expandable description */}
+         { /* Expandable description */ }
          <Collapse
-            in={expanded}
-            timeout="auto"
-            unmountOnExit={true}
+            in = { expanded }
+            timeout = "auto"
+            unmountOnExit = { true }
          >
-            <CardContent sx={{ p: "0 15px" }}>
+            <CardContent sx = { { p: "0 15px" } }>
                <Typography
-                  color="textSecondary"
-                  variant="body2"
+                  color = "textSecondary"
+                  variant = "body2"
                >
-                  {storyDescription}
+                  { storyDescription }
                </Typography>
             </CardContent>
          </Collapse>
@@ -179,37 +183,39 @@ export default function Stories({ data }: StoriesProps) {
 
    return (
       <Box
-         id="news"
-         sx={{ textAlign: "center" }}
+         id = "news"
+         sx = { { textAlign: "center" } }
       >
          <Stack
-            direction="column"
-            sx={{ textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 }}
+            direction = "column"
+            sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
          >
-            {/* Header image */}
-            <Box className="animation-container">
+            { /* Header image */ }
+            <Box className = "animation-container">
                <Box
-                  alt="News"
-                  className="floating"
-                  component="img"
-                  src="/svg/news.svg"
-                  sx={{ width: 225, height: "auto", mx: "auto", mt: { xs: 3, lg: 0 } }}
+                  alt = "News"
+                  className = "floating"
+                  component = "img"
+                  src = "/svg/news.svg"
+                  sx = { { width: 225, height: "auto", mx: "auto", mt: { xs: 3, lg: 0 } } }
                />
             </Box>
-            {/* News grid */}
+            { /* News grid */ }
             <Grid
-               columnSpacing={3.1}
-               container={true}
-               sx={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" }}
+               columnSpacing = { 3.1 }
+               container = { true }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
             >
-               {newsItems.map((item: Story, index: number) => (
-                  <Grid
-                     key={`news-${index}`}
-                     size={{ xs: 12, md: 6, lg: 12 }}
-                  >
-                     <StoryItem {...item} />
-                  </Grid>
-               ))}
+               {
+                  newsItems.map((item: Story, index: number) => (
+                     <Grid
+                        key = { `news-${index}` }
+                        size = { { xs: 12, md: 6, lg: 12 } }
+                     >
+                        <StoryItem { ...item } />
+                     </Grid>
+                  ))
+               }
             </Grid>
          </Stack>
       </Box>

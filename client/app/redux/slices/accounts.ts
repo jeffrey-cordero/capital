@@ -1,6 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { type Account, type AccountHistory } from "capital/accounts";
 
+import { normalizeDate } from "@/lib/dates";
+
 const authenticationSlice = createSlice({
    name: "accounts",
    initialState: {
@@ -20,10 +22,10 @@ const authenticationSlice = createSlice({
          if (history) {
             // Update the history records array if a record is supplied
             let found: boolean = false;
-            const update: Date = new Date(history.last_updated);
+            const update: Date = normalizeDate(history.last_updated);
 
             account.history = account.history.reduce((acc: AccountHistory[], record: AccountHistory) => {
-               const current = new Date(record.last_updated);
+               const current = normalizeDate(record.last_updated.split("T")[0]);
 
                if (!found && update.getTime() >= current.getTime()) {
                   // Insert the new history record
