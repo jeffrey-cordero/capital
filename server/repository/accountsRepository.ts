@@ -3,7 +3,11 @@ import { PoolClient } from "pg";
 
 import { query, transaction  } from "@/lib/database";
 
+// Constants for query parameter indexing
+const FIRST_PARAM = 1;
+
 export async function findByUserId(user_id: string): Promise<Account[]> {
+   // Fetch accounts with their latest history records in a single query
    const search = `
       SELECT a.*, ah.*
       FROM accounts as a
@@ -14,20 +18,23 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    `;
    const result: (Account & AccountHistory)[] = await query(search, [user_id]);
 
-   // Group account's by their ID's, formatting their respective history array
-   const positions: { [key: string]: number } = {};
+   // Track positions to efficiently build account objects with history
+   const positions: Record<string, number> = {};
 
    return result.reduce((acc: Account[], record: Account & AccountHistory) => {
-      const existing = positions[record.account_id as string];
+      const account_id = record.account_id as string;
+      const existing = positions[account_id];
 
-      if (record.account_id in positions) {
+      // Add history to existing account or create new account entry
+      if (account_id in positions) {
          acc[existing].history.push({
             balance: record.balance,
             last_updated: record.last_updated
          });
       } else {
-         positions[record.account_id as string] = acc.length;
+         positions[account_id] = acc.length;
 
+         // Create new account with initial history entry
          acc.push({
             account_id: record.account_id,
             name: record.name,
@@ -48,25 +55,32 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
 
 export async function create(user_id: string, account: Account): Promise<string> {
    return await transaction(async(client: PoolClient) => {
-      // Create the account
+      // Create account record with basic details
       const creation = `
          INSERT INTO accounts (user_id, name, type, image, account_order)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING account_id;
       `;
-      const result: { account_id: string }[] = (await client.query(
-         creation, [user_id, account.name, account.type, account.image, account.account_order]
-      ))?.rows;
+      const result = await client.query<{ account_id: string }>(
+         creation,
+         [user_id, account.name, account.type, account.image, account.account_order]
+      );
 
-      // Insert the initial account history record
+      if (!result.rows.length) {
+         throw new Error("Failed to create account");
+      }
+
+      const account_id = result.rows[0].account_id;
+
+      // Create initial history record with starting balance
       const history = `
          INSERT INTO accounts_history (account_id, balance, last_updated)
          VALUES ($1, $2, CURRENT_TIMESTAMP)
          RETURNING last_updated;
       `;
-      await client.query(history, [result[0].account_id, account.balance]);
+      await client.query(history, [account_id, account.balance]);
 
-      return result[0].account_id;
+      return account_id;
    }) as string;
 }
 
@@ -75,10 +89,12 @@ export async function updateDetails(
    account_id: string,
    updates: Partial<Account & AccountHistory>
 ): Promise<boolean> {
+   // Build dynamic update query based on provided fields
    const fields: string[] = [];
    const values: any[] = [];
-   let params = 1;
+   let params = FIRST_PARAM;
 
+   // Only include fields that are present in the updates
    ["name", "type", "image", "account_order"].forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${params}`);
@@ -87,27 +103,27 @@ export async function updateDetails(
       }
    });
 
-   // Handle updating the most-recent balance
+   // Handle balance updates through the history table
    if (updates.balance) {
       await updateHistory(user_id, account_id, updates.balance, new Date());
    }
 
-   // Update the provided account details
-   if (fields.length > 0) {
-      values.push(user_id, account_id);
+   // Skip query if no fields to update
+   if (fields.length === 0) return true;
 
-      const updateQuery = `
-         UPDATE accounts
-         SET ${fields.join(", ")}
-         WHERE user_id = $${params}
-         AND account_id = $${params + 1}
-         RETURNING account_id;
-      `;
+   values.push(user_id, account_id);
 
-      return (await query(updateQuery, values) as Account[]).length > 0;
-   }
+   const updateQuery = `
+      UPDATE accounts
+      SET ${fields.join(", ")}
+      WHERE user_id = $${params}
+      AND account_id = $${params + 1}
+      RETURNING account_id;
+   `;
 
-   return true;
+   const result = await query(updateQuery, values) as Account[];
+
+   return result.length > 0;
 }
 
 export async function updateHistory(
@@ -116,6 +132,7 @@ export async function updateHistory(
    balance: number,
    last_updated: Date = new Date()
 ): Promise<boolean> {
+   // Update or insert history record only if account exists and belongs to user
    const updateHistory = `
       WITH existing_account AS (
          SELECT 1
@@ -128,12 +145,13 @@ export async function updateHistory(
       FROM existing_account
       WHERE EXISTS (SELECT 1 FROM existing_account)
       ON CONFLICT (account_id, last_updated)
-      DO UPDATE SET
-         balance = EXCLUDED.balance
+      DO UPDATE SET balance = EXCLUDED.balance
       RETURNING account_id;
    `;
+
    const result = await query(
-      updateHistory, [user_id, account_id, balance, last_updated]
+      updateHistory,
+      [user_id, account_id, balance, last_updated]
    ) as { account_id: string }[];
 
    return result.length > 0;
@@ -143,9 +161,9 @@ export async function removeHistory(
    user_id: string,
    account_id: string,
    last_updated: Date
-): Promise<"conflict" | "success" | "missing">  {
+): Promise<"conflict" | "success" | "missing"> {
    return await transaction(async(client: PoolClient) => {
-      // Fetch all the existing account records
+      // Prevent removal if it's the last history record
       const records = `
          SELECT COUNT(*)
          FROM accounts AS a
@@ -154,39 +172,36 @@ export async function removeHistory(
          WHERE a.user_id = $1
          AND a.account_id = $2;
       `;
-      const total: { count: number }[] = (
-         await client.query(records, [user_id, account_id])
-      ).rows;
+      const result = await client.query<{ count: number }>(records, [user_id, account_id]);
 
-      if (total[0].count <= 1) {
+      if (!result.rows.length || result.rows[0].count <= 1) {
          return "conflict";
-      } else {
-         const removal = `
-            DELETE FROM accounts_history
-            WHERE account_id = $1
-            AND last_updated = $2
-            RETURNING account_id;
-         `;
-
-         const removals: { account_id: string }[] = (
-            await client.query(removal, [account_id, last_updated])
-         ).rows;
-
-         if (removals.length === 1) {
-            // Matching history record removed
-            return "success";
-         } else {
-            // No matching history record
-            return "missing";
-         }
       }
+
+      // Remove specific history record
+      const removal = `
+         DELETE FROM accounts_history
+         WHERE account_id = $1
+         AND last_updated = $2
+         RETURNING account_id;
+      `;
+
+      const removals = await client.query<{ account_id: string }>(
+         removal,
+         [account_id, last_updated]
+      );
+
+      return removals.rows.length === 1 ? "success" : "missing";
    }, "SERIALIZABLE") as "conflict" | "success" | "missing";
 }
 
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
-   // Update account ordering in a single query
+   // Bulk update account ordering in a single query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
-   const params = updates.flatMap(update => [String(update.account_id), Number(update.account_order)]);
+   const params = updates.flatMap(update => [
+      String(update.account_id),
+      Number(update.account_order)
+   ]);
 
    const update = `
       UPDATE accounts
@@ -196,38 +211,33 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       AND accounts.user_id = $${params.length + 1}
       RETURNING accounts.user_id;
    `;
-   const result: { account_id: string }[] = await query(update, [...params, user_id]);
+
+   const result = await query(update, [...params, user_id]) as { account_id: string }[];
 
    return result.length > 0;
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    return await transaction(async(client: PoolClient) => {
-      // Disable the account history record removal trigger
-      const disableTrigger = `
-         ALTER TABLE accounts_history 
-         DISABLE TRIGGER prevent_last_history_record_delete_trigger;
-      `;
-      await client.query(disableTrigger);
+      // Temporarily disable trigger to allow cascade delete
+      await client.query(
+         "ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;"
+      );
 
-      // Remove the account with the respective history records through cascading
+      // Remove account and associated history through CASCADE
       const removal = `
          DELETE FROM accounts
          WHERE user_id = $1 
          AND account_id = $2
          RETURNING account_id;
       `;
-      const result: { account_id: string }[] = (
-         await client.query(removal, [user_id, account_id])
-      ).rows;
+      const result = await client.query<{ account_id: string }>(removal, [user_id, account_id]);
 
-      // Enable the account history record removal trigger
-      const enableTrigger = `
-         ALTER TABLE accounts_history 
-         ENABLE TRIGGER prevent_last_history_record_delete_trigger;
-      `;
-      await client.query(enableTrigger);
+      // Re-enable trigger
+      await client.query(
+         "ALTER TABLE accounts_history ENABLE TRIGGER prevent_last_history_record_delete_trigger;"
+      );
 
-      return result.length > 0;
+      return result.rows.length > 0;
    }, "SERIALIZABLE") as boolean;
 }

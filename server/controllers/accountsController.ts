@@ -24,12 +24,12 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
 
    if (req.params.id === "ordering") {
-      // Update accounts ordering for the user
+      // Update accounts ordering
       return submitServiceRequest(res,
          async() => updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[])
       );
    } else {
-      // Update account details or history records, where providing last_updated implies a record update
+      // Update account details or history records
       const account: Partial<Account & AccountHistory> = { ...req.body, account_id: req.params.id };
 
       return submitServiceRequest(res,
@@ -40,8 +40,8 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    // Handle deleting account history records or accounts, where providing last_updated implies a record removal
-   const user_id: string = res.locals.user_id;
    const account_id: string = req.params.id;
+   const user_id: string = res.locals.user_id;
 
    if (req.body.last_updated) {
       return submitServiceRequest(res,

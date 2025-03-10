@@ -26,7 +26,14 @@ export const accountSchema = z.object({
    }).max(30, {
       message: "Name must be at most 30 characters"
    }),
-   balance: z.literal("").transform(() => undefined).or(z.coerce.number({
+   balance: z.preprocess((value) => {
+      if (typeof value === "string" && (value.trim() === "" || isNaN(Number(value)))) {
+        return NaN; // Force validation failure for non-numeric strings
+      } else {
+         return Number(value); // Otherwise, return the original value
+      }
+   },
+   z.number({
       message: "Balance must be a valid number"
    }).min(0, {
       message: "Balance must be at least $0"
