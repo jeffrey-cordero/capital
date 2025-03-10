@@ -19,23 +19,6 @@ export type AccountHistory = {
    last_updated: string;
 }
 
-export const accountHistorySchema = z.object({
-   balance: z.literal("").transform(() => undefined).or(z.coerce.number({
-      message: "Balance must be a valid number"
-   }).min(0, {
-      message: "Balance must be at least $0"
-   }).max(99999999999.99, {
-      message: "Balance cannot exceed $99,999,999,999.99"
-   })),
-   last_updated: z.coerce.date({
-      message: "Last updated must be a valid date"
-   }).min(new Date("1800-01-01"), {
-      message: "Update cannot be earlier than the year 1800"
-   }).max(new Date(new Date().getTime() + 24 * 60 * 60 * 1000), {
-      message: "Update cannot be in the future"
-   })
-});
-
 export const accountSchema = z.object({
    account_id: z.string().uuid().optional(),
    name: z.string().min(1, {
@@ -59,4 +42,16 @@ export const accountSchema = z.object({
    }).max(2_147_483_647, 
       { message: "Account order must be at most 2,147,483,647" }
    )
+});
+
+export const accountHistorySchema = z.object({
+   balance: accountSchema.shape.balance,
+   history_balance: accountSchema.shape.balance.optional(),
+   last_updated: z.coerce.date({
+      message: "Last updated must be a valid date"
+   }).min(new Date("1800-01-01"), {
+      message: "Update cannot be earlier than the year 1800"
+   }).max(new Date(new Date().getTime() + 24 * 60 * 60 * 1000), {
+      message: "Update cannot be in the future"
+   })
 });

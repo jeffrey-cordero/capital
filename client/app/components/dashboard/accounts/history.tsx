@@ -156,7 +156,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                            fontSize = "15px"
                            icon = { faTrashCan }
                            onClick = { () => deleteAccountHistory(historyItem.last_updated) }
-                           style = { { cursor: "pointer" } }
+                           style = { { cursor: "pointer", paddingRight: "12px" } }
                         />
                      </ListItemButton>
                   ))
@@ -223,10 +223,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                }));
 
                // Reset the form for future submissions
-               reset({
-                  history_balance: "",
-                  last_updated: ""
-               });
+               reset();
             }
          }
       } catch (error) {
