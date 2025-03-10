@@ -12,7 +12,7 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
 
    const onSubmit = useCallback(async() => {
       try {
-         const result: number = await sendApiRequest(
+         const result = await sendApiRequest<number>(
             `dashboard/accounts/${account.account_id}`, "DELETE", undefined, dispatch, navigate
          );
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const decrementingTypes = new Set(["Debt", "Credit Card", "Loan"]);
+export const liabilityTypes = new Set(["Debt", "Credit Card", "Loan"]);
 export const types = new Set(["Checking", "Savings", "Credit Card", "Debt", "Retirement", "Investment", "Loan", "Property", "Other"]);
 export const images = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 

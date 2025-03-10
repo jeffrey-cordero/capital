@@ -75,7 +75,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
       }
 
       try {
-         const result: number = await sendApiRequest(
+         const result = await sendApiRequest<number>(
             `dashboard/accounts/${account.account_id}`, "DELETE",
             { last_updated },
             dispatch,
@@ -208,7 +208,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                last_updated: normalizeDate(data.last_updated)
             };
 
-            const result: number = await sendApiRequest(
+            const result = await sendApiRequest<number>(
                `dashboard/accounts/${account.account_id}`, "PUT", update, dispatch, navigate
             );
 
@@ -301,7 +301,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           disabled = { isSubmitting || disabled }
                                           fullWidth = { true }
                                           id = "history-balance"
-                                          inputProps = { { min: 0 } }
+                                          inputProps = { { min: 0, step: 0.01 } }
                                           label = "Balance"
                                           type = "number"
                                           value = { field.value || "" }

@@ -75,11 +75,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          && (to !== "" ? date <= normalizeDate(to) : true);
    });
 
-   /**
-    * Processes raw data into the appropriate format based on selected view
-    * Supports Year and Month views with special handling for single data points
-    */
    const constructGraphData = () => {
+      // Supports Year and Month views with special handling for single data points
       switch (view) {
          case "Year": {
             // Extract all unique years from the filtered data
@@ -333,7 +330,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               showMark: false,
                               curve: "linear",
                               area: true,
-                              data: filtered.map(d => Number(d.value))
+                              data: filtered.map(d => Number(d.value)),
+                              valueFormatter: (date) => date?.toFixed(2) + (average && view === "Year" ? " (avg)" : "")
                            }
                         ]
                      }

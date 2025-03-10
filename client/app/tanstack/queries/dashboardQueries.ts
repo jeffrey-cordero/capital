@@ -18,15 +18,19 @@ export async function fetchDashboard(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<Dashboard | null> {
-   const dashboard: Dashboard = await sendApiRequest(
+   const dashboard = await sendApiRequest<Dashboard>(
       "dashboard", "GET", null, dispatch, navigate
    );
 
-   dispatch(setAccounts(dashboard.accounts));
-   dispatch(setMarkets({
-      news: dashboard.news,
-      trends: dashboard.trends
-   }));
+   if (typeof dashboard === "object" && dashboard !== null) {
+      dispatch(setAccounts(dashboard.accounts));
+      dispatch(setMarkets({
+         news: dashboard.news,
+         trends: dashboard.trends
+      }));
 
-   return dashboard ?? null;
+      return dashboard;
+   } else {
+      return null;
+   }
 }

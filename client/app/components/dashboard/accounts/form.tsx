@@ -91,7 +91,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             if (Object.keys(updatedFields).length > 0) {
                updatedFields.account_id = account.account_id;
 
-               const result = await sendApiRequest(
+               const result = await sendApiRequest<number>(
                   `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
                );
 
@@ -119,11 +119,11 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                account_order: accounts.length
             };
 
-            const result = await sendApiRequest(
+            const result = await sendApiRequest<{ account_id: string }>(
                "dashboard/accounts", "POST", creation, dispatch, navigate, setError
             );
 
-            if (result?.account_id) {
+            if (typeof result === "object" && result?.account_id) {
                // Add new account for a valid response
                dispatch(addAccount({
                   ...creation,
@@ -208,7 +208,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        aria-label = "Balance"
                                        disabled = { isSubmitting }
                                        id = "balance"
-                                       inputProps = { { min: 0 } }
+                                       inputProps = { { min: 0, step: 0.01 } }
                                        label = "Balance"
                                        type = "number"
                                        value = { field.value || "" }

@@ -5,6 +5,7 @@ import type { NavigateFunction } from "react-router";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
+// HTTP status codes used throughout the application
 const HTTP_STATUS = {
    OK: 200,
    CREATED: 201,
@@ -12,83 +13,94 @@ const HTTP_STATUS = {
    REDIRECT: 302,
    UNAUTHORIZED: 401,
    INTERNAL_SERVER_ERROR: 500
-};
+} as const;
+
+// Special API paths that require different handling
+const SPECIAL_PATHS = {
+   LOGIN: "authentication/login",
+   AUTHENTICATION: "authentication",
+   DASHBOARD: "dashboard"
+} as const;
+
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
-export async function sendApiRequest(
+// Type for the expected API response structure
+type ApiResponse<T> = {
+   data?: T;
+   errors?: Record<string, string>;
+};
+
+export async function sendApiRequest<T>(
    path: string,
    method: string,
-   body: any,
+   body: unknown,
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
-): Promise<number | any | null> {
-   const login: boolean = path === "authentication/login";
-   const authenticating: boolean = path === "authentication";
+): Promise<T | number | null> {
+   // Check if this is a special path that needs different handling
+   const isLogin = path === SPECIAL_PATHS.LOGIN;
+   const isAuthentication = path === SPECIAL_PATHS.AUTHENTICATION;
 
-   return await fetch(`${SERVER_URL}/${path}`, {
-      method: method,
-      headers: {
-         "Content-Type": "application/json"
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      credentials: "include"
-   }).then(async(response) => {
-      if (!login && response.status === HTTP_STATUS.UNAUTHORIZED) {
-         // Unauthorized endpoint access, which requires a global state reset
+   try {
+      const response = await fetch(`${SERVER_URL}/${path}`, {
+         method,
+         headers: {
+            "Content-Type": "application/json"
+         },
+         body: body ? JSON.stringify(body) : undefined,
+         credentials: "include"
+      });
+
+      // Handle authentication and redirection cases
+      if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
          window.location.pathname = "/login";
-
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
-         // Navigate back to the authorized endpoint
          navigate("/dashboard");
-
          return null;
-      } else if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
-         // Caught server error
-         const error: string = (await response.json())?.errors?.server || "An unknown error occurred";
-
-         throw new Error(error);
       }
 
-      // Update the authentication state to match the server state
-      if (!authenticating) {
-         const dashboard: boolean = path.startsWith("dashboard");
-         const loggedIn: boolean = login && response.status === HTTP_STATUS.OK;
+      // Handle server errors with specific error messages
+      if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+         const responseData: ApiResponse<T> = await response.json();
 
-         dispatch(authenticate(loggedIn || dashboard));
+         throw new Error(responseData.errors?.server || "An unknown error occurred");
       }
 
+      // Update authentication state if not checking authentication
+      if (!isAuthentication) {
+         const isDashboard = path.startsWith(SPECIAL_PATHS.DASHBOARD);
+         const isSuccessfulLogin = isLogin && response.status === HTTP_STATUS.OK;
+
+         dispatch(authenticate(isSuccessfulLogin || isDashboard));
+      }
+
+      // Handle different response types
       if (response.status === HTTP_STATUS.NO_CONTENT) {
-         // No data required other than the status code for AccountDeletion
          return response.status;
       } else if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
-         // Successful response
-         const data: any = (await response.json())?.data ?? {};
+         const responseData: ApiResponse<T> = await response.json();
 
-         return data;
+         return responseData.data as T;
       } else {
-         // Errors returned from the server
-         const errors: Record<string, string> = (await response.json())?.errors || {};
+         // Handle validation errors from the server
+         const responseData: ApiResponse<T> = await response.json();
 
-         Object.entries(errors).forEach(
-            ([field, message]) => setError?.(field, {
-               type: "server", message: message as string
-            })
-         );
+         Object.entries(responseData.errors || {}).forEach(([field, message]) => {
+            setError?.(field, { type: "server", message });
+         });
 
          return null;
       }
-   }).catch((error: any) => {
-      console.error(error);
+   } catch (error) {
+      console.error("API Request failed:", error);
 
-      dispatch(
-         addNotification({
-            type: "error",
-            message: "Internal Server Error"
-         })
-      );
+      dispatch(addNotification({
+         type: "error",
+         message: "Internal Server Error"
+      }));
 
       return null;
-   });
+   }
 }

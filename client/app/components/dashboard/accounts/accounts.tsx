@@ -75,7 +75,7 @@ export default function Accounts({ accounts }: AccountsProps) {
             try {
                // Sync new order with server
                const ordering = newAccounts.map(account => account.account_id);
-               const result = await sendApiRequest(
+               const result = await sendApiRequest<number>(
                   "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
                );
 

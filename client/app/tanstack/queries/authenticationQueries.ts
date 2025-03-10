@@ -9,27 +9,27 @@ export async function fetchAuthentication(
    navigate: NavigateFunction
 ): Promise<boolean | null> {
    // Fetch authentication status within the landing pages
-   const status: { authenticated: boolean } = await sendApiRequest(
+   const status = await sendApiRequest<{ authenticated: boolean }>(
       "authentication", "GET", null, dispatch, navigate
    );
 
-   if (status !== null) {
+   if (typeof status === "object" && status !== null) {
       // Set the global authentication state for routing purposes
       dispatch(authenticate(status.authenticated));
    }
 
-   return status.authenticated === true ? null : false;
+   return typeof status === "object" && status?.authenticated === true ? null : false;
 };
 
 export async function clearAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
 ): Promise<void> {
-   const logout: { success: boolean } = await sendApiRequest(
+   const logout = await sendApiRequest<{ success: boolean }>(
       "authentication/logout", "POST", null, dispatch, navigate
    );
 
-   if (logout?.success) {
+   if (typeof logout === "object" && logout?.success) {
       // Navigate to the login page to reset the global state
       window.location.pathname = "/login";
    }

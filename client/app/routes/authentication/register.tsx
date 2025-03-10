@@ -51,11 +51,11 @@ export default function Register() {
             email: data.email.trim()
          };
 
-         const result: { success: boolean } = await sendApiRequest(
+         const result = await sendApiRequest<{ success: boolean }>(
             "users", "POST", registration, dispatch, navigate, setError
          );
 
-         if (result?.success) {
+         if (typeof result === "object" && result?.success) {
             navigate("/dashboard");
 
             dispatch(addNotification({

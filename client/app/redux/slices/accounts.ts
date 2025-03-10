@@ -20,54 +20,52 @@ const authenticationSlice = createSlice({
          const history: AccountHistory | undefined = action.payload.history;
 
          if (history) {
-            // Update the history records array if a record is supplied
-            let found: boolean = false;
-            const update: Date = normalizeDate(history.last_updated);
+            // Convert update date once to avoid repeated conversions
+            let historyInserted = false;
+            const updateDate = normalizeDate(history.last_updated);
+            const updateTimestamp = updateDate.getTime();
 
+            // Process history records chronologically
             account.history = account.history.reduce((acc: AccountHistory[], record: AccountHistory) => {
-               const current = normalizeDate(record.last_updated.split("T")[0]);
+               const currentDate = normalizeDate(record.last_updated.split("T")[0]);
+               const currentTimestamp = currentDate.getTime();
 
-               if (!found && update.getTime() >= current.getTime()) {
-                  // Insert the new history record
-                  found = true;
-
+               // Insert new history record in chronological order
+               if (!historyInserted && updateTimestamp >= currentTimestamp) {
+                  historyInserted = true;
                   acc.push({
                      balance: history.balance,
-                     last_updated: update.toISOString()
+                     last_updated: updateDate.toISOString()
                   });
 
-                  // Insert the old record with a different date
-                  if (update.getTime() !== current.getTime()) {
-                     acc.push({ ...record });
+                  // Keep the old record if dates don't match
+                  if (updateTimestamp !== currentTimestamp) {
+                     acc.push(record);
                   }
                } else {
-                  // Insert the old history record
-                  acc.push({ ...record });
+                  acc.push(record);
                }
 
                return acc;
             }, []);
 
-            // New history record to append
-            if (!found) {
+            // Append history record if it's the most recent
+            if (!historyInserted) {
                account.history.push({
                   balance: history.balance,
-                  last_updated: update.toISOString()
+                  last_updated: updateDate.toISOString()
                });
             }
          }
 
-         state.value = state.value.map((acc) => {
-            return account.account_id ===  acc.account_id ? {
-               ...account,
-               balance: account.history[0].balance
-            } : acc;
-         });
+         // Update account in state with latest balance
+         state.value = state.value.map((acc) =>
+            account.account_id === acc.account_id ? { ...account, balance: account.history[0].balance } : acc
+         );
       },
       removeAccount(state, action: PayloadAction<string>) {
-         state.value = state.value.filter((account) => {
-            return account.account_id !== action.payload;
-         });
+         // Filter out the account with matching ID
+         state.value = state.value.filter(account => account.account_id !== action.payload);
       }
    }
 });
