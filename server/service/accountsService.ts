@@ -92,7 +92,7 @@ export async function updateAccount(
             account.account_id,
             Number(account.balance),
             account.last_updated ? new Date(account.last_updated) : new Date()
-         ); 
+         );
       }
    }
 

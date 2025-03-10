@@ -24,6 +24,10 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addNotification } from "@/redux/slices/notifications";
 
+const registrationSchema = userSchema.extend({
+   verifyPassword: userSchema.shape.password
+});
+
 export default function Register() {
    const dispatch = useDispatch(), navigate = useNavigate();
    const {
@@ -36,7 +40,7 @@ export default function Register() {
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      const fields = userSchema.safeParse(data);
+      const fields = registrationSchema.safeParse(data);
 
       if (!fields.success) {
          // Invalid fields

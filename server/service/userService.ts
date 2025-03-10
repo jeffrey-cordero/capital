@@ -7,47 +7,55 @@ import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import { create, findConflictingUsers } from "@/repository/userRepository";
 
+// Helper function to normalize user input for case-insensitive comparison
+const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
+
+// Helper function to check for username/email conflicts and generate error messages, essential during registration and updates
+const generateConflictErrors = (existingUsers: User[], username: string, email: string): Record<string, string> => {
+   const normalizedUsername = normalizeUserInput(username);
+   const normalizedEmail = normalizeUserInput(email);
+
+   return existingUsers.reduce((acc: Record<string, string>, record: User) => {
+      if (normalizeUserInput(record.username) === normalizedUsername) {
+         acc.username = "Username already exists";
+      }
+
+      if (normalizeUserInput(record.email) === normalizedEmail) {
+         acc.email = "Email already exists";
+      }
+
+      return acc;
+   }, {});
+};
+
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
-   // Validate user fields
+   // Validate user fields against the user schema
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid user fields");
    } else if (fields.data.password !== fields.data.verifyPassword) {
-      // Invalid new password verification
+      // Ensure passwords match
       return sendValidationErrors(null, "Invalid user fields", {
          password: "Passwords do not match",
          verifyPassword: "Passwords do not match"
       });
    } else {
-      // Validate user uniqueness
-      const result: User[] = await findConflictingUsers(user.username, user.email);
+      // Validate user uniqueness by checking for existing username/email
+      const existingUsers: User[] = await findConflictingUsers(user.username, user.email);
 
-      if (result.length === 0) {
-         // Create the new user
-         const user_id: string = await create({ ...user, password: await hash(user.password) });
+      if (existingUsers.length === 0) {
+         // Hash password and create the new user
+         const hashedPassword = await hash(user.password);
+         const user_id: string = await create({ ...user, password: hashedPassword });
 
-         // Configure their JWT token for authentication purposes
+         // Configure JWT token for authentication
          configureToken(res, user_id);
 
          return sendServiceResponse(201, "Successfully registered", { success: true });
       } else {
-         // User(s) already exist with same username and/or email
-         const normalizedUsername = user.username.toLowerCase().trim();
-         const normalizedEmail = user.email.toLowerCase().trim();
-
-         const errors = result.reduce((acc: Record<string, string>, record: User) => {
-            if (record.username.toLowerCase().trim() === normalizedUsername) {
-               acc.username = "Username already exists";
-            }
-
-            if (record.email.toLowerCase().trim() === normalizedEmail) {
-               acc.email = "Email already exists";
-            }
-
-            return acc;
-         }, {} as Record<string, string>);
-
+         // Handle username/email conflicts
+         const errors = generateConflictErrors(existingUsers, user.username, user.email);
          return sendServiceResponse(409, "Invalid user fields", undefined, errors);
       }
    }
