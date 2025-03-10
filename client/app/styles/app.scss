@@ -60,6 +60,7 @@ a {
   position: relative;
   color: $primary;
   text-decoration: none;
+  cursor: pointer;
 
   &::before {
     content: "";
@@ -67,7 +68,7 @@ a {
     display: block;
     width: 100%;
     height: 2px;
-    bottom: -4px;
+    bottom: -2px;
     left: 0;
     background-color: $primary;
     transform: scaleX(0);
@@ -86,18 +87,20 @@ a {
     }
   }
 
+  &.error {
+    color: $error;
+
+    &::before {
+      background-color: $error;
+    }
+  }
+
   &.snackbar {
     color: white;
 
     &::before {
       transform: scaleX(1);
       background-color: white;
-    }
-  }
-
-  &.news {
-    &::before {
-      background-color: transparent;
     }
   }
 }

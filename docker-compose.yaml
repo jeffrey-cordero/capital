@@ -11,7 +11,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - server
+      server:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
@@ -23,7 +24,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "sleep 2 && npm run dev"
+    command: sh -c "npm install --legacy-peer-deps && npm run dev"
     container_name: capital_client
 
   server:
@@ -38,7 +39,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - mysql
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
       interval: 30s
@@ -50,33 +54,34 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: sh -c "sleep 2 && npm uninstall bcrypt && npm install bcrypt && npm run dev"
+    command: sh -c "npm uninstall bcrypt && npm install bcrypt && npm run dev"
     container_name: capital_server
 
-  mysql: 
-    image: mysql
+  postgres: 
+    image: postgres
     environment:
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_DATABASE: capital
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: capital
     volumes:
-      - capital_mysql_data:/capital/mysql_data
-      - ./server/lib/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - capital_postgres_data:/var/lib/capital/data
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - capital_network
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
+       test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'capital']
+       interval: 60s
+       timeout: 5s
+       retries: 5
+    restart: "on-failure"
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    container_name: capital_mysql
+    container_name: capital_postgres
 
   redis:
     image: redis
@@ -100,5 +105,5 @@ networks:
     driver: bridge
 
 volumes:
-  capital_mysql_data:
+  capital_postgres_data:
   capital_redis_data:

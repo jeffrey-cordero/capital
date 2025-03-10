@@ -1,0 +1,50 @@
+// Utility methods to ensure consistent formatting for values across the various components
+export const ellipsis = {
+   whiteSpace: "nowrap",
+   overflow: "hidden",
+   textOverflow: "ellipsis"
+};
+
+export function displayCurrency(value: number): string {
+   const currency = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+   }).format(Math.abs(value));
+
+   return value < 0 ? `-$${currency}` : `$${currency}`;
+}
+
+export function displayNumeric(value: number, decimals: boolean = true): string {
+   return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals ? 2 : 0,
+      maximumFractionDigits: decimals ? 2 : 0
+   }).format(Math.abs(value));
+}
+
+export function displayPercentage(percentage: number): string {
+   return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+   }).format(Number(percentage.toFixed(2))) + "%";
+}
+
+export function displayVolume(volume: number): string {
+   if (volume >= 1_000_000_000) {
+      return (volume / 1_000_000_000).toFixed(1) + "B";
+   } else if (volume >= 1_000_000) {
+      return (volume / 1_000_000).toFixed(1) + "M";
+   } else if (volume >= 1_000) {
+      return (volume / 1_000).toFixed(1) + "K";
+   } else {
+      return volume.toString();
+   }
+}
+
+export function displayDate(date: string): string {
+   return new Date(date).toLocaleDateString("en-us", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      timeZone: "UTC"
+   });
+}

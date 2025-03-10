@@ -1,7 +1,9 @@
 import pluginJs from "@eslint/js";
+import pluginImports from "eslint-plugin-import-newlines";
 import pluginReact from "eslint-plugin-react";
-import reactHooksPlugin from "eslint-plugin-react-hooks";
+import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginSort from "eslint-plugin-simple-import-sort";
+import pluginSpellCheck from "eslint-plugin-spellcheck";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -19,8 +21,10 @@ export default [
          }
       },
       plugins: {
+         "import-newlines": pluginImports,
          "simple-import-sort": pluginSort,
-         "react-hooks": reactHooksPlugin
+         "react-hooks": pluginReactHooks,
+         "spellcheck": pluginSpellCheck
       },
       rules: {
          "no-undef": "off",
@@ -39,6 +43,7 @@ export default [
          "no-trailing-spaces": "error",
          "eol-last": ["error", "never"],
          "no-duplicate-imports": "error",
+         "import-newlines/enforce": "error",
          "comma-dangle": ["error", "never"],
          "no-mixed-spaces-and-tabs": ["error"],
          "spaced-comment": ["error", "always"],

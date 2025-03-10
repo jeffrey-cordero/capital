@@ -1,5 +1,6 @@
 import { Box, Container, Link, Typography } from "@mui/material";
 import Stack from "@mui/material/Stack";
+import { useNavigate } from "react-router";
 
 export function meta() {
    return [
@@ -8,43 +9,49 @@ export function meta() {
    ];
 }
 
-export default function Landing() {
+export default function Page() {
+   const navigate = useNavigate();
+
    return (
-      <Container
-         className = "center"
-         sx = { { gap: 0, px: 1 } }
-      >
+      <Container className = "center">
          <Box className = "animation-container">
             <Box
                alt = "Logo"
                className = "floating"
                component = "img"
-               src = "logo.svg"
+               src = "/svg/logo.svg"
                sx = { { width: 300, height: "auto" } }
             />
          </Box>
-         <Box sx = { { mt: "-20px" } }>
-            <Typography
-               sx = { { fontWeight: "bold", marginBottom: "10px" } }
-               variant = "h1"
+         <Box sx = { { mt: -4 } }>
+            <Stack
+               direction = "column"
+               spacing = { 2 }
             >
-               Capital
-            </Typography>
-            <Typography
-               color = "textSecondary"
-               sx = { { margin: "0 auto", fontWeight: "bold", maxWidth: "400px", px: 2 } }
-               variant = "body2"
-            >
-               A data-driven finance tracker created for the intelligent acquisition of capital.
-            </Typography>
+               <Typography
+                  fontWeight = "bold"
+                  variant = "h1"
+               >
+                  Capital
+               </Typography>
+               <Typography
+                  color = "textSecondary"
+                  fontWeight = "bold"
+                  sx = { { margin: "0 auto", maxWidth: "400px", px: 2 } }
+                  variant = "body2"
+               >
+                  A data-driven finance tracker created for the intelligent acquisition of capital
+               </Typography>
+            </Stack>
             <Stack
                direction = "row"
-               sx = { { mt: 2, flexWrap: "wrap", justifyContent: "center", gap: "1rem" } }
+               spacing = { 2 }
+               sx = { { mt: 2, flexWrap: "wrap", justifyContent: "center" } }
             >
                <Link
                   fontWeight = "bold"
-                  href = "/login"
                   id = "login"
+                  onClick = { () => navigate("/login") }
                   underline = "none"
                   variant = "button"
                >
@@ -54,8 +61,8 @@ export default function Landing() {
                   className = "success"
                   color = "success"
                   fontWeight = "bold"
-                  href = "/register"
                   id = "register"
+                  onClick = { () => navigate("/register") }
                   underline = "none"
                   variant = "button"
                >

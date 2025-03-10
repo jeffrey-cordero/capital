@@ -3,7 +3,7 @@ export type IndicatorTrend = {
    value: string;
 };
 
-export type StockIndictor = {
+export type StockIndicator = {
    ticker: string,
    price: string,
    change_amount: string,
@@ -14,9 +14,9 @@ export type StockIndictor = {
 export type StockTrends = {
    metadata: string;
    last_updated: string;
-   top_gainers: StockIndictor[],
-   top_losers: StockIndictor[],
-   most_actively_traded: StockIndictor[]
+   top_gainers: StockIndicator[],
+   top_losers: StockIndicator[],
+   most_actively_traded: StockIndicator[]
 };
 
 export type MarketTrends = Record<string, IndicatorTrend[] | StockTrends>;

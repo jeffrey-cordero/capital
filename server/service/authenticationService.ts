@@ -1,63 +1,57 @@
-import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import { ServerResponse } from "capital/server";
+import { User } from "capital/user";
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
-import { ServiceResponse } from "@/lib/api/response";
-import { authenticate } from "@/repository/userRepository";
+import { compare } from "@/lib/cryptography";
+import { logger } from "@/lib/logger";
+import { configureToken } from "@/lib/middleware";
+import { sendServiceResponse } from "@/lib/services";
+import { findByUsername } from "@/repository/userRepository";
 
-export async function login(username: string, password: string): Promise<ServiceResponse> {
+export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
-      const result = await authenticate(username, password);
+      // Verify the JWT token, handling expected thrown errors
+      jwt.verify(token, process.env.SESSION_SECRET || "");
 
-      if (result === null) {
-         return {
-            code: 401,
-            message: "Invalid credentials",
-            errors: {
-               username: "Invalid credentials",
-               password: "Invalid credentials"
-            }
-         };
-      } else {
-         return {
-            code: 200,
-            message: "Login successful",
-            data: result
-         };
-      }
+      return sendServiceResponse(200, "Authenticated Status", { authenticated: true });
    } catch (error: any) {
-      console.error(error);
+      // Handle JWT verification errors
+      if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
+         // Clear the expired or invalid authentication token cookies
+         res.clearCookie("token");
 
-      return {
-         code: 500,
-         message: "Internal server error",
-         errors: { system: error.message }
-      };
+         return sendServiceResponse(200, "Invalid Token", { authenticated: false });
+      } else {
+         logger.error(error.stack);
+
+         return sendServiceResponse(500, "Internal Server Error", undefined,
+            { server: error.message || error.code || "An unknown error occurred" }
+         );
+      }
    }
 }
 
-export async function fetchAuthentication(token: string): Promise<ServiceResponse> {
-   try {
-      // Verify the JWT token
-      return {
-         code: 200,
-         message: "Authenticated status retrieved",
-         data: { authenticated: jwt.verify(token, process.env.SESSION_SECRET || "") }
-      };
-   } catch (error: any) {
-      // Handle JWT verification errors
-      if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
-         return {
-            code: 200,
-            message: "Authenticated status retrieved",
-            data: { authenticated: false }
-         };
-      }  else {
-         console.error(error);
+export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
+   // Authenticate user based on the provided credentials
+   const user: User | null = await findByUsername(username);
 
-         return {
-            code: 500,
-            message: "Internal server error",
-            errors: { system: error.message }
-         };
-      }
+   if (!user || !(await compare(password, user.password))) {
+      return sendServiceResponse(401, "Invalid Credentials", undefined, {
+         username: "Invalid credentials",
+         password: "Invalid credentials"
+      });
+   } else {
+      // Configure JWT token for authentication purposes
+      configureToken(res, user?.user_id as string);
+
+      return sendServiceResponse(200, "Successfully logged in", { success: true });
    }
+}
+
+export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
+   // Clear the authentication token cookies
+   res.clearCookie("token");
+
+   return sendServiceResponse(200, "Successfully logged out", { success: true });
 }

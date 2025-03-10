@@ -3,80 +3,86 @@ require("dotenv").config();
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
-import session from "express-session";
+import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-import Redis from "ioredis";
-import logger from "morgan";
+import morgan from "morgan";
 import path from "path";
 import serveIndex from "serve-index";
 
-import { sendErrors } from "@/lib/api/response";
-import { fetchMarketTrends } from "@/repository/marketTrendsRepository";
+import { logger } from "@/lib/logger";
+import { sendErrors } from "@/lib/response";
 import authenticationRouter from "@/routers/authenticationRouter";
-import homeRouter from "@/routers/homeRouter";
+import dashboardRouter from "@/routers/dashboardRouter";
 import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
-const app = express();
-const redisStore = require("connect-redis").default;
-const redisClient = new Redis(process.env.REDIS_URL || "redis:6379");
+export const app = express();
 
-app.set("trust proxy", 1);
-app.use(cookieParser());
-app.use(session({
-   store: new redisStore({
-      client: redisClient
-   }),
-   secret: process.env.SESSION_SECRET || "",
-   resave:false,
-   saveUninitialized:true,
-   cookie: {
-      httpOnly: true,
-      sameSite: false,
-      maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === "production"
+// Rate limiting with logging for further investigations
+app.use(rateLimit({
+   max: 500,
+   windowMs: 10 * 60 * 1000,
+   message: "Too many requests from this IP. Please try again later.",
+   handler: (req: Request, res: Response) => {
+      logger.info(`Rate limited request from IP: ${req.ip}`);
+
+      return sendErrors(res, 429, "Internal Server Error",
+         { server: "Too many requests. Please try again later." }
+      );
    }
 }));
+
+// Trust proxy to obtain real client IP address
+app.set("trust proxy", 1);
+
+// Cookie parsing middleware
+app.use(cookieParser());
+
+// CORS
 app.use(cors({
    origin: process.env.CLIENT_URL || "http://localhost:3000",
+   methods: "GET,POST,PUT,DELETE",
+   allowedHeaders: "Content-Type, Authorization",
    credentials: true
 }));
-app.use(
-   helmet.contentSecurityPolicy({
-      directives: {
-         defaultSrc: ["'self'"],
-         imgSrc: ["'self'", "https://images.mktw.net", "data:"],
-         scriptSrc: ["'self'", "https://cdn.jsdelivr.net"]
-      }
-   })
-);
-app.use(logger("dev"));
-app.use(express.urlencoded({ extended: true }));
+
+// Disable the X-Powered-By header to hide the tech stack
+app.disable("x-powered-by");
+
+// XSS attack mitigations via Helmet
+app.use(helmet.xssFilter());
+
+// Prevent browsers from interpreting files as a different MIME type via Helmet
+app.use(helmet.noSniff());
+
+// Request logging
+app.use(morgan("short"));
+
+// Parse incoming URL-encoded data and JSON payloads
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the resources folder
 app.use("/resources", express.static(path.join(__dirname, "resources")));
 app.use("/resources", serveIndex(path.join(__dirname, "resources"), { "icons": true }));
 
+// Routers
 app.use("/", indexRouter);
-app.use("/home", homeRouter);
 app.use("/users", userRouter);
+app.use("/dashboard", dashboardRouter);
 app.use("/authentication", authenticationRouter);
 
-// Initialize Redis cache with market trends data
-(async() => await fetchMarketTrends())();
-
-// Catch 404 and forward to error handler
+// Error Handlers
 app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, "Internal server error", { system: "The requested resource could not be found" });
+   return sendErrors(res, 404, "Internal Server Error",
+      { server: "The requested resource could not be found" }
+   );
 });
 
-// Error handler
 app.use(function(error: any, req: Request, res: Response) {
-   console.error(error);
+   logger.error(error.stack || "An unknown error occurred");
 
-   const status: number = error.status || 500;
-   const message: string = error.message || "An unknown error occurred";
-
-   return sendErrors(res, status, "Internal server error", { system: message });
+   return sendErrors(res, error.status || 500, "Internal Server Error",
+      { server: error.message || error.code || "An unknown error occurred" }
+   );
 });
-
-export { app, redisClient };

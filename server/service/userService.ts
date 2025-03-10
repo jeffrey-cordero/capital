@@ -1,74 +1,62 @@
-import { User, userSchema } from "capital-types/user";
+import { ServerResponse } from "capital/server";
+import { User, userSchema } from "capital/user";
+import { Request, Response } from "express";
 
-import { ServiceResponse } from "@/lib/api/response";
-import { authenticate, create, getConflictingUsers } from "@/repository/userRepository";
+import { hash } from "@/lib/cryptography";
+import { configureToken } from "@/lib/middleware";
+import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { create, findConflictingUsers } from "@/repository/userRepository";
 
-export async function authenticateUser(username: string, password: string): Promise<ServiceResponse> {
-   const result = await authenticate(username, password);
+// Helper function to normalize user input for case-insensitive comparison
+const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
 
-   if (result === null) {
-      return {
-         code: 401,
-         message: "Invalid credentials",
-         errors: {
-            username: "Invalid credentials",
-            password: "Invalid credentials"
-         }
-      };
-   } else {
-      return {
-         code: 200,
-         message: "Successfully authenticated",
-         data: null
-      };
-   }
-}
+// Helper function to check for username/email conflicts and generate error messages, essential during registration and updates
+const generateConflictErrors = (existingUsers: User[], username: string, email: string): Record<string, string> => {
+   const normalizedUsername = normalizeUserInput(username);
+   const normalizedEmail = normalizeUserInput(email);
 
-export async function createUser(user: User): Promise<ServiceResponse> {
+   return existingUsers.reduce((acc: Record<string, string>, record: User) => {
+      if (normalizeUserInput(record.username) === normalizedUsername) {
+         acc.username = "Username already exists";
+      }
+
+      if (normalizeUserInput(record.email) === normalizedEmail) {
+         acc.email = "Email already exists";
+      }
+
+      return acc;
+   }, {});
+};
+
+export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
+   // Validate user fields against the user schema
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
-      // Return single error message per registration field
-      const errors = fields.error.flatten().fieldErrors;
-
-      return {
-         code: 400,
-         message: "Invalid user fields",
-         errors: Object.fromEntries(
-            Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
-               field,
-               errors?.[0] || "Unknown error"
-            ])
-         )
-      };
+      return sendValidationErrors(fields, "Invalid user fields");
    } else if (fields.data.password !== fields.data.verifyPassword) {
-      // Invalid new password verification
-      return {
-         code: 400,
-         message: "Invalid user fields",
-         errors: {
-            password: "Passwords do not match",
-            verifyPassword: "Passwords do not match"
-         }
-      };
+      // Ensure passwords match
+      return sendValidationErrors(null, "Invalid user fields", {
+         password: "Passwords do not match",
+         verifyPassword: "Passwords do not match"
+      });
    } else {
-      // Handle user uniqueness or successfully create new user
-      const result = await getConflictingUsers(user.username, user.email);
+      // Validate user uniqueness by checking for existing username/email
+      const existingUsers: User[] = await findConflictingUsers(user.username, user.email);
 
-      if (result !== null) {
-         return {
-            code: 409,
-            message: "Invalid user fields",
-            errors: result
-         };
+      if (existingUsers.length === 0) {
+         // Hash password and create the new user
+         const hashedPassword = await hash(user.password);
+         const user_id: string = await create({ ...user, password: hashedPassword });
+
+         // Configure JWT token for authentication
+         configureToken(res, user_id);
+
+         return sendServiceResponse(201, "Successfully registered", { success: true });
       } else {
-         await create(user);
-
-         return {
-            code: 201,
-            message: "Successfully registered",
-            data: null
-         };
+         // Handle username/email conflicts
+         const errors = generateConflictErrors(existingUsers, user.username, user.email);
+         return sendServiceResponse(409, "Invalid user fields", undefined, errors);
       }
    }
 }

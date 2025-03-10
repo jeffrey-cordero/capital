@@ -1,4 +1,3 @@
-
 export function AreaGradient({ color, id }: { color: string; id: string }) {
    return (
       <defs>

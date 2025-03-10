@@ -1,14 +1,18 @@
 import { configureStore } from "@reduxjs/toolkit";
 
+import accountsReducer from "@/redux/slices/accounts";
 import authenticationReducer from "@/redux/slices/authentication";
+import marketReducer from "@/redux/slices/markets";
 import notificationsReducer from "@/redux/slices/notifications";
 import themeReducer from "@/redux/slices/theme";
 
 const store = configureStore({
    reducer: {
       theme: themeReducer,
-      auth: authenticationReducer,
-      notifications: notificationsReducer
+      authentication: authenticationReducer,
+      notifications: notificationsReducer,
+      markets: marketReducer,
+      accounts: accountsReducer
    }
 });
 

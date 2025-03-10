@@ -1,4 +1,17 @@
-import { faBank, faBarsStaggered, faChartLine, faGears, faHome, faNewspaper, faPieChart, faPlaneArrival, faQuoteLeft, faRightFromBracket, faUnlockKeyhole, faUserPlus, type IconDefinition }  from "@fortawesome/free-solid-svg-icons";
+import {
+   faBarsStaggered,
+   faBusinessTime,
+   faChartSimple,
+   faGears,
+   faMoneyCheckDollar,
+   faNewspaper,
+   faPieChart,
+   faPlaneArrival,
+   faRightFromBracket,
+   faUnlockKeyhole,
+   faUserPlus,
+   type IconDefinition
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconButton, Stack, Switch, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -6,17 +19,23 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
-import { clearAuthentication } from "@/lib/authentication";
-import { logout } from "@/redux/slices/authentication";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
+import { clearAuthentication } from "@/tanstack/queries/authenticationQueries";
 
-const landing = [{
+// Navigation link type definition
+interface NavigationLink {
+   path: string;
+   title: string;
+   icon: IconDefinition;
+}
+
+// Landing page navigation links
+const landing: NavigationLink[] = [{
    path: "/",
    title: "Home",
    icon: faPlaneArrival
@@ -30,36 +49,34 @@ const landing = [{
    icon: faUserPlus
 }];
 
-const home = [{
-   path: "/home",
-   title: "Home",
-   icon: faHome
+// Dashboard navigation links for authenticated users
+const dashboard: NavigationLink[] = [{
+   path: "/dashboard",
+   title: "Dashboard",
+   icon: faChartSimple
 }, {
-   path: "/accounts",
+   path: "/dashboard/accounts",
    title: "Accounts",
-   icon: faBank
+   icon: faMoneyCheckDollar
 }, {
-   path: "/budget",
+   path: "/dashboard/budget",
    title: "Budget",
    icon: faPieChart
 }, {
-   path: "/home#indicators",
-   title: "Indicators",
-   icon: faChartLine
+   path: "/dashboard#markets",
+   title: "Markets",
+   icon: faBusinessTime
 }, {
-   path: "/home#news",
+   path: "/dashboard#news",
    title: "News",
    icon: faNewspaper
-}, {
-   path: "/home#quotes",
-   title: "Quotes",
-   icon: faQuoteLeft
 }, {
    path: "/settings",
    title: "Settings",
    icon: faGears
 }];
 
+// Preserve existing MaterialUISwitch styling exactly as is
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    width: 58,
    height: 30,
@@ -116,13 +133,19 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    }
 }));
 
+interface SideBarContentProps {
+   links: NavigationLink[];
+   onClose: () => void;
+}
+
 export function SideBar() {
    const [open, setOpen] = useState(false);
-   const authenticated = useSelector((state: RootState) => state.auth.value);
+   const authenticated = useSelector((state: RootState) => state.authentication.value);
    const theme = useTheme();
 
    return (
       <Box>
+         { /* Hamburger menu button */ }
          <IconButton
             color = "primary"
             onClick = { () => setOpen(true) }
@@ -130,12 +153,15 @@ export function SideBar() {
                {
                   position: "absolute",
                   top: 10,
-                  left: 5
+                  left: 5,
+                  zIndex: 2
                }
             }
          >
             <FontAwesomeIcon icon = { faBarsStaggered } />
          </IconButton>
+
+         { /* Sidebar drawer */ }
          <Drawer
             onClose = { () => setOpen(false) }
             open = { open }
@@ -148,13 +174,13 @@ export function SideBar() {
                      width: "250px",
                      borderColor: alpha(theme.palette.grey[500], 0.08),
                      backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
-                     zIndex: 1101
+                     zIndex: 3
                   }
                }
             }
          >
             <SideBarContent
-               links = { authenticated ? home : landing }
+               links = { authenticated ? dashboard : landing }
                onClose = { () => setOpen(false) }
             />
          </Drawer>
@@ -162,46 +188,17 @@ export function SideBar() {
    );
 }
 
-interface SideBarContentProps {
-   links: {
-      path: string;
-      title: string;
-      icon: IconDefinition;
-   }[];
-   onClose: () => void;
-};
-
-function SideBarContent(props: SideBarContentProps) {
-   const { links, onClose } = props;
-   const dispatch = useDispatch();
-   const queryClient = useQueryClient();
-   const theme = useTheme();
-   const location = useLocation();
-
-   const mutation = useMutation({
-      mutationFn: clearAuthentication,
-      onSuccess: () => {
-         // Update cached authentication status
-         queryClient.setQueriesData({ queryKey: "authentication" }, false);
-
-         // Update Redux store
-         dispatch(logout());
-
-         // Navigate to the login page
-         window.location.reload();
-      },
-      onError: (error: any) => {
-         console.error(error);
-      }
-   });
+function SideBarContent({ links, onClose }: SideBarContentProps) {
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme(), location = useLocation();
 
    return (
       <Box sx = { { position: "relative", height: "100%", textAlign: "center" } }>
+         { /* Logo and title section */ }
          <Stack>
             <Box
                alt = "Logo"
                component = "img"
-               src = "logo.svg"
+               src = "/svg/logo.svg"
                sx = { { width: 125, height: "auto" } }
             />
             <Typography
@@ -212,17 +209,19 @@ function SideBarContent(props: SideBarContentProps) {
             </Typography>
          </Stack>
 
+         { /* Navigation container */ }
          <Box
             component = "nav"
             sx = { { display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" } }
          >
+            { /* Navigation links */ }
             <Box
                component = "ul"
                sx = { { gap: 0.5, pl: 1 } }
             >
                {
                   links.map((link) => {
-                     const isActivated = link.path === location.pathname;
+                     const isActivated = link.path === location.pathname || link.path + "/" === location.pathname;
 
                      return (
                         <ListItem
@@ -232,8 +231,12 @@ function SideBarContent(props: SideBarContentProps) {
                         >
                            <ListItemButton
                               disableGutters = { true }
-                              href = { link.path }
-                              onClick = { onClose }
+                              onClick = {
+                                 () => {
+                                    navigate(link.path);
+                                    onClose();
+                                 }
+                              }
                               sx = {
                                  {
                                     pl: 1.5,
@@ -276,42 +279,13 @@ function SideBarContent(props: SideBarContentProps) {
                   })
                }
             </Box>
-            <Box
-               sx = {
-                  {
-                     position: "relative",
-                     mb: 22
-                  }
-               }
-            >
+
+            { /* Footer controls section */ }
+            <Box sx = { { position: "relative", mb: 22 } }>
                {
-                  links === home ? (
+                  links === dashboard ? (
+                  // Dashboard mode: Theme toggle and logout
                      <Box>
-                        <Box
-                           sx = {
-                              {
-                                 display: "flex",
-                                 justifyContent: "center",
-                                 alignItems: "center",
-                                 mb: 1
-                              }
-                           }
-                        >
-                           <Box
-                              alt = "Profile"
-                              component = "img"
-                              src = "/logo.svg"
-                              sx = {
-                                 {
-                                    width: 58,
-                                    height: 58,
-                                    borderRadius: "50%",
-                                    border: `2px solid ${theme.palette.primary.main}`,
-                                    background: "white"
-                                 }
-                              }
-                           />
-                        </Box>
                         <Stack
                            direction = "column"
                            sx = {
@@ -326,12 +300,16 @@ function SideBarContent(props: SideBarContentProps) {
                               checked = { theme.palette.mode === "dark" }
                               id = "theme-switch"
                               onChange = { () => dispatch(toggleTheme()) }
-                              sx = { { m: 1 } }
                            />
                            <IconButton
                               aria-label = "Logout"
                               disableRipple = { true }
-                              onClick = { () => mutation.mutate() }
+                              onClick = {
+                                 async() => {
+                                    await clearAuthentication(dispatch, navigate);
+                                    onClose();
+                                 }
+                              }
                               size = "medium"
                               sx = {
                                  {
@@ -344,6 +322,7 @@ function SideBarContent(props: SideBarContentProps) {
                         </Stack>
                      </Box>
                   ) : (
+                  // Landing mode: Theme toggle only
                      <Box>
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }

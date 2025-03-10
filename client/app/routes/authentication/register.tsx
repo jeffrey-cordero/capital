@@ -1,16 +1,27 @@
 import { faEye, faEyeSlash, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, FormControl, FormHelperText, InputLabel, Link, OutlinedInput, Stack, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
-import { userSchema } from "capital-types/user";
+import {
+   Box,
+   Button,
+   Container,
+   FormControl,
+   FormHelperText,
+   InputLabel,
+   Link,
+   OutlinedInput,
+   Stack,
+   Typography
+} from "@mui/material";
+import { userSchema } from "capital/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
-import { sendApiRequest } from "@/lib/server";
+import { sendApiRequest } from "@/lib/api";
+import { handleValidationErrors } from "@/lib/validation";
 import { addNotification } from "@/redux/slices/notifications";
 
 const registrationSchema = userSchema.extend({
@@ -18,41 +29,49 @@ const registrationSchema = userSchema.extend({
 });
 
 export default function Register() {
-   const dispatch = useDispatch();
+   const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,
       handleSubmit,
       setError,
       formState: { isSubmitting, errors }
-   } = useForm({
-      resolver: zodResolver(registrationSchema)
-   });
+   } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      const registration = {
-         username: data.username.trim(),
-         name: data.name.trim(),
-         password: data.password.trim(),
-         verifyPassword: data.verifyPassword.trim(),
-         email: data.email.trim()
-      };
+      const fields = registrationSchema.safeParse(data);
 
-      const response = await sendApiRequest("users", "POST", registration, dispatch, setError);
+      if (!fields.success) {
+         // Invalid fields
+         handleValidationErrors(fields, setError);
+      } else {
+         // Submit fields for user registration
+         const registration = {
+            username: data.username.trim(),
+            name: data.name.trim(),
+            password: data.password.trim(),
+            verifyPassword: data.verifyPassword?.trim(),
+            email: data.email.trim()
+         };
 
-      if (response?.status === "Success") {
-         dispatch(addNotification({
-            type: "success",
-            message: "Successfully registered!"
-         }));
+         const result = await sendApiRequest<{ success: boolean }>(
+            "users", "POST", registration, dispatch, navigate, setError
+         );
 
-         setTimeout(() => window.location.reload(), 2500);
+         if (typeof result === "object" && result?.success) {
+            navigate("/dashboard");
+
+            dispatch(addNotification({
+               type: "success",
+               message: "Welcome"
+            }));
+         }
       }
    };
 
    return (
-      <div className = "center">
+      <Container className = "center">
          <Callout
             sx = { { width: "100%", my: 12 } }
             type = "primary"
@@ -61,39 +80,25 @@ export default function Register() {
                direction = "column"
                spacing = { 3 }
             >
-               <Grid
-                  container = { true }
-                  direction = "column"
-                  sx = { { justifyContent: "center", alignItems: "center" } }
+               <Stack
+                  alignItems = "center"
+                  justifyContent = "center"
                >
-                  <Grid>
-                     <Stack
-                        alignItems = "center"
-                        justifyContent = "center"
-                     >
-                        <Box
-                           alt = "Logo"
-                           component = "img"
-                           src = "logo.svg"
-                           sx = { { width: 150, height: "auto", p: 0, m: 0 } }
-                        />
-                        <Typography
-                           color = "primary.main"
-                           sx = { { fontWeight: "bold", marginBottom: "2px" } }
-                           variant = "h4"
-                        >
-                           Join Us
-                        </Typography>
-                        <Typography
-                           color = "text.secondary"
-                           sx = { { fontSize: "16px", textAlign: "center" } }
-                           variant = "subtitle2"
-                        >
-                           Enter your details to create an account and get started
-                        </Typography>
-                     </Stack>
-                  </Grid>
-               </Grid>
+                  <Box
+                     alt = "Logo"
+                     component = "img"
+                     src = "/svg/logo.svg"
+                     sx = { { width: 175, height: "auto", p: 0, m: 0 } }
+                  />
+                  <Typography
+                     color = "primary"
+                     fontWeight = "bold"
+                     sx = { { mt: -1 } }
+                     variant = "h3"
+                  >
+                     Register
+                  </Typography>
+               </Stack>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
@@ -110,7 +115,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Name"
                                     autoComplete = "name"
                                     autoFocus = { true }
                                     disabled = { isSubmitting }
@@ -119,13 +123,9 @@ export default function Register() {
                                     type = "text"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.name && (
-                                       <FormHelperText>
-                                          { errors.name?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.name?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -141,7 +141,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Username"
                                     autoComplete = "none"
                                     disabled = { isSubmitting }
                                     id = "username"
@@ -149,13 +148,9 @@ export default function Register() {
                                     type = "text"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.username && (
-                                       <FormHelperText>
-                                          { errors.username?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.username?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -171,7 +166,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Password"
                                     autoComplete = "new-password"
                                     disabled = { isSubmitting }
                                     endAdornment = {
@@ -187,13 +181,9 @@ export default function Register() {
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.password && (
-                                       <FormHelperText>
-                                          { errors.password?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.password?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -209,7 +199,6 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Verify Password"
                                     autoComplete = "new-password"
                                     disabled = { isSubmitting }
                                     endAdornment = {
@@ -225,13 +214,9 @@ export default function Register() {
                                     type = { showVerifyPassword ? "text" : "password" }
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.verifyPassword && (
-                                       <FormHelperText>
-                                          { errors.verifyPassword?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.verifyPassword?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -247,21 +232,16 @@ export default function Register() {
                                  </InputLabel>
                                  <OutlinedInput
                                     { ...field }
-                                    aria-label = "Email"
                                     autoComplete = "email"
                                     disabled = { isSubmitting }
                                     id = "email"
-                                    label = "Email"
+                                    label = "email"
                                     type = "email"
                                     value = { field.value || "" }
                                  />
-                                 {
-                                    errors.email && (
-                                       <FormHelperText>
-                                          { errors.email?.message?.toString() }
-                                       </FormHelperText>
-                                    )
-                                 }
+                                 <FormHelperText>
+                                    { errors.email?.message?.toString() }
+                                 </FormHelperText>
                               </FormControl>
                            )
                         }
@@ -278,25 +258,25 @@ export default function Register() {
                      >
                         Register
                      </Button>
+                     <Typography
+                        align = "center"
+                        fontWeight = "bold"
+                        variant = "body2"
+                     >
+                        Already have an account?{ " " }
+                        <Link
+                           color = "primary"
+                           fontWeight = "bold"
+                           onClick = { () => navigate("/login") }
+                           underline = "none"
+                        >
+                           Login
+                        </Link>
+                     </Typography>
                   </Stack>
                </form>
-               <Typography
-                  align = "center"
-                  sx = { { fontWeight: "bold" } }
-                  variant = "body2"
-               >
-                  Already have an account?{ " " }
-                  <Link
-                     color = "primary"
-                     fontWeight = "bold"
-                     href = "/login"
-                     underline = "none"
-                  >
-                     Login
-                  </Link>
-               </Typography>
             </Stack>
          </Callout>
-      </div>
+      </Container>
    );
 }

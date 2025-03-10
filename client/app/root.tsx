@@ -1,12 +1,14 @@
 import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Provider } from "react-redux";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
 import store from "@/redux/store";
+import Router from "@/routes/router";
+import queryClient from "@/tanstack/client";
 
 import type { Route } from "./+types/root";
 
@@ -27,14 +29,17 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-   const [prefersDarkMode, setPrefersDarkMode] = useState<boolean>(true);
-
    useEffect(() => {
-      const preferredTheme: string | undefined = window.localStorage.theme;
+      // Initialize the theme based on localStorage or preferred color scheme
+      const preferredTheme: string | undefined = localStorage.theme;
       const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+      const darkMode: boolean = preferredTheme === "dark" || (!preferredTheme && prefersDarkMode);
 
-      setPrefersDarkMode(preferredTheme === "dark" || (!preferredTheme && prefersDarkMode));
-   }, [setPrefersDarkMode]);
+      store.dispatch({
+         type: "theme/setTheme",
+         payload: darkMode ? "dark" : "light"
+      });
+   }, []);
 
    return (
       <html lang = "en">
@@ -44,13 +49,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                content = "width=device-width, initial-scale=1"
                name = "viewport"
             />
+            <title>Capital</title>
             <Meta />
             <Links />
          </head>
-         <body
-            data-dark = { prefersDarkMode }
-            suppressHydrationWarning = { true }
-         >
+         <body suppressHydrationWarning = { true }>
             { children }
             <ScrollRestoration />
             <Scripts />
@@ -59,13 +62,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
    );
 }
 
-const queryClient = new QueryClient();
-
 export default function App() {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
-            <Outlet />
+            <Router />
          </QueryClientProvider>
       </Provider>
    );
@@ -82,7 +83,7 @@ export function ErrorBoundary() {
                alt = "Error"
                className = "floating"
                component = "img"
-               src = "error.svg"
+               src = "/svg/error.svg"
                sx = { { width: 350, height: "auto", my: 4 } }
             />
          </Box>

@@ -6,7 +6,7 @@ import { gray, green, red } from "@/styles/mui/colors";
 export const components: Components = {
    MuiButton: {
       styleOverrides: {
-         root: { borderRadius: "12px", textTransform: "none" },
+         root: { borderRadius: "10px", textTransform: "none" },
          sizeSmall: { padding: "6px 16px" },
          sizeMedium: { padding: "8px 20px" },
          sizeLarge: { padding: "11px 24px" },
@@ -20,7 +20,8 @@ export const components: Components = {
          root: {
             borderRadius: "12px",
             fontSize: "0.95rem",
-            borderColor: "primary.main"
+            borderColor: "primary.main",
+            overflow: "hidden"
          },
          input: {
             fontSize: "0.95rem",
@@ -58,8 +59,8 @@ export const components: Components = {
                      color: "default"
                   },
                   style: {
-                     borderColor: gray[200],
-                     backgroundColor: gray[100],
+                     borderColor: gray[300],
+                     backgroundColor: gray[50],
                      [`& .${chipClasses.label}`]: {
                         color: gray[500]
                      },
@@ -67,13 +68,13 @@ export const components: Components = {
                         color: gray[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: gray[700],
-                        backgroundColor: gray[800],
+                        borderColor: gray[200],
+                        backgroundColor: gray[700],
                         [`& .${chipClasses.label}`]: {
-                           color: gray[300]
+                           color: gray[200]
                         },
                         [`& .${chipClasses.icon}`]: {
-                           color: gray[300]
+                           color: gray[200]
                         }
                      })
                   }
@@ -83,7 +84,7 @@ export const components: Components = {
                      color: "success"
                   },
                   style: {
-                     borderColor: green[200],
+                     borderColor: green[300],
                      backgroundColor: green[50],
                      [`& .${chipClasses.label}`]: {
                         color: green[500]
@@ -92,8 +93,8 @@ export const components: Components = {
                         color: green[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: green[800],
-                        backgroundColor: green[900],
+                        borderColor: green[600],
+                        backgroundColor: green[800],
                         [`& .${chipClasses.label}`]: {
                            color: green[300]
                         },
@@ -108,7 +109,7 @@ export const components: Components = {
                      color: "error"
                   },
                   style: {
-                     borderColor: red[100],
+                     borderColor: red[200],
                      backgroundColor: red[50],
                      [`& .${chipClasses.label}`]: {
                         color: red[500]
@@ -117,8 +118,8 @@ export const components: Components = {
                         color: red[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: red[800],
-                        backgroundColor: red[900],
+                        borderColor: red[600],
+                        backgroundColor: red[800],
                         [`& .${chipClasses.label}`]: {
                            color: red[200]
                         },

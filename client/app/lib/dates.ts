@@ -1,4 +1,7 @@
-export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
+export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
+
+export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
+   // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
       const [month, year] = date.split("/");
 
@@ -6,30 +9,43 @@ export function constructDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(`${date}T00:00:00`);
+      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
    }
 }
 
-export function getDaysInMonth(month: number, year: number) {
-   const days = [];
-   const date = new Date(year, month, 0);
+export function getLastSixMonths(referenceDate = today): string[] {
+   // Format the 6-month array to "MM. YYYY" format
+   const months = [
+      "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
+      "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+   ];
 
-   const monthName = date.toLocaleDateString("en-US", {
-      month: "short"
-   });
-   const daysInMonth = date.getDate();
+   const sixMonths = [];
 
-   let i = 1;
+   for (let i = 0; i < 6; i++) {
+      // Calculate the date for the last day of each month
+      const monthDate = new Date(
+         referenceDate.getUTCFullYear(),
+         referenceDate.getUTCMonth() - i + 1,
+         0
+      );
 
-   while (days.length < daysInMonth) {
-      days.push(`${monthName} ${i}`);
-      i += 1;
+      // Adjust for year rollovers
+      if (monthDate.getUTCMonth() < 0) {
+         monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
+         monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
+      }
+
+      sixMonths.unshift(
+         months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear()
+      );
    }
-   return days;
+
+   return sixMonths;
 }
 
 export function timeSinceLastUpdate(date: string) {
-   // Calculate the difference in milliseconds
+   // Calculate the time difference in milliseconds
    const difference = new Date().getTime() - new Date(date).getTime();
 
    // Convert to time units
