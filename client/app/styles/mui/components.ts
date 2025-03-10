@@ -68,13 +68,13 @@ export const components: Components = {
                         color: gray[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: gray[400],
-                        backgroundColor: gray[800],
+                        borderColor: gray[200],
+                        backgroundColor: gray[700],
                         [`& .${chipClasses.label}`]: {
-                           color: gray[300]
+                           color: gray[200]
                         },
                         [`& .${chipClasses.icon}`]: {
-                           color: gray[300]
+                           color: gray[200]
                         }
                      })
                   }
