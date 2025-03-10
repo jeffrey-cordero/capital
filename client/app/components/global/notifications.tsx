@@ -1,4 +1,4 @@
-import { Alert, Link, Stack } from "@mui/material";
+import { Alert, Stack } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,7 +8,9 @@ import type { RootState } from "@/redux/store";
 
 export default function Notifications() {
    const dispatch = useDispatch();
-   const notifications: Notification[] = useSelector((state: RootState) => state.notifications.value);
+   const notifications: Notification[] = useSelector(
+      (state: RootState) => state.notifications.value
+   );
 
    const closeNotification = useCallback((index: number) => {
       dispatch(removeNotification(index));
@@ -31,19 +33,7 @@ export default function Notifications() {
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }
                         variant = "filled"
                      >
-                        {
-                           notification.href ? (
-                              <Link
-                                 className = "snackbar"
-                                 href = { notification.href }
-                                 underline = "none"
-                              >
-                                 { notification.message }
-                              </Link>
-                           ) : (
-                              notification.message
-                           )
-                        }
+                        { notification.message }
                      </Alert>
                   </Snackbar>
                ))

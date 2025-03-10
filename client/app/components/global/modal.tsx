@@ -106,7 +106,20 @@ function Warning({ open, onClose, onCancel }: WarningProps) {
    );
 }
 
-export function ModalSection({ title, children }: { title: string; children: React.ReactNode }) {
+interface ModalProps {
+   open: boolean;
+   onClose: () => void;
+   children: React.ReactNode;
+   sx?: SxProps<any>;
+   displayWarning?: boolean;
+}
+
+interface ModalSectionProps {
+   title: string;
+   children: React.ReactNode;
+}
+
+export function ModalSection({ title, children }: ModalSectionProps) {
    return (
       <Box>
          <Divider>
@@ -120,15 +133,7 @@ export function ModalSection({ title, children }: { title: string; children: Rea
    );
 }
 
-interface ModalProps {
-   open: boolean;
-   onClose: () => void;
-   children: React.ReactNode;
-   sx?: SxProps<any>;
-   displayWarning?: boolean;
-}
-
-export function Modal({ open, onClose, children, sx, displayWarning }: ModalProps) {
+export function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps) {
    const [warningOpen, setWarningOpen] = useState<boolean>(false);
 
    const closeModal = useCallback(() => {

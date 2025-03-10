@@ -36,12 +36,12 @@ export default function Page() {
             >
                <Grid
                   size = { { xs: 12, lg: 8 } }
-                  sx = { { height: "100%" } }
+                  sx = { { minHeight: "100%" } }
                >
                   <Stack
                      direction = "column"
                      spacing = { 1 }
-                     sx = { { height:"100%", textAlign: "center", justifyContent: "space-between" } }
+                     sx = { { minHeight:"100%", textAlign: "center", justifyContent: "space-between" } }
                   >
                      <Grid size = { { xs: 12 } }>
                         <Finances accounts = { accounts } />
@@ -60,7 +60,7 @@ export default function Page() {
             >
                <Grid
                   size = { { xs: 12, lg: 4 } }
-                  sx = { { height: "100%" } }
+                  sx = { { minHeight: "100%" } }
                >
                   <Stories data = { news } />
                </Grid>

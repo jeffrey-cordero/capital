@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const userSchema = z.object({
+  user_id: z.string().uuid().optional(),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
@@ -16,7 +17,7 @@ export const userSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  verifyPassword: z.string().optional(),
+  verifyPassword: z.string(),
   email: z
     .string()
     .email("Invalid email address"),
@@ -27,7 +28,7 @@ export type User = {
   username: string;
   name: string;
   password: string;
-  verifyPassword?: string;
+  verifyPassword: string;
   email: string;
   verified: boolean
 }

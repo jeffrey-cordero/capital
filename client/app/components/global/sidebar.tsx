@@ -27,7 +27,15 @@ import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 import { clearAuthentication } from "@/tanstack/queries/authenticationQueries";
 
-const landing = [{
+// Navigation link type definition
+interface NavigationLink {
+   path: string;
+   title: string;
+   icon: IconDefinition;
+}
+
+// Landing page navigation links
+const landing: NavigationLink[] = [{
    path: "/",
    title: "Home",
    icon: faPlaneArrival
@@ -41,7 +49,8 @@ const landing = [{
    icon: faUserPlus
 }];
 
-const dashboard = [{
+// Dashboard navigation links for authenticated users
+const dashboard: NavigationLink[] = [{
    path: "/dashboard",
    title: "Dashboard",
    icon: faChartSimple
@@ -67,6 +76,7 @@ const dashboard = [{
    icon: faGears
 }];
 
+// Preserve existing MaterialUISwitch styling exactly as is
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    width: 58,
    height: 30,
@@ -123,6 +133,11 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    }
 }));
 
+interface SideBarContentProps {
+   links: NavigationLink[];
+   onClose: () => void;
+}
+
 export function SideBar() {
    const [open, setOpen] = useState(false);
    const authenticated = useSelector((state: RootState) => state.authentication.value);
@@ -130,6 +145,7 @@ export function SideBar() {
 
    return (
       <Box>
+         { /* Hamburger menu button */ }
          <IconButton
             color = "primary"
             onClick = { () => setOpen(true) }
@@ -144,6 +160,8 @@ export function SideBar() {
          >
             <FontAwesomeIcon icon = { faBarsStaggered } />
          </IconButton>
+
+         { /* Sidebar drawer */ }
          <Drawer
             onClose = { () => setOpen(false) }
             open = { open }
@@ -170,22 +188,12 @@ export function SideBar() {
    );
 }
 
-interface SideBarContentProps {
-   links: {
-      path: string;
-      title: string;
-      icon: IconDefinition;
-   }[];
-   onClose: () => void;
-};
-
 function SideBarContent({ links, onClose }: SideBarContentProps) {
-   const dispatch = useDispatch(), navigate = useNavigate();
-   const theme = useTheme();
-   const location = useLocation();
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme(), location = useLocation();
 
    return (
       <Box sx = { { position: "relative", height: "100%", textAlign: "center" } }>
+         { /* Logo and title section */ }
          <Stack>
             <Box
                alt = "Logo"
@@ -201,10 +209,12 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
             </Typography>
          </Stack>
 
+         { /* Navigation container */ }
          <Box
             component = "nav"
             sx = { { display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" } }
          >
+            { /* Navigation links */ }
             <Box
                component = "ul"
                sx = { { gap: 0.5, pl: 1 } }
@@ -269,16 +279,12 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                   })
                }
             </Box>
-            <Box
-               sx = {
-                  {
-                     position: "relative",
-                     mb: 22
-                  }
-               }
-            >
+
+            { /* Footer controls section */ }
+            <Box sx = { { position: "relative", mb: 22 } }>
                {
                   links === dashboard ? (
+                  // Dashboard mode: Theme toggle and logout
                      <Box>
                         <Stack
                            direction = "column"
@@ -316,6 +322,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                         </Stack>
                      </Box>
                   ) : (
+                  // Landing mode: Theme toggle only
                      <Box>
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }

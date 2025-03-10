@@ -36,7 +36,7 @@ export function getGraphColor(theme: Theme, value: number) {
    } else {
       return theme.palette.error.main;
    }
-};
+}
 
 export function getChipColor(trend: number) {
    if (trend === 0) {
@@ -46,14 +46,13 @@ export function getChipColor(trend: number) {
    } else {
       return "error" as const;
    }
-};
+}
 
 export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps) {
    const theme = useTheme();
-   const {
-      watch,
-      control
-   } = useForm();
+   const { watch, control } = useForm();
+
+   // Form control values with defaults
    const { option, view, graph, from, to } = {
       option: watch("option", defaultOption),
       view: watch("view", "Year"),
@@ -62,42 +61,50 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       to: watch("to", "")
    };
 
+   // Sort data by date in ascending order
    const sorted = useMemo(() => {
       return [...data[option]].sort(
          (a, b) => normalizeDate(a.date).getTime() - normalizeDate(b.date).getTime()
       );
    }, [data, option]);
 
+   // Filter data based on date range
    const range = sorted.filter((a) => {
       const date = normalizeDate(a.date);
-
       return (from !== "" ? date >= normalizeDate(from) : true)
          && (to !== "" ? date <= normalizeDate(to) : true);
    });
 
+   /**
+    * Processes raw data into the appropriate format based on selected view
+    * Supports Year and Month views with special handling for single data points
+    */
    const constructGraphData = () => {
       switch (view) {
          case "Year": {
-            // Format the yearly view (YYYY)
+            // Extract all unique years from the filtered data
             const years = Array.from(
                new Set(range.map(d => normalizeDate(d.date).getUTCFullYear()))
             );
 
             const yearlyData = years.map((year) => {
-               // Bucket the data by year and calculate the average or fetch the last value for each year
-               const data = range.filter(d => normalizeDate(d.date).getUTCFullYear() === year);
-               const value = data.length === 0 ? 0 
-                  : average ? 
-                     data.reduce((acc, record) => acc + Number(record.value), 0) / data.length : data[data.length - 1].value
+               // Get all data points for this year
+               const yearData = range.filter(d => normalizeDate(d.date).getUTCFullYear() === year);
+
+               // Calculate value based on average setting
+               const value = yearData.length === 0 ? 0
+                  : average
+                     ? yearData.reduce((acc, record) => acc + Number(record.value), 0) / yearData.length
+                     : yearData[yearData.length - 1].value;
 
                return {
                   date: year.toString(),
-                  value: data.length === 0 ? 0 : Number(value)
+                  value: yearData.length === 0 ? 0 : Number(value)
                };
             });
 
+            // For line charts with single data point, add a previous year data point to prevent empty graph
             if (yearlyData.length === 1 && graph !== "Bar") {
-               // Append the same value for the previous year to prevent an empty graph
                yearlyData.unshift({
                   date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
@@ -107,13 +114,13 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             return yearlyData;
          }
          case "Month": {
-            // Format the monthly view (MM/YYYY)
+            // Format the monthly view as MM/YYYY
             const buckets: Record<string, number> = {};
             const monthlyData = range.reduce((acc: { date: string, value: number }[], record) => {
                const date = normalizeDate(record.date);
                const title = (date.getUTCMonth() + 1).toString().padStart(2, "0") + "/" + (date.getUTCFullYear().toString());
-               
-               // Each monthly bucket represents the final value during that time period
+
+               // Update existing bucket or create new one
                if (title in buckets) {
                   acc[buckets[title]].value = Number(record.value);
                } else {
@@ -124,11 +131,11 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                return acc;
             }, []);
 
+            // For line charts with single data point, add previous month to prevent empty graph
             if (monthlyData.length === 1 && graph !== "Bar") {
-               // Append the same value for the previous month to prevent an empty graph
                const monthYear = monthlyData[0].date.split("/");
 
-               // Account for rotating to the previous year
+               // Handle month rollover, accounting for year change when month is January
                if (monthYear[0] !== "01") {
                   monthlyData.unshift({
                      date: (Number(monthYear[0]) - 1).toString().padStart(2, "0") + "/" + monthYear[1],
@@ -140,7 +147,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      value: monthlyData[0].value
                   });
                }
-
             }
 
             return monthlyData;
@@ -151,35 +157,46 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       }
    };
 
-   const filteredRange: { date: string; value: number; }[]  = constructGraphData();
-   const filtered = filteredRange.length > 0 ? 
+   // Process data and handle empty datasets
+   const filteredRange = constructGraphData();
+   const filtered = filteredRange.length > 0 ?
       filteredRange : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }];
 
-   // Growth from start to end of range
+   // Calculate growth trend as percentage change from start to end
    const trend = filtered.length > 0 ? (
       (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value))
       / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100) : (0);
 
-   // Coloring parameters
+   // Visual styling based on trend direction
    const color = getGraphColor(theme, trend);
    const chip = getChipColor(trend);
 
-   // Range parameters
-   const fromValue = from === "" ? range[0].date : from;
-   const toValue = to === "" ? range[range.length - 1].date : to;
+   // Date range for filter controls
+   const fromValue = from === "" ? range[0]?.date : from;
+   const toValue = to === "" ? range[range.length - 1]?.date : to;
    const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0];
    const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0];
 
    return (
       <Card
          elevation = { card ? 3 : 0 }
-         sx = { { height: "100%", flexGrow: 1, textAlign: "left", borderRadius: 2, position: "relative", background: "transparent" } }
+         sx = {
+            {
+               height: "100%",
+               flexGrow: 1,
+               textAlign: "left",
+               borderRadius: 2,
+               position: "relative",
+               background: card ? "" : "transparent"
+            }
+         }
          variant = "elevation"
       >
          <CardContent sx = { { p: card ? 2.5 : 0 } }>
+            { /* Controls for graph type, view and data selection */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: 1 } }
+               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0 } }
             >
                {
                   indicators && (
@@ -188,9 +205,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         name = "option"
                         render = {
                            ({ field }) => (
-                              <FormControl
-                                 sx = { { width: { xs: "100%", sm: "auto" } } }
-                              >
+                              <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
                                  <InputLabel
                                     htmlFor = "option"
                                     variant = "standard"
@@ -219,14 +234,13 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      />
                   )
                }
+
                <Controller
                   control = { control }
                   name = "view"
                   render = {
                      ({ field }) => (
-                        <FormControl
-                           sx = { { width: { xs: "100%", sm: "auto" } } }
-                        >
+                        <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
                            <InputLabel
                               htmlFor = "view"
                               variant = "standard"
@@ -250,9 +264,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   name = "graph"
                   render = {
                      ({ field }) => (
-                        <FormControl
-                           sx = { { width: { xs: "100%", sm: "auto" } } }
-                        >
+                        <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
                            <InputLabel
                               htmlFor = "graph"
                               variant = "standard"
@@ -272,7 +284,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   }
                />
             </Stack>
-            <Stack sx = { { justifyContent: "space-between"  } }>
+            { /* Current value and trend display */ }
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
                   direction = "row"
                   sx = {
@@ -282,7 +295,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         alignItems: "center",
                         flexWrap: "wrap",
                         gap: 1,
-                        px: 1,
                         my: { xs: 2, sm: 1 }
                      }
                   }
@@ -303,6 +315,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   />
                </Stack>
             </Stack>
+            { /* Chart display based on selected type */ }
             {
                graph === "Line" ? (
                   <LineChart
@@ -321,7 +334,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               curve: "linear",
                               area: true,
                               data: filtered.map(d => Number(d.value))
-
                            }
                         ]
                      }
@@ -404,9 +416,10 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   />
                )
             }
+            { /* Date range filter controls */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: 1, pb: 1 } }
+               sx = { { gap: 1, mt: 3, justifyContent: "space-between" } }
             >
                <Controller
                   control = { control }
@@ -440,7 +453,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               value = { fromValue }
                            />
                         </FormControl>
-
                      )
                   }
                />
