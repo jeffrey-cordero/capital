@@ -14,33 +14,45 @@ import {
    updateOrdering
 } from "@/repository/accountsRepository";
 
+// Cache duration in seconds for account data
+const ACCOUNT_CACHE_DURATION = 10 * 60;
+
+// Helper function to generate account cache key
+const getAccountCacheKey = (userId: string) => `accounts:${userId}`;
+
+// Helper function to clear account cache on successful account updates
+const clearAccountCache = (userId: string) => {
+   removeCacheValue(getAccountCacheKey(userId));
+};
+
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
-   const cache = await getCacheValue(`accounts:${user_id}`);
+   // Try to get accounts from cache first
+   const cacheKey: string = getAccountCacheKey(user_id);
+   const cache: string | null = await getCacheValue(cacheKey);
 
    if (cache) {
       return sendServiceResponse(200, "Accounts", JSON.parse(cache) as Account[]);
    } else {
-      // Fetch the user accounts from the database and cache for 10 minutes
+      // If not in cache, fetch from database
       const result: Account[] = await findByUserId(user_id);
-      setCacheValue(`accounts:${user_id}`, 10 * 60, JSON.stringify(result));
 
+      setCacheValue(cacheKey, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
       return sendServiceResponse(200, "Accounts", result);
    }
 }
 
-// Successful updates to the overall user account's should clear their respective cache value
 export async function createAccount(user_id: string, account: Account): Promise<ServerResponse> {
-   // Validate the account fields
+   // Validate account data structure
    const fields = accountSchema.strict().safeParse(account);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid account fields");
    } else {
-      // Create the account and fetch the inserted account UUID
+      // Create account and clear the cache
       const account_id: string = await create(user_id, account);
-      removeCacheValue(`accounts:${user_id}`);
 
-      return sendServiceResponse(201, "Account created", { account_id: account_id });
+      clearAccountCache(user_id);
+      return sendServiceResponse(201, "Account created", { account_id });
    }
 }
 
@@ -49,67 +61,64 @@ export async function updateAccount(
    user_id: string,
    account: Partial<Account & AccountHistory>
 ): Promise<ServerResponse> {
-   // Validate the account fields
-   const fields = accountSchema.partial().safeParse(account);
-
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid account fields");
-   } else if (!account.account_id) {
+   // Validate base account fields
+   if (!account.account_id) {
       return sendValidationErrors(null, "Invalid account fields",
-         { account_id: "Missing account ID" }
-      );
+         { account_id: "Missing account ID" });
    } else if (Object.keys(account).length === 0) {
       return sendValidationErrors(null, "No account fields to update");
    }
 
+   let result: boolean;
+
    if (type === "details") {
-      const result: boolean = await updateDetails(user_id, account.account_id, account);
+      // Validate and update account details
+      const fields = accountSchema.partial().safeParse(account);
 
-      if (result) {
-         removeCacheValue(`accounts:${user_id}`);
-
-         return sendServiceResponse(204);
+      if (!fields.success) {
+         return sendValidationErrors(fields, "Invalid account fields");
       } else {
-         return sendServiceResponse(404, "Account not found", undefined,
-            { account: "Account does not exist based on the provided ID" }
-         );
+         result = await updateDetails(user_id, account.account_id, account);
       }
    } else {
+      // Validate and update account history
       const fields = accountHistorySchema.safeParse(account as AccountHistory);
 
       if (!fields.success) {
          return sendValidationErrors(fields, "Invalid account history fields");
       } else {
-         const result: boolean = await updateAccountHistory(
-            user_id, account.account_id, Number(account.balance), account.last_updated ? new Date(account.last_updated) : new Date()
-         );
-
-         if (result) {
-            removeCacheValue(`accounts:${user_id}`);
-
-            return sendServiceResponse(204);
-         } else {
-            return sendServiceResponse(404, "Account not found", undefined,
-               { account: "Account does not exist based on the provided ID" }
-            );
-         }
+         result = await updateAccountHistory(
+            user_id,
+            account.account_id,
+            Number(account.balance),
+            account.last_updated ? new Date(account.last_updated) : new Date()
+         ); 
       }
+   }
+
+   if (!result) {
+      return sendServiceResponse(404, "Account not found", undefined,
+         { account: "Account does not exist based on the provided ID" });
+   } else {
+      clearAccountCache(user_id);
+      return sendServiceResponse(204);
    }
 }
 
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
-   // Validate the array of account ID's
+   // Validate account IDs array
+   if (!accounts?.length) {
+      return sendValidationErrors(null, "Invalid account ordering fields",
+         { accounts: "Account ID array must be non-empty" });
+   }
+
+   // Validate each UUID and create updates array
    const uuidSchema = z.string().uuid();
    const updates: Partial<Account>[] = [];
 
-   if (!accounts || accounts.length === 0) {
-      return sendValidationErrors(null, "Invalid account ordering fields",
-         { accounts: "Account ID array must be non-empty" }
-      );
-   }
-
    for (let i = 0; i < accounts.length; i++) {
       if (!uuidSchema.safeParse(accounts[i]).success) {
+         // UUID validation failed
          return sendValidationErrors(null, "Invalid account ordering fields",
             { account_id: `Account ID must be a valid UUID: '${accounts[i]}'` }
          );
@@ -118,47 +127,41 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       updates.push({ account_id: accounts[i], account_order: i });
    }
 
-   const result: boolean = await updateOrdering(user_id, updates);
+   const result = await updateOrdering(user_id, updates);
 
-   if (result) {
-      removeCacheValue(`accounts:${user_id}`);
-
-      return sendServiceResponse(204);
-   } else {
+   if (!result) {
       return sendServiceResponse(404, "Invalid account ordering fields", undefined,
-         { accounts: "No possible ordering updates based on provided account ID's" }
-      );
+         { accounts: "No possible ordering updates based on provided account ID's" });
+   } else {
+      clearAccountCache(user_id);
+      return sendServiceResponse(204);
    }
 }
 
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-   const result: string = await removeHistory(user_id, account_id, new Date(last_updated));
+   const result = await removeHistory(user_id, account_id, new Date(last_updated));
 
+   // Handle different deletion scenarios (missing, conflict, success)
    if (result === "missing") {
       return sendServiceResponse(404, "Account history record not found", undefined,
-         { history: "Account history does not exist based on the provided date" }
-      );
+         { history: "Account history does not exist based on the provided date" });
    } else if (result === "conflict") {
       return sendServiceResponse(409, "Account history record conflicts", undefined,
-         { history: "At least one history record must remain for this account" }
-      );
+         { history: "At least one history record must remain for this account" });
    } else {
-      removeCacheValue(`accounts:${user_id}`);
-
+      clearAccountCache(user_id);
       return sendServiceResponse(204);
    }
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   const result: boolean = await removeAccount(user_id, account_id);
+   const result = await removeAccount(user_id, account_id);
 
-   if (result) {
-      removeCacheValue(`accounts:${user_id}`);
-
-      return sendServiceResponse(204);
-   } else {
+   if (!result) {
       return sendServiceResponse(404, "Account not found", undefined,
-         { account: "Account does not exist based on the provided ID" }
-      );
+         { account: "Account does not exist based on the provided ID" });
+   } else {
+      clearAccountCache(user_id);
+      return sendServiceResponse(204);
    }
 }
