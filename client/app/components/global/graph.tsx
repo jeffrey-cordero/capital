@@ -40,7 +40,7 @@ export function getGraphColor(theme: Theme, value: number) {
 
 export function getChipColor(trend: number) {
    if (trend === 0) {
-      return "info" as const;
+      return "default" as const;
    } else if (trend > 0) {
       return "success" as const;
    } else {
@@ -242,7 +242,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               htmlFor = "view"
                               variant = "standard"
                            >
-                              View
+                              Frequency
                            </InputLabel>
                            <NativeSelect
                               { ...field }
@@ -266,7 +266,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               htmlFor = "graph"
                               variant = "standard"
                            >
-                              Type
+                              Graph
                            </InputLabel>
                            <NativeSelect
                               { ...field }
@@ -287,12 +287,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   direction = "row"
                   sx = {
                      {
-                        justifyContent: "flex-start",
+                        justifyContent: { xs: "center", sm: "flex-start" },
                         alignContent: "center",
                         alignItems: "center",
                         flexWrap: "wrap",
                         gap: 1,
-                        my: { xs: 2, sm: 1 }
+                        my: { xs: 1.5, sm: 0.5 }
                      }
                   }
                >
@@ -373,7 +373,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   <BarChart
                      borderRadius = { 8 }
                      grid = { { horizontal: true } }
-                     height = { 375 }
+                     height = { 365 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
                      resolveSizeBeforeRender = { true }
                      series = {

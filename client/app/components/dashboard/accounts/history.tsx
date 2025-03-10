@@ -259,7 +259,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          <Modal
             onClose = { closeHistoryModal }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
             <ModalSection title = "History">
                <Box>
@@ -402,7 +402,6 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
       <Box>
          <Stack
             direction = "column"
-            spacing = { -1 }
             sx = { { mt: 1, pt: 1, px: 1 } }
          >
             <Graph

@@ -125,7 +125,7 @@ function AccountImage({
          <Modal
             onClose = { saveImage }
             open = { open }
-            sx = { { width: { xs: "85%", md: "65%", lg: "50%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
+            sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
             <ModalSection title = "Image">
                <Stack spacing = { 1 }>

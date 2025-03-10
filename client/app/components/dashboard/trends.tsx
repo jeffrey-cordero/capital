@@ -158,7 +158,7 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
    return (
       <TrendCard
          chart = { chartContent }
-         subtitle = "Account balances for the last 6 months"
+         subtitle = "Account balances for the past 6 months"
          title = "Net Worth"
          value = { displayCurrency(netWorth) }
       />
@@ -229,7 +229,7 @@ export function BudgetTrends() {
                size = "small"
             />
          }
-         subtitle = "Income vs. Expenses for the last 6 months"
+         subtitle = "Income vs. Expenses for the past 6 months"
          title = "Budget"
          value = "$0.00"
       />

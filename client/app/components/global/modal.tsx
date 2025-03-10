@@ -30,9 +30,7 @@ const ModalContent = styled("div")(
      transform: translate(-50%, -50%);
      flex-direction: column;
      gap: 8px;
-     max-height: 90%;
-     overflow-x: hidden;
-     overflow-y: scroll;
+     overflow: none;
      background-color: ${theme.palette.mode === "dark" ? "#2B2B2B" : "#ffffff"};
      border-radius: 8px;
      border: 1px solid ${theme.palette.mode === "dark" ? gray[700] : gray[200]};
@@ -40,20 +38,6 @@ const ModalContent = styled("div")(
       ${theme.palette.mode === "dark" ? "rgb(0 0 0 / 0.5)" : "rgb(0 0 0 / 0.2)"};
      padding: 24px;
      color: ${theme.palette.mode === "dark" ? gray[50] : gray[900]};
- 
-     & .modal-title {
-       margin: 0;
-       line-height: 1.5rem;
-       margin-bottom: 8px;
-     }
- 
-     & .modal-description {
-       margin: 0;
-       line-height: 1.5rem;
-       font-weight: 400;
-       color: ${theme.palette.mode === "dark" ? gray[400] : gray[800]};
-       margin-bottom: 4px;
-     }
    `
 );
 
@@ -156,13 +140,6 @@ export function Modal({ open, onClose, children, sx, displayWarning = false }: M
       <MuiModal
          onClose = { closeModal }
          open = { open }
-         slotProps = {
-            {
-               backdrop: {
-                  timeout: 350
-               }
-            }
-         }
       >
          <Fade
             in = { open }
@@ -171,7 +148,8 @@ export function Modal({ open, onClose, children, sx, displayWarning = false }: M
             unmountOnExit = { true }
          >
             <ModalContent sx = { sx }>
-               <Box sx = { { position: "relative" } }>
+               { /* Enforce max-height at the child-level as Modal.max-height causes blurry rendering */ }
+               <Box sx = { { position: "relative", overflowY: "auto", maxHeight: "90vh", "&::-webkit-scrollbar": { display: "none" }, msOverflowStyle: "none", scrollbarWidth: "none" } }>
                   { children }
                   <Warning
                      onCancel = { () => confirmCloseModal(false) }

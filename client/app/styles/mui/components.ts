@@ -6,7 +6,7 @@ import { gray, green, red } from "@/styles/mui/colors";
 export const components: Components = {
    MuiButton: {
       styleOverrides: {
-         root: { borderRadius: "12px", textTransform: "none" },
+         root: { borderRadius: "10px", textTransform: "none" },
          sizeSmall: { padding: "6px 16px" },
          sizeMedium: { padding: "8px 20px" },
          sizeLarge: { padding: "11px 24px" },
@@ -68,13 +68,13 @@ export const components: Components = {
                         color: gray[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: gray[700],
+                        borderColor: gray[400],
                         backgroundColor: gray[800],
                         [`& .${chipClasses.label}`]: {
-                           color: gray[700]
+                           color: gray[300]
                         },
                         [`& .${chipClasses.icon}`]: {
-                           color: gray[500]
+                           color: gray[300]
                         }
                      })
                   }
@@ -109,7 +109,7 @@ export const components: Components = {
                      color: "error"
                   },
                   style: {
-                     borderColor: red[300],
+                     borderColor: red[200],
                      backgroundColor: red[50],
                      [`& .${chipClasses.label}`]: {
                         color: red[500]
