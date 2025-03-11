@@ -4,25 +4,17 @@ import { z } from "zod";
 
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
-import {
-   create,
-   deleteAccount as removeAccount,
-   findByUserId,
-   removeHistory,
-   updateDetails,
-   updateHistory as updateAccountHistory,
-   updateOrdering
-} from "@/repository/accountsRepository";
+import * as accountsRepository from "@/repository/accountsRepository";
 
 // Cache duration in seconds for account data
 const ACCOUNT_CACHE_DURATION = 10 * 60;
 
 // Helper function to generate account cache key
-const getAccountCacheKey = (userId: string) => `accounts:${userId}`;
+const getAccountCacheKey = (user_id: string) => `accounts:${user_id}`;
 
 // Helper function to clear account cache on successful account updates
-const clearAccountCache = (userId: string) => {
-   removeCacheValue(getAccountCacheKey(userId));
+const clearAccountCache = (user_id: string) => {
+   removeCacheValue(getAccountCacheKey(user_id));
 };
 
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
@@ -34,7 +26,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
       return sendServiceResponse(200, "Accounts", JSON.parse(cache) as Account[]);
    } else {
       // If not in cache, fetch from database
-      const result: Account[] = await findByUserId(user_id);
+      const result: Account[] = await accountsRepository.findByUserId(user_id);
 
       setCacheValue(cacheKey, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
       return sendServiceResponse(200, "Accounts", result);
@@ -49,7 +41,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
       return sendValidationErrors(fields, "Invalid account fields");
    } else {
       // Create account and clear the cache
-      const account_id: string = await create(user_id, account);
+      const account_id: string = await accountsRepository.create(user_id, account);
 
       clearAccountCache(user_id);
       return sendServiceResponse(201, "Account created", { account_id });
@@ -78,7 +70,7 @@ export async function updateAccount(
       if (!fields.success) {
          return sendValidationErrors(fields, "Invalid account fields");
       } else {
-         result = await updateDetails(user_id, account.account_id, account);
+         result = await accountsRepository.updateDetails(user_id, account.account_id, account);
       }
    } else {
       // Validate and update account history
@@ -87,7 +79,7 @@ export async function updateAccount(
       if (!fields.success) {
          return sendValidationErrors(fields, "Invalid account history fields");
       } else {
-         result = await updateAccountHistory(
+         result = await accountsRepository.updateHistory(
             user_id,
             account.account_id,
             Number(account.balance),
@@ -127,7 +119,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       updates.push({ account_id: accounts[i], account_order: i });
    }
 
-   const result = await updateOrdering(user_id, updates);
+   const result = await accountsRepository.updateOrdering(user_id, updates);
 
    if (!result) {
       return sendServiceResponse(404, "Invalid account ordering fields", undefined,
@@ -139,7 +131,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 }
 
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-   const result = await removeHistory(user_id, account_id, new Date(last_updated));
+   const result = await accountsRepository.removeHistory(user_id, account_id, new Date(last_updated));
 
    // Handle different deletion scenarios (missing, conflict, success)
    if (result === "missing") {
@@ -155,7 +147,7 @@ export async function deleteAccountHistory(user_id: string, account_id: string, 
 }
 
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   const result = await removeAccount(user_id, account_id);
+   const result = await accountsRepository.deleteAccount(user_id, account_id);
 
    if (!result) {
       return sendServiceResponse(404, "Account not found", undefined,

@@ -38,7 +38,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          categories: []
       }
    };
-   
+
    // Initialize category positions tracking
    const categoryPositions: Record<BudgetType, Record<string, number>> = {
       "Income": {},
@@ -131,7 +131,7 @@ export async function updateCategory(user_id: string, updates: Partial<BudgetCat
    return result.length > 0;
 }
 
-export async function deleteCategory(user_id: string, category_id: string): Promise<boolean> {
+export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
    // Deletes a budget category, which will also delete all associated budgets (CASCADE)
    const removal = `
       DELETE FROM budget_categories
@@ -139,15 +139,15 @@ export async function deleteCategory(user_id: string, category_id: string): Prom
       AND budget_category_id = $2
       RETURNING budget_category_id;
    `;
-   const result = await query(removal, [user_id, category_id]) as { budget_category_id: string }[];
+   const result = await query(removal, [user_id, budget_category_id]) as { budget_category_id: string }[];
 
    return result.length > 0;
 }
 
-export async function updateCategoryOrdering(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
+export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
    // Skip processing if no updates provided
    if (updates.length === 0) return true;
-   
+
    // Bulk update category ordering in a single query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
