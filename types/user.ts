@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const userSchema = z.object({
-  user_id: z.string().uuid().optional(),
+  user_id: z.string().uuid().nullable().optional(),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
@@ -21,14 +21,7 @@ export const userSchema = z.object({
   email: z
     .string()
     .email("Invalid email address"),
+  verified: z.boolean().default(false)
 }).strict();
 
-export type User = {
-  user_id: string | null;
-  username: string;
-  name: string;
-  password: string;
-  verifyPassword: string;
-  email: string;
-  verified: boolean
-}
+export type User = z.infer<typeof userSchema>;

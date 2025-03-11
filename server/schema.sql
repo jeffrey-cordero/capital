@@ -43,11 +43,11 @@ BEFORE DELETE ON accounts_history
 FOR EACH ROW
    EXECUTE FUNCTION prevent_last_history_record_delete();
 
-CREATE TYPE transaction_type AS ENUM ('Income', 'Expenses');
+CREATE TYPE budget_type AS ENUM ('Income', 'Expenses');
 
 CREATE TABLE budget_categories (
    budget_category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   type transaction_type NOT NULL,
+   type budget_type NOT NULL,
    name VARCHAR(30) NOT NULL CHECK (name <> 'Income' AND name <> 'Expenses'),
    category_order INT NOT NULL CHECK (category_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -55,13 +55,13 @@ CREATE TABLE budget_categories (
 );
 
 CREATE TABLE budgets (
-   type transaction_type NOT NULL,
-   goal DECIMAL(13, 2) NOT NULL,
+   type budget_type NOT NULL,
+   goal DECIMAL(13, 2) NOT NULL CHECK (goal >= 0),
    month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
    year SMALLINT NOT NULL CHECK (year >= 1800 AND year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT)),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
-   PRIMARY KEY(user_id, type, year, month)
+   PRIMARY KEY(user_id, budget_category_id, type, year, month)
 );
 
 CREATE INDEX idx_budgets_year_month ON budgets (year, month);
