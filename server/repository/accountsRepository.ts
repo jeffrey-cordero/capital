@@ -1,10 +1,7 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
-import { query, transaction  } from "@/lib/database";
-
-// Constants for query parameter indexing
-const FIRST_PARAM = 1;
+import { FIRST_PARAM, query, transaction  } from "@/lib/database";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
    // Fetch accounts with their latest history records in a single query
@@ -65,11 +62,6 @@ export async function create(user_id: string, account: Account): Promise<string>
          creation,
          [user_id, account.name, account.type, account.image, account.account_order]
       );
-
-      if (!result.rows.length) {
-         throw new Error("Failed to create account");
-      }
-
       const account_id = result.rows[0].account_id;
 
       // Create initial history record with starting balance

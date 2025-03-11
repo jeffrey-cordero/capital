@@ -12,6 +12,9 @@ const pool = new Pool({
    max: 50
 });
 
+// Constant for query parameter indexing
+export const FIRST_PARAM = 1;
+
 export async function query(query: string, parameters: any[]): Promise<any[]> {
    // Submit the query and return the resulting rows
    return (await pool.query(query, parameters)).rows;

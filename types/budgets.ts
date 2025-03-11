@@ -38,3 +38,14 @@ export const budgetCategorySchema = z.object({
 export type BudgetType = "Income" | "Expenses";
 export type Budget = z.infer<typeof budgetSchema>;
 export type BudgetCategory = z.infer<typeof budgetCategorySchema>;
+
+export interface OrganizedBudgets {
+   Income: {
+      goals: Budget[];
+      categories: Array<[BudgetCategory, Budget[]]>;
+   };
+   Expenses: {
+      goals: Budget[];
+      categories: Array<[BudgetCategory, Budget[]]>;
+   };
+}

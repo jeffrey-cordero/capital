@@ -59,8 +59,8 @@ const dashboard: NavigationLink[] = [{
    title: "Accounts",
    icon: faMoneyCheckDollar
 }, {
-   path: "/dashboard/budget",
-   title: "Budget",
+   path: "/dashboard/budgets",
+   title: "Budgets",
    icon: faPieChart
 }, {
    path: "/dashboard#markets",
