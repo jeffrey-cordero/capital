@@ -35,9 +35,9 @@ export const accountSchema = z.object({
    },
    z.number({
       message: "Balance must be a valid number"
-   }).min(0, {
-      message: "Balance must be at least $0"
-   }).max(99999999999.99, {
+   }).min(-99_999_999_999.99, {
+      message: "Balance must be at least -$99,999,999,999.99"
+   }).max(99_999_999_999.99, {
       message: "Balance cannot exceed $99,999,999,999.99"
    })),
    type: z.enum(Array.from(types) as any, {

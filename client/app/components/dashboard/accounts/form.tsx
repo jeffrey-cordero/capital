@@ -208,7 +208,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        aria-label = "Balance"
                                        disabled = { isSubmitting }
                                        id = "balance"
-                                       inputProps = { { min: 0, step: 0.01 } }
+                                       inputProps = { { step: 0.01 } }
                                        label = "Balance"
                                        type = "number"
                                        value = { field.value || "" }

@@ -9,12 +9,12 @@ CREATE TABLE users (
    verified BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+CREATE TYPE account_type AS ENUM ('Checking', 'Savings', 'Credit Card', 'Debt', 'Retirement', 'Investment', 'Loan', 'Property', 'Other');
+
 CREATE TABLE accounts (
    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    name VARCHAR(30) NOT NULL,
-   type VARCHAR(20) CHECK (
-      TYPE IN ('Checking', 'Savings', 'Credit Card', 'Debt', 'Retirement', 'Investment', 'Loan', 'Property', 'Other')
-   ) NOT NULL,
+   type account_type NOT NULL,
    image CHARACTER VARYING,
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
@@ -30,7 +30,6 @@ CREATE TABLE accounts_history (
 CREATE OR REPLACE FUNCTION prevent_last_history_record_delete()
 RETURNS TRIGGER AS $$
 BEGIN
-   -- Ensure all account's have at least one record in the accounts_history relation
     IF (SELECT COUNT(*) FROM accounts_history WHERE account_id = OLD.account_id) <= 1 THEN
       RAISE EXCEPTION 'At least one history record must remain for account %', OLD.account_id;
     END IF;
@@ -43,6 +42,29 @@ CREATE TRIGGER prevent_last_history_record_delete_trigger
 BEFORE DELETE ON accounts_history
 FOR EACH ROW
    EXECUTE FUNCTION prevent_last_history_record_delete();
+
+CREATE TYPE transaction_type AS ENUM ('Income', 'Expenses');
+
+CREATE TABLE budget_categories (
+   budget_category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   type transaction_type NOT NULL,
+   name VARCHAR(30) NOT NULL CHECK (name <> 'Income' AND name <> 'Expenses'),
+   category_order INT NOT NULL CHECK (category_order >= 0),
+   user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+   UNIQUE(user_id, type, name)
+);
+
+CREATE TABLE budgets (
+   type transaction_type NOT NULL,
+   goal DECIMAL(13, 2) NOT NULL,
+   month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
+   year SMALLINT NOT NULL CHECK (year >= 1800 AND year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT)),
+   user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+   budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
+   PRIMARY KEY(user_id, type, year, month)
+);
+
+CREATE INDEX idx_budgets_year_month ON budgets (year, month);
 
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,

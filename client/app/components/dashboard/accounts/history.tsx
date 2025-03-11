@@ -301,7 +301,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           disabled = { isSubmitting || disabled }
                                           fullWidth = { true }
                                           id = "history-balance"
-                                          inputProps = { { min: 0, step: 0.01 } }
+                                          inputProps = { { step: 0.01 } }
                                           label = "Balance"
                                           type = "number"
                                           value = { field.value || "" }
