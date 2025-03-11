@@ -56,15 +56,36 @@ CREATE TABLE budget_categories (
 
 CREATE TABLE budgets (
    type budget_type NOT NULL,
+   name VARCHAR(30) NOT NULL,
    goal DECIMAL(13, 2) NOT NULL CHECK (goal >= 0),
    month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
    year SMALLINT NOT NULL CHECK (year >= 1800 AND year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT)),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
-   PRIMARY KEY(user_id, budget_category_id, type, year, month)
+   CHECK (
+      (budget_category_id IS NULL AND (name = 'Income' AND type = 'Income') OR (name = 'Expenses' AND type = 'Expenses'))
+      OR
+      (budget_category_id IS NOT NULL AND name NOT IN ('Income', 'Expenses'))
+   ),
+   PRIMARY KEY(user_id, name, type, year, month)
 );
 
-CREATE INDEX idx_budgets_year_month ON budgets (year, month);
+CREATE OR REPLACE FUNCTION prevent_non_category_budget_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.budget_category_id IS NULL THEN
+      RAISE EXCEPTION 'Non-category budgets cannot be deleted';
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_last_history_record_delete_trigger
+BEFORE DELETE ON budgets
+FOR EACH ROW
+EXECUTE FUNCTION prevent_non_category_budget_deletion();
+
+CREATE INDEX idx_budgets_user_id_year_month ON budgets (user_id, year, month);
 
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,

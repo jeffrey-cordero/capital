@@ -53,12 +53,18 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
    return sendServiceResponse(201, "Budget created", { success: result });
 }
 
-export async function createCategory(user_id: string, category: Omit<BudgetCategory, "id">): Promise<ServerResponse> {
-   // Validate budget category fields
-   const fields = budgetCategorySchema.strict().safeParse(category);
+export async function createCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
+   // Validate budget and category fields to ensure their creation and insertion into the budgets relation
+   const categoryFields = budgetCategorySchema.strict().safeParse(category);
 
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget category fields");
+   if (!categoryFields.success) {
+      return sendValidationErrors(categoryFields, "Invalid budget category fields");
+   }
+
+   const budgetFields = budgetSchema.strict().safeParse(category);
+
+   if (!budgetFields.success) {
+      return sendValidationErrors(budgetFields, "Invalid budget fields");
    }
 
    const result: string = await budgetRepository.createCategory(category);
@@ -136,6 +142,16 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 }
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
+   // Validate category ID
+   const uuidSchema = z.string().uuid();
+
+   if (!uuidSchema.safeParse(budget_category_id).success) {
+      return sendValidationErrors(null, "Invalid budget category fields",
+         { budget_category_id: `Category ID must be a valid UUID: '${budget_category_id}'` }
+      );
+   }
+
+   // Submit the delete request to the repository
    const result = await budgetRepository.deleteCategory(user_id, budget_category_id);
 
    if (!result) {
@@ -154,6 +170,10 @@ export async function deleteBudget(user_id: string, budget: Budget): Promise<Ser
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid budget fields");
+   } else if (!budget.budget_category_id) {
+      return sendValidationErrors(null, "Invalid budget fields",
+         { budget_category_id: "Non-category budgets cannot be deleted" }
+      );
    }
 
    const result = await budgetRepository.deleteBudget(budget);

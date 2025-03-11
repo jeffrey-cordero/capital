@@ -1,6 +1,7 @@
 import { User } from "capital/user";
+import { PoolClient } from "pg";
 
-import { query } from "@/lib/database";
+import { query, transaction } from "@/lib/database";
 
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
@@ -27,15 +28,25 @@ export async function findByUsername(username: string): Promise<User | null> {
 }
 
 export async function create(user: User): Promise<string> {
-   // Create the new user with provided fields
-   const insert = `
-      INSERT INTO users (username, name, password, email) 
-      VALUES ($1, $2, $3, $4)
-      RETURNING user_id;
-   `;
-   const result: { user_id: string }[] = await query(
-      insert, [user.username, user.name, user.password, user.email]
-   );
+   return await transaction(async(client: PoolClient) => {
+      // Create the new user with provided fields
+      const creation = `
+         INSERT INTO users (username, name, password, email) 
+         VALUES ($1, $2, $3, $4)
+         RETURNING user_id;
+      `;
+      const result = await client.query<{ user_id: string }[]>(
+         creation, [user.username, user.name, user.password, user.email]
+      ) as any;
 
-   return result[0].user_id;
+      // Create the new user's initial Income and Expenses budgets
+      const budgets = `
+         INSERT INTO budgets (user_id, type, goal, year, month)
+         VALUES ($1, 'Income', 2000, EXTRACT(YEAR FROM CURRENT_DATE), EXTRACT(MONTH FROM CURRENT_DATE)),
+                ($1, 'Expenses', 2000, EXTRACT(YEAR FROM CURRENT_DATE), EXTRACT(MONTH FROM CURRENT_DATE));
+      `;
+      await client.query(budgets, [result.rows[0].user_id]);
+
+      return result.rows[0].user_id;
+   }) as string;
 }
