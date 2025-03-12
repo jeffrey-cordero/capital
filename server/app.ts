@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
@@ -38,22 +39,22 @@ app.set("trust proxy", 1);
 // Cookie parsing middleware
 app.use(cookieParser());
 
-// CORS
+// Compression middleware to compress responses
+app.use(compression());
+
+// CORS middleware
 app.use(cors({
-   origin: process.env.CLIENT_URL || "http://localhost:3000",
-   methods: "GET,POST,PUT,DELETE",
-   allowedHeaders: "Content-Type, Authorization",
+   origin: [process.env.CLIENT_URL || "http://localhost:3000"],
+   methods: ["GET", "POST", "PUT", "DELETE"],
+   allowedHeaders: ["Content-Type", "Authorization"],
    credentials: true
 }));
 
 // Disable the X-Powered-By header to hide the tech stack
 app.disable("x-powered-by");
 
-// XSS attack mitigations via Helmet
-app.use(helmet.xssFilter());
-
-// Prevent browsers from interpreting files as a different MIME type via Helmet
-app.use(helmet.noSniff());
+// Apply all Helmet security headers, such as XSS attack mitigations, MIME type sniffing, referrer policy, etc.
+app.use(helmet());
 
 // Request logging
 app.use(morgan("short"));
