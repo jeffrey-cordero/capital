@@ -22,8 +22,8 @@ export type AccountHistory = {
 }
 
 export const accountSchema = z.object({
-   account_id: z.string().nonempty().uuid().optional(),
-   name: z.string().nonempty().min(1, {
+   account_id: z.string().trim().uuid().optional(),
+   name: z.string().trim().min(1, {
       message: "Name must be at least 1 character"
    }).max(30, {
       message: "Name must be at most 30 characters"

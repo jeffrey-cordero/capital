@@ -105,7 +105,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    }
 
    // Validate each UUID and create updates array
-   const uuidSchema = z.string().nonempty().uuid();
+   const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
 
    for (let i = 0; i < accounts.length; i++) {

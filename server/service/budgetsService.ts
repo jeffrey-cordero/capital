@@ -55,7 +55,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
       return sendServiceResponse(201, "Budget category created", { budget_category_id: result });
    } else {
       // Conflict with existing budget category name (unique constraint for each budget type)
-      return sendServiceResponse(409, "Budget category conflicts",
+      return sendServiceResponse(409, "Budget category conflicts", undefined,
          { name: "Budget category name already exists" }
       );
    }
@@ -77,7 +77,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
 
    if (!result) {
       // No budget category found based on the provided ID
-      return sendServiceResponse(404, "Budget category not found",
+      return sendServiceResponse(404, "Budget category not found", undefined,
          { budget_category_id: "No budget category found based on the provided ID" }
       );
    }
@@ -119,7 +119,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    }
 
    // Validate each UUID
-   const uuidSchema = z.string().nonempty().uuid();
+   const uuidSchema = z.string().trim().uuid();
    const updates: Partial<BudgetCategory>[] = [];
 
    for (let i = 0; i < categoryIds.length; i++) {
@@ -148,7 +148,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    // Validate category ID, where main budget categories are not allowed to be deleted within the repository
-   const uuidSchema = z.string().nonempty().uuid();
+   const uuidSchema = z.string().trim().uuid();
 
    if (!uuidSchema.safeParse(budget_category_id).success) {
       return sendValidationErrors(null, "Invalid budget category fields",

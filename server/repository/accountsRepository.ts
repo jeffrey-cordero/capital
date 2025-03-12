@@ -60,7 +60,7 @@ export async function create(user_id: string, account: Account): Promise<string>
       `;
       const result = await client.query<{ account_id: string }>(
          creation,
-         [user_id, account.name, account.type, account.image, account.account_order]
+         [user_id, account.name.trim(), account.type, account.image, account.account_order]
       );
       const account_id = result.rows[0].account_id;
 
@@ -92,6 +92,11 @@ export async function updateDetails(
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof (Account & AccountHistory)]);
          params++;
+      }
+
+      if (field === "name" && field in updates) {
+         // Trim name if it's being updated
+         values[values.length - 1] = updates[field]?.trim();
       }
    });
 

@@ -92,7 +92,7 @@ export async function createCategory(
          `;
          const result = await client.query<{ budget_category_id: string }[]>(
             creation,
-            [user_id, category.type, category.name, category.category_order]
+            [user_id, category.type, category.name?.trim(), category.category_order]
          ) as any;
 
          // Create the budget record
@@ -111,9 +111,9 @@ export async function createCategory(
 
          return budget_category_id;
       }) as string;
-   } catch (error) {
+   } catch (error: any) {
       // Check if error is a unique constraint violation
-      if (error instanceof Error && error.message.includes("unique constraint")) {
+      if (error.code === "23505") {
          return "conflict";
       }
 
@@ -134,6 +134,11 @@ export async function updateCategory(user_id: string, updates: Partial<BudgetCat
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof BudgetCategory]);
          params++;
+      }
+
+      if (field === "name" && field in updates) {
+         // Trim name if it's being updated
+         values[values.length - 1] = updates[field]?.trim();
       }
    });
 

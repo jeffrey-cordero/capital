@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 export const budgetSchema = z.object({
-   budget_category_id: z.string().nonempty().uuid(),
+   budget_category_id: z.string().trim().uuid(),
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal must be a valid number"
    }).min(0, {
@@ -28,8 +28,8 @@ export const budgetSchema = z.object({
 });
 
 export const budgetCategorySchema = z.object({
-   user_id: z.string().nonempty().uuid().optional(),
-   budget_category_id: z.string().nonempty().uuid(),
+   user_id: z.string().trim().uuid().optional(),
+   budget_category_id: z.string().trim().uuid(),
    type: z.enum(['Income', 'Expenses'], {
       message: "Type must be either Income or Expenses"
    }),
@@ -45,7 +45,7 @@ export const budgetCategorySchema = z.object({
          return undefined;
       }
    }, z.string()
-      .nonempty()
+      .trim()
       .min(1, { message: "Name must be at least 1 character" })
       .max(30, { message: "Name must be less than 30 characters" })
       .nullable()
