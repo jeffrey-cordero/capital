@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
+import * as authenticationService from "@/service/authenticationService";
 import { submitServiceRequest } from "@/lib/services";
-import { authenticateUser, getAuthentication, logoutUser } from "@/service/authenticationService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => getAuthentication(res, req.cookies.token))
+   submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token))
 );
 
 export const LOGIN = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => authenticateUser(res, req.body.username, req.body.password))
+   submitServiceRequest(res, async() => authenticationService.authenticateUser(res, req.body.username, req.body.password))
 );
 
 export const LOGOUT = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => logoutUser(req, res))
+   submitServiceRequest(res, async() => authenticationService.logoutUser(req, res))
 );

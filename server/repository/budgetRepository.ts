@@ -7,14 +7,11 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Retrieves all budgets for a user organized by type, year, month, and category
    const overall = `
       SELECT b.*, bc.*
-      FROM budgets AS b
-      LEFT JOIN budget_categories AS bc 
+      FROM budget_categories AS bc
+      INNER JOIN budgets AS b
       ON b.budget_category_id = bc.budget_category_id
       WHERE b.user_id = $1
-      ORDER BY b.year DESC, b.month DESC, 
-      CASE WHEN b.budget_category_id IS NULL THEN 0 ELSE 1 END,
-      b.type, 
-      bc.category_order ASC NULLS FIRST;
+      ORDER BY b.year DESC, b.month DESC, bc.type, bc.category_order ASC NULLS FIRST;
    `;
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
 
@@ -40,36 +37,32 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    for (const row of results) {
       const type: BudgetType = row.type;
 
-      // Extract budget data from the row
-      const budget: Budget = {
-         user_id: row.user_id,
-         budget_category_id: row.budget_category_id,
-         type: row.type,
-         goal: row.goal,
-         year: row.year,
-         month: row.month
-      };
-
-      // Handle main budget (Income or Expenses) goals
-      if (!budget.budget_category_id) {
-         result[type].goals.push(budget);
-
-         continue;
-      }
-
       // Extract category data from the row
       const category: BudgetCategory = {
          budget_category_id: row.budget_category_id,
-         user_id: row.user_id,
          type: row.type,
          name: row.name,
          category_order: row.category_order
       };
 
+      // Extract budget data from the row
+      const budget: Budget = {
+         budget_category_id: row.budget_category_id,
+         goal: row.goal,
+         year: row.year,
+         month: row.month
+      };
+
+      // Handle main budgets (Income or Expenses)
+      if (!category.name) {
+         result[type].goals.push(budget);
+         continue;
+      }
+
       // Check if we've already processed this category
       const categoryIndex = categoryPositions[type][row.budget_category_id];
 
-      if (categoryIndex === undefined) {
+      if (!categoryIndex) {
          // New category found, add it to the categories array and track its position
          categoryPositions[type][row.budget_category_id] = result[type].categories.length;
          result[type].categories.push([category, [budget]]);
@@ -82,11 +75,16 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    return result;
 }
 
-export async function createCategory(category: Budget & BudgetCategory): Promise<string | "conflict"> {
+export async function createCategory(
+   user_id: string,
+   category: Omit<Budget & BudgetCategory, "budget_category_id">,
+   externalClient?: PoolClient
+): Promise<string | "conflict"> {
    // Creates a new budget category or returns a conflict if the category already exists
    try {
-      return await transaction(async(client: PoolClient) => {
-         // Create the budget category record
+      return await transaction(async(c: PoolClient) => {
+         // Create the budget category record through internal or external (registration) client
+         const client: PoolClient = externalClient || c;
          const creation = `
             INSERT INTO budget_categories (user_id, type, name, category_order)
             VALUES ($1, $2, $3, $4)
@@ -94,26 +92,24 @@ export async function createCategory(category: Budget & BudgetCategory): Promise
          `;
          const result = await client.query<{ budget_category_id: string }[]>(
             creation,
-            [category.user_id, category.type, category.name, category.category_order]
+            [user_id, category.type, category.name, category.category_order]
          ) as any;
 
          // Create the budget record
-         const budgetCategoryId: string = result.rows[0].budget_category_id;
+         const budget_category_id: string = result.rows[0].budget_category_id;
          const budget = `
-            INSERT INTO budgets (user_id, budget_category_id, type, goal, year, month)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO budgets (budget_category_id, goal, year, month)
+            VALUES ($1, $2, $3, $4)
          `;
 
          await client.query(budget, [
-            category.user_id,
-            budgetCategoryId,
-            category.type,
+            budget_category_id,
             category.goal,
             category.year,
             category.month
          ]);
 
-         return budgetCategoryId;
+         return budget_category_id;
       }) as string;
    } catch (error) {
       // Check if error is a unique constraint violation
@@ -165,6 +161,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
       DELETE FROM budget_categories
       WHERE user_id = $1
       AND budget_category_id = $2
+      AND name IS NOT NULL
       RETURNING budget_category_id;
    `;
    const result = await query(removal, [user_id, budget_category_id]) as { budget_category_id: string }[];
@@ -196,59 +193,69 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
    return result.length > 0;
 }
 
-export async function createBudget(budget: Budget): Promise<boolean> {
-   // Creates a new budget (main or category)
+export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
+   // Creates a new budget
    const creation = `
-      INSERT INTO budgets (user_id, budget_category_id, type, goal, year, month)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING user_id;
+      WITH existing_budget_category AS (
+         SELECT user_id
+         FROM budget_categories
+         WHERE user_id = $1
+         AND budget_category_id = $2
+      )
+      INSERT INTO budgets (budget_category_id, goal, year, month)
+      SELECT $2, $3, $4, $5
+      FROM existing_budget_category
+      WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      RETURNING budget_category_id;
    `;
-
    const result = await query(creation,
-      [budget.user_id, budget.budget_category_id || null, budget.type, budget.goal, budget.year, budget.month]
+      [user_id, budget.budget_category_id, budget.goal, budget.year, budget.month]
    ) as { user_id: string }[];
 
    return result.length > 0;
 }
 
-export async function updateBudgetGoal(updates: Budget): Promise<boolean> {
-   // Updates a budget goal (main or category)
+export async function updateBudgetGoal(user_id: string, updates: Budget): Promise<boolean> {
+   // Updates a budget goal
    const updateQuery = `
+      WITH existing_budget_category AS (
+         SELECT user_id
+         FROM budget_categories
+         WHERE user_id = $1
+         AND budget_category_id = $2
+      )
       UPDATE budgets
-      SET goal = $1
-      WHERE user_id = $2
-      AND type = $3
-      AND year = $4
-      AND month = $5
-      AND budget_category_id ${updates.budget_category_id ? "= $6" : "IS NULL"}
-      RETURNING user_id;
+      SET goal = $3
+      FROM existing_budget_category
+      WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      RETURNING budget_category_id;
    `;
 
-   const params = [updates.goal, updates.user_id, updates.type, updates.year, updates.month];
-
-   if (updates.budget_category_id) {
-      // Updating a category budget goal
-      params.push(updates.budget_category_id);
-   }
-
-   const result = await query(updateQuery, params) as { user_id: string }[];
+   const result = await query(updateQuery,
+      [user_id, updates.budget_category_id, updates.goal]
+   ) as { user_id: string }[];
 
    return result.length > 0;
 }
 
-export async function deleteBudget(budget: Budget): Promise<boolean> {
+export async function deleteBudget(user_id: string, budget: Budget): Promise<boolean> {
    // Deletes a category budget
    const removal = `
+      WITH non_main_budget AS (
+         SELECT budget_category_id
+         FROM budget_categories
+         WHERE user_id = $1
+         AND budget_category_id = $2
+         AND name IS NOT NULL
+      )
       DELETE FROM budgets
-      WHERE user_id = $1
-      AND type = $2
+      WHERE EXISTS (SELECT 1 FROM non_main_budget)
       AND year = $3
       AND month = $4
-      AND budget_category_id = $5
       RETURNING user_id;
-  `;
+   `;
    const result = await query(removal,
-      [budget.user_id, budget.type, budget.year, budget.month, budget.budget_category_id]
+      [user_id, budget.budget_category_id, budget.year, budget.month]
    ) as { user_id: string }[];
 
    return result.length > 0;

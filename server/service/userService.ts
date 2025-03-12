@@ -2,10 +2,10 @@ import { ServerResponse } from "capital/server";
 import { User, userSchema } from "capital/user";
 import { Request, Response } from "express";
 
+import * as userRepository from "@/repository/userRepository";
 import { hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
-import { create, findConflictingUsers } from "@/repository/userRepository";
 
 // Helper function to normalize user input for case-insensitive comparison
 const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
@@ -42,12 +42,12 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       });
    } else {
       // Validate user uniqueness by checking for existing username/email
-      const existingUsers: User[] = await findConflictingUsers(user.username, user.email);
+      const existingUsers: User[] = await userRepository.findConflictingUsers(user.username, user.email);
 
       if (existingUsers.length === 0) {
          // Hash password and create the new user
          const hashedPassword = await hash(user.password);
-         const user_id: string = await create({ ...user, password: hashedPassword });
+         const user_id: string = await userRepository.create({ ...user, password: hashedPassword });
 
          // Configure JWT token for authentication
          configureToken(res, user_id);

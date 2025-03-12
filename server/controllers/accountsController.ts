@@ -2,22 +2,15 @@ import { type Account, AccountHistory } from "capital/accounts";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
+import * as accountsService from "@/service/accountsService";
 import { submitServiceRequest } from "@/lib/services";
-import {
-   createAccount,
-   deleteAccount,
-   deleteAccountHistory,
-   fetchAccounts,
-   updateAccount,
-   updateAccountsOrdering
-} from "@/service/accountsService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => fetchAccounts(res.locals.user_id))
+   submitServiceRequest(res, async() => accountsService.fetchAccounts(res.locals.user_id))
 );
 
 export const POST = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => createAccount(res.locals.user_id, req.body as Account))
+   submitServiceRequest(res, async() => accountsService.createAccount(res.locals.user_id, req.body as Account))
 );
 
 export const PUT = asyncHandler(async(req: Request, res: Response) => {
@@ -26,14 +19,14 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    if (req.params.id === "ordering") {
       // Update accounts ordering
       return submitServiceRequest(res,
-         async() => updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[])
+         async() => accountsService.updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[])
       );
    } else {
       // Update account details or history records
       const account: Partial<Account & AccountHistory> = { ...req.body, account_id: req.params.id };
 
       return submitServiceRequest(res,
-         async() => updateAccount(account.last_updated ? "history" : "details", user_id,  account)
+         async() => accountsService.updateAccount(account.last_updated ? "history" : "details", user_id,  account)
       );
    }
 });
@@ -45,9 +38,9 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
 
    if (req.body.last_updated) {
       return submitServiceRequest(res,
-         async() => deleteAccountHistory(user_id, account_id, req.body.last_updated)
+         async() => accountsService.deleteAccountHistory(user_id, account_id, req.body.last_updated)
       );
    } else {
-      return submitServiceRequest(res, async() => deleteAccount(user_id, account_id));
+      return submitServiceRequest(res, async() => accountsService.deleteAccount(user_id, account_id));
    }
 });

@@ -6,10 +6,10 @@ import { News } from "capital/news";
 import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
+import * as dashboardRepository from "@/repository/dashboardRepository";
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse } from "@/lib/services";
-import { getMarketTrends, updateMarketTrends } from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 
 // Mutex to ensure only one API call happens at a time
@@ -67,7 +67,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       }
 
       // Check if we have fresh data in the database
-      const stored = await getMarketTrends();
+      const stored = await dashboardRepository.getMarketTrends();
       const isStale = !stored || new Date(stored.time) < new Date(new Date().getTime() - MARKET_TRENDS_CACHE_DURATION * 1000);
 
       if (!isStale) {
@@ -80,7 +80,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 
       try {
          // Double-check if another request already updated the data
-         const updates = await getMarketTrends();
+         const updates = await dashboardRepository.getMarketTrends();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - MARKET_TRENDS_CACHE_DURATION * 1000)) {
             return sendServiceResponse(200, "Market Trends", updates.data as MarketTrends);
@@ -110,7 +110,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
          const time = new Date();
          const data = JSON.stringify(marketTrends);
 
-         await updateMarketTrends(time, data);
+         await dashboardRepository.updateMarketTrends(time, data);
          setCacheValue("marketTrends", MARKET_TRENDS_CACHE_DURATION, data);
 
          return sendServiceResponse(200, "Market Trends", marketTrends as MarketTrends);

@@ -28,12 +28,11 @@ export const accountSchema = z.object({
    }),
    balance: z.preprocess((value) => {
       if (typeof value === "string" && (value.trim() === "" || isNaN(Number(value)))) {
-        return NaN; // Force validation failure for non-numeric strings
+         return NaN; // Force validation failure for non-numeric strings
       } else {
          return Number(value); // Otherwise, return the original value
       }
-   },
-   z.number({
+   },z.number({
       message: "Balance must be a valid number"
    }).min(-99_999_999_999.99, {
       message: "Balance must be at least -$99,999,999,999.99"
@@ -46,9 +45,9 @@ export const accountSchema = z.object({
    image: z.enum(Array.from(images) as any).or(z.string().url()).or(z.literal("")).nullable().optional(),
    account_order: z.coerce.number().min(0, {
       message: "Account order must be at least 0"
-   }).max(2_147_483_647, 
-      { message: "Account order must be at most 2,147,483,647" }
-   )
+   }).max(2_147_483_647, {
+      message: "Account order must be at most 2,147,483,647"
+   })
 });
 
 export const accountHistorySchema = z.object({

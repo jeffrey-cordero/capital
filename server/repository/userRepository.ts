@@ -2,6 +2,7 @@ import { User } from "capital/user";
 import { PoolClient } from "pg";
 
 import { query, transaction } from "@/lib/database";
+import { createCategory } from "@/repository/budgetRepository";
 
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
@@ -40,12 +41,27 @@ export async function create(user: User): Promise<string> {
       ) as any;
 
       // Create the new user's initial Income and Expenses budgets
-      const budgets = `
-         INSERT INTO budgets (user_id, type, goal, year, month)
-         VALUES ($1, 'Income', 2000, EXTRACT(YEAR FROM CURRENT_DATE), EXTRACT(MONTH FROM CURRENT_DATE)),
-                ($1, 'Expenses', 2000, EXTRACT(YEAR FROM CURRENT_DATE), EXTRACT(MONTH FROM CURRENT_DATE));
-      `;
-      await client.query(budgets, [result.rows[0].user_id]);
+      const today = new Date();
+      const month = today.getUTCMonth() + 1;
+      const year = today.getUTCFullYear();
+
+      await createCategory(result.rows[0].user_id, {
+         type: "Income",
+         name: null,
+         category_order: null,
+         goal: 2000,
+         month: month,
+         year: year
+      }, client);
+
+      await createCategory(result.rows[0].user_id, {
+         type: "Expenses",
+         name: null,
+         category_order: null,
+         goal: 2000,
+         month: month,
+         year: year
+      }, client);
 
       return result.rows[0].user_id;
    }) as string;
