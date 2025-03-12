@@ -11,7 +11,6 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
 
 export const POST = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
-   console.log(user_id);
 
    if (req.params.id === "category")  {
       // Create a new budget category

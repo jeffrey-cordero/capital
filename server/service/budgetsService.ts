@@ -40,17 +40,11 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
 }
 
 export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
-   // Validate budget and category fields to ensure their creation and insertion into the budgets relation
-   const categoryFields = budgetCategorySchema.strict().safeParse(category);
+   // Validate budget and category fields in a single Zod schema
+   const fields = budgetSchema.merge(budgetCategorySchema).safeParse(category);
 
-   if (!categoryFields.success) {
-      return sendValidationErrors(categoryFields, "Invalid budget category fields");
-   }
-
-   const budgetFields = budgetSchema.strict().safeParse(category);
-
-   if (!budgetFields.success) {
-      return sendValidationErrors(budgetFields, "Invalid budget fields");
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid budget category fields");
    }
 
    const result: string = await budgetsRepository.createCategory(user_id, category);
@@ -125,7 +119,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    }
 
    // Validate each UUID
-   const uuidSchema = z.string().uuid();
+   const uuidSchema = z.string().nonempty().uuid();
    const updates: Partial<BudgetCategory>[] = [];
 
    for (let i = 0; i < categoryIds.length; i++) {
@@ -154,7 +148,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    // Validate category ID, where main budget categories are not allowed to be deleted within the repository
-   const uuidSchema = z.string().uuid();
+   const uuidSchema = z.string().nonempty().uuid();
 
    if (!uuidSchema.safeParse(budget_category_id).success) {
       return sendValidationErrors(null, "Invalid budget category fields",

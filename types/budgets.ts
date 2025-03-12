@@ -1,8 +1,9 @@
 import { z } from "zod";
+
 import { zodPreprocessNumber } from "./numerics";
 
 export const budgetSchema = z.object({
-   budget_category_id: z.string().uuid(),
+   budget_category_id: z.string().nonempty().uuid(),
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal must be a valid number"
    }).min(0, {
@@ -10,12 +11,16 @@ export const budgetSchema = z.object({
    }).max(999_999_999_999_999.99, {
       message: "Goal cannot exceed $999,999,999,999,999.99"
    })),
-   month: zodPreprocessNumber(z.coerce.number().min(1, {
+   month: zodPreprocessNumber(z.coerce.number({
+      message: "Month must be a valid number"
+   }).min(1, {
       message: "Month must be between 1 and 12"
    }).max(12, {
       message: "Month must be between 1 and 12"
    })),
-   year: zodPreprocessNumber(z.coerce.number().min(1800, {
+   year: zodPreprocessNumber(z.coerce.number({
+      message: "Year must be a valid number"
+   }).min(1800, {
       message: "Year must be at least 1800"
    }).max(new Date().getUTCFullYear(), {
       message: "Year must be less than or equal to the current year"
@@ -23,23 +28,31 @@ export const budgetSchema = z.object({
 });
 
 export const budgetCategorySchema = z.object({
-   user_id: z.string().uuid().optional(),
-   budget_category_id: z.string().uuid(),
+   user_id: z.string().nonempty().uuid().optional(),
+   budget_category_id: z.string().nonempty().uuid(),
    type: z.enum(['Income', 'Expenses'], {
       message: "Type must be either Income or Expenses"
    }),
    name: z.preprocess((value) => {
-      if (typeof value === "string" && (value.trim() === "Income" || value.trim() === "Expenses")) {
-         return undefined; // Block reserved names
+      if (typeof value === "string") {
+         // Block reserved names
+         return value.trim() === "Income" || value.trim() === "Expenses" ? undefined : String(value); 
+      } else if (value === null) {
+         // Main budget categories can be null
+         return null;
+      } else {
+         // Non-main budget categories name must be a string
+         return undefined;
       }
-
-      return value === null ? null : String(value);
    }, z.string()
+      .nonempty()
       .min(1, { message: "Name must be at least 1 character" })
       .max(30, { message: "Name must be less than 30 characters" })
       .nullable()
    ),
-   category_order: zodPreprocessNumber(z.coerce.number().min(0, {
+   category_order: zodPreprocessNumber(z.coerce.number({
+      message: "Category order must be a valid number"
+   }).min(0, {
       message: "Category order must be at least 0"
    }).max(2_147_483_647, {
       message: "Category order must be at most 2,147,483,647"
