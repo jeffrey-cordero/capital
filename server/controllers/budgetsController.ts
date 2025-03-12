@@ -19,8 +19,10 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
       );
    } else {
       // Create a new budget for a specific budget category
+      const budget: Budget = { ...req.body, budget_category_id: req.params.id };
+
       return submitServiceRequest(res,
-         async() => budgetsService.createBudget(user_id, req.body as Budget)
+         async() => budgetsService.createBudget(user_id, budget)
       );
    }
 });
@@ -35,12 +37,14 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       );
    } else {
       // Update a budget category
+      const category: BudgetCategory = { ...req.body, budget_category_id: req.params.id };
+
       return submitServiceRequest(res,
-         async() => budgetsService.updateCategory(user_id, req.body as BudgetCategory)
+         async() => budgetsService.updateCategory(user_id, category)
       );
    }
 });
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => budgetsService.deleteCategory(res.locals.user_id, req.body.budget_category_id))
+   submitServiceRequest(res, async() => budgetsService.deleteCategory(res.locals.user_id, req.params.id))
 );

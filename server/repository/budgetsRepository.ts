@@ -211,6 +211,8 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
       SELECT $2, $3, $4, $5
       FROM existing_budget_category
       WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      ON CONFLICT (budget_category_id, year, month)
+      DO UPDATE SET goal = EXCLUDED.goal
       RETURNING budget_category_id;
    `;
    const result = await query(creation,
