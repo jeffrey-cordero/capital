@@ -8,11 +8,11 @@ import {
 import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
-import * as budgetRepository from "@/repository/budgetRepository";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import * as budgetsRepository from "@/repository/budgetsRepository";
 
-// Cache duration in seconds for budget data
+// Cache duration in seconds for user budgets
 const BUDGET_CACHE_DURATION = 25 * 60;
 
 // Helper function to generate budgets cache key
@@ -23,7 +23,7 @@ const clearBudgetCache = (user_id: string) => {
    removeCacheValue(getBudgetsCacheKey(user_id));
 };
 
-export async function getBudgets(user_id: string): Promise<ServerResponse> {
+export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    // Try to get from cache first
    const cacheKey = getBudgetsCacheKey(user_id);
    const cache = await getCacheValue(cacheKey);
@@ -33,33 +33,13 @@ export async function getBudgets(user_id: string): Promise<ServerResponse> {
    }
 
    // If not in cache, fetch from the budget repository and cache the result
-   const result: OrganizedBudgets = await budgetRepository.findByUserId(user_id);
+   const result: OrganizedBudgets = await budgetsRepository.findByUserId(user_id);
 
    setCacheValue(cacheKey, BUDGET_CACHE_DURATION, JSON.stringify(result));
    return sendServiceResponse(200, "Budgets", result);
 }
 
-export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate category and budget fields
-   const categoryFields = budgetCategorySchema.strict().safeParse(budget);
-
-   if (!categoryFields.success) {
-      return sendValidationErrors(categoryFields, "Invalid budget category fields");
-   }
-
-   const budgetFields = budgetSchema.strict().safeParse(budget);
-
-   if (!budgetFields.success) {
-      return sendValidationErrors(budgetFields, "Invalid budget fields");
-   }
-
-   const result = await budgetRepository.createBudget(user_id, budget);
-
-   clearBudgetCache(user_id);
-   return sendServiceResponse(201, "Budget created", { success: result });
-}
-
-export async function createCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
+export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
    // Validate budget and category fields to ensure their creation and insertion into the budgets relation
    const categoryFields = budgetCategorySchema.strict().safeParse(category);
 
@@ -73,7 +53,7 @@ export async function createCategory(user_id: string, category: Budget & BudgetC
       return sendValidationErrors(budgetFields, "Invalid budget fields");
    }
 
-   const result: string = await budgetRepository.createCategory(user_id, category);
+   const result: string = await budgetsRepository.createCategory(user_id, category);
 
    if (result !== "conflict") {
       // Successfully created budget category
@@ -85,6 +65,31 @@ export async function createCategory(user_id: string, category: Budget & BudgetC
          { name: "Budget category name already exists" }
       );
    }
+}
+
+export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
+   // Validate budget fields
+   const fields = budgetSchema.strict().safeParse(budget);
+
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid budget fields");
+   } else if (!budget.budget_category_id) {
+      return sendValidationErrors(null, "Invalid budget fields",
+         { budget_category_id: "Budget category ID is required" }
+      );
+   }
+
+   const result = await budgetsRepository.createBudget(user_id, budget);
+
+   if (!result) {
+      // No budget category found based on the provided ID
+      return sendServiceResponse(404, "Budget category not found",
+         { budget_category_id: "No budget category found based on the provided ID" }
+      );
+   }
+
+   clearBudgetCache(user_id);
+   return sendServiceResponse(201, "Budget created", { success: result });
 }
 
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
@@ -99,7 +104,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
       );
    }
 
-   const result = await budgetRepository.updateCategory(user_id, category);
+   const result = await budgetsRepository.updateCategory(user_id, category);
 
    if (!result) {
       return sendServiceResponse(404, "Budget category not found", undefined,
@@ -135,7 +140,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
       updates.push({ budget_category_id: categoryId, category_order: i });
    }
 
-   const result = await budgetRepository.updateCategoryOrderings(user_id, updates);
+   const result = await budgetsRepository.updateCategoryOrderings(user_id, updates);
 
    if (!result) {
       return sendServiceResponse(404, "Invalid category ordering", undefined,
@@ -158,31 +163,11 @@ export async function deleteCategory(user_id: string, budget_category_id: string
    }
 
    // Submit the delete request to the repository
-   const result = await budgetRepository.deleteCategory(user_id, budget_category_id);
+   const result = await budgetsRepository.deleteCategory(user_id, budget_category_id);
 
    if (!result) {
       return sendServiceResponse(404, "Budget category not found", undefined,
          { category: "Budget category does not exist based on the provided ID. Please ensure the budget category exists and it's not tied to a main budget category." }
-      );
-   }
-
-   clearBudgetCache(user_id);
-   return sendServiceResponse(204);
-}
-
-export async function deleteBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate budget fields, where main budgets are not allowed to be deleted within the repository
-   const fields = budgetSchema.strict().safeParse(budget);
-
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget fields");
-   }
-
-   const result = await budgetRepository.deleteBudget(user_id, budget);
-
-   if (!result) {
-      return sendServiceResponse(404, "Budget not found", undefined,
-         { budget: "Budget does not exist based on the provided ID. Please ensure the budget category exists and it's not tied to a main budget category." }
       );
    }
 

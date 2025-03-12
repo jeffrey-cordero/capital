@@ -2,8 +2,8 @@ import { type Account, AccountHistory } from "capital/accounts";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
-import * as accountsService from "@/service/accountsService";
 import { submitServiceRequest } from "@/lib/services";
+import * as accountsService from "@/service/accountsService";
 
 export const GET = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(res, async() => accountsService.fetchAccounts(res.locals.user_id))

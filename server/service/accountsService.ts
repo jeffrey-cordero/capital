@@ -2,9 +2,9 @@ import { Account, AccountHistory, accountHistorySchema, accountSchema } from "ca
 import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
-import * as accountsRepository from "@/repository/accountsRepository";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import * as accountsRepository from "@/repository/accountsRepository";
 
 // Cache duration in seconds for account data
 const ACCOUNT_CACHE_DURATION = 10 * 60;

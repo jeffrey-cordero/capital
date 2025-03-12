@@ -1,6 +1,7 @@
 import express from "express";
 
 import * as accountsController from "@/controllers/accountsController";
+import * as budgetsController from "@/controllers/budgetsController";
 import * as dashboardController from "@/controllers/dashboardController";
 import { authenticateToken } from "@/lib/middleware";
 
@@ -17,5 +18,11 @@ dashboardRouter.get("/accounts", accountsController.GET);
 dashboardRouter.post("/accounts", accountsController.POST);
 dashboardRouter.put("/accounts/:id", accountsController.PUT);
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
+
+// Budgets
+dashboardRouter.get("/budgets", budgetsController.GET);
+dashboardRouter.post("/budgets/:id", budgetsController.POST);
+dashboardRouter.put("/budgets/:id", budgetsController.PUT);
+dashboardRouter.delete("/budgets/:id", budgetsController.DELETE);
 
 export default dashboardRouter;

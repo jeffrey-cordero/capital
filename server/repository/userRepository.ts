@@ -2,7 +2,7 @@ import { User } from "capital/user";
 import { PoolClient } from "pg";
 
 import { query, transaction } from "@/lib/database";
-import { createCategory } from "@/repository/budgetRepository";
+import { createCategory } from "@/repository/budgetsRepository";
 
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
    // Conflicts based on existing username and/or email

@@ -2,10 +2,10 @@ import { ServerResponse } from "capital/server";
 import { User, userSchema } from "capital/user";
 import { Request, Response } from "express";
 
-import * as userRepository from "@/repository/userRepository";
 import { hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import * as userRepository from "@/repository/userRepository";
 
 // Helper function to normalize user input for case-insensitive comparison
 const normalizeUserInput = (input: string): string => input.toLowerCase().trim();

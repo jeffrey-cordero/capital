@@ -6,12 +6,12 @@ import { News } from "capital/news";
 import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
 
-import * as dashboardRepository from "@/repository/dashboardRepository";
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse } from "@/lib/services";
+import * as dashboardRepository from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
-
+import { fetchBudgets } from "@/service/budgetsService";
 // Mutex to ensure only one API call happens at a time
 const mutex = new Mutex();
 
@@ -172,15 +172,17 @@ export async function fetchNews(): Promise<ServerResponse> {
 
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    // Fetch all dashboard components in parallel
-   const [marketTrends, news, accounts] = await Promise.all([
+   const [marketTrends, news, accounts, budgets] = await Promise.all([
       fetchMarketTrends(),
       fetchNews(),
-      fetchAccounts(user_id)
+      fetchAccounts(user_id),
+      fetchBudgets(user_id)
    ]);
 
    // Combine all data into a single dashboard response
    return sendServiceResponse(200, "Dashboard", {
       accounts: accounts.data,
+      budgets: budgets.data,
       trends: marketTrends.data,
       news: news.data
    });

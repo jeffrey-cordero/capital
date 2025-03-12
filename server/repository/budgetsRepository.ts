@@ -10,7 +10,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       FROM budget_categories AS bc
       INNER JOIN budgets AS b
       ON b.budget_category_id = bc.budget_category_id
-      WHERE b.user_id = $1
+      WHERE bc.user_id = $1
       ORDER BY b.year DESC, b.month DESC, bc.type, bc.category_order ASC NULLS FIRST;
    `;
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
@@ -53,7 +53,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          month: row.month
       };
 
-      // Handle main budgets (Income or Expenses)
+      // Handle main budget category (Income or Expenses)
       if (!category.name) {
          result[type].goals.push(budget);
          continue;
@@ -62,12 +62,12 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       // Check if we've already processed this category
       const categoryIndex = categoryPositions[type][row.budget_category_id];
 
-      if (!categoryIndex) {
-         // New category found, add it to the categories array and track its position
+      if (categoryIndex === undefined) {
+         // New category found
          categoryPositions[type][row.budget_category_id] = result[type].categories.length;
          result[type].categories.push([category, [budget]]);
       } else {
-         // Category already exists, just add the budget to it
+         // Budget category already exists, thus we append to the respective budget record
          result[type].categories[categoryIndex][1].push(budget);
       }
    }
@@ -82,9 +82,9 @@ export async function createCategory(
 ): Promise<string | "conflict"> {
    // Creates a new budget category or returns a conflict if the category already exists
    try {
-      return await transaction(async(c: PoolClient) => {
-         // Create the budget category record through internal or external (registration) client
-         const client: PoolClient = externalClient || c;
+      return await transaction(async(internalClient: PoolClient) => {
+         // Create the budget category record through internal or external client (budgets vs.registration)
+         const client: PoolClient = externalClient || internalClient;
          const creation = `
             INSERT INTO budget_categories (user_id, type, name, category_order)
             VALUES ($1, $2, $3, $4)
@@ -216,7 +216,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
 }
 
 export async function updateBudgetGoal(user_id: string, updates: Budget): Promise<boolean> {
-   // Updates a budget goal
+   // Updates a budget category goal for a specific month and year
    const updateQuery = `
       WITH existing_budget_category AS (
          SELECT user_id
@@ -233,29 +233,6 @@ export async function updateBudgetGoal(user_id: string, updates: Budget): Promis
 
    const result = await query(updateQuery,
       [user_id, updates.budget_category_id, updates.goal]
-   ) as { user_id: string }[];
-
-   return result.length > 0;
-}
-
-export async function deleteBudget(user_id: string, budget: Budget): Promise<boolean> {
-   // Deletes a category budget
-   const removal = `
-      WITH non_main_budget AS (
-         SELECT budget_category_id
-         FROM budget_categories
-         WHERE user_id = $1
-         AND budget_category_id = $2
-         AND name IS NOT NULL
-      )
-      DELETE FROM budgets
-      WHERE EXISTS (SELECT 1 FROM non_main_budget)
-      AND year = $3
-      AND month = $4
-      RETURNING user_id;
-   `;
-   const result = await query(removal,
-      [user_id, budget.budget_category_id, budget.year, budget.month]
    ) as { user_id: string }[];
 
    return result.length > 0;
