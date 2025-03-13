@@ -49,73 +49,67 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    }
 
    return (
-      <Card
-         elevation = { 3 }
-         sx = { { borderRadius: 2, height: "100%" } }
-         variant = "elevation"
-      >
-         <CardContent sx = { { p: 2.5 } }>
-            <Typography
-               component = "h2"
-               gutterBottom = { true }
-               variant = "subtitle2"
-            >
-               Income Budget
-            </Typography>
-            <Typography
-               component = "p"
-               variant = "h4"
-            >
-               { displayCurrency(mainGoal) }
-            </Typography>
-            <Typography
-               color = "text.secondary"
-               component = "p"
-               variant = "subtitle2"
-            >
-               Monthly Income Budget
-            </Typography>
+      <Box>
+         <Typography
+            component="h2"
+            gutterBottom={true}
+            variant="subtitle2"
+         >
+            Income Budget
+         </Typography>
+         <Typography
+            component="p"
+            variant="h4"
+         >
+            {displayCurrency(mainGoal)}
+         </Typography>
+         <Typography
+            color="text.secondary"
+            component="p"
+            variant="subtitle2"
+         >
+            Monthly Income Budget
+         </Typography>
 
-            <Box sx = { { height: 300, mt: 2 } }>
-               {
-                  data.length > 0 ? (
-                     <PieChart
-                        height = { 300 }
-                        margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
-                        series = {
-                           [
-                              {
-                                 data,
-                                 innerRadius: 30,
-                                 paddingAngle: 2,
-                                 cornerRadius: 4,
-                                 highlightScope: { faded: "global", highlighted: "item" },
-                                 arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
-                                 arcLabelMinAngle: 20
-                              }
-                           ]
-                        }
-                        slotProps = {
+         <Box sx={{ height: 300, mt: 2 }}>
+            {
+               data.length > 0 ? (
+                  <PieChart
+                     height={300}
+                     margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                     series={
+                        [
                            {
-                              legend: { hidden: true }
+                              data,
+                              innerRadius: 30,
+                              paddingAngle: 2,
+                              cornerRadius: 4,
+                              highlightScope: { faded: "global", highlighted: "item" },
+                              arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
+                              arcLabelMinAngle: 20
                            }
+                        ]
+                     }
+                     slotProps={
+                        {
+                           legend: { hidden: true }
                         }
-                     />
-                  ) : (
-                     <Stack
-                        alignItems = "center"
-                        justifyContent = "center"
-                        sx = { { height: "100%" } }
-                     >
-                        <Typography color = "text.secondary">
-                           No income categories defined
-                        </Typography>
-                     </Stack>
-                  )
-               }
-            </Box>
-         </CardContent>
-      </Card>
+                     }
+                  />
+               ) : (
+                  <Stack
+                     alignItems="center"
+                     justifyContent="center"
+                     sx={{ height: "100%" }}
+                  >
+                     <Typography color="text.secondary">
+                        No income categories defined
+                     </Typography>
+                  </Stack>
+               )
+            }
+         </Box>
+      </Box>
    );
 }
 
@@ -144,72 +138,66 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
    }
 
    return (
-      <Card
-         elevation = { 3 }
-         sx = { { borderRadius: 2, height: "100%" } }
-         variant = "elevation"
-      >
-         <CardContent sx = { { p: 2.5 } }>
-            <Typography
-               component = "h2"
-               gutterBottom = { true }
-               variant = "subtitle2"
-            >
-               Expenses Budget
-            </Typography>
-            <Typography
-               component = "p"
-               variant = "h4"
-            >
-               { displayCurrency(mainGoal) }
-            </Typography>
-            <Typography
-               color = "text.secondary"
-               component = "p"
-               variant = "subtitle2"
-            >
-               Monthly Expenses Budget
-            </Typography>
+      <Box>
+         <Typography
+            component="h2"
+            gutterBottom={true}
+            variant="subtitle2"
+         >
+            Expenses Budget
+         </Typography>
+         <Typography
+            component="p"
+            variant="h4"
+         >
+            {displayCurrency(mainGoal)}
+         </Typography>
+         <Typography
+            color="text.secondary"
+            component="p"
+            variant="subtitle2"
+         >
+            Monthly Expenses Budget
+         </Typography>
 
-            <Box sx = { { height: 300, mt: 2 } }>
-               {
-                  data.length > 0 ? (
-                     <PieChart
-                        height = { 300 }
-                        margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
-                        series = {
-                           [
-                              {
-                                 data,
-                                 innerRadius: 30,
-                                 paddingAngle: 2,
-                                 cornerRadius: 4,
-                                 highlightScope: { faded: "global", highlighted: "item" },
-                                 arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
-                                 arcLabelMinAngle: 20
-                              }
-                           ]
-                        }
-                        slotProps = {
+         <Box sx={{ height: 300, mt: 2 }}>
+            {
+               data.length > 0 ? (
+                  <PieChart
+                     height={300}
+                     margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                     series={
+                        [
                            {
-                              legend: { hidden: true }
+                              data,
+                              innerRadius: 30,
+                              paddingAngle: 2,
+                              cornerRadius: 4,
+                              highlightScope: { faded: "global", highlighted: "item" },
+                              arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
+                              arcLabelMinAngle: 20
                            }
+                        ]
+                     }
+                     slotProps={
+                        {
+                           legend: { hidden: true }
                         }
-                     />
-                  ) : (
-                     <Stack
-                        alignItems = "center"
-                        justifyContent = "center"
-                        sx = { { height: "100%" } }
-                     >
-                        <Typography color = "text.secondary">
-                           No expense categories defined
-                        </Typography>
-                     </Stack>
-                  )
-               }
-            </Box>
-         </CardContent>
-      </Card>
+                     }
+                  />
+               ) : (
+                  <Stack
+                     alignItems="center"
+                     justifyContent="center"
+                     sx={{ height: "100%" }}
+                  >
+                     <Typography color="text.secondary">
+                        No expense categories defined
+                     </Typography>
+                  </Stack>
+               )
+            }
+         </Box>
+      </Box>
    );
 }

@@ -35,7 +35,7 @@ export default function Page() {
                unmountOnExit = { true }
             >
                <Grid
-                  size = { { xs: 12, lg: 8 } }
+                  size = { { xs: 12 } }
                   sx = { { textAlign: "center" } }
                >
                   { /* Header image */ }
@@ -57,7 +57,7 @@ export default function Page() {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               <Grid size = { { xs: 12 } }>
+               <Grid size = { { xs: 12, lg: 8 } }>
                   <BudgetSummary budgets = { budgets } />
                </Grid>
             </Grow>

@@ -1,4 +1,4 @@
-import { faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
+import { faAnglesLeft, faAnglesRight, faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
@@ -158,7 +158,7 @@ function AccountImage({
                               size = "small"
                            >
                               <FontAwesomeIcon
-                                 icon = { faCircleLeft }
+                                 icon = { faAnglesLeft }
                                  size = "xl"
                               />
                            </Button>
@@ -170,7 +170,7 @@ function AccountImage({
                               size = "small"
                            >
                               <FontAwesomeIcon
-                                 icon = { faCircleRight }
+                                 icon = { faAnglesRight }
                                  size = "xl"
                               />
                            </Button>
