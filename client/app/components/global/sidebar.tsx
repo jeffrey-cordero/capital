@@ -19,13 +19,27 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { useState } from "react";
+import { type Dispatch, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router";
+import { type NavigateFunction, useLocation, useNavigate } from "react-router";
 
+import { sendApiRequest } from "@/lib/api";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import { clearAuthentication } from "@/tanstack/queries/authenticationQueries";
+
+export async function clearAuthentication(
+   dispatch: Dispatch<any>,
+   navigate: NavigateFunction
+): Promise<void> {
+   const logout = await sendApiRequest<{ success: boolean }>(
+      "authentication/logout", "POST", null, dispatch as any, navigate
+   );
+
+   if (typeof logout === "object" && logout?.success) {
+      // Navigate to the login page to reset the global state
+      window.location.pathname = "/login";
+   }
+};
 
 // Navigation link type definition
 interface NavigationLink {

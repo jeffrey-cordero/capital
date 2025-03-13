@@ -136,9 +136,9 @@ export async function updateCategory(user_id: string, updates: Partial<BudgetCat
          params++;
       }
 
-      if (field === "name" && field in updates) {
+      if (field !== "category_order" && field in updates) {
          // Trim name if it's being updated
-         values[values.length - 1] = updates[field]?.trim();
+         values[values.length - 1] = String(updates[field as keyof BudgetCategory])?.trim();
       }
    });
 
@@ -222,7 +222,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
    return result.length > 0;
 }
 
-export async function updateBudgetGoal(user_id: string, updates: Budget): Promise<boolean> {
+export async function updateBudget(user_id: string, updates: Budget): Promise<boolean> {
    // Updates a budget category goal for a specific month and year
    const updateQuery = `
       WITH existing_budget_category AS (
@@ -235,11 +235,13 @@ export async function updateBudgetGoal(user_id: string, updates: Budget): Promis
       SET goal = $3
       FROM existing_budget_category
       WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      AND year = $4
+      AND month = $5
       RETURNING budget_category_id;
    `;
 
    const result = await query(updateQuery,
-      [user_id, updates.budget_category_id, updates.goal]
+      [user_id, updates.budget_category_id, updates.goal, updates.year, updates.month]
    ) as { user_id: string }[];
 
    return result.length > 0;

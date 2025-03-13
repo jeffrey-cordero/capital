@@ -94,9 +94,9 @@ export async function updateDetails(
          params++;
       }
 
-      if (field === "name" && field in updates) {
+      if (field !== "account_order" && field in updates) {
          // Trim name if it's being updated
-         values[values.length - 1] = updates[field]?.trim();
+         values[values.length - 1] = String(updates[field as keyof (Account & AccountHistory)])?.trim();
       }
    });
 

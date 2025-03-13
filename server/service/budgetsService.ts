@@ -67,10 +67,6 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid budget fields");
-   } else if (!budget.budget_category_id) {
-      return sendValidationErrors(null, "Invalid budget fields",
-         { budget_category_id: "Budget category ID is required" }
-      );
    }
 
    const result = await budgetsRepository.createBudget(user_id, budget);
@@ -145,6 +141,27 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    clearBudgetCache(user_id);
    return sendServiceResponse(204);
 }
+
+export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
+   // Validate budget fields
+   const fields = budgetSchema.strict().safeParse(budget);
+
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid budget fields");
+   }
+
+   const result = await budgetsRepository.updateBudget(user_id, budget);
+
+   if (!result) {
+      return sendServiceResponse(404, "Budget not found", undefined,
+         { budget_category_id: "Budget does not exist based on the provided ID" }
+      );
+   }
+
+   clearBudgetCache(user_id);
+   return sendServiceResponse(204);
+}
+
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    // Validate category ID, where main budget categories are not allowed to be deleted within the repository

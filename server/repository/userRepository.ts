@@ -37,7 +37,7 @@ export async function create(user: User): Promise<string> {
          RETURNING user_id;
       `;
       const result = await client.query<{ user_id: string }[]>(
-         creation, [user.username, user.name, user.password, user.email]
+         creation, [user.username.trim(), user.name.trim(), user.password.trim(), user.email.trim()]
       ) as any;
 
       // Create the new user's initial Income and Expenses budgets

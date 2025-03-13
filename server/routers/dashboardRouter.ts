@@ -21,8 +21,10 @@ dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 
 // Budgets
 dashboardRouter.get("/budgets", budgetsController.GET);
-dashboardRouter.post("/budgets/:id", budgetsController.POST);
-dashboardRouter.put("/budgets/:id", budgetsController.PUT);
-dashboardRouter.delete("/budgets/:id", budgetsController.DELETE);
+dashboardRouter.post("/budgets/category", budgetsController.POST);
+dashboardRouter.post("/budgets/budget", budgetsController.POST);
+dashboardRouter.put("/budgets/category/:id", budgetsController.PUT);
+dashboardRouter.put("/budgets/budget/:id", budgetsController.PUT);
+dashboardRouter.delete("/budgets/category/:id", budgetsController.DELETE);
 
 export default dashboardRouter;
