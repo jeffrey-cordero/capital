@@ -24,15 +24,15 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    } else {
       // Update account details or history records
       const account: Partial<Account & AccountHistory> = { ...req.body, account_id: req.params.id };
-
+      
       return submitServiceRequest(res,
-         async() => accountsService.updateAccount(account.last_updated ? "history" : "details", user_id,  account)
+         async() => accountsService.updateAccount(account.last_updated ? "history" : "details", user_id, account)
       );
    }
 });
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
-   // Handle deleting account history records or accounts, where providing last_updated implies a record removal
+   // Handle deleting account history records or accounts
    const account_id: string = req.params.id;
    const user_id: string = res.locals.user_id;
 
@@ -41,6 +41,8 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
          async() => accountsService.deleteAccountHistory(user_id, account_id, req.body.last_updated)
       );
    } else {
-      return submitServiceRequest(res, async() => accountsService.deleteAccount(user_id, account_id));
+      return submitServiceRequest(res, 
+         async() => accountsService.deleteAccount(user_id, account_id)
+      );
    }
 });

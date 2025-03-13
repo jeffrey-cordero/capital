@@ -15,10 +15,10 @@ import { fetchBudgets } from "@/service/budgetsService";
 // Mutex to ensure only one API call happens at a time
 const mutex = new Mutex();
 
-// Cache duration in seconds for market trends
+// Cache duration in seconds for market trends (24 hours)
 const MARKET_TRENDS_CACHE_DURATION = 24 * 60 * 60;
 
-// Cache duration in seconds for news
+// Cache duration in seconds for news (15 minutes)
 const NEWS_CACHE_DURATION = 15 * 60;
 
 // Helper function to generate API URL with proper key

@@ -4,7 +4,7 @@ import { PoolClient } from "pg";
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
-   // Retrieves all budgets for a user organized by type, year, month, and category
+   // Fetch all budgets for a user with categories in a single query
    const overall = `
       SELECT b.*, bc.*
       FROM budget_categories AS bc
@@ -15,19 +15,13 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    `;
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
 
-   // Initialize organized budgets structure
+   // Initialize organized structure with Income and Expenses sections
    const result: OrganizedBudgets = {
-      Income: {
-         goals: [],
-         categories: []
-      },
-      Expenses: {
-         goals: [],
-         categories: []
-      }
+      Income: { goals: [], categories: [] },
+      Expenses: { goals: [], categories: [] }
    };
 
-   // Initialize category positions tracking
+   // Track category positions for efficient lookups
    const categoryPositions: Record<BudgetType, Record<string, number>> = {
       "Income": {},
       "Expenses": {}
@@ -37,7 +31,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    for (const row of results) {
       const type: BudgetType = row.type;
 
-      // Extract category data from the row
+      // Extract category data
       const category: BudgetCategory = {
          budget_category_id: row.budget_category_id,
          type: row.type,
@@ -45,7 +39,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          category_order: row.category_order
       };
 
-      // Extract budget data from the row
+      // Extract budget data
       const budget: Budget = {
          budget_category_id: row.budget_category_id,
          goal: row.goal,
@@ -59,16 +53,16 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          continue;
       }
 
-      // Check if we've already processed this category
+      // Check if category already exists in our result
       const categoryIndex = categoryPositions[type][row.budget_category_id];
 
       if (categoryIndex === undefined) {
-         // New category found
+         // New category - add to result and track position
          categoryPositions[type][row.budget_category_id] = result[type].categories.length;
-         result[type].categories.push([category, [budget]]);
+         result[type].categories.push({ ...category, goals: [budget] });
       } else {
-         // Budget category already exists, thus we append to the respective budget record
-         result[type].categories[categoryIndex][1].push(budget);
+         // Existing category - append budget to goals
+         result[type].categories[categoryIndex].goals.push(budget);
       }
    }
 
@@ -199,7 +193,7 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
-   // Creates a new budget
+   // Creates a new budget or updates existing one
    const creation = `
       WITH existing_budget_category AS (
          SELECT user_id
@@ -217,7 +211,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
    `;
    const result = await query(creation,
       [user_id, budget.budget_category_id, budget.goal, budget.year, budget.month]
-   ) as { user_id: string }[];
+   ) as { budget_category_id: string }[];
 
    return result.length > 0;
 }
@@ -235,6 +229,7 @@ export async function updateBudget(user_id: string, updates: Budget): Promise<bo
       SET goal = $3
       FROM existing_budget_category
       WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      AND budget_category_id = $2
       AND year = $4
       AND month = $5
       RETURNING budget_category_id;
@@ -242,7 +237,7 @@ export async function updateBudget(user_id: string, updates: Budget): Promise<bo
 
    const result = await query(updateQuery,
       [user_id, updates.budget_category_id, updates.goal, updates.year, updates.month]
-   ) as { user_id: string }[];
+   ) as { budget_category_id: string }[];
 
    return result.length > 0;
 }

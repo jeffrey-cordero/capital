@@ -1,19 +1,10 @@
 import type { Dispatch } from "@reduxjs/toolkit";
 import type { UseFormSetError } from "react-hook-form";
 import type { NavigateFunction } from "react-router";
+import { HTTP_STATUS } from "capital/server";
 
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
-
-// HTTP status codes used throughout the application
-const HTTP_STATUS = {
-   OK: 200,
-   CREATED: 201,
-   NO_CONTENT: 204,
-   REDIRECT: 302,
-   UNAUTHORIZED: 401,
-   INTERNAL_SERVER_ERROR: 500
-} as const;
 
 // Special API paths that require different handling
 const SPECIAL_PATHS = {

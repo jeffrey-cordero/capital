@@ -12,7 +12,7 @@ import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as budgetsRepository from "@/repository/budgetsRepository";
 
-// Cache duration in seconds for user budgets
+// Cache duration in seconds for user budgets (25 minutes)
 const BUDGET_CACHE_DURATION = 25 * 60;
 
 // Helper function to generate budgets cache key
@@ -29,57 +29,36 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    const cache = await getCacheValue(cacheKey);
 
    if (cache) {
-      return sendServiceResponse(200, "Budgets", JSON.parse(cache) as Budget[]);
+      return sendServiceResponse(200, "Budgets", JSON.parse(cache) as OrganizedBudgets);
    }
 
-   // If not in cache, fetch from the budget repository and cache the result
+   // Fetch from repository and cache the result
    const result: OrganizedBudgets = await budgetsRepository.findByUserId(user_id);
-
    setCacheValue(cacheKey, BUDGET_CACHE_DURATION, JSON.stringify(result));
-   return sendServiceResponse(200, "Budgets", result);
+   
+   return sendServiceResponse(200, "Budgets", result as OrganizedBudgets);
 }
 
 export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
-   // Validate budget and category fields in a single Zod schema
+   // Validate budget and category fields
    const fields = budgetSchema.merge(budgetCategorySchema).safeParse(category);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid budget category fields");
    }
 
-   const result: string = await budgetsRepository.createCategory(user_id, category);
+   const result = await budgetsRepository.createCategory(user_id, category);
 
    if (result !== "conflict") {
       // Successfully created budget category
       clearBudgetCache(user_id);
       return sendServiceResponse(201, "Budget category created", { budget_category_id: result });
    } else {
-      // Conflict with existing budget category name (unique constraint for each budget type)
+      // Conflict with existing budget category name
       return sendServiceResponse(409, "Budget category conflicts", undefined,
          { name: "Budget category name already exists" }
       );
    }
-}
-
-export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate budget fields
-   const fields = budgetSchema.strict().safeParse(budget);
-
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget fields");
-   }
-
-   const result = await budgetsRepository.createBudget(user_id, budget);
-
-   if (!result) {
-      // No budget category found based on the provided ID
-      return sendServiceResponse(404, "Budget category not found", undefined,
-         { budget_category_id: "No budget category found based on the provided ID" }
-      );
-   }
-
-   clearBudgetCache(user_id);
-   return sendServiceResponse(201, "Budget created", { success: result });
 }
 
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
@@ -114,7 +93,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
       );
    }
 
-   // Validate each UUID
+   // Validate each UUID and create updates array
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<BudgetCategory>[] = [];
 
@@ -142,6 +121,26 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    return sendServiceResponse(204);
 }
 
+export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
+   // Validate budget fields
+   const fields = budgetSchema.strict().safeParse(budget);
+
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid budget fields");
+   }
+
+   const result = await budgetsRepository.createBudget(user_id, budget);
+
+   if (!result) {
+      return sendServiceResponse(404, "Budget category not found", undefined,
+         { budget_category_id: "No budget category found based on the provided ID" }
+      );
+   }
+
+   clearBudgetCache(user_id);
+   return sendServiceResponse(201, "Budget created", { success: result });
+}
+
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
    // Validate budget fields
    const fields = budgetSchema.strict().safeParse(budget);
@@ -162,9 +161,8 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
    return sendServiceResponse(204);
 }
 
-
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
-   // Validate category ID, where main budget categories are not allowed to be deleted within the repository
+   // Validate category ID
    const uuidSchema = z.string().trim().uuid();
 
    if (!uuidSchema.safeParse(budget_category_id).success) {
@@ -173,7 +171,6 @@ export async function deleteCategory(user_id: string, budget_category_id: string
       );
    }
 
-   // Submit the delete request to the repository
    const result = await budgetsRepository.deleteCategory(user_id, budget_category_id);
 
    if (!result) {

@@ -1,8 +1,7 @@
 import type { Dispatch } from "@reduxjs/toolkit";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import type { NavigateFunction } from "react-router";
-import { Outlet, useNavigate } from "react-router";
+import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";

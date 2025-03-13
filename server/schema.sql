@@ -57,7 +57,7 @@ CREATE TABLE budget_categories (
 CREATE TABLE budgets (
    goal DECIMAL(18, 2) NOT NULL CHECK (goal >= 0),
    month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
-   year SMALLINT NOT NULL CHECK (year >= 1800 AND year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT)),
+   year SMALLINT NOT NULL CHECK (year >= 1800),
    budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
    PRIMARY KEY(budget_category_id, year, month)
 );

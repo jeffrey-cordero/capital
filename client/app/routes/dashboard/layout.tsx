@@ -4,8 +4,7 @@ import type { Account } from "capital/accounts";
 import type { MarketTrends } from "capital/marketTrends";
 import type { News } from "capital/news";
 import { useDispatch } from "react-redux";
-import type { NavigateFunction } from "react-router";
-import { Outlet, useNavigate } from "react-router";
+import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";

@@ -6,7 +6,7 @@ import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as accountsRepository from "@/repository/accountsRepository";
 
-// Cache duration in seconds for account data
+// Cache duration in seconds for account data (10 minutes)
 const ACCOUNT_CACHE_DURATION = 10 * 60;
 
 // Helper function to generate account cache key
