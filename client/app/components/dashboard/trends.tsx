@@ -8,9 +8,11 @@ import {
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { type Account, liabilityTypes } from "capital/accounts";
+import { useSelector } from "react-redux";
 
 import { getLastSixMonths, normalizeDate, today } from "@/lib/dates";
 import { displayCurrency, displayVolume, ellipsis } from "@/lib/display";
+import { type RootState } from "@/redux/store";
 
 // Common card layout component to reduce duplication
 const TrendCard = ({ title, value, subtitle, chart, extraInfo }: {

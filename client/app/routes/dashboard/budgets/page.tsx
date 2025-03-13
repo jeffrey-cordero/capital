@@ -1,32 +1,79 @@
-import { Container, Grow } from "@mui/material";
+import {
+   Box,
+   Container,
+   Grow,
+   Stack,
+   Typography
+} from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { useSelector } from "react-redux";
+
+import { ExpensesPieChart, IncomePieChart } from "@/components/dashboard/budgets/charts";
+import { BudgetSummary } from "@/components/dashboard/budgets/summary";
+import { type RootState } from "@/redux/store";
 
 export default function Page() {
+   // Get budgets data from Redux store
+   const budgets = useSelector((root: RootState) => root.budgets.value);
+
    return (
       <Container
          maxWidth = "xl"
-         sx = { { textAlign: "center", py: 4, px: 2 } }
+         sx = { { py: 4, px: 2 } }
       >
-         <Grow
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
+         <Grid
+            columnSpacing = { 4 }
+            container = { true }
+            rowSpacing = { 4 }
+            sx = { { width: "100%", height: "100%" } }
          >
-            <Grid size = { { xs: 12 } }>
-               <h1>Budgets</h1>
-            </Grid>
-         </Grow>
-         <Grow
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
-         >
-            <Grid size = { { xs: 12 } }>
-               <h1>Pie Charts</h1>
-            </Grid>
-         </Grow>
+            { /* Header */ }
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid
+                  size = { { xs: 12, lg: 8 } }
+                  sx = { { textAlign: "center" } }
+               >
+                  { /* Header image */ }
+                  <Box className = "animation-container">
+                     <Box
+                        alt = "Accounts"
+                        className = "floating"
+                        component = "img"
+                        src = "/svg/budget.svg"
+                        sx = { { width: 250, height: "auto", mb: 6 } }
+                     />
+                  </Box>
+               </Grid>
+            </Grow>
+            { /* Budget Summary */ }
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12 } }>
+                  <BudgetSummary budgets = { budgets } />
+               </Grid>
+            </Grow>
+            { /* Budget Charts */ }
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12, lg: 4 } }>
+                  <IncomePieChart budgets = { budgets } />
+                  <ExpensesPieChart budgets = { budgets } />
+               </Grid>
+            </Grow>
+         </Grid>
       </Container>
    );
 }

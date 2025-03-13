@@ -187,7 +187,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
 
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
    // Skip processing if no updates provided
-   if (updates.length === 0) return true;
+   if (!Array.isArray(updates) || updates.length === 0) return true;
 
    // Bulk update category ordering in a single query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
@@ -230,7 +230,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
       [user_id, budget.budget_category_id, budget.goal, budget.year, budget.month]
    ) as { budget_category_id: string, inserted: boolean }[];
 
-   if (result.length === 0) return "failure";
+      if (result.length === 0) return "failure";
 
    return result[0].inserted ? "created" : "updated";
 }
@@ -238,24 +238,16 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
 export async function updateBudget(user_id: string, updates: Budget): Promise<boolean> {
    // Updates a budget category goal for a specific month and year
    const updateQuery = `
-      WITH existing_budget_category AS (
-         SELECT user_id
-         FROM budget_categories
-         WHERE user_id = $1
-         AND budget_category_id = $2
-      )
       UPDATE budgets
-      SET goal = $3
-      FROM existing_budget_category
-      WHERE EXISTS (SELECT 1 FROM existing_budget_category)
-      AND budget_category_id = $2
-      AND year = $4
-      AND month = $5
-      RETURNING budget_category_id;
+      SET goal = $2
+      WHERE budget_category_id = $1
+      AND year = $3
+      AND month = $4
+      RETURNING budgets.budget_category_id;
    `;
 
    const result = await query(updateQuery,
-      [user_id, updates.budget_category_id, updates.goal, updates.year, updates.month]
+      [updates.budget_category_id, updates.goal, updates.year, updates.month]
    ) as { budget_category_id: string }[];
 
    return result.length > 0;

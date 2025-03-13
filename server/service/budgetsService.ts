@@ -56,7 +56,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    } else {
       // Conflict with existing budget category name
       return sendServiceResponse(409, "Budget category conflicts", undefined,
-         { name: "Budget category name already exists" }
+         { name: `Budget category name already exists within the '${category.type}' categories` }
       );
    }
 }
@@ -94,7 +94,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    } else if (result === "name_conflict") {
       // Name conflict, where the name is already taken by another category
       return sendServiceResponse(409, "Budget category conflicts", undefined,
-         { category: "Budget category name already exists" }
+         { category: "Budget category name already exists within its respective category type" }
       );
    }
 
@@ -104,7 +104,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
 
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {
    // Validate category IDs array
-   if (!categoryIds?.length) {
+   if (!Array.isArray(categoryIds) || !categoryIds.length) {
       return sendValidationErrors(null, "Invalid category ordering fields",
          { categories: "Category ID array must be non-empty" }
       );
@@ -175,7 +175,7 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
 
    if (!result) {
       return sendServiceResponse(404, "Budget not found", undefined,
-         { budget_category_id: "Budget does not exist based on the provided ID" }
+         { budget_category_id: "Budget does not exist based on the provided year, month, and budget category ID" }
       );
    }
 
@@ -197,7 +197,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
 
    if (!result) {
       return sendServiceResponse(404, "Budget category not found", undefined,
-         { category: "Budget category does not exist based on the provided ID. Please ensure the budget category exists and it's not tied to a main budget category." }
+         { category: "Budget category does not exist based on the provided budget category ID." }
       );
    }
 

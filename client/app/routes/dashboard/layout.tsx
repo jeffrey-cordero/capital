@@ -1,6 +1,7 @@
 import type { Dispatch } from "@reduxjs/toolkit";
 import { useQuery } from "@tanstack/react-query";
 import type { Account } from "capital/accounts";
+import type { OrganizedBudgets } from "capital/budgets";
 import type { MarketTrends } from "capital/marketTrends";
 import type { News } from "capital/news";
 import { useDispatch } from "react-redux";
@@ -9,12 +10,14 @@ import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
+import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
 
 interface Dashboard {
    news: News;
    trends: MarketTrends;
    accounts: Account[];
+   budgets: OrganizedBudgets;
 }
 
 export async function fetchDashboard(
@@ -27,6 +30,7 @@ export async function fetchDashboard(
 
    if (typeof dashboard === "object" && dashboard !== null) {
       dispatch(setAccounts(dashboard.accounts));
+      dispatch(setBudgets(dashboard.budgets));
       dispatch(setMarkets({
          news: dashboard.news,
          trends: dashboard.trends
