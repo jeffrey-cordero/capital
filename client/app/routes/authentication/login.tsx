@@ -25,8 +25,9 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 
 const loginSchema = z.object({
-   username: userSchema.shape.username,
-   password: userSchema.shape.password
+   // Access innerType() to get the base schema from refined userSchema
+   username: userSchema.innerType().shape.username,
+   password: userSchema.innerType().shape.password
 });
 
 export default function Login() {

@@ -1,7 +1,7 @@
 import type { Dispatch } from "@reduxjs/toolkit";
+import { HTTP_STATUS } from "capital/server";
 import type { UseFormSetError } from "react-hook-form";
 import type { NavigateFunction } from "react-router";
-import { HTTP_STATUS } from "capital/server";
 
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";

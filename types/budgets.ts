@@ -49,15 +49,12 @@ export const budgetCategorySchema = z.object({
       if (typeof value === "string") {
          const trimmed = value.trim();
          
-         if (RESERVED_WORDS.includes(trimmed.toLowerCase())) {
+         if (RESERVED_WORDS.includes(trimmed.toLowerCase()) || trimmed === "null") {
             // Return a special error indicator
             return "__RESERVED__"; 
          }
          
          return trimmed;
-      } else if (value === null) {
-         // Main budget categories can be null
-         return null;
       } else {
          // Non-main budget categories name must be a string
          return undefined;
@@ -65,7 +62,7 @@ export const budgetCategorySchema = z.object({
    }, z.string()
       .trim()
       .refine(val => val !== "__RESERVED__", {
-         message: "Name cannot be a reserved word (Income or Expenses)"
+         message: "Name cannot be a null or a reserved word (Income or Expenses)"
       })
       .refine(val => val.length >= MIN_NAME_LENGTH && val.length <= MAX_NAME_LENGTH, {
          message: `Name must be between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters`
@@ -83,15 +80,18 @@ export const budgetCategorySchema = z.object({
 
 export type BudgetType = "Income" | "Expenses";
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
+export type BudgetGoals = Omit<Budget, "budget_category_id">;
 export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id">;
 
 export interface OrganizedBudgets {
    Income: {
-      goals: Budget[];
-      categories: Array<BudgetCategory & { goals: Budget[] }>;
+      goals: BudgetGoals[];
+      budget_category_id: string;
+      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
    Expenses: {
-      goals: Budget[];
-      categories: Array<BudgetCategory & { goals: Budget[] }>;
+      goals: BudgetGoals[];
+      budget_category_id: string;
+      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
 }

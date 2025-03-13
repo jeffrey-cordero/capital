@@ -22,7 +22,7 @@ CREATE TABLE accounts (
 
 CREATE TABLE accounts_history (
    balance DECIMAL(18, 2) NOT NULL,
-   last_updated DATE NOT NULL CHECK (last_updated < '1800-01-01' AND last_updated <= CURRENT_DATE),
+   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),
    account_id UUID NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
    PRIMARY KEY(account_id, last_updated)
 );
@@ -77,20 +77,20 @@ BEFORE DELETE ON budget_categories
 FOR EACH ROW 
    EXECUTE FUNCTION prevent_main_budget_category_deletion();
 
-CREATE OR REPLACE FUNCTION prevent_main_budget_category_name_update()
+CREATE OR REPLACE FUNCTION prevent_main_budget_category_updates()
 RETURNS TRIGGER AS $$
 BEGIN
-   IF OLD.name IS NULL AND NEW.name IS NOT NULL THEN
-      RAISE EXCEPTION 'Main budget category name can''t be updated';
+   IF OLD.name IS NULL THEN
+      RAISE EXCEPTION 'Main budget category can''t be updated';
    END IF;
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER prevent_main_budget_category_name_update_trigger
+CREATE TRIGGER prevent_main_budget_category_specific_update_trigger
 BEFORE UPDATE ON budget_categories
 FOR EACH ROW
-   EXECUTE FUNCTION prevent_main_budget_category_name_update();
+   EXECUTE FUNCTION prevent_main_budget_category_updates();
 
 CREATE TABLE market_trends_api_cache (
    time TIMESTAMP PRIMARY KEY,

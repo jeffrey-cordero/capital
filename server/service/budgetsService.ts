@@ -35,7 +35,7 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    // Fetch from repository and cache the result
    const result: OrganizedBudgets = await budgetsRepository.findByUserId(user_id);
    setCacheValue(cacheKey, BUDGET_CACHE_DURATION, JSON.stringify(result));
-   
+
    return sendServiceResponse(200, "Budgets", result as OrganizedBudgets);
 }
 
@@ -71,13 +71,30 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
       return sendValidationErrors(null, "Invalid budget category fields",
          { budget_category_id: "Budget category ID is required" }
       );
+   } else if (category.name === null) {
+      return sendValidationErrors(null, "Invalid budget category fields",
+         { name: "Budget category name can't be null" }
+      );
    }
 
    const result = await budgetsRepository.updateCategory(user_id, category);
 
-   if (!result) {
+   if (result === "failure") {
       return sendServiceResponse(404, "Budget category not found", undefined,
          { category: "Budget category does not exist based on the provided ID" }
+      );
+   } else if (result === "no_updates") {
+      // No updates to budget category, prevent unnecessary cache updates
+      return sendServiceResponse(204);
+   } else if (result === "main_category_conflict") {
+      // Main budget category's can't be updated
+      return sendServiceResponse(409, "Budget category conflicts", undefined,
+         { category: "Main budget categories can't be updated" }
+      );
+   } else if (result === "name_conflict") {
+      // Name conflict, where the name is already taken by another category
+      return sendServiceResponse(409, "Budget category conflicts", undefined,
+         { category: "Budget category name already exists" }
       );
    }
 
@@ -129,16 +146,21 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
       return sendValidationErrors(fields, "Invalid budget fields");
    }
 
-   const result = await budgetsRepository.createBudget(user_id, budget);
+   const result: "created" | "updated" | "failure" = await budgetsRepository.createBudget(user_id, budget);
 
-   if (!result) {
+   if (result === "failure") {
       return sendServiceResponse(404, "Budget category not found", undefined,
          { budget_category_id: "No budget category found based on the provided ID" }
       );
    }
 
+   // Clear cache to ensure fresh data on next fetch
    clearBudgetCache(user_id);
-   return sendServiceResponse(201, "Budget created", { success: result });
+
+   // Return appropriate status code based on whether a new budget was created or an existing one was updated
+   return result === "created"
+      ? sendServiceResponse(201, "Budget created successfully", { success: true })
+      : sendServiceResponse(204);
 }
 
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {

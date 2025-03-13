@@ -24,7 +24,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    } else {
       // Update account details or history records
       const account: Partial<Account & AccountHistory> = { ...req.body, account_id: req.params.id };
-      
+
       return submitServiceRequest(res,
          async() => accountsService.updateAccount(account.last_updated ? "history" : "details", user_id, account)
       );
@@ -41,7 +41,7 @@ export const DELETE = asyncHandler(async(req: Request, res: Response) => {
          async() => accountsService.deleteAccountHistory(user_id, account_id, req.body.last_updated)
       );
    } else {
-      return submitServiceRequest(res, 
+      return submitServiceRequest(res,
          async() => accountsService.deleteAccount(user_id, account_id)
       );
    }

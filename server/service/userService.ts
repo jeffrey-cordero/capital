@@ -34,12 +34,6 @@ export async function createUser(req: Request, res: Response, user: User): Promi
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid user fields");
-   } else if (fields.data.password !== fields.data.verifyPassword) {
-      // Ensure passwords match
-      return sendValidationErrors(null, "Invalid user fields", {
-         password: "Passwords do not match",
-         verifyPassword: "Passwords do not match"
-      });
    } else {
       // Validate user uniqueness by checking for existing username/email
       const existingUsers: User[] = await userRepository.findConflictingUsers(user.username, user.email);

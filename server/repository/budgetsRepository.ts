@@ -17,8 +17,8 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
    // Initialize organized structure with Income and Expenses sections
    const result: OrganizedBudgets = {
-      Income: { goals: [], categories: [] },
-      Expenses: { goals: [], categories: [] }
+      Income: { goals: [], budget_category_id: "", categories: [] },
+      Expenses: { goals: [], budget_category_id: "", categories: [] }
    };
 
    // Track category positions for efficient lookups
@@ -40,8 +40,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       };
 
       // Extract budget data
-      const budget: Budget = {
-         budget_category_id: row.budget_category_id,
+      const budget: Omit<Budget, "budget_category_id"> = {
          goal: row.goal,
          year: row.year,
          month: row.month
@@ -49,6 +48,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
       // Handle main budget category (Income or Expenses)
       if (!category.name) {
+         result[type].budget_category_id = row.budget_category_id;
          result[type].goals.push(budget);
          continue;
       }
@@ -116,7 +116,10 @@ export async function createCategory(
    }
 }
 
-export async function updateCategory(user_id: string, updates: Partial<BudgetCategory>): Promise<boolean> {
+export async function updateCategory(
+   user_id: string,
+   updates: Partial<BudgetCategory>
+): Promise<"success" | "failure" | "main_category_conflict" | "name_conflict" | "no_updates"> {
    // Dynamically builds an update query based on the provided updates
    const fields: string[] = [];
    const values: any[] = [];
@@ -137,7 +140,7 @@ export async function updateCategory(user_id: string, updates: Partial<BudgetCat
    });
 
    // Skip query if no fields to update
-   if (fields.length === 0) return true;
+   if (fields.length === 0) return "no_updates";
 
    // Add user ID and category ID to the values array for a proper update
    values.push(user_id, updates.budget_category_id);
@@ -149,9 +152,23 @@ export async function updateCategory(user_id: string, updates: Partial<BudgetCat
       AND budget_category_id = $${params + 1}
       RETURNING budget_category_id;
    `;
-   const result = await query(updateQuery, values) as { budget_category_id: string }[];
 
-   return result.length > 0;
+   try {
+      const result = await query(updateQuery, values) as { budget_category_id: string }[];
+
+      return result.length > 0 ? "success" : "failure";
+   } catch (error: any) {
+      // Catch main category conflicts, where all changes are forbidden for data integrity
+      if (error.message.includes("Main budget category can't be updated")) {
+         return "main_category_conflict";
+      } else if (error.message.includes("duplicate key value violates unique constraint")) {
+         // Catch name conflicts, where the name is already taken by another category
+         return "name_conflict";
+      }
+
+      // Unexpected error
+      throw error;
+   }
 }
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
@@ -192,7 +209,7 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
    return result.length > 0;
 }
 
-export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
+export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "updated" |"failure"> {
    // Creates a new budget or updates existing one
    const creation = `
       WITH existing_budget_category AS (
@@ -207,13 +224,15 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
       WHERE EXISTS (SELECT 1 FROM existing_budget_category)
       ON CONFLICT (budget_category_id, year, month)
       DO UPDATE SET goal = EXCLUDED.goal
-      RETURNING budget_category_id;
+      RETURNING budget_category_id, (xmax = 0) AS inserted;
    `;
    const result = await query(creation,
       [user_id, budget.budget_category_id, budget.goal, budget.year, budget.month]
-   ) as { budget_category_id: string }[];
+   ) as { budget_category_id: string, inserted: boolean }[];
 
-   return result.length > 0;
+   if (result.length === 0) return "failure";
+
+   return result[0].inserted ? "created" : "updated";
 }
 
 export async function updateBudget(user_id: string, updates: Budget): Promise<boolean> {
