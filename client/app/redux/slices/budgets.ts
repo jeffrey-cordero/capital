@@ -52,7 +52,7 @@ const budgetsSlice = createSlice({
 
          const categoryRecord = state.value[type].categories.find(
             c => c.budget_category_id === updates.budget_category_id
-         )
+         );
 
          if (categoryRecord) {
             Object.assign(categoryRecord, { ...categoryRecord, ...updates });

@@ -4,7 +4,7 @@ import { PoolClient } from "pg";
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
-   // Fetch all budgets for a user with categories in a single query
+   // Fetch all budgets for a user with categories in a single efficient query
    const overall = `
       SELECT b.*, bc.*
       FROM budget_categories AS bc
@@ -17,11 +17,11 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
    // Initialize organized structure with Income and Expenses sections
    const result: OrganizedBudgets = {
-      Income: { goals: [], budget_category_id: "", categories: [] },
-      Expenses: { goals: [], budget_category_id: "", categories: [] }
+      Income: { goals: [], categories: [] },
+      Expenses: { goals: [], categories: [] }
    };
 
-   // Track category positions for efficient lookups
+   // Track category positions for efficient lookups (avoid duplicate processing)
    const categoryPositions: Record<BudgetType, Record<string, number>> = {
       "Income": {},
       "Expenses": {}
@@ -48,7 +48,6 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
       // Handle main budget category (Income or Expenses)
       if (!category.name) {
-         result[type].budget_category_id = row.budget_category_id;
          result[type].goals.push(budget);
          continue;
       }
@@ -73,53 +72,43 @@ export async function createCategory(
    user_id: string,
    category: Omit<Budget & BudgetCategory, "budget_category_id">,
    externalClient?: PoolClient
-): Promise<string | "conflict"> {
-   // Creates a new budget category or returns a conflict if the category already exists
-   try {
-      return await transaction(async(internalClient: PoolClient) => {
-         // Create the budget category record through internal or external client (budgets vs.registration)
-         const client: PoolClient = externalClient || internalClient;
-         const creation = `
-            INSERT INTO budget_categories (user_id, type, name, category_order)
-            VALUES ($1, $2, $3, $4)
-            RETURNING budget_category_id;
-         `;
-         const result = await client.query<{ budget_category_id: string }[]>(
-            creation,
-            [user_id, category.type, category.name?.trim(), category.category_order]
-         ) as any;
+): Promise<string> {
+   return await transaction(async(internalClient: PoolClient) => {
+      // Use provided external client or internal transaction client
+      const client: PoolClient = externalClient || internalClient;
+      
+      // Create the budget category record
+      const creation = `
+         INSERT INTO budget_categories (user_id, type, name, category_order)
+         VALUES ($1, $2, $3, $4)
+         RETURNING budget_category_id;
+      `;
+      const result = await client.query<{ budget_category_id: string }>(
+         creation,
+         [user_id, category.type, category.name?.trim(), category.category_order]
+      );
 
-         // Create the budget record
-         const budget_category_id: string = result.rows[0].budget_category_id;
-         const budget = `
-            INSERT INTO budgets (budget_category_id, goal, year, month)
-            VALUES ($1, $2, $3, $4)
-         `;
+      // Create the initial budget record for this category
+      const budget_category_id: string = result.rows[0].budget_category_id;
+      const budget = `
+         INSERT INTO budgets (budget_category_id, goal, year, month)
+         VALUES ($1, $2, $3, $4)
+      `;
 
-         await client.query(budget, [
-            budget_category_id,
-            category.goal,
-            category.year,
-            category.month
-         ]);
+      await client.query(budget, [
+         budget_category_id,
+         category.goal,
+         category.year,
+         category.month
+      ]);
 
-         return budget_category_id;
-      }) as string;
-   } catch (error: any) {
-      // Check if error is a unique constraint violation
-      if (error.code === "23505") {
-         return "conflict";
-      }
-
-      // Unexpected error
-      throw error;
-   }
+      return budget_category_id;
+   }) as string;
 }
 
 export async function updateCategory(
-   user_id: string,
    updates: Partial<BudgetCategory>
-): Promise<"success" | "failure" | "main_category_conflict" | "name_conflict" | "no_updates"> {
+): Promise<"success" | "failure" | "main_category_conflict" | "no_updates"> {
    // Dynamically builds an update query based on the provided updates
    const fields: string[] = [];
    const values: any[] = [];
@@ -131,53 +120,46 @@ export async function updateCategory(
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof BudgetCategory]);
          params++;
-      }
-
-      if (field !== "category_order" && field in updates) {
-         // Trim name if it's being updated
-         values[values.length - 1] = String(updates[field as keyof BudgetCategory])?.trim();
+         
+         // Trim string fields (except category_order which is numeric)
+         if (field !== "category_order") {
+            values[values.length - 1] = String(values[values.length - 1])?.trim();
+         }
       }
    });
 
    // Skip query if no fields to update
    if (fields.length === 0) return "no_updates";
 
-   // Add user ID and category ID to the values array for a proper update
-   values.push(user_id, updates.budget_category_id);
+   // Add category ID to the values array for the WHERE clause
+   values.push(updates.budget_category_id);
 
    const updateQuery = `
       UPDATE budget_categories
       SET ${fields.join(", ")}
-      WHERE user_id = $${params}
-      AND budget_category_id = $${params + 1}
+      WHERE budget_category_id = $${params}
       RETURNING budget_category_id;
    `;
 
    try {
       const result = await query(updateQuery, values) as { budget_category_id: string }[];
-
       return result.length > 0 ? "success" : "failure";
    } catch (error: any) {
-      // Catch main category conflicts, where all changes are forbidden for data integrity
+      // Catch main category conflicts, where changes are forbidden for data integrity
       if (error.message.includes("Main budget category can't be updated")) {
          return "main_category_conflict";
-      } else if (error.message.includes("duplicate key value violates unique constraint")) {
-         // Catch name conflicts, where the name is already taken by another category
-         return "name_conflict";
       }
 
-      // Unexpected error
+      // Re-throw unexpected errors
       throw error;
    }
 }
 
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
-   // Deletes a budget category, which will also delete all associated budgets (CASCADE)
    const removal = `
       DELETE FROM budget_categories
       WHERE user_id = $1
       AND budget_category_id = $2
-      AND name IS NOT NULL
       RETURNING budget_category_id;
    `;
    const result = await query(removal, [user_id, budget_category_id]) as { budget_category_id: string }[];
@@ -189,7 +171,7 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
    // Skip processing if no updates provided
    if (!Array.isArray(updates) || updates.length === 0) return true;
 
-   // Bulk update category ordering in a single query
+   // Bulk update category ordering in a single efficient query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.budget_category_id),
@@ -209,45 +191,36 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
    return result.length > 0;
 }
 
-export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "updated" |"failure"> {
+export async function createBudget(budget: Budget): Promise<"created" | "updated" |"failure"> {
    // Creates a new budget or updates existing one
    const creation = `
-      WITH existing_budget_category AS (
-         SELECT user_id
-         FROM budget_categories
-         WHERE user_id = $1
-         AND budget_category_id = $2
-      )
       INSERT INTO budgets (budget_category_id, goal, year, month)
-      SELECT $2, $3, $4, $5
-      FROM existing_budget_category
-      WHERE EXISTS (SELECT 1 FROM existing_budget_category)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (budget_category_id, year, month)
       DO UPDATE SET goal = EXCLUDED.goal
       RETURNING budget_category_id, (xmax = 0) AS inserted;
    `;
    const result = await query(creation,
-      [user_id, budget.budget_category_id, budget.goal, budget.year, budget.month]
+      [budget.budget_category_id, budget.goal, budget.year, budget.month]
    ) as { budget_category_id: string, inserted: boolean }[];
 
-      if (result.length === 0) return "failure";
+   if (result.length === 0) return "failure";
 
    return result[0].inserted ? "created" : "updated";
 }
 
-export async function updateBudget(user_id: string, updates: Budget): Promise<boolean> {
-   // Updates a budget category goal for a specific month and year
+export async function updateBudget(updates: Budget): Promise<boolean> {
    const updateQuery = `
       UPDATE budgets
-      SET goal = $2
-      WHERE budget_category_id = $1
+      SET goal = $1
+      WHERE budget_category_id = $2
       AND year = $3
       AND month = $4
       RETURNING budgets.budget_category_id;
    `;
 
    const result = await query(updateQuery,
-      [updates.budget_category_id, updates.goal, updates.year, updates.month]
+      [updates.goal, updates.budget_category_id, updates.year, updates.month]
    ) as { budget_category_id: string }[];
 
    return result.length > 0;

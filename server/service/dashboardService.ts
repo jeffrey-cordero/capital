@@ -12,6 +12,7 @@ import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 import { fetchBudgets } from "@/service/budgetsService";
+
 // Mutex to ensure only one API call happens at a time
 const mutex = new Mutex();
 
@@ -59,7 +60,7 @@ async function loadBackupMarketTrends(): Promise<MarketTrends> {
 
 export async function fetchMarketTrends(): Promise<ServerResponse> {
    try {
-      // Try to get market trends from cache first
+      // Try to get market trends from cache first for better performance
       const cache = await getCacheValue("marketTrends");
 
       if (cache) {
@@ -79,7 +80,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       const release = await mutex.acquire();
 
       try {
-         // Double-check if another request already updated the data
+         // Double-check if another request already updated the data while we were waiting
          const updates = await dashboardRepository.getMarketTrends();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - MARKET_TRENDS_CACHE_DURATION * 1000)) {
@@ -96,12 +97,11 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
             { key: "Federal Interest Rate", fetch: () => fetchIndicators("FEDERAL_FUNDS_RATE") }
          ];
 
-         // Fetch all indicators in parallel
+         // Fetch all indicators in parallel for better performance
          const trends = await Promise.all(indicators.map(indicator => indicator.fetch()));
 
          // Construct market trends object
          const marketTrends: MarketTrends = {};
-
          indicators.forEach((indicator, index) => {
             marketTrends[indicator.key] = trends[index] as any;
          });
@@ -113,9 +113,9 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
          await dashboardRepository.updateMarketTrends(time, data);
          setCacheValue("marketTrends", MARKET_TRENDS_CACHE_DURATION, data);
 
-         return sendServiceResponse(200, "Market Trends", marketTrends as MarketTrends);
+         return sendServiceResponse(200, "Market Trends", marketTrends);
       } finally {
-         // Always release the mutex
+         // Always release the mutex to prevent deadlocks
          release();
       }
    } catch (error: any) {
@@ -148,30 +148,30 @@ async function loadBackupNews(): Promise<News> {
 
 export async function fetchNews(): Promise<ServerResponse> {
    try {
-      // Try to get news from cache first
+      // Try to get news from cache first for better performance
       const cache = await getCacheValue("news");
 
       if (cache) {
          return sendServiceResponse(200, "Financial News", JSON.parse(cache) as News);
       }
 
-      // Fetch fresh news data
+      // Cache miss - fetch fresh news data
       const data = await fetchRSSFeed();
       setCacheValue("news", NEWS_CACHE_DURATION, JSON.stringify(data));
 
-      return sendServiceResponse(200, "Financial News", data as News);
+      return sendServiceResponse(200, "Financial News", data);
    } catch (error: any) {
       // Log error and use backup data
       logger.error(error.stack);
+      
       // Use the backup XML news file
       const backupData = await loadBackupNews();
-
       return sendServiceResponse(200, "Financial News", backupData);
    }
 }
 
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   // Fetch all dashboard components in parallel
+   // Fetch all dashboard components in parallel for better performance
    const [marketTrends, news, accounts, budgets] = await Promise.all([
       fetchMarketTrends(),
       fetchNews(),

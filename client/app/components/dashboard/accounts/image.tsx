@@ -1,4 +1,4 @@
-import { faAnglesLeft, faAnglesRight, faCircleLeft, faCircleRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
+import { faAnglesLeft, faAnglesRight, faPhotoFilm } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
@@ -89,12 +89,12 @@ function AccountImage({
 
    // Navigate to previous image in carousel
    const handlePrevImage = useCallback(() => {
-      setActiveStep(prev => prev - 1);
+      setActiveStep(prev => prev === 0 ? imagesArray.length - 1 : prev - 1);
    }, []);
 
    // Navigate to next image in carousel
    const handleNextImage = useCallback(() => {
-      setActiveStep(prev => prev + 1);
+      setActiveStep(prev => prev === imagesArray.length - 1 ? 0 : prev + 1);
    }, []);
 
    // Handle opening the modal
@@ -153,7 +153,6 @@ function AccountImage({
                         activeStep = { activeStep }
                         backButton = {
                            <Button
-                              disabled = { activeStep === 0 }
                               onClick = { handlePrevImage }
                               size = "small"
                            >
@@ -165,7 +164,6 @@ function AccountImage({
                         }
                         nextButton = {
                            <Button
-                              disabled = { activeStep === imagesArray.length - 1 }
                               onClick = { handleNextImage }
                               size = "small"
                            >

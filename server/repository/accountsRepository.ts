@@ -1,10 +1,10 @@
 import { Account, AccountHistory } from "capital/accounts";
 import { PoolClient } from "pg";
 
-import { FIRST_PARAM, query, transaction  } from "@/lib/database";
+import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 export async function findByUserId(user_id: string): Promise<Account[]> {
-   // Fetch accounts with their latest history records in a single query
+   // Fetch accounts with their history records in a single efficient query
    const search = `
       SELECT a.*, ah.*
       FROM accounts as a
@@ -18,17 +18,20 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    // Track positions to efficiently build account objects with history
    const positions: Record<string, number> = {};
 
+   // Process query results into structured account objects with history arrays
    return result.reduce((acc: Account[], record: Account & AccountHistory) => {
       const account_id = record.account_id as string;
       const existing = positions[account_id];
 
       // Add history to existing account or create new account entry
       if (account_id in positions) {
+         // Add history record to existing account
          acc[existing].history.push({
             balance: record.balance,
             last_updated: record.last_updated
          });
       } else {
+         // Track position of new account in result array
          positions[account_id] = acc.length;
 
          // Create new account with initial history entry
@@ -77,7 +80,6 @@ export async function create(user_id: string, account: Account): Promise<string>
 }
 
 export async function updateDetails(
-   user_id: string,
    account_id: string,
    updates: Partial<Account & AccountHistory>
 ): Promise<boolean> {
@@ -92,29 +94,29 @@ export async function updateDetails(
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof (Account & AccountHistory)]);
          params++;
-      }
-
-      if (field !== "account_order" && field in updates) {
-         // Trim name if it's being updated
-         values[values.length - 1] = String(updates[field as keyof (Account & AccountHistory)])?.trim();
+         
+         // Trim string fields (except account_order which is numeric)
+         if (field !== "account_order") {
+            values[values.length - 1] = String(values[values.length - 1])?.trim();
+         }
       }
    });
 
-   // Handle balance updates through the history table
-   if (updates.balance) {
-      await updateHistory(user_id, account_id, updates.balance, new Date());
+   // Handle balance updates through the history table if provided
+   if (updates.balance !== undefined) {
+      await updateHistory(account_id, updates.balance, new Date());
    }
 
    // Skip query if no fields to update
    if (fields.length === 0) return true;
 
-   values.push(user_id, account_id);
+   // Add account ID for WHERE clause
+   values.push(account_id);
 
    const updateQuery = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE user_id = $${params}
-      AND account_id = $${params + 1}
+      WHERE account_id = $${params}
       RETURNING account_id;
    `;
 
@@ -124,23 +126,14 @@ export async function updateDetails(
 }
 
 export async function updateHistory(
-   user_id: string,
    account_id: string,
    balance: number,
    last_updated: Date = new Date()
 ): Promise<boolean> {
-   // Update or insert history record only if account exists and belongs to user
+   // Insert or update history record with UPSERT pattern
    const updateHistory = `
-      WITH existing_account AS (
-         SELECT 1
-         FROM accounts
-         WHERE user_id = $1 
-         AND account_id = $2
-      )
       INSERT INTO accounts_history (account_id, balance, last_updated)
-      SELECT $2, $3, $4
-      FROM existing_account
-      WHERE EXISTS (SELECT 1 FROM existing_account)
+      VALUES ($1, $2, $3)
       ON CONFLICT (account_id, last_updated)
       DO UPDATE SET balance = EXCLUDED.balance
       RETURNING account_id;
@@ -148,28 +141,24 @@ export async function updateHistory(
 
    const result = await query(
       updateHistory,
-      [user_id, account_id, balance, last_updated]
+      [account_id, balance, last_updated]
    ) as { account_id: string }[];
 
    return result.length > 0;
 }
 
 export async function removeHistory(
-   user_id: string,
    account_id: string,
    last_updated: Date
 ): Promise<"conflict" | "success" | "missing"> {
    return await transaction(async(client: PoolClient) => {
-      // Prevent removal if it's the last history record
+      // Prevent removal if it's the last history record (data integrity)
       const records = `
          SELECT COUNT(*)
-         FROM accounts AS a
-         INNER JOIN accounts_history as ah
-         ON a.account_id = ah.account_id
-         WHERE a.user_id = $1
-         AND a.account_id = $2;
+         FROM accounts_history
+         WHERE account_id = $1;
       `;
-      const result = await client.query<{ count: number }>(records, [user_id, account_id]);
+      const result = await client.query<{ count: number }>(records, [account_id]);
 
       if (!result.rows.length || result.rows[0].count <= 1) {
          return "conflict";
@@ -193,7 +182,7 @@ export async function removeHistory(
 }
 
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
-   // Bulk update account ordering in a single query
+   // Bulk update account ordering in a single efficient query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.account_id),

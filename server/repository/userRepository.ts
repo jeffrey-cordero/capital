@@ -36,15 +36,16 @@ export async function create(user: User): Promise<string> {
          VALUES ($1, $2, $3, $4)
          RETURNING user_id;
       `;
-      const result = await client.query<{ user_id: string }[]>(
+      const result = await client.query<{ user_id: string }>(
          creation, [user.username.trim(), user.name.trim(), user.password.trim(), user.email.trim()]
-      ) as any;
+      );
 
       // Create the new user's initial Income and Expenses budgets
       const today = new Date();
       const month = today.getUTCMonth() + 1;
       const year = today.getUTCFullYear();
 
+      // Create Income category with initial budget
       await createCategory(result.rows[0].user_id, {
          type: "Income",
          name: null,
@@ -54,6 +55,7 @@ export async function create(user: User): Promise<string> {
          year: year
       }, client);
 
+      // Create Expenses category with initial budget
       await createCategory(result.rows[0].user_id, {
          type: "Expenses",
          name: null,

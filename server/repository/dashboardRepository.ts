@@ -18,11 +18,13 @@ export async function getMarketTrends(): Promise<{ time: string, data: MarketTre
 export async function updateMarketTrends(time: Date, data: string): Promise<void> {
    // Update the market trends content in the database through a transaction
    return await transaction(async(client: PoolClient) => {
+      // Clear existing cache data first
       const removal = `
          DELETE FROM market_trends_api_cache;
       `;
       await client.query(removal);
 
+      // Insert new market trends data
       const insertion = `
          INSERT INTO market_trends_api_cache (time, data) 
          VALUES ($1, $2);

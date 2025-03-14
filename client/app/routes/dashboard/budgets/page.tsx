@@ -1,10 +1,4 @@
-import {
-   Box,
-   Container,
-   Grow,
-   Stack,
-   Typography
-} from "@mui/material";
+import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useSelector } from "react-redux";
 

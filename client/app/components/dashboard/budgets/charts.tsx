@@ -1,11 +1,4 @@
-import {
-   Box,
-   Card,
-   CardContent,
-   Stack,
-   Typography,
-   useTheme
-} from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 import { type OrganizedBudgets } from "capital/budgets";
 
@@ -41,7 +34,7 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    if (Math.abs(mainGoal - categoryTotal) > 0) {
       // Add an additional data point for the main goal, if there is a difference
       data.unshift({
-         id: budgets.Income.budget_category_id,
+         id: "Income",
          value: Math.abs(mainGoal - categoryTotal),
          label: "Income",
          color: theme.palette.primary.light
@@ -51,33 +44,33 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    return (
       <Box>
          <Typography
-            component="h2"
-            gutterBottom={true}
-            variant="subtitle2"
+            component = "h2"
+            gutterBottom = { true }
+            variant = "subtitle2"
          >
             Income Budget
          </Typography>
          <Typography
-            component="p"
-            variant="h4"
+            component = "p"
+            variant = "h4"
          >
-            {displayCurrency(mainGoal)}
+            { displayCurrency(mainGoal) }
          </Typography>
          <Typography
-            color="text.secondary"
-            component="p"
-            variant="subtitle2"
+            color = "text.secondary"
+            component = "p"
+            variant = "subtitle2"
          >
             Monthly Income Budget
          </Typography>
 
-         <Box sx={{ height: 300, mt: 2 }}>
+         <Box sx = { { height: 300, mt: 2 } }>
             {
                data.length > 0 ? (
                   <PieChart
-                     height={300}
-                     margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                     series={
+                     height = { 300 }
+                     margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
+                     series = {
                         [
                            {
                               data,
@@ -90,7 +83,7 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
                            }
                         ]
                      }
-                     slotProps={
+                     slotProps = {
                         {
                            legend: { hidden: true }
                         }
@@ -98,11 +91,11 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
                   />
                ) : (
                   <Stack
-                     alignItems="center"
-                     justifyContent="center"
-                     sx={{ height: "100%" }}
+                     alignItems = "center"
+                     justifyContent = "center"
+                     sx = { { height: "100%" } }
                   >
-                     <Typography color="text.secondary">
+                     <Typography color = "text.secondary">
                         No income categories defined
                      </Typography>
                   </Stack>
@@ -130,7 +123,7 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
    if (Math.abs(mainGoal - categoryTotal) > 0) {
       // Add an additional data point for the main goal, if there is a difference
       data.unshift({
-         id: budgets.Expenses.budget_category_id,
+         id: "Expenses",
          value: Math.abs(mainGoal - categoryTotal),
          label: "Expenses",
          color: theme.palette.error.light
@@ -140,33 +133,33 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
    return (
       <Box>
          <Typography
-            component="h2"
-            gutterBottom={true}
-            variant="subtitle2"
+            component = "h2"
+            gutterBottom = { true }
+            variant = "subtitle2"
          >
             Expenses Budget
          </Typography>
          <Typography
-            component="p"
-            variant="h4"
+            component = "p"
+            variant = "h4"
          >
-            {displayCurrency(mainGoal)}
+            { displayCurrency(mainGoal) }
          </Typography>
          <Typography
-            color="text.secondary"
-            component="p"
-            variant="subtitle2"
+            color = "text.secondary"
+            component = "p"
+            variant = "subtitle2"
          >
             Monthly Expenses Budget
          </Typography>
 
-         <Box sx={{ height: 300, mt: 2 }}>
+         <Box sx = { { height: 300, mt: 2 } }>
             {
                data.length > 0 ? (
                   <PieChart
-                     height={300}
-                     margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                     series={
+                     height = { 300 }
+                     margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
+                     series = {
                         [
                            {
                               data,
@@ -179,7 +172,7 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
                            }
                         ]
                      }
-                     slotProps={
+                     slotProps = {
                         {
                            legend: { hidden: true }
                         }
@@ -187,11 +180,11 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
                   />
                ) : (
                   <Stack
-                     alignItems="center"
-                     justifyContent="center"
-                     sx={{ height: "100%" }}
+                     alignItems = "center"
+                     justifyContent = "center"
+                     sx = { { height: "100%" } }
                   >
-                     <Typography color="text.secondary">
+                     <Typography color = "text.secondary">
                         No expense categories defined
                      </Typography>
                   </Stack>

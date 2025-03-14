@@ -22,25 +22,33 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
          async() => accountsService.updateAccountsOrdering(user_id, (req.body.accounts ?? []) as string[])
       );
    } else {
-      // Update account details or history records
-      const account: Partial<Account & AccountHistory> = { ...req.body, account_id: req.params.id };
+      // Update account details or history records based on presence of last_updated
+      const account: Partial<Account & AccountHistory> = { 
+         ...req.body, 
+         account_id: req.params.id 
+      };
 
       return submitServiceRequest(res,
-         async() => accountsService.updateAccount(account.last_updated ? "history" : "details", user_id, account)
+         async() => accountsService.updateAccount(
+            account.last_updated ? "history" : "details", 
+            user_id, 
+            account
+         )
       );
    }
 });
 
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
-   // Handle deleting account history records or accounts
    const account_id: string = req.params.id;
    const user_id: string = res.locals.user_id;
 
    if (req.body.last_updated) {
+      // Delete a specific account history record
       return submitServiceRequest(res,
          async() => accountsService.deleteAccountHistory(user_id, account_id, req.body.last_updated)
       );
    } else {
+      // Delete the entire account and all its history
       return submitServiceRequest(res,
          async() => accountsService.deleteAccount(user_id, account_id)
       );

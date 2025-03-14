@@ -50,8 +50,7 @@ CREATE TABLE budget_categories (
    type budget_type NOT NULL,
    name VARCHAR(30) CHECK (name IS NULL OR (name <> 'Income' AND name <> 'Expenses')),
    category_order INT CHECK ((name IS NULL AND category_order IS NULL) OR (name IS NOT NULL AND category_order >= 0)),
-   user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-   UNIQUE(user_id, type, name)
+   user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE budgets (
@@ -59,6 +58,15 @@ CREATE TABLE budgets (
    month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
    year SMALLINT NOT NULL CHECK (year >= 1800),
    budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
+   CHECK (
+         year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT) 
+         AND 
+         (
+            month <= CAST(EXTRACT(MONTH FROM CURRENT_DATE) AS SMALLINT)
+            OR
+            year < CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT) 
+         )
+   ),
    PRIMARY KEY(budget_category_id, year, month)
 );
 

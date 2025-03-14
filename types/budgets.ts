@@ -29,6 +29,8 @@ export const budgetSchema = z.object({
       message: "Year must be a valid number"
    }).min(1800, {
       message: "Year must be at least 1800"
+   }).max(new Date().getUTCFullYear(), {
+      message: "Year must be not be in a future year"
    }))
 });
 
@@ -86,12 +88,10 @@ export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id
 export interface OrganizedBudgets {
    Income: {
       goals: BudgetGoals[];
-      budget_category_id: string;
       categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
    Expenses: {
       goals: BudgetGoals[];
-      budget_category_id: string;
       categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
 }
