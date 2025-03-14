@@ -17,8 +17,8 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
    // Initialize organized structure with Income and Expenses sections
    const result: OrganizedBudgets = {
-      Income: { goals: [], categories: [] },
-      Expenses: { goals: [], categories: [] }
+      Income: { goals: [], budget_category_id: "", categories: [] },
+      Expenses: { goals: [], budget_category_id: "", categories: [] }
    };
 
    // Track category positions for efficient lookups (avoid duplicate processing)
@@ -49,6 +49,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       // Handle main budget category (Income or Expenses)
       if (!category.name) {
          result[type].goals.push(budget);
+         result[type].budget_category_id = row.budget_category_id;
          continue;
       }
 

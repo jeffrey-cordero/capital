@@ -6,6 +6,8 @@ import { zodPreprocessNumber } from "./numerics";
 const MIN_NAME_LENGTH = 1;
 const MAX_NAME_LENGTH = 30;
 const MAX_INT = 2_147_483_647;
+const CURRENT_YEAR = new Date().getUTCFullYear();
+const MAX_CURRENT_MONTH = new Date().getUTCMonth() + 1;
 
 export const budgetSchema = z.object({
    budget_category_id: z.string().trim().uuid({
@@ -29,9 +31,12 @@ export const budgetSchema = z.object({
       message: "Year must be a valid number"
    }).min(1800, {
       message: "Year must be at least 1800"
-   }).max(new Date().getUTCFullYear(), {
+   }).max(CURRENT_YEAR, {
       message: "Year must be not be in a future year"
    }))
+}).refine(data => data.month <= MAX_CURRENT_MONTH || data.year < CURRENT_YEAR, {
+   message: "Month must not be in a future month for the current year",
+   path: ["month"]
 });
 
 // Reserved words that cannot be used as category names
@@ -88,10 +93,12 @@ export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id
 export interface OrganizedBudgets {
    Income: {
       goals: BudgetGoals[];
+      budget_category_id: string;
       categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
    Expenses: {
       goals: BudgetGoals[];
+      budget_category_id: string;
       categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
 }

@@ -40,11 +40,17 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
 }
 
 export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
-   // Validate budget and category fields using schema
-   const fields = budgetSchema.merge(budgetCategorySchema).safeParse(category);
+   // Validate budget and category fields using schema separately to ensure Zod refines are applied
+   const budgetFields = budgetSchema.safeParse(category);
 
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget category fields");
+   if (!budgetFields.success) {
+      return sendValidationErrors(budgetFields, "Invalid budget fields");
+   }
+
+   const categoryFields = budgetCategorySchema.safeParse(category);
+
+   if (!categoryFields.success) {
+      return sendValidationErrors(categoryFields, "Invalid budget category fields");
    }
 
    // Create category and initial budget
@@ -133,7 +139,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 
 export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
    // Validate budget fields
-   const fields = budgetSchema.strict().safeParse(budget);
+   const fields = budgetSchema.safeParse(budget);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid budget fields");
@@ -158,11 +164,17 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
 }
 
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate budget fields
-   const fields = budgetSchema.strict().safeParse(budget);
+   // Validate budget and category fields separately to ensure Zod refines are applied
+   const budgetFields = budgetSchema.safeParse(budget);
 
-   if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget fields");
+   if (!budgetFields.success) {
+      return sendValidationErrors(budgetFields, "Invalid budget fields");
+   }
+
+   const categoryFields = budgetCategorySchema.safeParse(budget);
+
+   if (!categoryFields.success) {
+      return sendValidationErrors(categoryFields, "Invalid budget category fields");
    }
 
    // Update budget
