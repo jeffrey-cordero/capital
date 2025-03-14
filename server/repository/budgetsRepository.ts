@@ -77,7 +77,7 @@ export async function createCategory(
    return await transaction(async(internalClient: PoolClient) => {
       // Use provided external client or internal transaction client
       const client: PoolClient = externalClient || internalClient;
-      
+
       // Create the budget category record
       const creation = `
          INSERT INTO budget_categories (user_id, type, name, category_order)
@@ -121,7 +121,7 @@ export async function updateCategory(
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof BudgetCategory]);
          params++;
-         
+
          // Trim string fields (except category_order which is numeric)
          if (field !== "category_order") {
             values[values.length - 1] = String(values[values.length - 1])?.trim();

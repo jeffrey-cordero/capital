@@ -94,7 +94,7 @@ export async function updateDetails(
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof (Account & AccountHistory)]);
          params++;
-         
+
          // Trim string fields (except account_order which is numeric)
          if (field !== "account_order") {
             values[values.length - 1] = String(values[values.length - 1])?.trim();

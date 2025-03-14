@@ -23,15 +23,15 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       );
    } else {
       // Update account details or history records based on presence of last_updated
-      const account: Partial<Account & AccountHistory> = { 
-         ...req.body, 
-         account_id: req.params.id 
+      const account: Partial<Account & AccountHistory> = {
+         ...req.body,
+         account_id: req.params.id
       };
 
       return submitServiceRequest(res,
          async() => accountsService.updateAccount(
-            account.last_updated ? "history" : "details", 
-            user_id, 
+            account.last_updated ? "history" : "details",
+            user_id,
             account
          )
       );

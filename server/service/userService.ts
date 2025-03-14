@@ -35,7 +35,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid user fields");
    }
-   
+
    // Validate user uniqueness by checking for existing username/email
    const existingUsers: User[] = await userRepository.findConflictingUsers(user.username, user.email);
 

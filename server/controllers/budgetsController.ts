@@ -19,9 +19,9 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
       );
    } else {
       // Create a new budget for a specific budget category
-      const budget: Budget = { 
-         ...req.body, 
-         budget_category_id: req.params.id 
+      const budget: Budget = {
+         ...req.body,
+         budget_category_id: req.params.id
       };
 
       return submitServiceRequest(res,
@@ -40,9 +40,9 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       );
    } else if (req.path.includes("/budgets/budget")) {
       // Update a budget for a specific year/month
-      const budget: Budget = { 
-         ...req.body, 
-         budget_category_id: req.params.id 
+      const budget: Budget = {
+         ...req.body,
+         budget_category_id: req.params.id
       };
 
       return submitServiceRequest(res,
@@ -50,9 +50,9 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
       );
    } else {
       // Update a budget category
-      const category: BudgetCategory = { 
-         ...req.body, 
-         budget_category_id: req.params.id 
+      const category: BudgetCategory = {
+         ...req.body,
+         budget_category_id: req.params.id
       };
 
       return submitServiceRequest(res,

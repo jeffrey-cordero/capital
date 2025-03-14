@@ -163,7 +163,7 @@ export async function fetchNews(): Promise<ServerResponse> {
    } catch (error: any) {
       // Log error and use backup data
       logger.error(error.stack);
-      
+
       // Use the backup XML news file
       const backupData = await loadBackupNews();
       return sendServiceResponse(200, "Financial News", backupData);

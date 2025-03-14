@@ -2,8 +2,8 @@ import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useSelector } from "react-redux";
 
+import Budgets from "@/components/dashboard/budgets/budgets";
 import { ExpensesPieChart, IncomePieChart } from "@/components/dashboard/budgets/charts";
-import { BudgetSummary } from "@/components/dashboard/budgets/summary";
 import { type RootState } from "@/redux/store";
 
 export default function Page() {
@@ -52,7 +52,7 @@ export default function Page() {
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12, lg: 8 } }>
-                  <BudgetSummary budgets = { budgets } />
+                  <Budgets budgets = { budgets } />
                </Grid>
             </Grow>
             { /* Budget Charts */ }

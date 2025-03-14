@@ -1,5 +1,10 @@
 export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
+export const months = [
+   "January", "February", "March", "April", "May", "June",
+   "July", "August", "September", "October", "November", "December"
+];
+
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
