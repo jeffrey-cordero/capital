@@ -182,13 +182,9 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        type = "text"
                                        value = { field.value || "" }
                                     />
-                                    {
-                                       errors.name && (
-                                          <FormHelperText>
-                                             { errors.name?.message?.toString() }
-                                          </FormHelperText>
-                                       )
-                                    }
+                                    <FormHelperText>
+                                       { errors.name?.message?.toString() }
+                                    </FormHelperText>
                                  </FormControl>
                               )
                            }
@@ -213,13 +209,9 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        type = "number"
                                        value = { field.value || "" }
                                     />
-                                    {
-                                       errors.balance && (
-                                          <FormHelperText>
-                                             { errors.balance?.message?.toString() }
-                                          </FormHelperText>
-                                       )
-                                    }
+                                    <FormHelperText>
+                                       { errors.balance?.message?.toString() }
+                                    </FormHelperText>
                                  </FormControl>
                               )
                            }

@@ -12,11 +12,12 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 
 interface ConfirmationProps {
+   type: "button" | "icon";
    message: string;
    disabled: boolean;
    onConfirmation: () => void;
 }
-export default function Confirmation({ message, disabled, onConfirmation }: ConfirmationProps) {
+export default function Confirmation({ message, disabled, onConfirmation, type }: ConfirmationProps) {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -30,19 +31,31 @@ export default function Confirmation({ message, disabled, onConfirmation }: Conf
 
    return (
       <Box>
-         <Button
-            className = "btn-primary"
-            color = "error"
-            disabled = { disabled || isSubmitting }
-            fullWidth = { true }
-            loading = { isSubmitting }
-            onClick = { openDialog }
-            startIcon = { <FontAwesomeIcon icon = { faTrashCan } /> }
-            type = "button"
-            variant = "contained"
-         >
-            Delete
-         </Button>
+         {
+            type === "button" ? (
+               <Button
+                  className = "btn-primary"
+                  color = "error"
+                  disabled = { disabled || isSubmitting }
+                  fullWidth = { true }
+                  loading = { isSubmitting }
+                  onClick = { openDialog }
+                  startIcon = { <FontAwesomeIcon icon = { faTrashCan } /> }
+                  type = "button"
+                  variant = "contained"
+               >
+                  Delete
+               </Button>
+            ) : (
+               <FontAwesomeIcon
+                  className = "primary"
+                  icon = { faTrashCan }
+                  onClick = { openDialog }
+                  size = "xl"
+                  style = { { cursor: "pointer", color: "red" } }
+               />
+            )
+         }
          <Dialog
             onClose = { closeDialog }
             open = { open }

@@ -1,110 +1,65 @@
-import { faAnglesLeft, faAnglesRight, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-   LinearProgress,
-   Stack,
-   Typography,
-   useTheme
-} from "@mui/material";
+import { Stack } from "@mui/material";
 import { type BudgetCategory, type BudgetGoals } from "capital/budgets";
+import { useState } from "react";
 
-import { displayCurrency } from "@/lib/display";
+import { BudgetCategoryList } from "@/components/dashboard/budgets/categories";
+import { CreateCategory, CreateCategoryButton } from "@/components/dashboard/budgets/create";
 
-// Component to render a budget category (Income or Expenses) with its progress bar
-interface BudgetCategoryProps {
+// Props for the budget component
+interface BudgetProps {
    type: "Income" | "Expenses";
    data: {
       goals: BudgetGoals[];
       budget_category_id: string;
-      categories?: Array<BudgetCategory & { goals: BudgetGoals[] }>; // null for subcategories
+      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
    };
    onEditClick: () => void;
 }
 
-// Helper function to calculate progress percentage
-const calculateProgress = (current: number, goal: number): number => {
-   if (goal <= 0) return 0;
+// Component to render a budget with its categories and creation functionality
+export default function Budget({ type, data, onEditClick }: BudgetProps) {
+   // State to track if we're creating a new category
+   const [isCreating, setIsCreating] = useState(false);
 
-   const progress = (current / goal) * 100;
-   return Math.min(progress, 100); // Cap at 100%
-};
+   // Toggle category creation mode
+   const toggleCreating = () => {
+      setIsCreating(!isCreating);
+   };
 
-function BudgetCategoryList({ type, data, onEditClick }: BudgetCategoryProps) {
-   const theme = useTheme();
-   // For demo purposes, using 0 as current value - this should be replaced with actual data
-   const currentAmount = 0;
-   const goalAmount = data.goals[0]?.goal || 0;
-   const progress = calculateProgress(currentAmount, goalAmount);
-
-   // Determine color based on category type
-   const color = type === "Income" ? "success" : "error";
+   // Handle saving a new category
+   const handleSaveCategory = async (categoryData: { name: string; goal: number }) => {
+      // Here you would typically call an API or dispatch a Redux action
+      console.log("Saving new category:", categoryData);
+      
+      // Close the creation form after saving
+      setIsCreating(false);
+   };
 
    return (
       <Stack
-         direction = "column"
-         spacing = { 0.5 }
-         sx = { { pl: !data.categories ? 4 : 0 } }
+         direction="column"
+         spacing={1}
       >
-         <Stack
-            direction = "row"
-            sx = { { justifyContent: "space-between" } }
-         >
-            <Stack
-               direction = "row"
-               spacing = { 1 }
-               sx = { { alignItems: "center" } }
-            >
-               <Typography variant = "h6">
-                  { type }
-               </Typography>
-               <FontAwesomeIcon
-                  className = "primary"
-                  icon = { faPenToSquare }
-                  onClick = { onEditClick }
-                  size = "lg"
-                  style = { { cursor: "pointer" } }
-               />
-            </Stack>
-            <Typography variant = "h6">
-               { displayCurrency(currentAmount) } / { displayCurrency(goalAmount) }
-            </Typography>
-         </Stack>
-         <LinearProgress
-            color = { color }
-            sx = {
-               {
-                  height: "1.5rem",
-                  borderRadius: "12px"
-               }
-            }
-            value = { progress }
-            variant = "determinate"
+         {/* Render the category list */}
+         <BudgetCategoryList 
+            data={data} 
+            onEditClick={onEditClick} 
+            type={type} 
          />
-      </Stack>
-   );
-}
-
-// Component to render a single budget category with its progress bar
-export default function Budget({ type, data, onEditClick }: BudgetCategoryProps) {
-   return (
-      <Stack>
-         <BudgetCategoryList type = { type } data = { data } onEditClick = { onEditClick } />
-         {
-            data.categories && (
-               <Stack direction = "column" spacing = { 2 } sx = {{ mt: 2 }}>
-                  {
-                     data.categories.map((category) => (
-                        <BudgetCategoryList
-                           key = { category.budget_category_id }
-                           type = { type }
-                           data = { category }
-                           onEditClick = { onEditClick }
-                        />
-                     ))
-                  }
-               </Stack>
-            )
-         }
+         
+         {/* Show either the create button or the create form */}
+         {isCreating ? (
+            <CreateCategory
+               onCancel={toggleCreating}
+               onSave={handleSaveCategory}
+               parentType={type}
+            />
+         ) : (
+            <CreateCategoryButton
+               onClick={toggleCreating}
+               type={type}
+            />
+         )}
       </Stack>
    );
 }

@@ -1,65 +1,44 @@
-import { faAnglesLeft, faAnglesRight, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-   Box,
-   Stack,
-   Typography,
-   useTheme
-} from "@mui/material";
-import { type BudgetCategory, type BudgetGoals, type OrganizedBudgets } from "capital/budgets";
+import { Box, Stack, Typography } from "@mui/material";
+import { type OrganizedBudgets } from "capital/budgets";
 import { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-import { months, today } from "@/lib/dates";
-import { Modal } from "@/components/global/modal";
 import Budget from "@/components/dashboard/budgets/budget";
+import BudgetForm from "@/components/dashboard/budgets/form";
+import { months } from "@/lib/dates";
+import { selectNextMonth, selectPreviousMonth } from "@/redux/slices/budgets";
+import { type RootState } from "@/redux/store";
 
-// Component to render a budget category (Income or Expenses) with its progress bar
-interface BudgetCategoryProps {
-   type: "Income" | "Expenses";
-   data: {
-      goals: BudgetGoals[];
-      budget_category_id: string;
-      categories: Array<BudgetCategory & { goals: BudgetGoals[] }> | null; // null for subcategories
-   };
-   onEditClick: () => void;
-}
 export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
-   const theme = useTheme();
-   const [state, setState] = useState<"view" | "edit">("view");
-
-   // Track current month and year for infinite stepping
-   const [currentDate, setCurrentDate] = useState(() => {
-      return { month: today.getUTCMonth(), year: today.getUTCFullYear() };
+   const dispatch = useDispatch();
+   const [editState, setEditState] = useState<{ state: "view" | "edit", type: "Income" | "Expenses" }>({
+      state: "view",
+      type: "Income"
    });
+   const { period } = useSelector(
+      (state: RootState) => state.budgets.value
+   ) as  { period: { month: number, year: number } };
 
    // Helper function to format the current month/year display
    const formatCurrentPeriod = useCallback(() => {
-      return `${months[currentDate.month]} ${currentDate.year}`;
-   }, [currentDate]);
-
-   // Navigate to previous month
-   const selectPreviousMonth = useCallback(() => {
-      setCurrentDate(prev => {
-         const newMonth = prev.month === 0 ? 11 : prev.month - 1;
-         const newYear = prev.month === 0 ? prev.year - 1 : prev.year;
-         return { month: newMonth, year: newYear };
-      });
-   }, []);
-
-   // Navigate to next month
-   const selectNextMonth = useCallback(() => {
-      setCurrentDate(prev => {
-         const newMonth = prev.month === 11 ? 0 : prev.month + 1;
-         const newYear = prev.month === 11 ? prev.year + 1 : prev.year;
-         return { month: newMonth, year: newYear };
-      });
-   }, []);
+      return `${months[period.month]} ${period.year}`;
+   }, [period]);
 
    // Handle edit button click
-   const handleEditClick = useCallback(() => {
-      setState("edit");
-      // This would open a modal for editing the budget
-      // TODO: Implement budget edit modal
+   const handleEditClick = useCallback((type: "Income" | "Expenses") => {
+      setEditState({
+         state: "edit",
+         type
+      });
+   }, []);
+
+   const closeModal = useCallback(() => {
+      setEditState(prev => ({
+         ...prev,
+         state: "view"
+      }));
    }, []);
 
    return (
@@ -72,7 +51,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             <FontAwesomeIcon
                className = "primary"
                icon = { faAnglesLeft }
-               onClick = { selectPreviousMonth }
+               onClick = { () => dispatch(selectPreviousMonth()) }
                size = "xl"
                style = { { cursor: "pointer" } }
             />
@@ -85,31 +64,36 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             <FontAwesomeIcon
                className = "primary"
                icon = { faAnglesRight }
-               onClick = { selectNextMonth }
+               onClick = { () => dispatch(selectNextMonth()) }
                size = "xl"
                style = { { cursor: "pointer" } }
             />
          </Stack>
-
          { /* Income section with main category and subcategories */ }
          <Stack
             direction = "column"
             spacing = { 4 }
             sx = { { mt: 2 } }
          >
-            <Budget type = "Income" data = { budgets.Income } onEditClick = { handleEditClick } />
-            <Budget type = "Expenses" data = { budgets.Expenses } onEditClick = { handleEditClick } />
+            <Budget
+               data = { budgets.Income }
+               onEditClick = { () => handleEditClick("Income") }
+               type = "Income"
+            />
+            <Budget
+               data = { budgets.Expenses }
+               onEditClick = { () => handleEditClick("Expenses") }
+               type = "Expenses"
+            />
          </Stack>
 
-         { /* TODO: Add budget edit modal component here */ }
-         <Modal
-            open = { state === "edit" }
-            onClose = { () => setState("view") }
-         >
-            <Box>
-               <Typography variant = "h6">Edit Budget</Typography>
-            </Box>
-         </Modal>
+         { /* Budget edit modal */ }
+         <BudgetForm
+            budget = { budgets[editState.type] }
+            onClose = { closeModal }
+            open = { editState.state === "edit" }
+            type = { editState.type }
+         />
       </Box>
    );
 }

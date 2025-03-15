@@ -32,6 +32,7 @@ export default function AccountDeletion({ account, disabled }: { account: Accoun
             However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.`
          }
          onConfirmation = { onSubmit }
+         type = "button"
       />
    );
 }

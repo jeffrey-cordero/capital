@@ -9,6 +9,7 @@ import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
+import { today } from "@/lib/dates";
 import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
@@ -30,7 +31,10 @@ export async function fetchDashboard(
 
    if (typeof dashboard === "object" && dashboard !== null) {
       dispatch(setAccounts(dashboard.accounts));
-      dispatch(setBudgets(dashboard.budgets));
+      dispatch(setBudgets({
+         ...dashboard.budgets,
+         period: { month: today.getUTCMonth(), year: today.getUTCFullYear() }
+      }));
       dispatch(setMarkets({
          news: dashboard.news,
          trends: dashboard.trends

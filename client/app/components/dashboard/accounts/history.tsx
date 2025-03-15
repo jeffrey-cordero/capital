@@ -306,13 +306,9 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           type = "number"
                                           value = { field.value || "" }
                                        />
-                                       {
-                                          errors.history_balance && (
-                                             <FormHelperText>
-                                                { errors.history_balance?.message?.toString() }
-                                             </FormHelperText>
-                                          )
-                                       }
+                                       <FormHelperText>
+                                          { errors.history_balance?.message?.toString() }
+                                       </FormHelperText>
                                     </FormControl>
                                  )
                               }
@@ -354,13 +350,9 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           type = "date"
                                           value = { field.value || "" }
                                        />
-                                       {
-                                          errors.last_updated && (
-                                             <FormHelperText>
-                                                { errors.last_updated?.message?.toString() }
-                                             </FormHelperText>
-                                          )
-                                       }
+                                       <FormHelperText>
+                                          { errors.last_updated?.message?.toString() }
+                                       </FormHelperText>
                                     </FormControl>
                                  )
                               }

@@ -90,15 +90,13 @@ export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 export type BudgetGoals = Omit<Budget, "budget_category_id">;
 export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id">;
 
+export type OrganizedBudget = {
+   goals: BudgetGoals[];
+   budget_category_id: string;
+   categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
+};
+
 export interface OrganizedBudgets {
-   Income: {
-      goals: BudgetGoals[];
-      budget_category_id: string;
-      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
-   };
-   Expenses: {
-      goals: BudgetGoals[];
-      budget_category_id: string;
-      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
-   };
+   Income: OrganizedBudget;
+   Expenses: OrganizedBudget;
 }
