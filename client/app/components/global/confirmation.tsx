@@ -51,7 +51,7 @@ export default function Confirmation({ message, disabled, onConfirmation, type }
                   className = "primary"
                   icon = { faTrashCan }
                   onClick = { openDialog }
-                  size = "xl"
+                  size = "lg"
                   style = { { cursor: "pointer", color: "red" } }
                />
             )

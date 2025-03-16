@@ -1,18 +1,18 @@
 import { faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { type OrganizedBudgets } from "capital/budgets";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { months } from "@/lib/dates";
+import { months, today } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
-   const dispatch = useDispatch();
+   const dispatch = useDispatch(), theme = useTheme();
    const [editState, setEditState] = useState<{ state: "view" | "edit", type: "Income" | "Expenses" }>({
       state: "view",
       type: "Income"
@@ -21,12 +21,12 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
       (state: RootState) => state.budgets.value
    ) as  { period: { month: number, year: number } };
 
-   // Helper function to format the current month/year display
-   const formatCurrentPeriod = useCallback(() => {
-      return `${months[period.month - 1]} ${period.year}`;
+   // Prevent future month selections
+   const nextMonthDisabled = useMemo(() => {
+      return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period]);
 
-   // Handle edit button click
+   // Handle edit button click to open the budget modal
    const handleEditClick = useCallback((type: "Income" | "Expenses") => {
       setEditState({
          state: "edit",
@@ -34,6 +34,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
       });
    }, []);
 
+   // Close the budget modal
    const closeModal = useCallback(() => {
       setEditState(prev => ({
          ...prev,
@@ -43,33 +44,31 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
 
    return (
       <Box>
-         { /* Month and year selector */ }
+         { /* Month and year selection buttons */ }
          <Stack
             direction = "row"
             sx = { { justifyContent: "space-between", alignItems: "center" } }
          >
             <FontAwesomeIcon
-               className = "primary"
                icon = { faAnglesLeft }
                onClick = { () => dispatch(selectMonth({ direction: "previous" })) }
                size = "xl"
-               style = { { cursor: "pointer" } }
+               style = { { cursor: "pointer", color: theme.palette.primary.main } }
             />
             <Typography
                fontWeight = "bold"
                variant = "h6"
             >
-               { formatCurrentPeriod() }
+               { `${months[period.month - 1]} ${period.year}` }
             </Typography>
             <FontAwesomeIcon
-               className = "primary"
                icon = { faAnglesRight }
-               onClick = { () => dispatch(selectMonth({ direction: "next" })) }
+               onClick = { () => nextMonthDisabled ? null : dispatch(selectMonth({ direction: "next" })) }
                size = "xl"
-               style = { { cursor: "pointer" } }
+               style = { { cursor: "pointer", color: nextMonthDisabled ? theme.palette.info.main : theme.palette.primary.main } }
             />
          </Stack>
-         { /* Income section with main category and subcategories */ }
+         { /* Income and expenses sections */ }
          <Stack
             direction = "column"
             spacing = { 4 }
@@ -86,8 +85,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
                type = "Expenses"
             />
          </Stack>
-
-         { /* Budget edit modal */ }
+         { /* Modal for editing budgets (Income or Expenses) */ }
          <BudgetForm
             budget = { budgets[editState.type] }
             onClose = { closeModal }

@@ -1,176 +1,278 @@
-import { faCaretDown, faChevronDown, faChevronUp, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faPlus, faRotateLeft, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Collapse,
-   LinearProgress,
+   Button,
+   Divider,
+   FormControl,
+   FormHelperText,
+   InputLabel,
+   NativeSelect,
+   OutlinedInput,
    Stack,
    Typography
 } from "@mui/material";
-import { type OrganizedBudget } from "capital/budgets";
-import { useState } from "react";
+import { type BudgetCategory, budgetSchema, type OrganizedBudget } from "capital/budgets";
+import { useEffect, useState } from "react";
+import { Controller, type FieldValues, useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 
-import { Expand } from "@/components/global/expand";
+import Transactions from "@/components/dashboard/accounts/transactions";
+import BudgetDeletion from "@/components/dashboard/budgets/delete";
+import { Modal, ModalSection } from "@/components/global/modal";
+import { sendApiRequest } from "@/lib/api";
 import { displayCurrency } from "@/lib/display";
+import { handleValidationErrors } from "@/lib/validation";
+import { addBudgetCategory, updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
+import type { RootState } from "@/redux/store";
 
-// Props for rendering a single category item
-interface CategoryItemProps {
-   goal: number;
-   total: number;
-   name: string;
-   progress: number;
-   type: "Income" | "Expenses";
-   onEditClick?: () => void;
-   color: "success" | "error";
-   isParent?: boolean;
+
+interface CategoryFormProps {
+   category: BudgetCategory & { goals: any[] };
+   onCancel: () => void;
+   isSubmitting: boolean;
 }
 
-// Component to render a single category with its progress bar
-export function CategoryItem({
-   name,
-   goal,
-   total,
-   progress,
-   color,
-   onEditClick,
-   isParent = false
-}: CategoryItemProps) {
-   // State to track if the category is being edited
-   const [isEditing, setIsEditing] = useState(false);
+// Component for editing a single category
+function CategoryEditor({ category, onCancel, isSubmitting }: CategoryFormProps) {
+   const { control, handleSubmit, formState: { errors } } = useForm({
+      defaultValues: {
+         name: category.name,
+         goal: category.goals[0]?.goal || 0,
+         type: (category.type)
+      }
+   });
 
-   return (
-      <Box sx = { { pl: !isParent ? 4 : 0 } }>
-         <Stack
-            direction = "row"
-            sx = { { justifyContent: "space-between", mb: 1 } }
-         >
-            <Stack
-               direction = "row"
-               spacing = { 1 }
-               sx = { { alignItems: "center" } }
-            >
-               <Typography variant = "h6">
-                  { name }
-               </Typography>
-               {
-                  onEditClick && (
-                     <FontAwesomeIcon
-                        className = "primary"
-                        icon = { faPenToSquare }
-                        onClick = { onEditClick }
-                        style = { { cursor: "pointer", zIndex: 1000 } }
-                     />
-                  )
-               }
-            </Stack>
-            <Typography variant = "h6">
-               { displayCurrency(total) } / { displayCurrency(goal) }
-            </Typography>
-         </Stack>
-         <LinearProgress
-            color = { color }
-            sx = {
-               {
-                  height: "1.5rem",
-                  borderRadius: "12px"
-               }
-            }
-            value = { progress }
-            variant = "determinate"
-         />
-      </Box>
-   );
-}
-
-// Props for the category list component
-interface CategoryListProps {
-   type: "Income" | "Expenses";
-   data: OrganizedBudget;
-   onEditClick: () => void;
-}
-
-// Component to render a list of budget categories with their progress bars
-export function BudgetCategoryList({ type, data, onEditClick }: CategoryListProps) {
-   // Calculate parent category values
-   const goal = data.goals[data.goalIndex]?.goal || 0;
-   const total = Math.random() * goal;
-   const progress = goal <= 0 ? 0 : Math.min((total / goal) * 100, 100);
-   const color = type === "Income" ? "success" : "error";
-
-   // State to track expanded/collapsed state
-   const [isExpanded, setIsExpanded] = useState(true);
-
-   // Toggle expanded state
-   const toggleExpanded = () => {
-      setIsExpanded(!isExpanded);
+   const onSubmit = async (data: FieldValues) => {
+      // Handles form submission for both create and update operations
+      
    };
 
    return (
-      <Stack
-         direction = "column"
-         spacing = { 1 }
-      >
-         { /* Parent category */ }
+      <form onSubmit = { handleSubmit(onSave) }>
          <Stack
-            direction = "row"
-            spacing = { 1 }
-            sx = { { position: "relative", alignContent: "center" } }
+            direction = "column"
+            spacing = { 2 }
          >
-            <Box sx = { { flexGrow: 1 } }>
-               <CategoryItem
-                  color = { color }
-                  goal = { goal }
-                  isParent = { true }
-                  name = { type }
-                  onEditClick = { onEditClick }
-                  progress = { progress }
-                  total = { total }
-                  type = { type }
-               />
-            </Box>
-            <Expand
-               disableRipple = { true }
-               expand = { isExpanded }
-               onClick = { toggleExpanded }
-            >
-               <FontAwesomeIcon
-                  icon = { faCaretDown }
-                  size = "xl"
-               />
-            </Expand>
-         </Stack>
-
-         { /* Child categories */ }
-         <Collapse
-            in = { isExpanded }
-            timeout = "auto"
-            unmountOnExit = { true }
-         >
-            <Stack
-               direction = "column"
-               spacing = { 0.5 }
-            >
-               {
-                  data.categories.map((category) => {
-                     const categoryGoal = category.goals[category.goalIndex]?.goal || 0;
-                     const categoryTotal = Math.random() * categoryGoal;
-                     const categoryProgress = categoryGoal <= 0 ? 0 : Math.min((categoryTotal / categoryGoal) * 100, 100);
-
-                     return (
-                        <CategoryItem
-                           color = { color }
-                           goal = { categoryGoal }
-                           key = { category.budget_category_id }
-                           name = { category.name || "" }
-                           progress = { categoryProgress }
-                           total = { categoryTotal }
-                           type = { type }
+            <Controller
+               control = { control }
+               name = "name"
+               render = {
+                  ({ field }) => (
+                     <FormControl error = { Boolean(errors.name) }>
+                        <InputLabel htmlFor = "name">
+                           Name
+                        </InputLabel>
+                        <OutlinedInput
+                           { ...field }
+                           aria-label = "Name"
+                           disabled = { isSubmitting }
+                           id = "name"
+                           label = "Name"
+                           type = "text"
+                           value = { field.value || "" }
                         />
-                     );
-                  })
+                        <FormHelperText>
+                           { errors.name?.message?.toString() }
+                        </FormHelperText>
+                     </FormControl>
+                  )
                }
+            />
+            <Controller
+               control = { control }
+               name = "goal"
+               render = {
+                  ({ field }) => (
+                     <FormControl error = { Boolean(errors.goal) }>
+                        <InputLabel htmlFor = "goal">
+                           Goal
+                        </InputLabel>
+                        <OutlinedInput
+                           { ...field }
+                           aria-label = "Goal"
+                           disabled = { isSubmitting }
+                           id = "goal"
+                           inputProps = { { step: 0.01, min: 0 } }
+                           label = "Goal"
+                           type = "number"
+                           value = { field.value || "" }
+                        />
+                        <FormHelperText>
+                           { errors.goal?.message?.toString() }
+                        </FormHelperText>
+                     </FormControl>
+                  )
+               }
+            />
+            <Controller
+               control = { control }
+               defaultValue = { category.type }
+               name = "type"
+               render = {
+                  ({ field }) => (
+                     <FormControl
+                        disabled = { isSubmitting }
+                        error = { Boolean(errors.type) }
+                        sx = { { px: 0.75 } }
+                     >
+                        <InputLabel
+                           htmlFor = "type"
+                           sx = { { px: 0.75 } }
+                           variant = "standard"
+                        >
+                           Type
+                        </InputLabel>
+                        <NativeSelect
+                           { ...field }
+                           id = "type"
+                        >
+                           <option value = "Income">Income</option>
+                           <option value = "Expenses">Expenses</option>
+                        </NativeSelect>
+                     </FormControl>
+                  )
+               }
+            />
+            <Stack
+               direction = "row"
+               spacing = { 1 }
+            >
+               <Button
+                  color = "primary"
+                  disabled = { isSubmitting }
+                  fullWidth = { true }
+                  loading = { isSubmitting }
+                  startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
+                  type = "submit"
+                  variant = "contained"
+               >
+                  Save
+               </Button>
+               <Button
+                  color = "inherit"
+                  disabled = { isSubmitting }
+                  fullWidth = { true }
+                  onClick = { onCancel }
+                  startIcon = { <FontAwesomeIcon icon = { faRotateLeft } /> }
+                  variant = "outlined"
+               >
+                  Cancel
+               </Button>
             </Stack>
-         </Collapse>
-      </Stack>
+         </Stack>
+      </form>
    );
+}
+
+
+interface BudgetCategoriesProps {
+   budget: OrganizedBudget;
+   isSubmitting: boolean;
+   type: "Income" | "Expenses";
+}
+
+export default function BudgetCategories({ budget, type, isSubmitting }: BudgetCategoriesProps) {
+   // Handle form submission for creating and updating budget subcategories
+   const [editingCategory, setEditingCategory] = useState<string | null>(null);
+   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+
+   // Edit/create form setup with react-hook-form
+   
+
+   return (
+      <ModalSection title = "Categories">
+         <Stack
+            direction = "column"
+            spacing = { 2 }
+            sx = { { mt: 2 } }
+         >
+            { /* Existing sub categories */ }
+            {
+               budget.categories && budget.categories.map((category) => {
+                  const isEditing = editingCategory === category.budget_category_id;
+                  const currentAmount = 0; // Placeholder until transactions are implemented
+                  const goal = category.goals[category.goalIndex]?.goal || 0;
+
+                  return (
+                     <Box key = { category.budget_category_id }>
+                        {
+                           isEditing ? (
+                              <CategoryEditor
+                                 category = { category }
+                                 isSubmitting = { isSubmitting }
+                                 onCancel = { () => setEditingCategory(null) }
+                              />
+                           ) : (
+                              <Stack
+                                 direction = "column"
+                                 spacing = { 1 }
+                              >
+                                 <Stack
+                                    direction = "row"
+                                    sx = { { justifyContent: "space-between", alignItems: "center" } }
+                                 >
+                                    <Typography
+                                       fontWeight = "semibold"
+                                       variant = "subtitle1"
+                                    >
+                                       { displayCurrency(currentAmount) } / { displayCurrency(goalAmount) }
+                                    </Typography>
+                                    <Stack
+                                       direction = "row"
+                                       spacing = { 1 }
+                                       sx = { { alignItems: "center" } }
+                                    >
+                                       <Typography variant = "subtitle1">
+                                          { category.name }
+                                       </Typography>
+                                       <FontAwesomeIcon
+                                          className = "primary"
+                                          icon = { faPenToSquare }
+                                          onClick = { () => setEditingCategory(category.budget_category_id) }
+                                          size = "lg"
+                                          style = { { cursor: "pointer" } }
+                                       />
+                                       <BudgetDeletion
+                                          category = { category }
+                                          disabled = { isSubmitting }
+                                          type = { type }
+                                       />
+                                    </Stack>
+                                 </Stack>
+                              </Stack>
+                           )
+                        }
+                     </Box>
+                  );
+               })
+            }
+            { /* New category */ }
+            <Box sx = { { mb: 2 } }>
+               {
+                  !showNewCategoryForm ? (
+                     <Button
+                        color = "primary"
+                        disabled = { isSubmitting }
+                        fullWidth = { true }
+                        onClick = { () => setShowNewCategoryForm(true) }
+                        startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+                        variant = "outlined"
+                     >
+                        Add Category
+                     </Button>
+                  ) : (
+                     <NewCategoryForm
+                        isSubmitting = { isSubmitting }
+                        onCancel = { () => setShowNewCategoryForm(false) }
+                        onSave = { handleCreateCategory }
+                        parentType = { type }
+                     />
+                  )
+               }
+            </Box>
+         </Stack>
+      </ModalSection>
+   )
 }

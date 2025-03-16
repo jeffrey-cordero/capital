@@ -35,16 +35,17 @@ const budgetsSlice = createSlice({
          const category = state.value[type].categories[categoryIndex];
 
          // Get the existing goals for the category
-         const budgetGoals = category.goals;
+         const currentGoals = category.goals;
+         const currentGoal = currentGoals[category.goalIndex];
 
-         if (budgetGoals[category.goalIndex].month !== month && budgetGoals[category.goalIndex].year !== year) {
+         if (currentGoal.month !== month && currentGoal.year !== year) {
             // New goal for the current period to be inserted
-            budgetGoals.splice(category.goalIndex, 0, { year, month, goal });
+            currentGoals.splice(category.goalIndex, 0, { year, month, goal });
             return;
          }
 
          // Update the existing goal
-         budgetGoals[category.goalIndex].goal = goal;
+         currentGoals[category.goalIndex].goal = goal;
       },
       addBudgetCategory(state, action: PayloadAction<{
          type: "Income" | "Expenses",
@@ -66,8 +67,19 @@ const budgetsSlice = createSlice({
          const categoryIndex = state.value[type].categoriesMap[updates.budget_category_id];
          const category = state.value[type].categories[categoryIndex];
 
+         // Handle changes in category type
+         if (updates.type && updates.type !== category.type) {
+            // Remove the category from the current type
+            state.value[category.type].categories.splice(categoryIndex, 1);
+
+            // Add the category to the new type
+            state.value[updates.type].categories.push(category);
+            state.value[updates.type].categoriesMap[category.budget_category_id] = state.value[updates.type].categories.length - 1;
+         }
+
          // Update the category with the new values
          Object.assign(category, { ...category, ...updates });
+
       },
       removeBudgetCategory(state, action: PayloadAction<{
          type: "Income" | "Expenses",

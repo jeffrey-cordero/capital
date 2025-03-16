@@ -540,12 +540,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                   spacing = { 2 }
                   sx = { { mt: 2 } }
                >
-                  { /* Divider after new category form */ }
-                  {
-                     showNewCategoryForm && budget.categories && budget.categories.length > 0 && (
-                        <Divider sx = { { my: 1 } } />
-                     )
-                  }
                   { /* List of existing categories */ }
                   {
                      budget.categories && budget.categories.map((category) => {
@@ -572,6 +566,12 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                                           direction = "row"
                                           sx = { { justifyContent: "space-between", alignItems: "center" } }
                                        >
+                                          <Typography
+                                             fontWeight = "semibold"
+                                             variant = "subtitle2"
+                                          >
+                                             { displayCurrency(currentAmount) } / { displayCurrency(goalAmount) }
+                                          </Typography>
                                           <Stack
                                              direction = "row"
                                              spacing = { 1 }
@@ -584,6 +584,7 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                                                 className = "primary"
                                                 icon = { faPenToSquare }
                                                 onClick = { () => setEditingCategory(category.budget_category_id) }
+                                                size = "lg"
                                                 style = { { cursor: "pointer" } }
                                              />
                                              <BudgetDeletion
@@ -592,9 +593,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                                                 type = { type }
                                              />
                                           </Stack>
-                                          <Typography variant = "subtitle1">
-                                             { displayCurrency(currentAmount) } / { displayCurrency(goalAmount) }
-                                          </Typography>
                                        </Stack>
                                     </Stack>
                                  )
