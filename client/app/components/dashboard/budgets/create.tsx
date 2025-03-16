@@ -28,7 +28,7 @@ export function CreateCategory({ parentType, onSave, onCancel }: CreateCategoryP
    const { control, handleSubmit, formState: { errors } } = useForm({
       defaultValues: {
          name: "",
-         goal: 0,
+         goal: 0
       }
    });
 
@@ -36,7 +36,7 @@ export function CreateCategory({ parentType, onSave, onCancel }: CreateCategoryP
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    // Handle form submission
-   const onSubmit = async (data: { name: string; goal: number }) => {
+   const onSubmit = async(data: { name: string; goal: number }) => {
       setIsSubmitting(true);
       try {
          await onSave(data);
@@ -46,78 +46,103 @@ export function CreateCategory({ parentType, onSave, onCancel }: CreateCategoryP
    };
 
    return (
-      <Box sx={{ p: 2, border: "1px dashed", borderColor: "divider", borderRadius: 2, mt: 2 }}>
-         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6">New {parentType} Category</Typography>
+      <Box sx = { { p: 2, border: "1px dashed", borderColor: "divider", borderRadius: 2, mt: 2 } }>
+         <Stack
+            alignItems = "center"
+            direction = "row"
+            justifyContent = "space-between"
+            mb = { 2 }
+         >
+            <Typography variant = "h6">New { parentType } Category</Typography>
             <FontAwesomeIcon
-               icon={faXmark}
-               onClick={onCancel}
-               style={{ cursor: "pointer" }}
+               icon = { faXmark }
+               onClick = { onCancel }
+               style = { { cursor: "pointer" } }
             />
          </Stack>
 
-         <form onSubmit={handleSubmit(onSubmit)}>
-            <Stack spacing={2}>
-               {/* Category Name Input */}
+         <form onSubmit = { handleSubmit(onSubmit) }>
+            <Stack spacing = { 2 }>
+               { /* Category Name Input */ }
                <Controller
-                  control={control}
-                  name="name"
-                  rules={{ required: "Category name is required" }}
-                  render={({ field }) => (
-                     <FormControl error={!!errors.name} fullWidth>
-                        <InputLabel htmlFor="category-name">Category Name</InputLabel>
-                        <OutlinedInput
-                           id="category-name"
-                           label="Category Name"
-                           {...field}
-                        />
-                        {errors.name && (
-                           <FormHelperText>{errors.name.message}</FormHelperText>
-                        )}
-                     </FormControl>
-                  )}
+                  control = { control }
+                  name = "name"
+                  render = {
+                     ({ field }) => (
+                        <FormControl
+                           error = { !!errors.name }
+                           fullWidth = { true }
+                        >
+                           <InputLabel htmlFor = "category-name">Category Name</InputLabel>
+                           <OutlinedInput
+                              id = "category-name"
+                              label = "Category Name"
+                              { ...field }
+                           />
+                           {
+                              errors.name && (
+                                 <FormHelperText>{ errors.name.message }</FormHelperText>
+                              )
+                           }
+                        </FormControl>
+                     )
+                  }
+                  rules = { { required: "Category name is required" } }
                />
 
-               {/* Goal Amount Input */}
+               { /* Goal Amount Input */ }
                <Controller
-                  control={control}
-                  name="goal"
-                  rules={{ 
-                     required: "Goal amount is required",
-                     min: { value: 0, message: "Goal must be a positive number" }
-                  }}
-                  render={({ field }) => (
-                     <FormControl error={!!errors.goal} fullWidth>
-                        <InputLabel htmlFor="category-goal">Goal Amount</InputLabel>
-                        <OutlinedInput
-                           id="category-goal"
-                           label="Goal Amount"
-                           type="number"
-                           startAdornment="$"
-                           {...field}
-                           onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
-                        {errors.goal && (
-                           <FormHelperText>{errors.goal.message}</FormHelperText>
-                        )}
-                     </FormControl>
-                  )}
+                  control = { control }
+                  name = "goal"
+                  render = {
+                     ({ field }) => (
+                        <FormControl
+                           error = { !!errors.goal }
+                           fullWidth = { true }
+                        >
+                           <InputLabel htmlFor = "category-goal">Goal Amount</InputLabel>
+                           <OutlinedInput
+                              id = "category-goal"
+                              label = "Goal Amount"
+                              startAdornment = "$"
+                              type = "number"
+                              { ...field }
+                              onChange = { (e) => field.onChange(Number(e.target.value)) }
+                           />
+                           {
+                              errors.goal && (
+                                 <FormHelperText>{ errors.goal.message }</FormHelperText>
+                              )
+                           }
+                        </FormControl>
+                     )
+                  }
+                  rules = {
+                     {
+                        required: "Goal amount is required",
+                        min: { value: 0, message: "Goal must be a positive number" }
+                     }
+                  }
                />
 
-               {/* Action Buttons */}
-               <Stack direction="row" spacing={2} justifyContent="flex-end">
+               { /* Action Buttons */ }
+               <Stack
+                  direction = "row"
+                  justifyContent = "flex-end"
+                  spacing = { 2 }
+               >
                   <Button
-                     color="error"
-                     onClick={onCancel}
-                     variant="outlined"
+                     color = "error"
+                     onClick = { onCancel }
+                     variant = "outlined"
                   >
                      Cancel
                   </Button>
                   <Button
-                     color="primary"
-                     disabled={isSubmitting}
-                     type="submit"
-                     variant="contained"
+                     color = "primary"
+                     disabled = { isSubmitting }
+                     type = "submit"
+                     variant = "contained"
                   >
                      Save
                   </Button>
@@ -137,13 +162,13 @@ interface CreateCategoryButtonProps {
 export function CreateCategoryButton({ onClick, type }: CreateCategoryButtonProps) {
    return (
       <Button
-         color="primary"
-         onClick={onClick}
-         startIcon={<FontAwesomeIcon icon={faPlus} />}
-         sx={{ mt: 1 }}
-         variant="outlined"
+         color = "primary"
+         onClick = { onClick }
+         startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+         sx = { { mt: 1 } }
+         variant = "outlined"
       >
-         Add {type} Category
+         Add { type } Category
       </Button>
    );
-} 
+}

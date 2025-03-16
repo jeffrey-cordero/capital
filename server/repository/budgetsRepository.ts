@@ -3,6 +3,8 @@ import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
+const today = new Date(new Date().setHours(0, 0, 0, 0));
+
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single efficient query
    const overall = `
@@ -17,14 +19,12 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
    // Initialize organized structure with Income and Expenses sections
    const result: OrganizedBudgets = {
-      Income: { goals: [], budget_category_id: "", categories: [] },
-      Expenses: { goals: [], budget_category_id: "", categories: [] }
-   };
-
-   // Track category positions for efficient lookups (avoid duplicate processing)
-   const categoryPositions: Record<BudgetType, Record<string, number>> = {
-      "Income": {},
-      "Expenses": {}
+      Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
+      Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
+      period: {
+         month: today.getUTCMonth() + 1,
+         year: today.getUTCFullYear()
+      }
    };
 
    // Process each row from the joined query
@@ -36,14 +36,15 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          budget_category_id: row.budget_category_id,
          type: row.type,
          name: row.name,
-         category_order: row.category_order
+         category_order: row.category_order,
+         goalIndex: 0
       };
 
       // Extract budget data
       const budget: Omit<Budget, "budget_category_id"> = {
          goal: row.goal,
          year: row.year,
-         month: row.month
+         month: row.month,
       };
 
       // Handle main budget category (Income or Expenses)
@@ -54,12 +55,14 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       }
 
       // Check if category already exists in our result
-      const categoryIndex = categoryPositions[type][row.budget_category_id];
+      const categoryIndex = result[type].categoriesMap[row.budget_category_id];
 
       if (categoryIndex === undefined) {
          // New category - add to result and track position
-         categoryPositions[type][row.budget_category_id] = result[type].categories.length;
+         const index = result[type].categories.length;
+
          result[type].categories.push({ ...category, goals: [budget] });
+         result[type].categoriesMap[row.budget_category_id] = index;
       } else {
          // Existing category - append budget to goals
          result[type].categories[categoryIndex].goals.push(budget);

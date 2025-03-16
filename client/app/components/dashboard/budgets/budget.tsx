@@ -1,5 +1,5 @@
 import { Stack } from "@mui/material";
-import { type BudgetCategory, type BudgetGoals } from "capital/budgets";
+import { type BudgetCategory, type BudgetGoals, type OrganizedBudget } from "capital/budgets";
 import { useState } from "react";
 
 import { BudgetCategoryList } from "@/components/dashboard/budgets/categories";
@@ -8,11 +8,7 @@ import { CreateCategory, CreateCategoryButton } from "@/components/dashboard/bud
 // Props for the budget component
 interface BudgetProps {
    type: "Income" | "Expenses";
-   data: {
-      goals: BudgetGoals[];
-      budget_category_id: string;
-      categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
-   };
+   data: OrganizedBudget;
    onEditClick: () => void;
 }
 
@@ -27,39 +23,25 @@ export default function Budget({ type, data, onEditClick }: BudgetProps) {
    };
 
    // Handle saving a new category
-   const handleSaveCategory = async (categoryData: { name: string; goal: number }) => {
+   const handleSaveCategory = async(categoryData: { name: string; goal: number }) => {
       // Here you would typically call an API or dispatch a Redux action
       console.log("Saving new category:", categoryData);
-      
+
       // Close the creation form after saving
       setIsCreating(false);
    };
 
    return (
       <Stack
-         direction="column"
-         spacing={1}
+         direction = "column"
+         spacing = { 1 }
       >
-         {/* Render the category list */}
-         <BudgetCategoryList 
-            data={data} 
-            onEditClick={onEditClick} 
-            type={type} 
+         { /* Render the category list */ }
+         <BudgetCategoryList
+            data = { data }
+            onEditClick = { onEditClick }
+            type = { type }
          />
-         
-         {/* Show either the create button or the create form */}
-         {isCreating ? (
-            <CreateCategory
-               onCancel={toggleCreating}
-               onSave={handleSaveCategory}
-               parentType={type}
-            />
-         ) : (
-            <CreateCategoryButton
-               onClick={toggleCreating}
-               type={type}
-            />
-         )}
       </Stack>
    );
 }

@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
 import { months } from "@/lib/dates";
-import { selectNextMonth, selectPreviousMonth } from "@/redux/slices/budgets";
+import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
@@ -23,7 +23,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
 
    // Helper function to format the current month/year display
    const formatCurrentPeriod = useCallback(() => {
-      return `${months[period.month]} ${period.year}`;
+      return `${months[period.month - 1]} ${period.year}`;
    }, [period]);
 
    // Handle edit button click
@@ -51,7 +51,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             <FontAwesomeIcon
                className = "primary"
                icon = { faAnglesLeft }
-               onClick = { () => dispatch(selectPreviousMonth()) }
+               onClick = { () => dispatch(selectMonth({ direction: "previous" })) }
                size = "xl"
                style = { { cursor: "pointer" } }
             />
@@ -64,7 +64,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             <FontAwesomeIcon
                className = "primary"
                icon = { faAnglesRight }
-               onClick = { () => dispatch(selectNextMonth()) }
+               onClick = { () => dispatch(selectMonth({ direction: "next" })) }
                size = "xl"
                style = { { cursor: "pointer" } }
             />

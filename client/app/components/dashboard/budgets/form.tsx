@@ -17,7 +17,6 @@ import { useEffect, useState } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { useDoubleTap } from "use-double-tap";
 
 import Transactions from "@/components/dashboard/accounts/transactions";
 import BudgetDeletion from "@/components/dashboard/budgets/delete";
@@ -25,7 +24,7 @@ import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { displayCurrency } from "@/lib/display";
 import { handleValidationErrors } from "@/lib/validation";
-import { addBudgetCategory, updateBudgetCategory, updateBudgetGoal } from "@/redux/slices/budgets";
+import { addBudgetCategory, updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 interface BudgetFormProps {
@@ -363,11 +362,9 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
 
          if (result === 204) {
             // Update Redux store with the new goal
-            dispatch(updateBudgetGoal({
+            dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,
-               year: period.year,
-               month: period.month,
                goal: parseFloat(data.goal)
             }));
 
@@ -451,6 +448,7 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                   name: data.name,
                   type: data.type,
                   category_order: budget.categories.length - 1,
+                  goalIndex: 0,
                   goals: [{
                      year: period.year,
                      month: period.month,
@@ -554,11 +552,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                         const isEditing = editingCategory === category.budget_category_id;
                         const currentAmount = 0; // Replace with actual data
                         const goalAmount = category.goals[0]?.goal || 0;
-
-                        // Setup double tap for category name
-                        // TODO: RULE OF HOOKS: const doubleTap = useDoubleTap(() => { ~ NEW COMPONENT
-                        //    setEditingCategory(category.budget_category_id);
-                        // });
 
                         return (
                            <Box key = { category.budget_category_id }>

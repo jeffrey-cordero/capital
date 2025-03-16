@@ -12,39 +12,16 @@ import * as React from "react";
 
 import { displayCurrency, displayVolume } from "@/lib/display";
 
-const data = [
-   { label: "India", value: 50000 },
-   { label: "USA", value: 35000 },
-   { label: "Brazil", value: 10000 },
-   { label: "Other", value: 5000 }
-];
+interface BudgetCategory {
+   name: string;
+   goal: number;
+   current: number;
+   color: string;
+}
 
-const countries = [
-   {
-      name: "India",
-      value: 50,
-      color: "hsl(220, 25%, 65%)"
-   },
-   {
-      name: "USA",
-      value: 35,
-      color: "hsl(220, 25%, 45%)"
-   },
-   {
-      name: "Brazil",
-      value: 10,
-      color: "hsl(220, 25%, 30%)"
-   },
-   {
-      name: "Other",
-      value: 5,
-      color: "hsl(220, 25%, 20%)"
-   }
-];
-
- interface StyledTextProps {
+interface StyledTextProps {
    variant: "primary" | "secondary";
- }
+}
 
 const StyledText = styled("text", {
    shouldForwardProp: (prop) => prop !== "variant"
@@ -84,10 +61,10 @@ const StyledText = styled("text", {
    ]
 }));
 
- interface PieCenterLabelProps {
+interface PieCenterLabelProps {
    primaryText: string;
    secondaryText: string;
- }
+}
 
 function PieCenterLabel({ primaryText, secondaryText }: PieCenterLabelProps) {
    const { width, height, left, top } = useDrawingArea();
@@ -114,7 +91,23 @@ function PieCenterLabel({ primaryText, secondaryText }: PieCenterLabelProps) {
    );
 }
 
-function ChartUserByCountry() {
+interface BudgetProgressChartProps {
+   title: string;
+   categories: BudgetCategory[];
+   totalGoal: number;
+   totalCurrent: number;
+   colorBase: string;
+}
+function BudgetProgressChart({ title, categories, totalGoal, totalCurrent, colorBase }: BudgetProgressChartProps) {
+   // Calculate percentage of total budget used
+   const percentUsed = Math.min(100, Math.round((totalCurrent / totalGoal) * 100)) || 0;
+
+   // Prepare data for pie chart
+   const chartData = categories.map(cat => ({
+      label: cat.name,
+      value: cat.goal
+   }));
+
    return (
       <Stack
          direction = "column"
@@ -125,7 +118,7 @@ function ChartUserByCountry() {
             component = "h2"
             variant = "subtitle2"
          >
-            Income
+            { title }
          </Typography>
          <Box sx = { { display: "flex", alignItems: "center" } }>
             <PieChart
@@ -141,7 +134,7 @@ function ChartUserByCountry() {
                series = {
                   [
                      {
-                        data,
+                        data: chartData,
                         innerRadius: 75,
                         outerRadius: 100,
                         paddingAngle: 0,
@@ -157,57 +150,62 @@ function ChartUserByCountry() {
                width = { 260 }
             >
                <PieCenterLabel
-                  primaryText = { displayVolume(11111111) }
-                  secondaryText = "Total"
+                  primaryText = { displayCurrency(totalCurrent) }
+                  secondaryText = { `${percentUsed}% Used` }
                />
             </PieChart>
          </Box>
          {
-            countries.map((country, index) => (
-               <Stack
-                  direction = "row"
-                  key = { index }
-                  sx = { { alignItems: "center", gap: 2, pb: 2 } }
-               >
-                  <Stack sx = { { gap: 1, flexGrow: 1 } }>
-                     <Stack
-                        direction = "row"
-                        sx = {
-                           {
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              gap: 2
-                           }
-                        }
-                     >
-                        <Typography
-                           sx = { { fontWeight: "500" } }
-                           variant = "body2"
-                        >
-                           { country.name }
-                        </Typography>
-                        <Typography
-                           sx = { { color: "text.secondary" } }
-                           variant = "body2"
-                        >
-                           { country.value }%
-                        </Typography>
-                     </Stack>
-                     <LinearProgress
-                        aria-label = "Number of users by country"
-                        sx = {
-                           {
-                              [`& .${linearProgressClasses.bar}`]: {
-                                 backgroundColor: country.color
+            categories.map((category, index) => {
+            // Calculate percentage of category budget used
+               const categoryPercentUsed = Math.min(100, Math.round((category.current / category.goal) * 100)) || 0;
+
+               return (
+                  <Stack
+                     direction = "row"
+                     key = { index }
+                     sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2, px: 6 } }
+                  >
+                     <Stack sx = { { gap: 1, flexGrow: 1 } }>
+                        <Stack
+                           direction = "row"
+                           sx = {
+                              {
+                                 justifyContent: "space-between",
+                                 alignItems: "center",
+                                 gap: 2
                               }
                            }
-                        }
-                        value = { country.value }
-                        variant = "determinate"
-                     />
+                        >
+                           <Typography
+                              sx = { { fontWeight: "500" } }
+                              variant = "body2"
+                           >
+                              { category.name }
+                           </Typography>
+                           <Typography
+                              sx = { { color: "text.secondary" } }
+                              variant = "body2"
+                           >
+                              { displayCurrency(category.current) } / { displayCurrency(category.goal) }
+                           </Typography>
+                        </Stack>
+                        <LinearProgress
+                           aria-label = { `Budget progress for ${category.name}` }
+                           sx = {
+                              {
+                                 [`& .${linearProgressClasses.bar}`]: {
+                                    backgroundColor: category.color
+                                 }
+                              }
+                           }
+                           value = { categoryPercentUsed }
+                           variant = "determinate"
+                        />
+                     </Stack>
                   </Stack>
-               </Stack>
-            ))
+               );
+            })
          }
       </Stack>
    );
@@ -226,14 +224,23 @@ const calculateTotal = (budgets: OrganizedBudgets, type: "Income" | "Expenses") 
    return { mainGoal, categoryTotal };
 };
 
+// Helper to generate random current amount until transactions are implemented
+const getRandomAmount = (goal: number) => {
+   // Generate a random percentage between 10% and 110% of the goal
+   return Math.round(goal * (0.1 + Math.random()));
+};
+
 export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    const theme = useTheme();
 
    // Calculate totals (main goal and category total)
    const { mainGoal, categoryTotal } = calculateTotal(budgets, "Income");
 
+   // Generate a random current amount for the total (placeholder)
+   const currentTotal = getRandomAmount(mainGoal * 0.8);
+
    // Prepare data for pie chart
-   const data = budgets.Income.categories.map(category => ({
+   const pieData = budgets.Income.categories.map(category => ({
       id: category.budget_category_id,
       value: category.goals[0]?.goal || 0,
       label: category.name || "",
@@ -242,7 +249,7 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
 
    if (Math.abs(mainGoal - categoryTotal) > 0) {
       // Add an additional data point for the main goal, if there is a difference
-      data.unshift({
+      pieData.unshift({
          id: "Income",
          value: Math.abs(mainGoal - categoryTotal),
          label: "Income",
@@ -250,66 +257,27 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
       });
    }
 
+   // Prepare data for progress chart
+   const progressCategories: BudgetCategory[] = budgets.Income.categories.map((category, index) => {
+      const goal = category.goals[0]?.goal || 0;
+      return {
+         name: category.name || "Unnamed",
+         goal,
+         current: getRandomAmount(goal),
+         color: `hsl(220, 50%, ${65 - (index * 10)}%)`
+      };
+   });
+
    return (
       <Box>
-         <Typography
-            component = "h2"
-            gutterBottom = { true }
-            variant = "subtitle2"
-         >
-            Income Budget
-         </Typography>
-         <Typography
-            component = "p"
-            variant = "h4"
-         >
-            { displayCurrency(mainGoal) }
-         </Typography>
-         <Typography
-            color = "text.secondary"
-            component = "p"
-            variant = "subtitle2"
-         >
-            Monthly Income Budget
-         </Typography>
-
-         <Box sx = { { height: 300, mt: 2 } }>
-            {
-               data.length > 0 ? (
-                  <PieChart
-                     height = { 300 }
-                     margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
-                     series = {
-                        [
-                           {
-                              data,
-                              innerRadius: 30,
-                              paddingAngle: 2,
-                              cornerRadius: 4,
-                              highlightScope: { faded: "global", highlighted: "item" },
-                              arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
-                              arcLabelMinAngle: 20
-                           }
-                        ]
-                     }
-                     slotProps = {
-                        {
-                           legend: { hidden: true }
-                        }
-                     }
-                  />
-               ) : (
-                  <Stack
-                     alignItems = "center"
-                     justifyContent = "center"
-                     sx = { { height: "100%" } }
-                  >
-                     <Typography color = "text.secondary">
-                        No income categories defined
-                     </Typography>
-                  </Stack>
-               )
-            }
+         <Box sx = { { mt: 4 } }>
+            <BudgetProgressChart
+               categories = { progressCategories }
+               colorBase = "primary"
+               title = "Income Progress"
+               totalCurrent = { currentTotal }
+               totalGoal = { mainGoal }
+            />
          </Box>
       </Box>
    );
@@ -321,8 +289,11 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
    // Calculate totals
    const { mainGoal, categoryTotal } = calculateTotal(budgets, "Expenses");
 
+   // Generate a random current amount for the total (placeholder)
+   const currentTotal = getRandomAmount(mainGoal * 0.8);
+
    // Prepare data for pie chart
-   const data = budgets.Expenses.categories.map(category => ({
+   const pieData = budgets.Expenses.categories.map(category => ({
       id: category.budget_category_id,
       value: category.goals[0]?.goal || 0,
       label: category.name || "",
@@ -331,7 +302,7 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
 
    if (Math.abs(mainGoal - categoryTotal) > 0) {
       // Add an additional data point for the main goal, if there is a difference
-      data.unshift({
+      pieData.unshift({
          id: "Expenses",
          value: Math.abs(mainGoal - categoryTotal),
          label: "Expenses",
@@ -339,67 +310,28 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
       });
    }
 
+   // Prepare data for progress chart
+   const progressCategories: BudgetCategory[] = budgets.Expenses.categories.map((category, index) => {
+      const goal = category.goals[0]?.goal || 0;
+      return {
+         name: category.name || "Unnamed",
+         goal,
+         current: getRandomAmount(goal),
+         color: `hsl(0, 70%, ${65 - (index * 10)}%)`
+      };
+   });
+
    return (
       <Box>
-         <Typography
-            component = "h2"
-            gutterBottom = { true }
-            variant = "subtitle2"
-         >
-            Expenses Budget
-         </Typography>
-         <Typography
-            component = "p"
-            variant = "h4"
-         >
-            { displayCurrency(mainGoal) }
-         </Typography>
-         <Typography
-            color = "text.secondary"
-            component = "p"
-            variant = "subtitle2"
-         >
-            Monthly Expenses Budget
-         </Typography>
-
-         <Box sx = { { height: 300, mt: 2 } }>
-            {
-               data.length > 0 ? (
-                  <PieChart
-                     height = { 300 }
-                     margin = { { top: 10, bottom: 10, left: 10, right: 10 } }
-                     series = {
-                        [
-                           {
-                              data,
-                              innerRadius: 30,
-                              paddingAngle: 2,
-                              cornerRadius: 4,
-                              highlightScope: { faded: "global", highlighted: "item" },
-                              arcLabel: (item) => `${item.label}: ${displayCurrency(item.value)}`,
-                              arcLabelMinAngle: 20
-                           }
-                        ]
-                     }
-                     slotProps = {
-                        {
-                           legend: { hidden: true }
-                        }
-                     }
-                  />
-               ) : (
-                  <Stack
-                     alignItems = "center"
-                     justifyContent = "center"
-                     sx = { { height: "100%" } }
-                  >
-                     <Typography color = "text.secondary">
-                        No expense categories defined
-                     </Typography>
-                  </Stack>
-               )
-            }
-            <ChartUserByCountry />
+         { /* Add the budget progress chart for Expenses */ }
+         <Box sx = { { mt: 4 } }>
+            <BudgetProgressChart
+               categories = { progressCategories }
+               colorBase = "error"
+               title = "Expenses Progress"
+               totalCurrent = { currentTotal }
+               totalGoal = { mainGoal }
+            />
          </Box>
       </Box>
    );

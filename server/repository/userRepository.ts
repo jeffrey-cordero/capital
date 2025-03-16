@@ -52,7 +52,8 @@ export async function create(user: User): Promise<string> {
          category_order: null,
          goal: 2000,
          month: month,
-         year: year
+         year: year,
+         goalIndex: 0
       }, client);
 
       // Create Expenses category with initial budget
@@ -62,7 +63,8 @@ export async function create(user: User): Promise<string> {
          category_order: null,
          goal: 2000,
          month: month,
-         year: year
+         year: year,
+         goalIndex: 0
       }, client);
 
       return result.rows[0].user_id;

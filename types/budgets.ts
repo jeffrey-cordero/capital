@@ -88,15 +88,21 @@ export const budgetCategorySchema = z.object({
 export type BudgetType = "Income" | "Expenses";
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 export type BudgetGoals = Omit<Budget, "budget_category_id">;
-export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id">;
+export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & { goalIndex: number };
 
 export type OrganizedBudget = {
+   goalIndex: number;
    goals: BudgetGoals[];
    budget_category_id: string;
    categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
+   categoriesMap: Record<string, number>;
 };
 
 export interface OrganizedBudgets {
    Income: OrganizedBudget;
    Expenses: OrganizedBudget;
+   period: {
+      month: number;
+      year: number;
+   }
 }

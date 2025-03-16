@@ -32,7 +32,7 @@ export default function BudgetDeletion({ category, type, disabled }: BudgetDelet
          if (result === 204) {
             dispatch(removeBudgetCategory({
                type,
-               categoryId: category.budget_category_id
+               budget_category_id: category.budget_category_id
             }));
          }
       } catch (error) {
