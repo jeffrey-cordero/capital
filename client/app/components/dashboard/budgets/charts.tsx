@@ -5,12 +5,11 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import LinearProgress, { linearProgressClasses } from "@mui/material/LinearProgress";
 import { PieChart, useDrawingArea } from "@mui/x-charts";
 import { type OrganizedBudgets } from "capital/budgets";
 import * as React from "react";
 
-import { displayCurrency, displayVolume } from "@/lib/display";
+import { displayCurrency } from "@/lib/display";
 
 interface BudgetCategory {
    name: string;
@@ -96,9 +95,8 @@ interface BudgetProgressChartProps {
    categories: BudgetCategory[];
    totalGoal: number;
    totalCurrent: number;
-   colorBase: string;
 }
-function BudgetProgressChart({ title, categories, totalGoal, totalCurrent, colorBase }: BudgetProgressChartProps) {
+function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: BudgetProgressChartProps) {
    // Calculate percentage of total budget used
    const percentUsed = Math.min(100, Math.round((totalCurrent / totalGoal) * 100)) || 0;
 
@@ -112,7 +110,7 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent, color
       <Stack
          direction = "column"
          spacing = { 2 }
-         sx = { { flexGrow: 1 } }
+         sx = { { flexGrow: 1, textAlign: "center" } }
       >
          <Typography
             component = "h2"
@@ -155,58 +153,6 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent, color
                />
             </PieChart>
          </Box>
-         {
-            categories.map((category, index) => {
-            // Calculate percentage of category budget used
-               const categoryPercentUsed = Math.min(100, Math.round((category.current / category.goal) * 100)) || 0;
-
-               return (
-                  <Stack
-                     direction = "row"
-                     key = { index }
-                     sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2, px: 6 } }
-                  >
-                     <Stack sx = { { gap: 1, flexGrow: 1 } }>
-                        <Stack
-                           direction = "row"
-                           sx = {
-                              {
-                                 justifyContent: "space-between",
-                                 alignItems: "center",
-                                 gap: 2
-                              }
-                           }
-                        >
-                           <Typography
-                              sx = { { fontWeight: "500" } }
-                              variant = "body2"
-                           >
-                              { category.name }
-                           </Typography>
-                           <Typography
-                              sx = { { color: "text.secondary" } }
-                              variant = "body2"
-                           >
-                              { displayCurrency(category.current) } / { displayCurrency(category.goal) }
-                           </Typography>
-                        </Stack>
-                        <LinearProgress
-                           aria-label = { `Budget progress for ${category.name}` }
-                           sx = {
-                              {
-                                 [`& .${linearProgressClasses.bar}`]: {
-                                    backgroundColor: category.color
-                                 }
-                              }
-                           }
-                           value = { categoryPercentUsed }
-                           variant = "determinate"
-                        />
-                     </Stack>
-                  </Stack>
-               );
-            })
-         }
       </Stack>
    );
 }
@@ -214,11 +160,11 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent, color
 // Helper function to calculate total budget goals
 const calculateTotal = (budgets: OrganizedBudgets, type: "Income" | "Expenses") => {
    // Get the most recent month's data
-   const mainGoal: number = budgets[type].goals[0]?.goal || 0;
+   const mainGoal: number = budgets[type].goals[budgets[type].goalIndex].goal || 0;
 
    // Sum up all category goals for the most recent month/year
    const categoryTotal = budgets[type].categories.reduce((acc, record) => {
-      return acc + record.goals[0]?.goal || 0;
+      return acc + record.goals[record.goalIndex].goal;
    }, 0);
 
    return { mainGoal, categoryTotal };
@@ -242,7 +188,7 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    // Prepare data for pie chart
    const pieData = budgets.Income.categories.map(category => ({
       id: category.budget_category_id,
-      value: category.goals[0]?.goal || 0,
+      value: category.goals[category.goalIndex].goal,
       label: category.name || "",
       color: theme.palette.primary.main
    }));
@@ -259,7 +205,7 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
 
    // Prepare data for progress chart
    const progressCategories: BudgetCategory[] = budgets.Income.categories.map((category, index) => {
-      const goal = category.goals[0]?.goal || 0;
+      const goal = category.goals[category.goalIndex].goal;
       return {
          name: category.name || "Unnamed",
          goal,
@@ -273,7 +219,6 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
          <Box sx = { { mt: 4 } }>
             <BudgetProgressChart
                categories = { progressCategories }
-               colorBase = "primary"
                title = "Income Progress"
                totalCurrent = { currentTotal }
                totalGoal = { mainGoal }
@@ -295,7 +240,7 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
    // Prepare data for pie chart
    const pieData = budgets.Expenses.categories.map(category => ({
       id: category.budget_category_id,
-      value: category.goals[0]?.goal || 0,
+      value: category.goals[category.goalIndex].goal,
       label: category.name || "",
       color: theme.palette.error.main
    }));
@@ -312,7 +257,7 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
 
    // Prepare data for progress chart
    const progressCategories: BudgetCategory[] = budgets.Expenses.categories.map((category, index) => {
-      const goal = category.goals[0]?.goal || 0;
+      const goal = category.goals[category.goalIndex].goal;
       return {
          name: category.name || "Unnamed",
          goal,
@@ -327,7 +272,6 @@ export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
          <Box sx = { { mt: 4 } }>
             <BudgetProgressChart
                categories = { progressCategories }
-               colorBase = "error"
                title = "Expenses Progress"
                totalCurrent = { currentTotal }
                totalGoal = { mainGoal }

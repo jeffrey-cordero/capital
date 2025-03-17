@@ -95,7 +95,6 @@ export type OrganizedBudget = {
    goals: BudgetGoals[];
    budget_category_id: string;
    categories: Array<BudgetCategory & { goals: BudgetGoals[] }>;
-   categoriesMap: Record<string, number>;
 };
 
 export interface OrganizedBudgets {

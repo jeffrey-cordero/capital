@@ -1,4 +1,6 @@
-export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
+export const getCurrentDate = () => {
+   return new Date(new Date().setUTCHours(0, 0, 0, 0));
+};
 
 export const months = [
    "January", "February", "March", "April", "May", "June",
@@ -18,7 +20,7 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
-export function getLastSixMonths(referenceDate = today): string[] {
+export function getLastSixMonths(referenceDate = getCurrentDate()): string[] {
    // Format the 6-month array to "MM. YYYY" format
    const months = [
       "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",

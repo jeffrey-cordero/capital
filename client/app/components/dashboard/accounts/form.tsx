@@ -22,7 +22,7 @@ import AccountImage from "@/components/dashboard/accounts/image";
 import Transactions from "@/components/dashboard/accounts/transactions";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
-import { today } from "@/lib/dates";
+import { getCurrentDate } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
@@ -104,7 +104,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                      },
                      history: updatedFields.balance ? {
                         balance: updatedFields.balance,
-                        last_updated: today.toISOString().split("T")[0]
+                        last_updated: getCurrentDate().toISOString().split("T")[0]
                      } : undefined
                   }));
                }

@@ -8,12 +8,12 @@ import { sendApiRequest } from "@/lib/api";
 import { removeBudgetCategory } from "@/redux/slices/budgets";
 
 // Component for deleting a budget category with confirmation
-interface BudgetDeletionProps {
+interface DeleteBudgetProps {
    category: BudgetCategory;
    type: "Income" | "Expenses";
    disabled: boolean;
 }
-export default function BudgetDeletion({ category, type, disabled }: BudgetDeletionProps) {
+export default function DeleteBudget({ category, type, disabled }: DeleteBudgetProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
 
    // Handle the deletion process when confirmed
@@ -21,11 +21,7 @@ export default function BudgetDeletion({ category, type, disabled }: BudgetDelet
       try {
          // Send delete request to the API
          const result = await sendApiRequest<number>(
-            `dashboard/budgets/category/${category.budget_category_id}`,
-            "DELETE",
-            undefined,
-            dispatch,
-            navigate
+            `dashboard/budgets/category/${category.budget_category_id}`, "DELETE", undefined, dispatch, navigate
          );
 
          // If successful, update the Redux store

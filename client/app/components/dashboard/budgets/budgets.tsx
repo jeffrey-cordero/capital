@@ -1,13 +1,19 @@
 import { faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import {
+   Box,
+   IconButton,
+   Stack,
+   Typography,
+   useTheme
+} from "@mui/material";
 import { type OrganizedBudgets } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { months, today } from "@/lib/dates";
+import { getCurrentDate, months } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
@@ -17,6 +23,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
       state: "view",
       type: "Income"
    });
+   const today = useMemo(() => getCurrentDate(), []);
    const { period } = useSelector(
       (state: RootState) => state.budgets.value
    ) as  { period: { month: number, year: number } };
@@ -24,7 +31,7 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
    // Prevent future month selections
    const nextMonthDisabled = useMemo(() => {
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
-   }, [period]);
+   }, [period, today]);
 
    // Handle edit button click to open the budget modal
    const handleEditClick = useCallback((type: "Income" | "Expenses") => {
@@ -49,24 +56,31 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             direction = "row"
             sx = { { justifyContent: "space-between", alignItems: "center" } }
          >
-            <FontAwesomeIcon
-               icon = { faAnglesLeft }
+            <IconButton
                onClick = { () => dispatch(selectMonth({ direction: "previous" })) }
-               size = "xl"
-               style = { { cursor: "pointer", color: theme.palette.primary.main } }
-            />
+               size = "medium"
+               sx = { { color: theme.palette.primary.main } }
+            >
+               <FontAwesomeIcon
+                  icon = { faAnglesLeft }
+               />
+            </IconButton>
             <Typography
                fontWeight = "bold"
                variant = "h6"
             >
                { `${months[period.month - 1]} ${period.year}` }
             </Typography>
-            <FontAwesomeIcon
-               icon = { faAnglesRight }
-               onClick = { () => nextMonthDisabled ? null : dispatch(selectMonth({ direction: "next" })) }
-               size = "xl"
-               style = { { cursor: "pointer", color: nextMonthDisabled ? theme.palette.info.main : theme.palette.primary.main } }
-            />
+            <IconButton
+               disabled = { nextMonthDisabled }
+               onClick = { () => dispatch(selectMonth({ direction: "next" })) }
+               size = "medium"
+               sx = { { color: theme.palette.primary.main } }
+            >
+               <FontAwesomeIcon
+                  icon = { faAnglesRight }
+               />
+            </IconButton>
          </Stack>
          { /* Income and expenses sections */ }
          <Stack

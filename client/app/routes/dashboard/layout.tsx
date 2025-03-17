@@ -9,7 +9,6 @@ import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
-import { today } from "@/lib/dates";
 import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";

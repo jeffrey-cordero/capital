@@ -41,7 +41,7 @@ export async function create(user: User): Promise<string> {
       );
 
       // Create the new user's initial Income and Expenses budgets
-      const today = new Date();
+      const today = new Date(new Date().setHours(0, 0, 0, 0));
       const month = today.getUTCMonth() + 1;
       const year = today.getUTCFullYear();
 

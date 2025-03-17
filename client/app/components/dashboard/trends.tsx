@@ -9,7 +9,7 @@ import {
 import { BarChart } from "@mui/x-charts";
 import { type Account, liabilityTypes } from "capital/accounts";
 
-import { getLastSixMonths, normalizeDate, today } from "@/lib/dates";
+import { getCurrentDate, getLastSixMonths, normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayVolume, ellipsis } from "@/lib/display";
 
 // Common card layout component to reduce duplication
@@ -74,6 +74,7 @@ export function AccountTrends({ accounts }: { accounts: Account[] }) {
          balance: Number(entry.balance || 0)
       }));
 
+      const today = getCurrentDate();
       let lastValidBalance = Number(account.balance || 0);
       const historicalData = [];
 

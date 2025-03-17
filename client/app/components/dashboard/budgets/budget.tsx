@@ -60,7 +60,7 @@ function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainC
             color = { color }
             sx = {
                {
-                  height: "1.25rem",
+                  height: "1.45rem",
                   borderRadius: "12px"
                }
             }
@@ -80,7 +80,7 @@ interface BudgetCategoryProps {
 // Component to render a list of budget categories with their progress bars and potential subcategories
 export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps) {
    // Calculate the category values
-   const goal = data.goals[data.goalIndex]?.goal || 0;
+   const goal = data.goals[data.goalIndex].goal;
    const total = Math.random() * goal; // Placeholder until transactions are implemented
    const progress = Math.min((total / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
@@ -116,16 +116,18 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
                   type = { type }
                />
             </Box>
+            <Box sx = { { display: "flex", alignItems: "center", justifyContent: "center", pt: isExpanded ? 3.5 : 3 } }>
                <Expand
                   disableRipple = { true }
                   expand = { isExpanded }
                   onClick = { toggleExpanded }
-            >
-               <FontAwesomeIcon
-                  icon = { faCaretDown }
-                  size = "xl"
-               />
-            </Expand>
+               >
+                  <FontAwesomeIcon
+                     icon = { faCaretDown }
+                     size = "xl"
+                  />
+               </Expand>
+            </Box>
          </Stack>
          { /* Child categories */ }
          <Collapse
@@ -139,7 +141,7 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
             >
                {
                   data.categories.map((category) => {
-                     const goal = category.goals[category.goalIndex]?.goal || 0;
+                     const goal = category.goals[category.goalIndex].goal;
                      const total = Math.random() * goal; // Placeholder until transactions are implemented
                      const progress = Math.min((total / goal) * 100, 100);
 

@@ -76,10 +76,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
 
       try {
          const result = await sendApiRequest<number>(
-            `dashboard/accounts/${account.account_id}`, "DELETE",
-            { last_updated },
-            dispatch,
-            navigate
+            `dashboard/accounts/${account.account_id}`, "DELETE", { last_updated }, dispatch, navigate
          );
 
          if (result === 204) {

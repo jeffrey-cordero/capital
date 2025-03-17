@@ -3,8 +3,6 @@ import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
-const today = new Date(new Date().setHours(0, 0, 0, 0));
-
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single efficient query
    const overall = `
@@ -18,14 +16,16 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
 
    // Initialize organized structure with Income and Expenses sections
+   const today = new Date(new Date().setHours(0, 0, 0, 0));
    const result: OrganizedBudgets = {
-      Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
-      Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
+      Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] },
+      Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] },
       period: {
          month: today.getUTCMonth() + 1,
          year: today.getUTCFullYear()
       }
    };
+   const categoriesMap: Record<string, number> = {};
 
    // Process each row from the joined query
    for (const row of results) {
@@ -55,14 +55,14 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       }
 
       // Check if category already exists in our result
-      const categoryIndex = result[type].categoriesMap[row.budget_category_id];
+      const categoryIndex = categoriesMap[row.budget_category_id];
 
       if (categoryIndex === undefined) {
          // New category - add to result and track position
          const index = result[type].categories.length;
 
          result[type].categories.push({ ...category, goals: [budget] });
-         result[type].categoriesMap[row.budget_category_id] = index;
+         categoriesMap[row.budget_category_id] = index;
       } else {
          // Existing category - append budget to goals
          result[type].categories[categoryIndex].goals.push(budget);

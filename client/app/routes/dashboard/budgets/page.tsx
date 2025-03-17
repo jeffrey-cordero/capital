@@ -51,22 +51,32 @@ export default function Page() {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               <Grid size = { { xs: 12, lg: 8 } }>
+               <Grid size = { { xs: 12, lg: 9 } }>
                   <Budgets budgets = { budgets } />
                </Grid>
             </Grow>
             { /* Budget Charts */ }
-            <Grow
-               in = { true }
-               mountOnEnter = { true }
-               timeout = { 1000 }
-               unmountOnExit = { true }
-            >
-               <Grid size = { { xs: 12, lg: 4 } }>
-                  <IncomePieChart budgets = { budgets } />
-                  <ExpensesPieChart budgets = { budgets } />
-               </Grid>
-            </Grow>
+            <Grid size = { { xs: 12, lg: 3 } }>
+               <Grow
+                  in = { true }
+                  mountOnEnter = { true }
+                  timeout = { 1000 }
+                  unmountOnExit = { true }
+               >
+                  <Grid
+                     container = { true }
+                     spacing = { 2 }
+                  >
+                     <Grid size = { { xs: 12, md: 6, lg: 12 } }>
+                        <IncomePieChart budgets = { budgets } />
+                     </Grid>
+                     <Grid size = { { xs: 12, md: 6, lg: 12 } }>
+                        <ExpensesPieChart budgets = { budgets } />
+                     </Grid>
+                  </Grid>
+               </Grow>
+            </Grid>
+
          </Grid>
       </Container>
    );
