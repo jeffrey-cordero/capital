@@ -5,9 +5,11 @@ import {
    Collapse,
    LinearProgress,
    Stack,
-   Typography
+   Typography,
+   Zoom
 } from "@mui/material";
 import { type OrganizedBudget } from "capital/budgets";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
 
 import { Expand } from "@/components/global/expand";
@@ -27,47 +29,55 @@ interface CategoryItemProps {
 // Component to render a single category with its respective progress bar and progress in the current period
 function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainCategory = false }: CategoryItemProps) {
    return (
-      <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
-         <Stack
-            direction = "row"
-            sx = { { justifyContent: "space-between", mb: 1 } }
-         >
+      <Zoom
+         in = { true }
+         mountOnEnter = { true }
+         timeout = { 1000 }
+         unmountOnExit = { true }
+      >
+         <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
             <Stack
                direction = "row"
-               spacing = { 1 }
-               sx = { { alignItems: "center" } }
+               sx = { { justifyContent: "space-between", mb: 1 } }
             >
+               <Stack
+                  direction = "row"
+                  spacing = { 1 }
+                  sx = { { alignItems: "center" } }
+               >
+                  <Typography variant = "h6">
+                     { name }
+                  </Typography>
+                  {
+                     onEditClick && (
+                        <FontAwesomeIcon
+                           className = "primary"
+                           icon = { faPenToSquare }
+                           onClick = { onEditClick }
+                           size = "lg"
+                           style = { { cursor: "pointer", zIndex: 1000 } }
+                        />
+                     )
+                  }
+               </Stack>
                <Typography variant = "h6">
-                  { name }
+                  { displayCurrency(total) } / { displayCurrency(goal) }
                </Typography>
-               {
-                  onEditClick && (
-                     <FontAwesomeIcon
-                        className = "primary"
-                        icon = { faPenToSquare }
-                        onClick = { onEditClick }
-                        size = "lg"
-                        style = { { cursor: "pointer", zIndex: 1000 } }
-                     />
-                  )
-               }
             </Stack>
-            <Typography variant = "h6">
-               { displayCurrency(total) } / { displayCurrency(goal) }
-            </Typography>
-         </Stack>
-         <LinearProgress
-            color = { color }
-            sx = {
-               {
-                  height: "1.45rem",
-                  borderRadius: "12px"
+
+            <LinearProgress
+               color = { color }
+               sx = {
+                  {
+                     height: "1.65rem",
+                     borderRadius: "12px"
+                  }
                }
-            }
-            value = { progress }
-            variant = "determinate"
-         />
-      </Box>
+               value = { progress }
+               variant = "determinate"
+            />
+         </Box>
+      </Zoom>
    );
 }
 
@@ -139,25 +149,35 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
                direction = "column"
                spacing = { 0.5 }
             >
-               {
-                  data.categories.map((category) => {
-                     const goal = category.goals[category.goalIndex].goal;
-                     const total = Math.random() * goal; // Placeholder until transactions are implemented
-                     const progress = Math.min((total / goal) * 100, 100);
+               <AnimatePresence mode = "popLayout">
+                  {
+                     data.categories.map((category) => {
+                        const goal = category.goals[category.goalIndex].goal;
+                        const total = Math.random() * goal; // Placeholder until transactions are implemented
+                        const progress = Math.min((total / goal) * 100, 100);
 
-                     return (
-                        <CategoryItem
-                           color = { color }
-                           goal = { goal }
-                           key = { category.budget_category_id }
-                           name = { String(category.name) }
-                           progress = { progress }
-                           total = { total }
-                           type = { type }
-                        />
-                     );
-                  })
-               }
+                        return (
+                           <motion.div
+                              animate = { { opacity: 1, y: 0 } }
+                              exit = { { opacity: 0, y: 10 } }
+                              initial = { { opacity: 0, y: -10 } }
+                              key = { category.budget_category_id }
+                              layout = { true }
+                              transition = { { duration: 0.2, ease: "easeInOut" } }
+                           >
+                              <CategoryItem
+                                 color = { color }
+                                 goal = { goal }
+                                 name = { String(category.name) }
+                                 progress = { progress }
+                                 total = { total }
+                                 type = { type }
+                              />
+                           </motion.div>
+                        );
+                     })
+                  }
+               </AnimatePresence>
             </Stack>
          </Collapse>
       </Stack>

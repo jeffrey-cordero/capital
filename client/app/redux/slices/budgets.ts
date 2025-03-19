@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { type BudgetCategory, type BudgetGoals, type OrganizedBudgets } from "capital/budgets";
+import { type BudgetCategory, type OrganizedBudgets } from "capital/budgets";
 
 import { getCurrentDate } from "@/lib/dates";
 
@@ -39,32 +39,28 @@ const budgetsSlice = createSlice({
       setBudgets(state, action: PayloadAction<OrganizedBudgets>) {
          state.value = action.payload;
       },
-      updateBudget(state, action: PayloadAction<{ type: "Income" | "Expenses", budget_category_id: string, goal: number }>) {
-         // Fetch the current month and year
+      updateBudget(state, action: PayloadAction<{ type: "Income" | "Expenses", budget_category_id: string, goal: number, isMainCategory?: boolean }>) {
+         const { type, budget_category_id, goal, isMainCategory } = action.payload;
          const { month, year } = state.value.period;
 
-         // Extract the updates from the payload
-         const { type, budget_category_id, goal } = action.payload;
+         // Get the respective category
+         const category = isMainCategory ? state.value[type] : state.value[type].categories.find(
+            c => c.budget_category_id === budget_category_id
+         );
 
-         // Get the category
-         const category = state.value[type].categories.find(c => c.budget_category_id === budget_category_id);
+         if (!category) return; // Ignore invalid category payloads
 
-         if (!category) return;
-
-         // Fetch the existing goals for the category
-         const currentGoal = category.goals[category.goalIndex];
-
-         // Calculate the difference in time periods between the current goal and the new goal
-         const timePeriodDifference = comparePeriods(currentGoal, { month, year });
+         // Calculate the difference in time periods between the current goal and the new goal periods
+         const timePeriodDifference = comparePeriods(category.goals[category.goalIndex], { month, year });
 
          if (timePeriodDifference !== 0) {
-            // Move forward for previous periods or stay at the current index for a valid future period
+            // A difference of 1 indicates a previous period, so we increment the goal index
             const increment = timePeriodDifference === 1 ? 1 : 0;
 
             // Insert the new goal at the correct position
             category.goals.splice(category.goalIndex + increment, 0, { year, month, goal });
 
-            // Update the goal index
+            // Update the goal index accordingly
             category.goalIndex += increment;
             return;
          }
@@ -72,34 +68,41 @@ const budgetsSlice = createSlice({
          // Update the existing goal
          category.goals[category.goalIndex].goal = goal;
       },
+      updateBudgetCategoryOrder(state, action: PayloadAction<{
+         type: "Income" | "Expenses",
+         categories: BudgetCategory[]
+      }>) {
+         const { type, categories } = action.payload;
+
+         // Update the category order in the respective type
+         state.value[type].categories = categories;
+      },
       addBudgetCategory(state, action: PayloadAction<{
          type: "Income" | "Expenses",
-         category: BudgetCategory & { goals: BudgetGoals[] }
+         category: BudgetCategory
       }>) {
          const { type, category } = action.payload;
 
-         // Add the new category and store its index for future lookups
+         // Add the new category to the respective type
          state.value[type].categories.push(category);
       },
       updateBudgetCategory(state, action: PayloadAction<{
          type: "Income" | "Expenses",
          updates: Partial<BudgetCategory> & { budget_category_id: string }
       }>) {
-         // Extract the updates from the payload
          const { type, updates } = action.payload;
 
          // Get the category index and category
-         const categoryIndex = state.value[type].categories.findIndex(c => c.budget_category_id === updates.budget_category_id);
+         const categoryIndex = state.value[type].categories.findIndex(
+            c => c.budget_category_id === updates.budget_category_id
+         );
+         if (categoryIndex === -1) return; // Ignore invalid category payloads
+
          const category = state.value[type].categories[categoryIndex];
 
-         if (!category) return;
-
-         // Handle changes in category type
+         // Handle a swap of category types
          if (updates.type && updates.type !== category.type) {
-            // Remove the category from the current type
             state.value[category.type].categories.splice(categoryIndex, 1);
-
-            // Add the category to the new type
             state.value[updates.type].categories.push(category);
          }
 
@@ -114,7 +117,13 @@ const budgetsSlice = createSlice({
          const { type, budget_category_id } = action.payload;
 
          // Remove the category from the categories array
-         const categoryIndex = state.value[type].categories.findIndex(c => c.budget_category_id === budget_category_id);
+         const categoryIndex = state.value[type].categories.findIndex(
+            c => c.budget_category_id === budget_category_id
+         );
+
+         if (categoryIndex === -1) return; // Ignore invalid category payloads
+
+         // Remove the category from the categories array
          state.value[type].categories.splice(categoryIndex, 1);
       },
       selectMonth: (state, action: PayloadAction<{ direction: "previous" | "next" }>) => {
@@ -129,9 +138,11 @@ const budgetsSlice = createSlice({
          }
 
          const { direction } = action.payload;
-         const { month, year } = calculateNewPeriod(state.value.period.month, state.value.period.year, direction);
+         const { month, year } = calculateNewPeriod(
+            state.value.period.month, state.value.period.year, direction
+         );
 
-         // Update the period state
+         // Update the current period state
          state.value.period.month = month;
          state.value.period.year = year;
 
@@ -181,6 +192,6 @@ const budgetsSlice = createSlice({
    }
 });
 
-export const { setBudgets, updateBudget, addBudgetCategory, updateBudgetCategory, removeBudgetCategory, selectMonth } = budgetsSlice.actions;
+export const { setBudgets, updateBudget, addBudgetCategory, updateBudgetCategory, removeBudgetCategory, selectMonth, updateBudgetCategoryOrder } = budgetsSlice.actions;
 
 export default budgetsSlice.reducer;

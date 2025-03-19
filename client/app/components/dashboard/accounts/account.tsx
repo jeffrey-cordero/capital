@@ -67,19 +67,19 @@ export default function AccountCard({ account }: AccountCardProps) {
          message: `There was an issue fetching the image for ${account?.name}`
       }));
 
-      e.currentTarget.src = "";
+      e.currentTarget.src = "/svg/logo.svg";
    }, [dispatch, account?.name]);
 
    const getImageSource = useCallback(() => {
       // Determines the appropriate image source based on account data and error state
       if (!account?.image) {
-         return "/images/empty.png";
+         return "/svg/logo.svg";
       } else if (images.has(account.image)) {
          return `/images/${account.image}.png`;
       } else if (!isResourceError) {
          return account.image;
       } else {
-         return "/images/empty.png";
+         return "/svg/logo.svg";
       }
    }, [account?.image, isResourceError]);
 

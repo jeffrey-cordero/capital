@@ -15,7 +15,7 @@ export default function Page() {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { textAlign: "center", py: 4, px: 2 } }
+         sx = { { textAlign: "center", pt: 6, pb: 4, px: 2 } }
       >
          <Grow
             in = { true }

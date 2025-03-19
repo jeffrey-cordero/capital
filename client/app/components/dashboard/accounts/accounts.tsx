@@ -12,7 +12,7 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { Box, Grow, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -27,6 +27,9 @@ interface AccountsProps {
 export default function Accounts({ accounts }: AccountsProps) {
    const dispatch = useDispatch();
    const navigate = useNavigate();
+   const accountIds = useMemo(() => {
+      return accounts.map(account => account.account_id ?? "");
+   }, [accounts]);
 
    // Configure drag and drop sensors
    const sensors = useSensors(
@@ -72,21 +75,19 @@ export default function Accounts({ accounts }: AccountsProps) {
             );
             dispatch(setAccounts(newAccounts));
 
-            try {
-               // Sync new order with server
-               const ordering = newAccounts.map(account => account.account_id);
-               const result = await sendApiRequest<number>(
-                  "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
-               );
-
-               // Revert optimistic update if server request fails
+            // Sync new order with server
+            const ordering = newAccounts.map(account => account.account_id);
+            sendApiRequest<number>(
+               "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
+            ).then((result) => {
                if (result !== 204) {
-                  dispatch(setAccounts(oldAccounts));
+                  throw new Error("Failed to update account order");
                }
-            } catch (error) {
+            }).catch((error) => {
+               // Revert optimistic update if server request fails
                console.error("Failed to update account order:", error);
                dispatch(setAccounts(oldAccounts));
-            }
+            });
          }
       }
    }, [accounts, dispatch, navigate]);
@@ -100,7 +101,7 @@ export default function Accounts({ accounts }: AccountsProps) {
                className = "floating"
                component = "img"
                src = "/svg/accounts.svg"
-               sx = { { width: 350, height: "auto", mb: 6 } }
+               sx = { { width: 400, height: "auto", mb: 10 } }
             />
          </Box>
          { /* Accounts grid with drag and drop */ }
@@ -116,7 +117,7 @@ export default function Accounts({ accounts }: AccountsProps) {
                sensors = { sensors }
             >
                <SortableContext
-                  items = { accounts.map(account => account.account_id ?? "") }
+                  items = { accountIds }
                   strategy = { rectSortingStrategy }
                >
                   {

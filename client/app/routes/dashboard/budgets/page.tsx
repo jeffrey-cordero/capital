@@ -39,7 +39,7 @@ export default function Page() {
                         className = "floating"
                         component = "img"
                         src = "/svg/budget.svg"
-                        sx = { { width: 250, height: "auto", mb: 6 } }
+                        sx = { { width: 250, height: "auto" } }
                      />
                   </Box>
                </Grid>

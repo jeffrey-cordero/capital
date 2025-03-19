@@ -171,8 +171,6 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
       return sendValidationErrors(budgetFields, "Invalid budget fields");
    }
 
-   console.log(budget);
-
    // Update budget
    const result = await budgetsRepository.updateBudget(budget);
 

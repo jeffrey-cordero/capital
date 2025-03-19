@@ -120,7 +120,7 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: Bud
          </Typography>
          <Box sx = { { display: "flex", alignItems: "center" } }>
             <PieChart
-               height = { 260 }
+               height = { 300 }
                margin = {
                   {
                      left: 80,

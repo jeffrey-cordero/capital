@@ -80,27 +80,25 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
             month: period.month
          };
 
-         // Determine if we need to create or update a budget entry
+         // Determine if we need to create or update a budget entry for Income or Expenses
          const currentGoal = budget.goals[budget.goalIndex];
          const isCurrentPeriod = currentGoal.month === period.month && currentGoal.year === period.year;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
-         // Send API request
+         // Submit the API request
          const result = await sendApiRequest(
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
-         // Handle successful response
+         // Handle a successful response
          if (result === 201 || result === 204) {
             // Update Redux store
             dispatch(updateBudget({
                type,
+               isMainCategory: true,
                budget_category_id: budget.budget_category_id,
                goal: validationResult.data.goal
             }));
-
-            // Close modal on success
-            onClose();
          }
       } catch (error) {
          console.error("Failed to update budget:", error);

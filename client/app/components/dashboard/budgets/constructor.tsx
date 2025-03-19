@@ -1,11 +1,10 @@
-import { faPlus, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Button,
    FormControl,
    FormHelperText,
    InputLabel,
-   NativeSelect,
    OutlinedInput,
    Stack
 } from "@mui/material";
@@ -20,29 +19,25 @@ import { addBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 // Combining category and budget validations for a single form
-const constructSchema = budgetCategorySchema
-   .omit({ budget_category_id: true, user_id: true, category_order: true })
-   .merge(budgetSchema.innerType().pick({ goal: true }));
+const constructSchema = budgetCategorySchema.omit(
+   { budget_category_id: true, user_id: true, category_order: true, type: true } // Current type is based on the parent type
+).merge(budgetSchema.innerType().pick(
+   { goal: true })
+);
 
 interface ConstructCategoryProps {
    onClose: () => void;
    isSubmitting: boolean;
-   parentType: "Income" | "Expenses";
+   type: "Income" | "Expenses";
 }
 
-export default function ConstructCategory({ onClose, isSubmitting, parentType }: ConstructCategoryProps) {
+export default function ConstructCategory({ onClose, isSubmitting, type }: ConstructCategoryProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
-   const parentCategories = useSelector((state: RootState) => state.budgets.value[parentType].categories);
+   const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Initialize form with typed values and defaults
-   const { control, handleSubmit, setError, reset, formState: { errors } } = useForm({
-      defaultValues: {
-         name: "",
-         goal: 0,
-         type: parentType
-      }
-   });
+   const { control, handleSubmit, setError, formState: { errors } } = useForm();
 
    // Handle form submission to create a new budget category
    const onSubmit = async(data: FieldValues) => {
@@ -57,9 +52,11 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
 
          // Prepare the payload for the API request
          const payload = {
-            name: data.name.trim(),
-            type: data.type,
+            budget_category_id: parentCategory.budget_category_id,
+            name: data.name,
+            type,
             goal: Number(data.goal),
+            category_order: parentCategory.categories.length,
             month,
             year
          };
@@ -73,23 +70,20 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
          if (typeof result === "object" && result?.budget_category_id) {
             // Add the new category to Redux store
             dispatch(addBudgetCategory({
-               type: data.type,
+               type,
                category: {
+                  ...payload,
                   budget_category_id: result.budget_category_id,
-                  name: data.name.trim(),
-                  type: data.type,
                   goalIndex: 0,
                   goals: [{
                      month,
                      year,
                      goal: Number(data.goal)
-                  }],
-                  category_order: parentCategories.length
+                  }]
                }
             }));
 
-            // Reset and close the form after successful creation
-            reset();
+            // Close the form after successful creation
             onClose();
          }
       } catch (error) {
@@ -101,7 +95,7 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
       <form onSubmit = { handleSubmit(onSubmit) }>
          <Stack
             direction = "column"
-            spacing = { 2 }
+            spacing = { 1  }
          >
             <Controller
                control = { control }
@@ -115,6 +109,7 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
+                           autoComplete = "none"
                            disabled = { isSubmitting }
                            id = "constructor-name"
                            label = "Name"
@@ -154,39 +149,21 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
                   )
                }
             />
-            <Controller
-               control = { control }
-               defaultValue = { parentType }
-               name = "type"
-               render = {
-                  ({ field }) => (
-                     <FormControl
-                        disabled = { isSubmitting }
-                        error = { Boolean(errors.type) }
-                        sx = { { px: 0.75 } }
-                     >
-                        <InputLabel
-                           htmlFor = "constructor-type"
-                           sx = { { px: 0.75 } }
-                           variant = "standard"
-                        >
-                           Type
-                        </InputLabel>
-                        <NativeSelect
-                           { ...field }
-                           id = "constructor-type"
-                        >
-                           <option value = "Income">Income</option>
-                           <option value = "Expenses">Expenses</option>
-                        </NativeSelect>
-                     </FormControl>
-                  )
-               }
-            />
             <Stack
                direction = "column"
                spacing = { 1 }
             >
+               <Button
+                  className = "btn-primary"
+                  color = "info"
+                  disabled = { isSubmitting }
+                  fullWidth = { true }
+                  onClick = { onClose }
+                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
+                  variant = "contained"
+               >
+                  Cancel
+               </Button>
                <Button
                   color = "primary"
                   disabled = { isSubmitting }
@@ -197,16 +174,6 @@ export default function ConstructCategory({ onClose, isSubmitting, parentType }:
                   variant = "contained"
                >
                   Create
-               </Button>
-               <Button
-                  color = "inherit"
-                  disabled = { isSubmitting }
-                  fullWidth = { true }
-                  onClick = { onClose }
-                  startIcon = { <FontAwesomeIcon icon = { faRotateLeft } /> }
-                  variant = "outlined"
-               >
-                  Cancel
                </Button>
             </Stack>
          </Stack>

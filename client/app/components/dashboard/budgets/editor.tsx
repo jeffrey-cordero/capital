@@ -1,4 +1,4 @@
-import { faPenToSquare, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Button,
@@ -20,7 +20,7 @@ import { updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 interface EditCategoryProps {
-   category: BudgetCategory & { goals: any[] };
+   category: BudgetCategory;
    onCancel: () => void;
    isSubmitting: boolean;
 }
@@ -169,6 +169,7 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
+                           autoComplete = "none"
                            disabled = { isSubmitting }
                            id = "editor-name"
                            label = "Name"
@@ -257,7 +258,7 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                   disabled = { isSubmitting }
                   fullWidth = { true }
                   onClick = { onCancel }
-                  startIcon = { <FontAwesomeIcon icon = { faRotateLeft } /> }
+                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
                   variant = "outlined"
                >
                   Cancel
