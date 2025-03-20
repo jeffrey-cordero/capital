@@ -6,7 +6,6 @@ import {
    LinearProgress,
    Stack,
    Typography,
-   Zoom
 } from "@mui/material";
 import { type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
@@ -29,55 +28,48 @@ interface CategoryItemProps {
 // Component to render a single category with its respective progress bar and progress in the current period
 function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainCategory = false }: CategoryItemProps) {
    return (
-      <Zoom
-         in = { true }
-         mountOnEnter = { true }
-         timeout = { 1000 }
-         unmountOnExit = { true }
-      >
-         <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
+
+      <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
+         <Stack
+            direction = "row"
+            sx = { { justifyContent: "space-between", mb: 1 } }
+         >
             <Stack
                direction = "row"
-               sx = { { justifyContent: "space-between", mb: 1 } }
+               spacing = { 1 }
+               sx = { { alignItems: "center" } }
             >
-               <Stack
-                  direction = "row"
-                  spacing = { 1 }
-                  sx = { { alignItems: "center" } }
-               >
-                  <Typography variant = "h6">
-                     { name }
-                  </Typography>
-                  {
-                     onEditClick && (
-                        <FontAwesomeIcon
-                           className = "primary"
-                           icon = { faPenToSquare }
-                           onClick = { onEditClick }
-                           size = "lg"
-                           style = { { cursor: "pointer", zIndex: 1000 } }
-                        />
-                     )
-                  }
-               </Stack>
                <Typography variant = "h6">
-                  { displayCurrency(total) } / { displayCurrency(goal) }
+                  { name }
                </Typography>
-            </Stack>
-
-            <LinearProgress
-               color = { color }
-               sx = {
-                  {
-                     height: "1.65rem",
-                     borderRadius: "12px"
-                  }
+               {
+                  onEditClick && (
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faPenToSquare }
+                        onClick = { onEditClick }
+                        size = "lg"
+                        style = { { cursor: "pointer", zIndex: 1000 } }
+                     />
+                  )
                }
-               value = { progress }
-               variant = "determinate"
-            />
-         </Box>
-      </Zoom>
+            </Stack>
+            <Typography variant = "h6">
+               { displayCurrency(total) } / { displayCurrency(goal) }
+            </Typography>
+         </Stack>
+         <LinearProgress
+            color = { color }
+            sx = {
+               {
+                  height: "1.65rem",
+                  borderRadius: "12px"
+               }
+            }
+            value = { progress }
+            variant = "determinate"
+         />
+      </Box>
    );
 }
 
@@ -142,7 +134,7 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
          { /* Child categories */ }
          <Collapse
             in = { isExpanded }
-            timeout = "auto"
+            timeout = { 500 }
             unmountOnExit = { true }
          >
             <Stack

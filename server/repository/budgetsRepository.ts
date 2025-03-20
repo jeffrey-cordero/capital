@@ -11,7 +11,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       INNER JOIN budgets AS b
       ON b.budget_category_id = bc.budget_category_id
       WHERE bc.user_id = $1
-      ORDER BY b.year DESC, b.month DESC, bc.type DESC, bc.category_order ASC NULLS FIRST;
+      ORDER BY bc.type DESC, bc.category_order ASC NULLS FIRST, b.year DESC, b.month DESC;
    `;
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
 

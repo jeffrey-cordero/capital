@@ -16,7 +16,7 @@ import { useCallback, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
-import AccountCard from "@/components/dashboard/accounts/account";
+import AccountCard from "@/components/dashboard/accounts/card";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 
