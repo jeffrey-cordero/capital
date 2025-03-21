@@ -16,7 +16,7 @@ import {
    verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faBars, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faFeatherPointed, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
@@ -81,7 +81,7 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
                >
                   <Stack
                      direction = "row"
-                     sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" } }
+                     sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", px: 1 } }
                   >
                      <Stack
                         direction = "row"
@@ -92,7 +92,7 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
                            icon = { faBars }
                            { ...listeners }
                            { ...attributes }
-                           style = { { cursor: "grab" } }
+                           style = { { cursor: "grab", outline: "none" } }
                         />
                         <Typography
                            fontWeight = "semibold"
@@ -256,7 +256,7 @@ export default function BudgetCategories({ budget, type, isSubmitting }: BudgetC
                </SortableContext>
             </DndContext>
             { /* New category */ }
-            <Box sx = { { mb: 2 } }>
+            <Box sx = { { mt: 12 } }>
                {
                   !showNewCategoryForm ? (
                      <Button
@@ -264,8 +264,8 @@ export default function BudgetCategories({ budget, type, isSubmitting }: BudgetC
                         disabled = { isSubmitting }
                         fullWidth = { true }
                         onClick = { () => displayNewCategoryForm(true) }
-                        startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-                        variant = "outlined"
+                        startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
+                        variant = "contained"
                      >
                         Add Category
                      </Button>

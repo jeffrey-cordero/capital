@@ -1,4 +1,4 @@
-import { faClockRotateLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faFeatherPointed } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Button,
@@ -46,7 +46,7 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
          const fields = constructSchema.safeParse(data);
 
          if (!fields.success) {
-            handleValidationErrors(fields, setError as any);
+            handleValidationErrors(fields, setError);
             return;
          }
 
@@ -169,7 +169,7 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
                   disabled = { isSubmitting }
                   fullWidth = { true }
                   loading = { isSubmitting }
-                  startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+                  startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
                   type = "submit"
                   variant = "contained"
                >

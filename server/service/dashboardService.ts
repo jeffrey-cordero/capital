@@ -131,7 +131,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 async function fetchRSSFeed(): Promise<News> {
    // Retrieve the latest financial news from the Dow Jones RSS feed
    const response = await fetch(
-      "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+      "https://www.spglobal.com/spdji/en/rss/rss-details/?rssFeedName=mw_topstories"
    ).then(async(response) => await response.text());
    const parsedData = await parseStringPromise(response);
 
@@ -155,8 +155,8 @@ export async function fetchNews(): Promise<ServerResponse> {
          return sendServiceResponse(200, "Financial News", JSON.parse(cache) as News);
       }
 
-      // Cache miss - fetch fresh news data
-      const data = await fetchRSSFeed();
+      // Rely on backup news file for now until RSS feed is normalized due to API changes
+      const data = await loadBackupNews();
       setCacheValue("news", NEWS_CACHE_DURATION, JSON.stringify(data));
 
       return sendServiceResponse(200, "Financial News", data);

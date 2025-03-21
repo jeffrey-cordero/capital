@@ -20,7 +20,7 @@ import BudgetCategories from "@/components/dashboard/budgets/categories";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
-import { updateBudget } from "@/redux/slices/budgets";
+import { comparePeriods, updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 // Create a dedicated schema for budget goal updates
@@ -82,7 +82,7 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
 
          // Determine if we need to create or update a budget entry for Income or Expenses
          const currentGoal = budget.goals[budget.goalIndex];
-         const isCurrentPeriod = currentGoal.month === period.month && currentGoal.year === period.year;
+         const isCurrentPeriod = comparePeriods(currentGoal, period) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Submit the API request
@@ -95,7 +95,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
             // Update Redux store
             dispatch(updateBudget({
                type,
-               isMainCategory: true,
                budget_category_id: budget.budget_category_id,
                goal: validationResult.data.goal
             }));

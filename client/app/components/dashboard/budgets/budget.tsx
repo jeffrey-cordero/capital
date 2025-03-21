@@ -5,7 +5,7 @@ import {
    Collapse,
    LinearProgress,
    Stack,
-   Typography,
+   Typography
 } from "@mui/material";
 import { type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
@@ -25,10 +25,8 @@ interface CategoryItemProps {
    isMainCategory?: boolean;
 }
 
-// Component to render a single category with its respective progress bar and progress in the current period
 function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainCategory = false }: CategoryItemProps) {
    return (
-
       <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
          <Stack
             direction = "row"
@@ -133,8 +131,8 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
          </Stack>
          { /* Child categories */ }
          <Collapse
+            easing = { { enter: "linear", exit: "linear" } }
             in = { isExpanded }
-            timeout = { 500 }
             unmountOnExit = { true }
          >
             <Stack
@@ -154,8 +152,16 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
                               exit = { { opacity: 0, y: 10 } }
                               initial = { { opacity: 0, y: -10 } }
                               key = { category.budget_category_id }
-                              layout = { true }
-                              transition = { { duration: 0.2, ease: "easeInOut" } }
+                              layout = "position"
+                              transition = {
+                                 {
+                                    type: "spring",
+                                    stiffness: 100,
+                                    damping: 15,
+                                    mass: 1,
+                                    duration: 0.1
+                                 }
+                              }
                            >
                               <CategoryItem
                                  color = { color }

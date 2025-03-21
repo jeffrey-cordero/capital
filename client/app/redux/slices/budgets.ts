@@ -5,7 +5,7 @@ import { getCurrentDate } from "@/lib/dates";
 
 type Period = { month: number, year: number };
 
-const calculateNewPeriod = (month: number, year: number, direction: "previous" | "next"): Period => {
+const calculateNewPeriod = ({ month, year }: Period, direction: "previous" | "next"): Period => {
    if (direction === "previous") {
       return { month: month === 1 ? 12 : month - 1, year: month === 1 ? year - 1 : year };
    } else {
@@ -13,11 +13,11 @@ const calculateNewPeriod = (month: number, year: number, direction: "previous" |
    }
 };
 
-export const comparePeriods = (period1: Period, period2: Period): number => {
-   // Return 0 if the periods are the same, 1 if period1 is before period2, and -1 if period1 is after period2
-   if (period1.year === period2.year && period1.month === period2.month) {
+export const comparePeriods = (p1: Period, p2: Period): number => {
+   // Return 0 if the periods are the same, 1 if p1 is before p2, and -1 if p1 is after p2
+   if (p1.year === p2.year && p1.month === p2.month) {
       return 0;
-   } else if (period1.year < period2.year || (period1.year === period2.year && period1.month < period2.month)) {
+   } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
       return 1;
    } else {
       return -1;
@@ -39,33 +39,35 @@ const budgetsSlice = createSlice({
       setBudgets(state, action: PayloadAction<OrganizedBudgets>) {
          state.value = action.payload;
       },
-      updateBudget(state, action: PayloadAction<{ type: "Income" | "Expenses", budget_category_id: string, goal: number, isMainCategory?: boolean }>) {
-         const { type, budget_category_id, goal, isMainCategory } = action.payload;
+      updateBudget(state, action: PayloadAction<{ type: "Income" | "Expenses", budget_category_id: string, goal: number }>) {
+         const { type, budget_category_id, goal } = action.payload;
          const { month, year } = state.value.period;
+         const isMainCategory = state.value[type].budget_category_id === budget_category_id;
 
          // Get the respective category
          const category = isMainCategory ? state.value[type] : state.value[type].categories.find(
             c => c.budget_category_id === budget_category_id
          );
 
-         if (!category) return; // Ignore invalid category payloads
+         if (!category) return; // Ignore invalid categories
 
          // Calculate the difference in time periods between the current goal and the new goal periods
          const timePeriodDifference = comparePeriods(category.goals[category.goalIndex], { month, year });
 
          if (timePeriodDifference !== 0) {
-            // A difference of 1 indicates a previous period, so we increment the goal index
-            const increment = timePeriodDifference === 1 ? 1 : 0;
+            // Handle new budgets that are either closer or further from current goal record
+            const goalIndexIncrement = timePeriodDifference === 1 ? 1 : 0; // Closer periods remain at the same index
+            const goalIndexAdjustment = Math.max(0, category.goalIndex + goalIndexIncrement);
 
-            // Insert the new goal at the correct position
-            category.goals.splice(category.goalIndex + increment, 0, { year, month, goal });
+            // Insert the new goal record
+            category.goals.splice(goalIndexAdjustment, 0, { year, month, goal });
 
             // Update the goal index accordingly
-            category.goalIndex += increment;
+            category.goalIndex = goalIndexAdjustment;
             return;
          }
 
-         // Update the existing goal
+         // Update the existing goal record
          category.goals[category.goalIndex].goal = goal;
       },
       updateBudgetCategoryOrder(state, action: PayloadAction<{
@@ -139,7 +141,8 @@ const budgetsSlice = createSlice({
 
          const { direction } = action.payload;
          const { month, year } = calculateNewPeriod(
-            state.value.period.month, state.value.period.year, direction
+            { month: state.value.period.month, year: state.value.period.year },
+            direction
          );
 
          // Update the current period state

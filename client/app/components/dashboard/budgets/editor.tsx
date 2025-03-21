@@ -16,7 +16,7 @@ import { useNavigate } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
-import { updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
+import { comparePeriods, updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 interface EditCategoryProps {
@@ -44,106 +44,84 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
       }
    });
 
+   console.log(category);
+
    const onSubmit = async(data: FieldValues) => {
       try {
-         // Identify which fields have actually changed
-         // If nothing changed, just cancel
          if (Object.keys(dirtyFields).length === 0) {
-            onCancel();
+            onCancel(); // No changes
             return;
          }
 
-         // Track update operations for rollback if needed
-         const updates = { category: false, budget: false };
+         // Prepare payloads for updates
+         const categoryPayload = {
+            name: data.name ?? undefined,
+            type: data.type ?? undefined
+         };
+         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
+         const categoryUpdates = Boolean(categoryPayload.name || categoryPayload.type);
 
-         // Handle category updates (name and/or type)
-         if ("name" in data || "type" in data) {
-            // Extract and validate only the category fields
-            const categoryUpdates = {
-               ...(data.name !== undefined && { name: data.name }),
-               ...(data.type !== undefined && { type: data.type })
-            };
-
-            // Validate category-specific fields
-            const categoryFields = updateCategorySchema.safeParse(categoryUpdates);
-
-            if (!categoryFields.success) {
-               handleValidationErrors(categoryFields, setError as any);
-               return;
-            }
-
-            const payload = {
-               name: data.name ?? undefined,
-               type: data.type ?? undefined
-            };
-
-            // Send API request to update category
-            const categoryResponse = await sendApiRequest(
-               `dashboard/budgets/category/${category.budget_category_id}`, "PUT", payload, dispatch, navigate, setError
-            );
-
-            // Handle successful response
-            if (categoryResponse === 204) {
-               // Update the category in Redux store
-               dispatch(updateBudgetCategory({
-                  type: category.type,
-                  updates: {
-                     ...payload,
-                     budget_category_id: category.budget_category_id
-                  }
-               }));
-               updates.category = true;
-            } else {
-               setError("name", { message: "Failed to update category" });
-            }
+         if (!categoryFields.success) {
+            // Invalid category updates
+            handleValidationErrors(categoryFields, setError);
+            return;
          }
 
-         // Handle budget goal update
-         if ("goal" in data) {
-            // Validate goal value
-            const goalField = updateBudgetGoalSchema.safeParse({
-               goal: Number(data.goal)
-            });
+         // Prepare payload for budget update, which may be a update or create request based on the current period
+         const budgetPayload = {
+            goal: data.goal ? Number(data.goal) : undefined,
+            budget_category_id: category.budget_category_id,
+            month,
+            year
+         };
+         const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
+         const budgetUpdates = Boolean(budgetPayload.goal);
 
-            if (!goalField.success) {
-               handleValidationErrors(goalField, setError as any);
-               return;
-            }
+         if (!budgetFields.success) {
+            // Invalid budget updates
+            handleValidationErrors(budgetFields, setError);
+            return;
+         }
 
-            // Create payload for budget update
-            const payload = {
+         const isCurrentPeriod = comparePeriods(category.goals[category.goalIndex], { month, year }) === 0;
+         const method = isCurrentPeriod ? "PUT" : "POST";
+
+         // Send potential  updates in parallel requests
+         const [categoryResponse, budgetResponse] = await Promise.all([
+            categoryUpdates ? sendApiRequest<number>(
+               `dashboard/budgets/category/${category.budget_category_id}`, "PUT", categoryPayload, dispatch, navigate, setError
+            ) : Promise.resolve(null),
+            budgetUpdates ? sendApiRequest<{ success: boolean } | number>(
+               `dashboard/budgets/budget/${category.budget_category_id}`, method, budgetPayload, dispatch, navigate, setError
+            ) : Promise.resolve(null)
+         ]);
+
+         const categorySuccess = !categoryUpdates || categoryResponse === 204;
+         const budgetSuccess = !budgetUpdates || (budgetResponse instanceof Object && budgetResponse.success) || budgetResponse === 204;
+
+         // Handle successful responses
+         if (categoryUpdates && categorySuccess) {
+            // Update the category on a successful request
+            dispatch(updateBudgetCategory({
+               type: category.type,
+               updates: {
+                  ...categoryPayload,
+                  budget_category_id: category.budget_category_id
+               }
+            }));
+         }
+
+         if (budgetUpdates && budgetSuccess) {
+            // Update the budget on a successful request
+            dispatch(updateBudget({
+               type: data.type || category.type,
                budget_category_id: category.budget_category_id,
-               goal: Number(data.goal),
-               month,
-               year
-            };
-
-            // Send API request to update budget
-            const budgetResponse = await sendApiRequest(
-               `dashboard/budgets/budget/${category.budget_category_id}`, "PUT", payload, dispatch, navigate, setError
-            );
-
-            // Handle successful response
-            if (budgetResponse === 204) {
-               // Update the budget in Redux store
-               dispatch(updateBudget({
-                  type: data.type || category.type,
-                  budget_category_id: category.budget_category_id,
-                  goal: Number(data.goal)
-               }));
-
-               updates.budget = true;
-            } else {
-               setError("goal", { message: "Failed to update budget goal" });
-            }
+               goal: Number(data.goal)
+            }));
          }
 
-         // Only close form if all attempted updates succeeded
-         const allUpdatesSucceeded =
-            (updates.category || !("name" in data || "type" in data)) &&
-            (updates.budget || !("goal" in data));
-
-         if (allUpdatesSucceeded) {
+         if (categorySuccess && budgetSuccess) {
+            // sendApiRequest will handle errors through setError or notification
             onCancel();
          }
       } catch (error) {
