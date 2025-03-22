@@ -21,19 +21,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import ConstructCategory from "@/components/dashboard/budgets/constructor";
 import DeleteBudget from "@/components/dashboard/budgets/delete";
 import EditCategory from "@/components/dashboard/budgets/editor";
-import { ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { displayCurrency, ellipsis } from "@/lib/display";
 import { updateBudgetCategoryOrder } from "@/redux/slices/budgets";
+import type { RootState } from "@/redux/store";
+
 interface BudgetCategoriesProps {
-   budget: OrganizedBudget;
-   isSubmitting: boolean;
    type: "Income" | "Expenses";
 }
 
@@ -41,13 +40,11 @@ interface CategoryItemProps {
    category: BudgetCategory;
    editingCategory: string | null;
    setEditingCategory: (_id: string | null) => void;
-   isSubmitting: boolean;
    type: "Income" | "Expenses";
 }
 
-function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitting, type }: CategoryItemProps) {
+function CategoryItem({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) {
    const isEditing = editingCategory === category.budget_category_id;
-   const amount = 0; // Placeholder until transactions are implemented
    const goal = category.goals[category.goalIndex].goal;
 
    // Configure drag and drop functionality
@@ -71,33 +68,32 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
             isEditing ? (
                <EditCategory
                   category = { category }
-                  isSubmitting = { isSubmitting }
                   onCancel = { () => setEditingCategory(null) }
                />
             ) : (
                <Stack
-                  direction = "column"
+                  direction = "row"
                   spacing = { 1 }
+                  sx = { { alignItems: "center", px: 1 } }
                >
+                  <FontAwesomeIcon
+                     icon = { faBars }
+                     { ...listeners }
+                     { ...attributes }
+                     style = { { cursor: "grab", outline: "none" } }
+                  />
                   <Stack
                      direction = "row"
-                     sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", px: 1 } }
+                     sx = { { width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" } }
                   >
                      <Stack
                         direction = "row"
                         spacing = { 1 }
                         sx = { { alignItems: "center" } }
                      >
-                        <FontAwesomeIcon
-                           icon = { faBars }
-                           { ...listeners }
-                           { ...attributes }
-                           style = { { cursor: "grab", outline: "none" } }
-                        />
                         <Typography
-                           fontWeight = "semibold"
-                           sx = { { ...ellipsis, maxWidth: "95%", pr: 3 } }
-                           variant = "subtitle2"
+                           sx = { { ...ellipsis, maxWidth: "320px", pr: 1 } }
+                           variant = "h6"
                         >
                            { category.name }
                         </Typography>
@@ -107,8 +103,11 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
                         spacing = { 1 }
                         sx = { { alignItems: "center" } }
                      >
-                        <Typography variant = "subtitle2">
-                           { displayCurrency(amount) } / { displayCurrency(goal) }
+                        <Typography
+                           sx = { { ...ellipsis, fontWeight: "600" } }
+                           variant = "subtitle1"
+                        >
+                           { displayCurrency(goal) }
                         </Typography>
                         <FontAwesomeIcon
                            className = "primary"
@@ -118,8 +117,7 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
                            style = { { cursor: "pointer" } }
                         />
                         <DeleteBudget
-                           category = { category }
-                           disabled = { isSubmitting }
+                           budget_category_id = { category.budget_category_id }
                            type = { type }
                         />
                      </Stack>
@@ -131,10 +129,11 @@ function CategoryItem({ category, editingCategory, setEditingCategory, isSubmitt
    );
 }
 
-export default function BudgetCategories({ budget, type, isSubmitting }: BudgetCategoriesProps) {
+export default function BudgetCategories({ type }: BudgetCategoriesProps) {
    // Handle form submission for creating and updating budget subcategories
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate();
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
+
    const [editingCategory, setEditingCategory] = useState<string | null>(null);
    const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
@@ -204,7 +203,7 @@ export default function BudgetCategories({ budget, type, isSubmitting }: BudgetC
 
             // Sync new order with server
             sendApiRequest(
-               "dashboard/budgets/category/ordering", "PUT", { categories: ordering  }, dispatch, navigate
+               "dashboard/budgets/category/ordering", "PUT", { categories: ordering }, dispatch, navigate
             ).then((result) => {
                if (result !== 204) {
                   throw new Error("Failed to update category order");
@@ -222,63 +221,59 @@ export default function BudgetCategories({ budget, type, isSubmitting }: BudgetC
    }, [budget, dispatch, navigate, type]);
 
    return (
-      <ModalSection title = "Categories">
-         <Stack
-            direction = "column"
-            spacing = { 2 }
-            sx = { { mt: 2 } }
+      <Stack
+         direction = "column"
+         spacing = { 2 }
+         sx = { { mt: 1 } }
+      >
+         { /* Existing sub categories */ }
+         <DndContext
+            collisionDetection = { closestCenter }
+            onDragEnd = { handleDragEnd }
+            sensors = { sensors }
          >
-            { /* Existing sub categories */ }
-            <DndContext
-               collisionDetection = { closestCenter }
-               onDragEnd = { handleDragEnd }
-               sensors = { sensors }
+            <SortableContext
+               items = { categoryIds }
+               strategy = { verticalListSortingStrategy }
             >
-               <SortableContext
-                  items = { categoryIds }
-                  strategy = { verticalListSortingStrategy }
-               >
-                  {
-                     budget.categories.map((category) => {
-
-                        return (
-                           <CategoryItem
-                              category = { category }
-                              editingCategory = { editingCategory }
-                              isSubmitting = { isSubmitting }
-                              key = { category.budget_category_id }
-                              setEditingCategory = { setEditingCategory }
-                              type = { type }
-                           />
-                        );
-                     })
-                  }
-               </SortableContext>
-            </DndContext>
-            { /* New category */ }
-            <Box sx = { { mt: 12 } }>
                {
-                  !showNewCategoryForm ? (
-                     <Button
-                        color = "primary"
-                        disabled = { isSubmitting }
-                        fullWidth = { true }
-                        onClick = { () => displayNewCategoryForm(true) }
-                        startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
-                        variant = "contained"
-                     >
-                        Add Category
-                     </Button>
-                  ) : (
-                     <ConstructCategory
-                        isSubmitting = { isSubmitting }
-                        onClose = { handleCloseConstructCategory }
-                        type = { type }
-                     />
-                  )
+                  budget.categories.map((category) => {
+
+                     return (
+                        <CategoryItem
+                           category = { category }
+                           editingCategory = { editingCategory }
+                           key = { category.budget_category_id }
+                           setEditingCategory = { setEditingCategory }
+                           type = { type }
+                        />
+                     );
+                  })
                }
-            </Box>
-         </Stack>
-      </ModalSection>
+            </SortableContext>
+         </DndContext>
+         { /* New category */ }
+         <Box sx = { { mt: 12 } }>
+            {
+               !showNewCategoryForm ? (
+                  <Button
+                     className = "btn-primary"
+                     color = "primary"
+                     fullWidth = { true }
+                     onClick = { () => displayNewCategoryForm(true) }
+                     startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
+                     variant = "contained"
+                  >
+                     Add Category
+                  </Button>
+               ) : (
+                  <ConstructCategory
+                     onClose = { handleCloseConstructCategory }
+                     type = { type }
+                  />
+               )
+            }
+         </Box>
+      </Stack>
    );
 }

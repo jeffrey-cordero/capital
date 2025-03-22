@@ -22,7 +22,6 @@ import { type RootState } from "@/redux/store";
 interface EditCategoryProps {
    category: BudgetCategory;
    onCancel: () => void;
-   isSubmitting: boolean;
 }
 
 // Create a dedicated schema for updates - partial to allow partial updates
@@ -31,20 +30,18 @@ const updateCategorySchema = budgetCategorySchema.partial().pick({ name: true, t
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 // Component for editing an existing budget category
-export default function EditCategory({ category, onCancel, isSubmitting }: EditCategoryProps) {
+export default function EditCategory({ category, onCancel }: EditCategoryProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
    // Initialize form with current category values
-   const { control, handleSubmit, setError, formState: { errors, dirtyFields } } = useForm({
+   const { control, handleSubmit, setError, formState: { errors, dirtyFields, isSubmitting } } = useForm({
       defaultValues: {
          name: category.name,
          goal: category.goals[category.goalIndex].goal,
          type: category.type as "Income" | "Expenses"
       }
    });
-
-   console.log(category);
 
    const onSubmit = async(data: FieldValues) => {
       try {
@@ -130,7 +127,11 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
    };
 
    return (
-      <form onSubmit = { handleSubmit(onSubmit) }>
+      <form
+         data-dirty = { Object.keys(dirtyFields).length > 0 }
+         id = "editor-form"
+         onSubmit = { handleSubmit(onSubmit) }
+      >
          <Stack
             direction = "column"
             spacing = { 2 }
@@ -148,7 +149,6 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                            { ...field }
                            aria-label = "Name"
                            autoComplete = "none"
-                           disabled = { isSubmitting }
                            id = "editor-name"
                            label = "Name"
                            type = "text"
@@ -173,7 +173,6 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"
-                           disabled = { isSubmitting }
                            id = "editor-goal"
                            inputProps = { { step: 0.01, min: 0 } }
                            label = "Goal"
@@ -194,7 +193,6 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                render = {
                   ({ field }) => (
                      <FormControl
-                        disabled = { isSubmitting }
                         error = { Boolean(errors.type) }
                         sx = { { px: 0.75 } }
                      >
@@ -217,12 +215,23 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                }
             />
             <Stack
-               direction = "row"
+               direction = { { xs: "column", sm: "row" } }
                spacing = { 1 }
             >
                <Button
-                  color = "primary"
+                  className = "btn-primary"
+                  color = "info"
                   disabled = { isSubmitting }
+                  fullWidth = { true }
+                  onClick = { onCancel }
+                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
+                  variant = "contained"
+               >
+                  Cancel
+               </Button>
+               <Button
+                  className = "btn-primary"
+                  color = "primary"
                   fullWidth = { true }
                   loading = { isSubmitting }
                   startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
@@ -230,16 +239,6 @@ export default function EditCategory({ category, onCancel, isSubmitting }: EditC
                   variant = "contained"
                >
                   Save
-               </Button>
-               <Button
-                  color = "inherit"
-                  disabled = { isSubmitting }
-                  fullWidth = { true }
-                  onClick = { onCancel }
-                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
-                  variant = "outlined"
-               >
-                  Cancel
                </Button>
             </Stack>
          </Stack>

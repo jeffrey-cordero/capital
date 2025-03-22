@@ -13,20 +13,17 @@ import { Box, Grow, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
 import { useCallback, useMemo } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import AccountCard from "@/components/dashboard/accounts/card";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
+import type { RootState } from "@/redux/store";
 
-interface AccountsProps {
-   accounts: Account[];
-}
-
-export default function Accounts({ accounts }: AccountsProps) {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
+export default function Accounts() {
+   const dispatch = useDispatch(), navigate = useNavigate();
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const accountIds = useMemo(() => {
       return accounts.map(account => account.account_id ?? "");
    }, [accounts]);

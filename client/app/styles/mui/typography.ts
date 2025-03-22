@@ -34,7 +34,7 @@ export const typography: TypographyOptions = {
       fontWeight: 600
    },
    subtitle1: {
-      fontSize: defaultTheme.typography.pxToRem(18)
+      fontSize: defaultTheme.typography.pxToRem(16)
    },
    subtitle2: {
       fontSize: defaultTheme.typography.pxToRem(14),

@@ -7,7 +7,7 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import { type OrganizedBudgets } from "capital/budgets";
+import { type Period } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -17,36 +17,37 @@ import { getCurrentDate, months } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
-export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
+type EditState = { state: "view" | "edit", type: "Income" | "Expenses", displayWarning: boolean };
+
+export default function Budgets() {
    const dispatch = useDispatch(), theme = useTheme();
-   const [editState, setEditState] = useState<{ state: "view" | "edit", type: "Income" | "Expenses" }>({
-      state: "view",
-      type: "Income"
-   });
-   const today = useMemo(() => getCurrentDate(), []);
-   const { period } = useSelector(
-      (state: RootState) => state.budgets.value
-   ) as  { period: { month: number, year: number } };
+   const [editState, setEditState] = useState<EditState>(
+      { state: "view", type: "Income", displayWarning: false }
+   );
+   const period: Period = useSelector((state: RootState) => state.budgets.value.period);
 
    // Prevent future month selections
+   const today: Date = useMemo(() => getCurrentDate(), []);
    const nextMonthDisabled = useMemo(() => {
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period, today]);
 
    // Handle edit button click to open the budget modal
-   const handleEditClick = useCallback((type: "Income" | "Expenses") => {
-      setEditState({
-         state: "edit",
-         type
-      });
+   const handleOpenModal = useCallback((type: "Income" | "Expenses") => {
+      setEditState({ state: "edit", displayWarning: false, type });
    }, []);
 
-   // Close the budget modal
-   const closeModal = useCallback(() => {
-      setEditState(prev => ({
-         ...prev,
-         state: "view"
-      }));
+   // Close the budget modal, but only if there are no dirty forms
+   const closeModal = useCallback((force?: boolean) => {
+      const containsDirtyForm = ["budget-form", "constructor-form", "editor-form"].some(
+         (form) => document.getElementById(form)?.dataset.dirty === "true"
+      );
+
+      if (containsDirtyForm && !force) {
+         setEditState((prev) => ({ ...prev, displayWarning: true }));
+      } else {
+         setEditState((prev) => ({ ...prev, state: "view" }));
+      }
    }, []);
 
    return (
@@ -89,19 +90,17 @@ export default function Budgets({ budgets }: { budgets: OrganizedBudgets }) {
             sx = { { mt: 2 } }
          >
             <Budget
-               data = { budgets.Income }
-               onEditClick = { () => handleEditClick("Income") }
+               onEditClick = { () => handleOpenModal("Income") }
                type = "Income"
             />
             <Budget
-               data = { budgets.Expenses }
-               onEditClick = { () => handleEditClick("Expenses") }
+               onEditClick = { () => handleOpenModal("Expenses") }
                type = "Expenses"
             />
          </Stack>
          { /* Modal for editing budgets (Income or Expenses) */ }
          <BudgetForm
-            budget = { budgets[editState.type] }
+            displayWarning = { editState.displayWarning }
             onClose = { closeModal }
             open = { editState.state === "edit" }
             type = { editState.type }

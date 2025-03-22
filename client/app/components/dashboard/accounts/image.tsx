@@ -12,7 +12,7 @@ import {
    Stack
 } from "@mui/material";
 import { accountSchema, images } from "capital/accounts";
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
    type Control,
    Controller,
@@ -37,15 +37,13 @@ interface AccountImageProps {
    clearErrors: UseFormClearErrors<FieldValues>;
    setValue: UseFormSetValue<FieldValues>;
    control: Control<FieldValues>;
-   disabled: boolean;
 }
 
-function AccountImage({
+export default function AccountImage({
    control,
    errors,
    setError,
    clearErrors,
-   disabled,
    value,
    setValue
 }: AccountImageProps) {
@@ -114,7 +112,6 @@ function AccountImage({
          <Button
             className = "btn-primary"
             color = "info"
-            disabled = { disabled }
             fullWidth = { true }
             onClick = { handleOpenModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }
@@ -213,6 +210,3 @@ function AccountImage({
       </Box>
    );
 }
-
-// Memoize the component to prevent unnecessary re-renders
-export default memo(AccountImage);

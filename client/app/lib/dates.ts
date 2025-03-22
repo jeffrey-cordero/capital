@@ -67,8 +67,8 @@ export function timeSinceLastUpdate(date: string) {
       const parts = [];
 
       if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-      if (hours >= 1) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-      if (minutes >= 1) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
+      if (hours >= 1 && hours % 24 !== 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
+      if (minutes >= 1 && minutes % 60 !== 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
 
       return parts.join(", ") + " ago";
    }

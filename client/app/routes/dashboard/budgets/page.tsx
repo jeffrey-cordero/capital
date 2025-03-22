@@ -1,15 +1,10 @@
 import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useSelector } from "react-redux";
 
 import Budgets from "@/components/dashboard/budgets/budgets";
-import { ExpensesPieChart, IncomePieChart } from "@/components/dashboard/budgets/charts";
-import { type RootState } from "@/redux/store";
+import { BudgetPieChart } from "@/components/dashboard/budgets/charts";
 
 export default function Page() {
-   // Get budgets data from Redux store
-   const budgets = useSelector((root: RootState) => root.budgets.value);
-
    return (
       <Container
          maxWidth = "xl"
@@ -35,7 +30,7 @@ export default function Page() {
                   { /* Header image */ }
                   <Box className = "animation-container">
                      <Box
-                        alt = "Accounts"
+                        alt = "Budgets"
                         className = "floating"
                         component = "img"
                         src = "/svg/budget.svg"
@@ -44,19 +39,19 @@ export default function Page() {
                   </Box>
                </Grid>
             </Grow>
-            { /* Budget Summary */ }
+            { /* Budget Summaries */ }
             <Grow
                in = { true }
                mountOnEnter = { true }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               <Grid size = { { xs: 12, lg: 9 } }>
-                  <Budgets budgets = { budgets } />
+               <Grid size = { { xs: 12 } }>
+                  <Budgets />
                </Grid>
             </Grow>
             { /* Budget Charts */ }
-            <Grid size = { { xs: 12, lg: 3 } }>
+            <Grid size = { { xs: 12 } }>
                <Grow
                   in = { true }
                   mountOnEnter = { true }
@@ -65,18 +60,31 @@ export default function Page() {
                >
                   <Grid
                      container = { true }
-                     spacing = { 2 }
                   >
-                     <Grid size = { { xs: 12, md: 6, lg: 12 } }>
-                        <IncomePieChart budgets = { budgets } />
+                     <Grid
+                        size = { { xs: 12 } }
+                        sx = { { textAlign: "center", justifyContent: "center" } }
+                     >
+                        { /* Budgeting image */ }
+                        <Box className = "animation-container">
+                           <Box
+                              alt = "Budgeting"
+                              className = "floating"
+                              component = "img"
+                              src = "/svg/budgeting.svg"
+                              sx = { { width: 500, height: "auto", mb: -5 } }
+                           />
+                        </Box>
                      </Grid>
-                     <Grid size = { { xs: 12, md: 6, lg: 12 } }>
-                        <ExpensesPieChart budgets = { budgets } />
+                     <Grid size = { { xs: 12, md: 6 } }>
+                        <BudgetPieChart type = "Income" />
+                     </Grid>
+                     <Grid size = { { xs: 12, md: 6 } }>
+                        <BudgetPieChart type = "Expenses" />
                      </Grid>
                   </Grid>
                </Grow>
             </Grid>
-
          </Grid>
       </Container>
    );

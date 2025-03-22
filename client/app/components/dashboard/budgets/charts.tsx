@@ -6,10 +6,12 @@ import {
    useTheme
 } from "@mui/material";
 import { PieChart, useDrawingArea } from "@mui/x-charts";
-import { type OrganizedBudgets } from "capital/budgets";
+import { type OrganizedBudget } from "capital/budgets";
 import * as React from "react";
+import { useSelector } from "react-redux";
 
 import { displayCurrency } from "@/lib/display";
+import type { RootState } from "@/redux/store";
 
 interface BudgetCategory {
    name: string;
@@ -109,12 +111,11 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: Bud
    return (
       <Stack
          direction = "column"
-         spacing = { 2 }
+         spacing = { -3 }
          sx = { { flexGrow: 1, textAlign: "center" } }
       >
          <Typography
-            component = "h2"
-            variant = "subtitle2"
+            variant = "h6"
          >
             { title }
          </Typography>
@@ -158,35 +159,27 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: Bud
 }
 
 // Helper function to calculate total budget goals
-const calculateTotal = (budgets: OrganizedBudgets, type: "Income" | "Expenses") => {
+const calculateTotal = (budget: OrganizedBudget) => {
    // Get the most recent month's data
-   const mainGoal: number = budgets[type].goals[budgets[type].goalIndex].goal || 0;
+   const mainGoal: number = budget.goals[budget.goalIndex].goal || 0;
 
    // Sum up all category goals for the most recent month/year
-   const categoryTotal = budgets[type].categories.reduce((acc, record) => {
+   const categoryTotal = budget.categories.reduce((acc, record) => {
       return acc + record.goals[record.goalIndex].goal;
    }, 0);
 
    return { mainGoal, categoryTotal };
 };
 
-// Helper to generate random current amount until transactions are implemented
-const getRandomAmount = (goal: number) => {
-   // Generate a random percentage between 10% and 110% of the goal
-   return Math.round(goal * (0.1 + Math.random()));
-};
-
-export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
+export function BudgetPieChart({ type }: { type: "Income" | "Expenses" }) {
    const theme = useTheme();
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Calculate totals (main goal and category total)
-   const { mainGoal, categoryTotal } = calculateTotal(budgets, "Income");
-
-   // Generate a random current amount for the total (placeholder)
-   const currentTotal = getRandomAmount(mainGoal * 0.8);
+   const { mainGoal, categoryTotal } = calculateTotal(budget);
 
    // Prepare data for pie chart
-   const pieData = budgets.Income.categories.map(category => ({
+   const pieData = budget.categories.map(category => ({
       id: category.budget_category_id,
       value: category.goals[category.goalIndex].goal,
       label: category.name || "",
@@ -196,20 +189,20 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
    if (Math.abs(mainGoal - categoryTotal) > 0) {
       // Add an additional data point for the main goal, if there is a difference
       pieData.unshift({
-         id: "Income",
+         id: type,
          value: Math.abs(mainGoal - categoryTotal),
-         label: "Income",
+         label: type,
          color: theme.palette.primary.light
       });
    }
 
    // Prepare data for progress chart
-   const progressCategories: BudgetCategory[] = budgets.Income.categories.map((category, index) => {
+   const progressCategories: BudgetCategory[] = budget.categories.map((category, index) => {
       const goal = category.goals[category.goalIndex].goal;
       return {
          name: category.name || "Unnamed",
          goal,
-         current: getRandomAmount(goal),
+         current: 0,
          color: `hsl(220, 50%, ${65 - (index * 10)}%)`
       };
    });
@@ -219,61 +212,8 @@ export function IncomePieChart({ budgets }: { budgets: OrganizedBudgets }) {
          <Box sx = { { mt: 4 } }>
             <BudgetProgressChart
                categories = { progressCategories }
-               title = "Income Progress"
-               totalCurrent = { currentTotal }
-               totalGoal = { mainGoal }
-            />
-         </Box>
-      </Box>
-   );
-}
-
-export function ExpensesPieChart({ budgets }: { budgets: OrganizedBudgets }) {
-   const theme = useTheme();
-
-   // Calculate totals
-   const { mainGoal, categoryTotal } = calculateTotal(budgets, "Expenses");
-
-   // Generate a random current amount for the total (placeholder)
-   const currentTotal = getRandomAmount(mainGoal * 0.8);
-
-   // Prepare data for pie chart
-   const pieData = budgets.Expenses.categories.map(category => ({
-      id: category.budget_category_id,
-      value: category.goals[category.goalIndex].goal,
-      label: category.name || "",
-      color: theme.palette.error.main
-   }));
-
-   if (Math.abs(mainGoal - categoryTotal) > 0) {
-      // Add an additional data point for the main goal, if there is a difference
-      pieData.unshift({
-         id: "Expenses",
-         value: Math.abs(mainGoal - categoryTotal),
-         label: "Expenses",
-         color: theme.palette.error.light
-      });
-   }
-
-   // Prepare data for progress chart
-   const progressCategories: BudgetCategory[] = budgets.Expenses.categories.map((category, index) => {
-      const goal = category.goals[category.goalIndex].goal;
-      return {
-         name: category.name || "Unnamed",
-         goal,
-         current: getRandomAmount(goal),
-         color: `hsl(0, 70%, ${65 - (index * 10)}%)`
-      };
-   });
-
-   return (
-      <Box>
-         { /* Add the budget progress chart for Expenses */ }
-         <Box sx = { { mt: 4 } }>
-            <BudgetProgressChart
-               categories = { progressCategories }
-               title = "Expenses Progress"
-               totalCurrent = { currentTotal }
+               title = { type }
+               totalCurrent = { 0 }
                totalGoal = { mainGoal }
             />
          </Box>

@@ -113,7 +113,6 @@ export default function Register() {
                                     { ...field }
                                     autoComplete = "name"
                                     autoFocus = { true }
-                                    disabled = { isSubmitting }
                                     id = "name"
                                     label = "Name"
                                     type = "text"
@@ -138,7 +137,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "none"
-                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
@@ -163,7 +161,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "new-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }
@@ -196,7 +193,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "new-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showVerifyPassword }) }
@@ -229,7 +225,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "email"
-                                    disabled = { isSubmitting }
                                     id = "email"
                                     label = "email"
                                     type = "email"

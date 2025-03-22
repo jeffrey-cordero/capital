@@ -110,7 +110,6 @@ export default function Login() {
                                     { ...field }
                                     autoComplete = "username"
                                     autoFocus = { true }
-                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
@@ -135,7 +134,6 @@ export default function Login() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "current-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }

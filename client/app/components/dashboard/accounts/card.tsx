@@ -29,8 +29,7 @@ interface AccountCardProps {
 type AccountState = "view" | "create" | "update";
 
 export default function AccountCard({ account }: AccountCardProps) {
-   const dispatch = useDispatch();
-   const theme = useTheme();
+   const dispatch = useDispatch(), theme = useTheme();
    const [state, setState] = useState<AccountState>("view");
    const [isResourceError, setIsResourceError] = useState<boolean>(false);
 

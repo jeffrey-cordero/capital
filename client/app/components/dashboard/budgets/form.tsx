@@ -9,7 +9,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { budgetSchema, type OrganizedBudget } from "capital/budgets";
+import { budgetSchema, type OrganizedBudget, type Period } from "capital/budgets";
 import { useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,15 +27,17 @@ import type { RootState } from "@/redux/store";
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 interface BudgetFormProps {
-   budget: OrganizedBudget;
    type: "Income" | "Expenses";
+   displayWarning: boolean;
    open: boolean;
    onClose: () => void;
 }
 
-export default function BudgetForm({ budget, type, open, onClose }: BudgetFormProps) {
+export default function BudgetForm({ type, displayWarning, open, onClose }: BudgetFormProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { period } = useSelector((state: RootState) => state.budgets.value) as { period: { month: number, year: number } };
+
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
+   const period: Period = useSelector((state: RootState) => state.budgets.value.period);
 
    // Setup form with react-hook-form
    const {
@@ -48,14 +50,8 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
 
    // Reset form when modal opens/closes or budget changes
    useEffect(() => {
-      if (open) {
-         reset({
-            goal: budget.goals[budget.goalIndex].goal
-         });
-      } else {
-         reset();
-      }
-   }, [budget, reset, open]);
+      reset(open ? { goal: budget.goals[budget.goalIndex].goal } : undefined);
+   }, [reset, open, budget.goals, budget.goalIndex]);
 
    // Handle budget goal updates with proper validation
    const onSubmit = async(data: FieldValues) => {
@@ -106,7 +102,7 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
 
    return (
       <Modal
-         displayWarning = { Object.keys(dirtyFields).length > 0 }
+         displayWarning = { displayWarning }
          onClose = { onClose }
          open = { open }
          sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, p: { xs: 2, sm: 3 }, maxWidth: "90%" } }
@@ -117,7 +113,11 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
          >
             <ModalSection title = "Goal">
                <Box>
-                  <form onSubmit = { handleSubmit(onSubmit) }>
+                  <form
+                     data-dirty = { Object.keys(dirtyFields).length > 0 }
+                     id = "budget-form"
+                     onSubmit = { handleSubmit(onSubmit) }
+                  >
                      <Stack
                         direction = "column"
                         spacing = { 2 }
@@ -135,7 +135,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                                     <OutlinedInput
                                        { ...field }
                                        aria-label = "Goal"
-                                       disabled = { isSubmitting }
                                        id = "goal"
                                        inputProps = { { step: 0.01, min: 0 } }
                                        label = "Goal"
@@ -156,7 +155,6 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                            <Button
                               className = "btn-primary"
                               color = "primary"
-                              disabled = { isSubmitting }
                               fullWidth = { true }
                               loading = { isSubmitting }
                               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
@@ -170,11 +168,11 @@ export default function BudgetForm({ budget, type, open, onClose }: BudgetFormPr
                   </form>
                </Box>
             </ModalSection>
-            <BudgetCategories
-               budget = { budget }
-               isSubmitting = { isSubmitting }
-               type = { type }
-            />
+            <ModalSection title = "Categories">
+               <BudgetCategories
+                  type = { type }
+               />
+            </ModalSection>
             <ModalSection title = "Transactions">
                <Transactions
                   filter = "budget"

@@ -14,10 +14,9 @@ import { useForm } from "react-hook-form";
 interface ConfirmationProps {
    type: "button" | "icon";
    message: string;
-   disabled: boolean;
    onConfirmation: () => void;
 }
-export default function Confirmation({ message, disabled, onConfirmation, type }: ConfirmationProps) {
+export default function Confirmation({ message, onConfirmation, type }: ConfirmationProps) {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -36,7 +35,6 @@ export default function Confirmation({ message, disabled, onConfirmation, type }
                <Button
                   className = "btn-primary"
                   color = "error"
-                  disabled = { disabled || isSubmitting }
                   fullWidth = { true }
                   loading = { isSubmitting }
                   onClick = { openDialog }
@@ -76,14 +74,12 @@ export default function Confirmation({ message, disabled, onConfirmation, type }
                <DialogActions>
                   <form onSubmit = { handleSubmit(onConfirmation) }>
                      <Button
-                        disabled = { disabled || isSubmitting }
                         onClick = { closeDialog }
                      >
                         No
                      </Button>
                      <Button
                         autoFocus = { true }
-                        disabled = { disabled || isSubmitting }
                         loading = { isSubmitting }
                         type = "submit"
                      >

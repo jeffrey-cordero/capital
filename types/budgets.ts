@@ -85,6 +85,7 @@ export const budgetCategorySchema = z.object({
    })).nullable()
 });
 
+export type Period = { month: number, year: number };
 export type BudgetType = "Income" | "Expenses";
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 export type BudgetGoals = Omit<Budget, "budget_category_id">;
@@ -100,8 +101,5 @@ export type OrganizedBudget = {
 export interface OrganizedBudgets {
    Income: OrganizedBudget;
    Expenses: OrganizedBudget;
-   period: {
-      month: number;
-      year: number;
-   }
+   period: Period;
 }

@@ -18,8 +18,7 @@ import { type News, type Story } from "capital/news";
 import { useState } from "react";
 
 import { Expand } from "@/components/global/expand";
-import { timeSinceLastUpdate } from "@/lib/dates";
-import { ellipsis } from "@/lib/display";
+import { displayDate, ellipsis } from "@/lib/display";
 
 // Regex to validate MarketWatch image URLs
 const MARKET_WATCH_IMAGE_REGEX = /^https:\/\/images\.mktw\.net\/.*/;
@@ -84,7 +83,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: StoryItemProp
                         { author }
                      </Typography>
                      <Typography variant = "caption">
-                        { timeSinceLastUpdate(publishDate) }
+                        { displayDate(publishDate) }
                      </Typography>
                   </Stack>
                   <IconButton
@@ -180,8 +179,6 @@ interface StoriesProps {
 export default function Stories({ data }: StoriesProps) {
    // Safely access news items with optional chaining
    const newsItems = (data?.channel?.[0]?.item || []).slice(0, 10);
-
-   console.log(newsItems);
 
    return (
       <Box

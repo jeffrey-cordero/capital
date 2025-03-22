@@ -92,7 +92,7 @@ function Warning({ open, onClose, onCancel }: WarningProps) {
 
 interface ModalProps {
    open: boolean;
-   onClose: () => void;
+   onClose: (_force?: boolean) => void;
    children: React.ReactNode;
    sx?: SxProps<any>;
    displayWarning?: boolean;
@@ -132,7 +132,8 @@ export function Modal({ open, onClose, children, sx, displayWarning = false }: M
       setWarningOpen(false);
 
       if (confirmed) {
-         onClose();
+         // Force-close the modal, regardless of dirty fields checkpoints
+         onClose(true);
       }
    }, [onClose]);
 

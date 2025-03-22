@@ -35,7 +35,7 @@ interface AccountFormProps {
 
 export default function AccountForm({ account, open, onClose }: AccountFormProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const accounts = useSelector((root: RootState) => root.accounts.value);
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const updating = account !== undefined;
 
    // Form setup with react-hook-form
@@ -176,7 +176,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        aria-label = "Name"
                                        autoComplete = "none"
                                        autoFocus = { true }
-                                       disabled = { isSubmitting }
                                        id = "name"
                                        label = "Name"
                                        type = "text"
@@ -202,7 +201,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                     <OutlinedInput
                                        { ...field }
                                        aria-label = "Balance"
-                                       disabled = { isSubmitting }
                                        id = "balance"
                                        inputProps = { { step: 0.01 } }
                                        label = "Balance"
@@ -224,7 +222,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                            render = {
                               ({ field }) => (
                                  <FormControl
-                                    disabled = { isSubmitting }
                                     error = { Boolean(errors.type) }
                                     sx = { { px: 0.75 } }
                                  >
@@ -262,7 +259,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                            <AccountImage
                               clearErrors = { clearErrors }
                               control = { control }
-                              disabled = { isSubmitting }
                               errors = { errors }
                               setError = { setError }
                               setValue = { setValue }
@@ -271,7 +267,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                            <Button
                               className = "btn-primary"
                               color = "primary"
-                              disabled = { isSubmitting }
                               fullWidth = { true }
                               loading = { isSubmitting }
                               startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
@@ -284,7 +279,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               updating && (
                                  <AccountDeletion
                                     account = { account }
-                                    disabled = { isSubmitting }
                                  />
                               )
                            }
@@ -299,7 +293,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   <ModalSection title = "Analytics">
                      <AccountHistory
                         account = { account }
-                        disabled = { isSubmitting }
                      />
                   </ModalSection>
                )

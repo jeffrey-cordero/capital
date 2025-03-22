@@ -27,17 +27,16 @@ const constructSchema = budgetCategorySchema.omit(
 
 interface ConstructCategoryProps {
    onClose: () => void;
-   isSubmitting: boolean;
    type: "Income" | "Expenses";
 }
 
-export default function ConstructCategory({ onClose, isSubmitting, type }: ConstructCategoryProps) {
+export default function ConstructCategory({ onClose, type }: ConstructCategoryProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Initialize form with typed values and defaults
-   const { control, handleSubmit, setError, formState: { errors } } = useForm();
+   const { control, handleSubmit, setError, formState: { errors, isSubmitting, dirtyFields } } = useForm();
 
    // Handle form submission to create a new budget category
    const onSubmit = async(data: FieldValues) => {
@@ -92,7 +91,11 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
    };
 
    return (
-      <form onSubmit = { handleSubmit(onSubmit) }>
+      <form
+         data-dirty = { Object.keys(dirtyFields).length > 0 }
+         id = "constructor-form"
+         onSubmit = { handleSubmit(onSubmit) }
+      >
          <Stack
             direction = "column"
             spacing = { 1  }
@@ -110,7 +113,6 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
                            { ...field }
                            aria-label = "Name"
                            autoComplete = "none"
-                           disabled = { isSubmitting }
                            id = "constructor-name"
                            label = "Name"
                            type = "text"
@@ -135,7 +137,6 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"
-                           disabled = { isSubmitting }
                            id = "constructor-goal"
                            inputProps = { { step: 0.01, min: 0 } }
                            label = "Goal"
@@ -150,7 +151,7 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
                }
             />
             <Stack
-               direction = "column"
+               direction = { { xs: "column", sm: "row" } }
                spacing = { 1 }
             >
                <Button
@@ -165,8 +166,8 @@ export default function ConstructCategory({ onClose, isSubmitting, type }: Const
                   Cancel
                </Button>
                <Button
+                  className = "btn-primary"
                   color = "primary"
-                  disabled = { isSubmitting }
                   fullWidth = { true }
                   loading = { isSubmitting }
                   startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }

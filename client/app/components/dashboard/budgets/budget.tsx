@@ -7,37 +7,46 @@ import {
    Stack,
    Typography
 } from "@mui/material";
-import { type OrganizedBudget } from "capital/budgets";
+import { type BudgetGoals, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 
 import { Expand } from "@/components/global/expand";
-import { displayCurrency } from "@/lib/display";
+import { displayCurrency, ellipsis } from "@/lib/display";
+import type { RootState } from "@/redux/store";
 
 interface CategoryItemProps {
-   goal: number;
-   total: number;
    name: string;
-   progress: number;
+   goals: BudgetGoals[];
+   goalIndex: number;
    type: "Income" | "Expenses";
-   color: "success" | "error";
    onEditClick?: () => void;
    isMainCategory?: boolean;
 }
 
-function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainCategory = false }: CategoryItemProps) {
+function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
+   // Calculate the category values
+   const goal = goals[goalIndex].goal;
+   const current = useMemo(() => Math.random() * goal, [goal]);
+   const progress = Math.min((current / goal) * 100, 100);
+   const color = type === "Income" ? "success" : "error";
+
    return (
       <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
          <Stack
             direction = "row"
-            sx = { { justifyContent: "space-between", mb: 1 } }
+            sx = { { justifyContent: "space-between", alignItems: "center", mb: 1 } }
          >
             <Stack
                direction = "row"
                spacing = { 1 }
                sx = { { alignItems: "center" } }
             >
-               <Typography variant = "h6">
+               <Typography
+                  sx = { { ...ellipsis } }
+                  variant = "h6"
+               >
                   { name }
                </Typography>
                {
@@ -52,8 +61,11 @@ function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainC
                   )
                }
             </Stack>
-            <Typography variant = "h6">
-               { displayCurrency(total) } / { displayCurrency(goal) }
+            <Typography
+               sx = { { ...ellipsis, fontWeight: "600" } }
+               variant = "subtitle1"
+            >
+               { displayCurrency(current) } / { displayCurrency(goal) }
             </Typography>
          </Stack>
          <LinearProgress
@@ -73,19 +85,13 @@ function CategoryItem({ name, goal, total, progress, color, onEditClick, isMainC
 
 interface BudgetCategoryProps {
    type: "Income" | "Expenses";
-   data: OrganizedBudget;
    onEditClick: () => void;
 }
 
 // Component to render a list of budget categories with their progress bars and potential subcategories
-export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps) {
-   // Calculate the category values
-   const goal = data.goals[data.goalIndex].goal;
-   const total = Math.random() * goal; // Placeholder until transactions are implemented
-   const progress = Math.min((total / goal) * 100, 100);
-   const color = type === "Income" ? "success" : "error";
-
-   // State to track expanded/collapsed state of subcategories
+export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
+   // Get the main budget category
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const [isExpanded, setIsExpanded] = useState(true);
 
    // Toggle expanded state of subcategories
@@ -106,13 +112,11 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
          >
             <Box sx = { { flexGrow: 1 } }>
                <CategoryItem
-                  color = { color }
-                  goal = { goal }
+                  goalIndex = { budget.goalIndex }
+                  goals = { budget.goals }
                   isMainCategory = { true }
                   name = { type }
                   onEditClick = { onEditClick }
-                  progress = { progress }
-                  total = { total }
                   type = { type }
                />
             </Box>
@@ -141,11 +145,7 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
             >
                <AnimatePresence mode = "popLayout">
                   {
-                     data.categories.map((category) => {
-                        const goal = category.goals[category.goalIndex].goal;
-                        const total = Math.random() * goal; // Placeholder until transactions are implemented
-                        const progress = Math.min((total / goal) * 100, 100);
-
+                     budget.categories.map((category) => {
                         return (
                            <motion.div
                               animate = { { opacity: 1, y: 0 } }
@@ -164,11 +164,9 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
                               }
                            >
                               <CategoryItem
-                                 color = { color }
-                                 goal = { goal }
+                                 goalIndex = { category.goalIndex }
+                                 goals = { category.goals }
                                  name = { String(category.name) }
-                                 progress = { progress }
-                                 total = { total }
                                  type = { type }
                               />
                            </motion.div>
@@ -183,14 +181,12 @@ export function BudgetCategory({ type, data, onEditClick }: BudgetCategoryProps)
 }
 interface BudgetProps {
    type: "Income" | "Expenses";
-   data: OrganizedBudget;
    onEditClick: () => void;
 }
 
-export default function Budget({ type, data, onEditClick }: BudgetProps) {
+export default function Budget({ type, onEditClick }: BudgetProps) {
    return (
       <BudgetCategory
-         data = { data }
          onEditClick = { onEditClick }
          type = { type }
       />

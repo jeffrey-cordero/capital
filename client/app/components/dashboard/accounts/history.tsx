@@ -164,7 +164,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
    );
 }
 
-function HistoryModal({ account, disabled }: { account: Account, disabled: boolean }) {
+function HistoryModal({ account }: { account: Account }) {
    // Allows users to view history records by month and add new history records
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const {
@@ -243,7 +243,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
          <Button
             className = "btn-primary"
             color = "info"
-            disabled = { isSubmitting || disabled }
             fullWidth = { true }
             loading = { isSubmitting }
             onClick = { () => setOpen(true) }
@@ -295,7 +294,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                        <OutlinedInput
                                           { ...field }
                                           aria-label = "Balance"
-                                          disabled = { isSubmitting || disabled }
                                           fullWidth = { true }
                                           id = "history-balance"
                                           inputProps = { { step: 0.01 } }
@@ -319,7 +317,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                        <TextField
                                           { ...field }
                                           color = { errors.last_updated ? "error" : "info" }
-                                          disabled = { isSubmitting || disabled }
                                           error = { Boolean(errors.last_updated) }
                                           fullWidth = { true }
                                           id = "balance-date"
@@ -357,7 +354,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                            <Button
                               className = "btn-primary"
                               color = "primary"
-                              disabled = { isSubmitting || disabled }
                               fullWidth = { true }
                               loading = { isSubmitting }
                               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
@@ -376,7 +372,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
    );
 }
 
-export default function AccountHistoryView({ account, disabled }: { account: Account, disabled: boolean }) {
+export default function AccountHistoryView({ account }: { account: Account }) {
    // Format history data for the graph component
    const historyData = useMemo(() => {
       return {
@@ -403,7 +399,6 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
             />
             <HistoryModal
                account = { account }
-               disabled = { disabled }
             />
          </Stack>
       </Box>
