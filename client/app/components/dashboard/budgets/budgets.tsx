@@ -32,18 +32,18 @@ export default function Budgets() {
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period, today]);
 
-   // Handle edit button click to open the budget modal
-   const handleOpenModal = useCallback((type: "Income" | "Expenses") => {
+   const openModal = useCallback((type: "Income" | "Expenses") => {
+      // Handle edit button click to open the budget modal
       setEditState({ state: "edit", displayWarning: false, type });
    }, []);
 
-   // Close the budget modal, but only if there are no dirty forms
    const closeModal = useCallback((force?: boolean) => {
       const containsDirtyForm = ["budget-form", "constructor-form", "editor-form"].some(
-         (form) => document.getElementById(form)?.dataset.dirty === "true"
+         (form) => (document.getElementById(form) as HTMLFormElement)?.dataset.dirty === "true"
       );
 
-      if (containsDirtyForm && !force) {
+      // Close the budget modal, but only if there are no dirty forms and the request is not forced
+      if (!force && containsDirtyForm) {
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
          setEditState((prev) => ({ ...prev, state: "view" }));
@@ -90,11 +90,11 @@ export default function Budgets() {
             sx = { { mt: 2 } }
          >
             <Budget
-               onEditClick = { () => handleOpenModal("Income") }
+               onEditClick = { () => openModal("Income") }
                type = "Income"
             />
             <Budget
-               onEditClick = { () => handleOpenModal("Expenses") }
+               onEditClick = { () => openModal("Expenses") }
                type = "Expenses"
             />
          </Stack>

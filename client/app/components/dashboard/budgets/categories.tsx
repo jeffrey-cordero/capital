@@ -80,6 +80,7 @@ function CategoryItem({ category, editingCategory, setEditingCategory, type }: C
                      icon = { faBars }
                      { ...listeners }
                      { ...attributes }
+                     size = "lg"
                      style = { { cursor: "grab", outline: "none" } }
                   />
                   <Stack

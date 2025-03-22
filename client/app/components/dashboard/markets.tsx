@@ -9,10 +9,12 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/marketTrends";
+import { useSelector } from "react-redux";
 
 import Graph, { getChipColor } from "@/components/global/graph";
 import { timeSinceLastUpdate } from "@/lib/dates";
 import { displayVolume } from "@/lib/display";
+import type { RootState } from "@/redux/store";
 
 interface StocksProps {
    data: StockTrends;
@@ -148,22 +150,19 @@ function Stocks({ data }: StocksProps) {
       </Stack>
    );
 }
+export default function Markets() {
+   const trends: MarketTrends = useSelector((state: RootState) => state.markets.trends);
 
-interface MarketsProps {
-   data: MarketTrends;
-}
-
-export default function Markets({ data }: MarketsProps) {
    // Extract and format indicators data
-   const indicators = Object.keys(data)
+   const indicators = Object.keys(trends)
       .filter(key => key !== "Stocks")
       .reduce((acc: { [key: string]: IndicatorTrend[] }, record) => {
-         acc[record] = data[record] as IndicatorTrend[];
+         acc[record] = trends[record] as IndicatorTrend[];
          return acc;
       }, {});
 
    // Extract stocks data and format last update time
-   const stocks = data["Stocks"] as StockTrends;
+   const stocks = trends["Stocks"] as StockTrends;
    const [date, time] = stocks.last_updated.split(" ");
    const timeSinceLastUpdated = timeSinceLastUpdate(`${date}:${time}`);
 

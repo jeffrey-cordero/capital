@@ -141,7 +141,7 @@ export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
          >
             <Stack
                direction = "column"
-               spacing = { 0.5 }
+               spacing = { 1 }
             >
                <AnimatePresence mode = "popLayout">
                   {

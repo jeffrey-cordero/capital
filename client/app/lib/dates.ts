@@ -7,6 +7,11 @@ export const months = [
    "July", "August", "September", "October", "November", "December"
 ];
 
+const monthAbbreviations = [
+   "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
+   "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+];
+
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
@@ -20,35 +25,15 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
-export function getLastSixMonths(referenceDate = getCurrentDate()): string[] {
-   // Format the 6-month array to "MM. YYYY" format
-   const months = [
-      "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
-      "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
-   ];
+export function getYearAbbreviations(referenceDate = getCurrentDate()): string[] {
+   // Format the year array to "MM. YYYY" format
+   const year = [];
 
-   const sixMonths = [];
-
-   for (let i = 0; i < 6; i++) {
-      // Calculate the date for the last day of each month
-      const monthDate = new Date(
-         referenceDate.getUTCFullYear(),
-         referenceDate.getUTCMonth() - i + 1,
-         0
-      );
-
-      // Adjust for year rollovers
-      if (monthDate.getUTCMonth() < 0) {
-         monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
-         monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
-      }
-
-      sixMonths.unshift(
-         months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear()
-      );
+   for (const month of monthAbbreviations) {
+      year.push(`${month} ${referenceDate.getUTCFullYear()}`);
    }
 
-   return sixMonths;
+   return year;
 }
 
 export function timeSinceLastUpdate(date: string) {

@@ -16,9 +16,11 @@ import {
 import Grid from "@mui/material/Grid2";
 import { type News, type Story } from "capital/news";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 
 import { Expand } from "@/components/global/expand";
 import { displayDate, ellipsis } from "@/lib/display";
+import type { RootState } from "@/redux/store";
 
 // Regex to validate MarketWatch image URLs
 const MARKET_WATCH_IMAGE_REGEX = /^https:\/\/images\.mktw\.net\/.*/;
@@ -172,13 +174,10 @@ function StoryItem({ description, link, pubDate, title, ...rest }: StoryItemProp
    );
 }
 
-interface StoriesProps {
-   data: News;
-}
-
-export default function Stories({ data }: StoriesProps) {
+export default function Stories() {
    // Safely access news items with optional chaining
-   const newsItems = (data?.channel?.[0]?.item || []).slice(0, 10);
+   const news: News = useSelector((state: RootState) => state.markets.news);
+   const newsItems = (news?.channel?.[0]?.item || []).slice(0, 10);
 
    return (
       <Box

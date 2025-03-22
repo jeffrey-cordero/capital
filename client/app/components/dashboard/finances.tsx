@@ -1,10 +1,10 @@
 import { Box, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type Account } from "capital/accounts";
 
-import { AccountTrends, BudgetTrends } from "@/components/dashboard/trends";
+import { AccountTrends } from "@/components/dashboard/accounts/charts";
+import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
-export default function Finances({ accounts }: { accounts: Account[] }) {
+export default function Finances() {
    return (
       <Box
          id = "marketTrends"
@@ -24,10 +24,10 @@ export default function Finances({ accounts }: { accounts: Account[] }) {
                />
             </Box>
             <Grid size = { 12 }>
-               <AccountTrends accounts = { accounts } />
+               <AccountTrends elevation = { 3 } />
             </Grid>
             <Grid size = { 12 }>
-               <BudgetTrends />
+               <BudgetTrends elevation = { 3 } />
             </Grid>
          </Stack>
       </Box>

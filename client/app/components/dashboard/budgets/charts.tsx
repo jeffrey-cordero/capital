@@ -1,18 +1,20 @@
 import {
    Box,
+   Chip,
    Stack,
    styled,
    Typography,
    useTheme
 } from "@mui/material";
-import { PieChart, useDrawingArea } from "@mui/x-charts";
+import { BarChart, PieChart, useDrawingArea } from "@mui/x-charts";
 import { type OrganizedBudget } from "capital/budgets";
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import { displayCurrency } from "@/lib/display";
+import { TrendCard } from "@/components/dashboard/trends";
+import { getYearAbbreviations } from "@/lib/dates";
+import { displayCurrency, displayVolume } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-
 interface BudgetCategory {
    name: string;
    goal: number;
@@ -98,6 +100,7 @@ interface BudgetProgressChartProps {
    totalGoal: number;
    totalCurrent: number;
 }
+
 function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: BudgetProgressChartProps) {
    // Calculate percentage of total budget used
    const percentUsed = Math.min(100, Math.round((totalCurrent / totalGoal) * 100)) || 0;
@@ -218,5 +221,77 @@ export function BudgetPieChart({ type }: { type: "Income" | "Expenses" }) {
             />
          </Box>
       </Box>
+   );
+}
+
+export function BudgetTrends({ elevation }: { elevation: number }) {
+   const theme = useTheme();
+
+   // Use theme colors for consistent styling
+   const colorPalette = [
+      theme.palette.primary.dark,
+      theme.palette.primary.main,
+      theme.palette.primary.light
+   ];
+
+   // Mock data until transactions are implemented
+   const chartContent = (
+      <BarChart
+         borderRadius = { 8 }
+         colors = { colorPalette }
+         grid = { { horizontal: true } }
+         height = { elevation === 0 ? 400 : 300 }
+         margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
+         resolveSizeBeforeRender = { true }
+         series = {
+            [
+               {
+                  id: "income",
+                  label: "Income",
+                  data: [45234, 33872, 29198, 49125, 41317, 27389, 29398, 45234, 33872, 29198, 49125, 41317],
+                  stack: "A",
+                  color: theme.palette.success.main
+               },
+               {
+                  id: "expenses",
+                  label: "Expenses",
+                  data: [45234, 33872, 29198, 42125, 51317, 27389, 29398, 45234, 33872, 22198, 12125, 2317],
+                  stack: "B",
+                  color: theme.palette.error.main
+               }
+            ]
+         }
+         slotProps = { { legend: { hidden: true } } }
+         xAxis = {
+            [{
+               scaleType: "band",
+               categoryGapRatio: 0.5,
+               data: getYearAbbreviations()
+            }] as any
+         }
+         yAxis = {
+            [{
+               domainLimit: "nice",
+               valueFormatter: displayVolume
+            }]
+         }
+      />
+   );
+
+   return (
+      <TrendCard
+         chart = { chartContent }
+         elevation = { elevation }
+         extraInfo = {
+            <Chip
+               color = "success"
+               label = "+52%"
+               size = "small"
+            />
+         }
+         subtitle = "Income vs. Expenses for the past 12 months"
+         title = "Budget"
+         value = "$0.00"
+      />
    );
 }

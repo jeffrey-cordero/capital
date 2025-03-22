@@ -1,6 +1,12 @@
-import { type WritableDraft } from 'immer';
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { type BudgetCategory, type BudgetGoals, type OrganizedBudget, type OrganizedBudgets, type Period } from "capital/budgets";
+import {
+   type BudgetCategory,
+   type BudgetGoals,
+   type OrganizedBudget,
+   type OrganizedBudgets,
+   type Period
+} from "capital/budgets";
+import { type WritableDraft } from "immer";
 
 import { getCurrentDate } from "@/lib/dates";
 
@@ -128,7 +134,7 @@ const budgetsSlice = createSlice({
 
          // Calculate the new period
          const newPeriod: Period = calculateNewPeriod(
-            { month: state.value.period.month, year: state.value.period.year }, 
+            { month: state.value.period.month, year: state.value.period.year },
             direction
          );
 
@@ -139,23 +145,40 @@ const budgetsSlice = createSlice({
             const currentIndex: number = category.goalIndex;
             const boundaryIndex: number = isNextDirection ? 0 : category.goals.length - 1;
 
-            // Skip processing if already at boundary
+            // Skip processing if already at the boundary
             if (currentIndex === boundaryIndex) return;
 
             // Fetch the potential new budget goal
-            const currentGoal: BudgetGoals = category.goals[currentIndex];
+            const currentGoal:  BudgetGoals = category.goals[currentIndex];
             const newGoal: BudgetGoals = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
-            if (newGoal.year === newPeriod.year && newGoal.month === newPeriod.month) {
-               // Only increment/decrement if the new goal period matches, otherwise carry over the current period
-               category.goalIndex += isNextDirection ? -1 : 1;
+            // Calculate the difference in time periods between the current goal and the new period
+            const currentTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+               { month: currentGoal.month, year: currentGoal.year },
+               { month: newPeriod.month, year: newPeriod.year }
+            );
+
+            if (!isNextDirection && currentTimePeriodDifference === -1) {
+               // Increment to previous goal periods once current goal period exceeds the new period
+               category.goalIndex++;
+            } else if (!isNextDirection) return; // Skip further processing for the previous direction request
+
+            // Calculate the difference in time periods between the new goal and the new period
+            const newTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+               { month: newGoal.month, year: newGoal.year },
+               { month: newPeriod.month, year: newPeriod.year }
+            );
+
+            if (isNextDirection && newTimePeriodDifference === 0) {
+               // Only decrement to closer goal periods on the exact period match
+               category.goalIndex--;
             }
          };
 
          // Update goal indices for all categories
          for (const type of ["Income", "Expenses"] as const) {
             updateGoalIndex(state.value[type]);
-            
+
             for (const category of state.value[type].categories) {
                updateGoalIndex(category);
             }

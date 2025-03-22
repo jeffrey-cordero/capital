@@ -20,6 +20,7 @@ CREATE TABLE accounts (
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Placeholder for transactions
 CREATE TABLE accounts_history (
    balance DECIMAL(18, 2) NOT NULL,
    last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),

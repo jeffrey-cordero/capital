@@ -2,7 +2,7 @@ import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
 import Budgets from "@/components/dashboard/budgets/budgets";
-import { BudgetPieChart } from "@/components/dashboard/budgets/charts";
+import { BudgetPieChart, BudgetTrends } from "@/components/dashboard/budgets/charts";
 
 export default function Page() {
    return (
@@ -16,7 +16,6 @@ export default function Page() {
             rowSpacing = { 4 }
             sx = { { width: "100%", height: "100%" } }
          >
-            { /* Header */ }
             <Grow
                in = { true }
                mountOnEnter = { true }
@@ -27,7 +26,7 @@ export default function Page() {
                   size = { { xs: 12 } }
                   sx = { { textAlign: "center" } }
                >
-                  { /* Header image */ }
+                  { /* Budget image */ }
                   <Box className = "animation-container">
                      <Box
                         alt = "Budgets"
@@ -81,6 +80,9 @@ export default function Page() {
                      </Grid>
                      <Grid size = { { xs: 12, md: 6 } }>
                         <BudgetPieChart type = "Expenses" />
+                     </Grid>
+                     <Grid size = { { xs: 12 } }>
+                        <BudgetTrends elevation = { 0 } />
                      </Grid>
                   </Grid>
                </Grow>

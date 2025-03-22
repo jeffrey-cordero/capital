@@ -91,16 +91,6 @@ export default function Accounts() {
 
    return (
       <Box id = "accounts">
-         { /* Header image */ }
-         <Box className = "animation-container">
-            <Box
-               alt = "Accounts"
-               className = "floating"
-               component = "img"
-               src = "/svg/accounts.svg"
-               sx = { { width: 400, height: "auto", mb: 10 } }
-            />
-         </Box>
          { /* Accounts grid with drag and drop */ }
          <Grid
             container = { true }
