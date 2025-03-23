@@ -4,30 +4,31 @@ import {
    Box,
    Card,
    CardContent,
-   Chip,
    IconButton,
    Stack,
    Typography,
    useTheme
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayVolume, ellipsis } from "@/lib/display";
+
+type YearData = {
+   id: string;
+   label: string;
+   data: number[];
+   stack: string;
+   color: string;
+}
 
 interface TrendProps {
    isCard: boolean;
    title: string;
    value: string;
    subtitle: string;
-   years: {
-      id: string;
-      label: string;
-      data: number[];
-      stack: string;
-      color: string;
-   }[];
+   years: YearData[];
    extraInfo?: React.ReactNode;
 }
 
@@ -36,18 +37,20 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
 
    // Use theme colors for consistent styling
-   const colorPalette = [
+   const colorPalette = useMemo(() => [
       theme.palette.primary.dark,
       theme.palette.primary.main,
       theme.palette.primary.light
-   ];
+   ], [theme.palette.primary]);
+
+   const yearAbbreviations = useMemo(() => getYearAbbreviations(year), [year]);
 
    const changeYear = useCallback((direction: "previous" | "next") => {
-      setYear(year + (direction === "previous" ? -1 : 1));
-   }, [year]);
+      setYear(prev => prev + (direction === "previous" ? -1 : 1));
+   }, []);
 
-   // Create the chart content
-   const chart = (
+   // Memoize the chart content
+   const chart = useMemo(() => (
       <BarChart
          borderRadius = { 8 }
          colors = { colorPalette }
@@ -58,11 +61,11 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
          series = { years }
          slotProps = { { legend: { hidden: true } } }
          xAxis = {
-            [{
-               scaleType: "band",
-               categoryGapRatio: 0.5,
-               data: getYearAbbreviations(year)
-            }] as any
+ [{
+    scaleType: "band",
+    categoryGapRatio: 0.5,
+    data: yearAbbreviations
+ }] as any
          }
          yAxis = {
             [{
@@ -71,7 +74,9 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
             }]
          }
       />
-   );
+   ), [colorPalette, isCard, yearAbbreviations, years]);
+
+   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
 
    return (
       <Box sx = { { position: "relative" } }>
@@ -85,9 +90,7 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
                   component = "h2"
                   gutterBottom = { true }
                   variant = "subtitle2"
-               >
-                  { title } Trends
-               </Typography>
+               >{ title } Trends</Typography>
                <Stack sx = { { justifyContent: "space-between" } }>
                   <Stack
                      direction = "row"
@@ -104,17 +107,13 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
                         component = "p"
                         sx = { { ...ellipsis, maxWidth: "95%" } }
                         variant = "h4"
-                     >
-                        { value }
-                     </Typography>
+                     >{ value }</Typography>
                      { extraInfo }
                   </Stack>
                   <Typography
                      sx = { { color: "text.secondary" } }
                      variant = "caption"
-                  >
-                     { subtitle }
-                  </Typography>
+                  >{ subtitle }</Typography>
                </Stack>
                { chart }
             </CardContent>
@@ -138,7 +137,7 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
                      />
                   </IconButton>
                   <IconButton
-                     disabled = { year === getCurrentDate().getUTCFullYear() }
+                     disabled = { year === currentYear }
                      onClick = { () => changeYear("next") }
                      size = "medium"
                      sx = { { color: theme.palette.primary.main } }

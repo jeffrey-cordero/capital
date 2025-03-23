@@ -26,7 +26,7 @@ import {
    Typography
 } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -50,7 +50,7 @@ interface CategoryItemProps {
    type: "Income" | "Expenses";
 }
 
-function CategoryItem({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) {
+const CategoryItem = memo(({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) => {
    const isEditing = editingCategory === category.budget_category_id;
    const goal = category.goals[category.goalIndex].goal;
 
@@ -65,71 +65,84 @@ function CategoryItem({ category, editingCategory, setEditingCategory, type }: C
       transition
    };
 
+   // Handler for clicking the edit button
+   const handleEditClick = useCallback(() => {
+      setEditingCategory(category.budget_category_id);
+   }, [category.budget_category_id, setEditingCategory]);
+
+   // Handler for canceling edit
+   const handleCancelEdit = useCallback(() => {
+      setEditingCategory(null);
+   }, [setEditingCategory]);
+
    return (
       <Box
-         key={category.budget_category_id}
-         ref={setNodeRef}
-         style={style}
+         key = { category.budget_category_id }
+         ref = { setNodeRef }
+         style = { style }
       >
          {
             isEditing ? (
                <EditCategory
-                  category={category}
-                  onCancel={() => setEditingCategory(null)}
+                  category = { category }
+                  onCancel = { handleCancelEdit }
                />
             ) : (
                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center", px: 1 }}
+                  direction = "row"
+                  spacing = { 1 }
+                  sx = { { alignItems: "center", px: 1 } }
                >
                   <FontAwesomeIcon
-                     icon={faBars}
-                     {...listeners}
-                     {...attributes}
-                     size="lg"
-                     style={{ cursor: "grab", outline: "none", touchAction: "none" }}
+                     icon = { faBars }
+                     { ...listeners }
+                     { ...attributes }
+                     size = "lg"
+                     style = { { cursor: "grab", outline: "none", touchAction: "none" } }
                   />
                   <Stack
-                     direction={{ xs: "column", sm: "row" }}
-                     sx={{ width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" }}
+                     direction = { { xs: "column", sm: "row" } }
+                     sx = { { width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" } }
                   >
                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ alignItems: "center" }}
+                        direction = "row"
+                        spacing = { 1 }
+                        sx = { { alignItems: "center" } }
                      >
                         <Typography
-                           sx = {{ wordBreak: "break-all", textAlign: "center" }}
-                           variant="subtitle1"
+                           sx = { { wordBreak: "break-all", textAlign: "center" } }
+                           variant = "subtitle1"
                         >
-                           {category.name}
+                           { category.name }
                         </Typography>
                      </Stack>
                      <Stack
-                        direction={ { xs: "column", sm: "row" } }
-                        spacing={1}
-                        sx={{ alignItems: "center" }}
+                        direction = { { xs: "column", sm: "row" } }
+                        spacing = { 1 }
+                        sx = { { alignItems: "center" } }
                      >
                         <Box>
                            <Typography
-                              sx={{ ...ellipsis, fontWeight: "600" }}
-                              variant="subtitle2"
+                              sx = { { ...ellipsis, fontWeight: "600" } }
+                              variant = "subtitle2"
                            >
-                              {displayCurrency(goal)}
+                              { displayCurrency(goal) }
                            </Typography>
                         </Box>
-                        <Stack direction="row" spacing={1}>
+                        <Stack
+                           direction = "row"
+                           spacing = { 1 }
+                        >
                            <FontAwesomeIcon
-                              className="primary"
-                              icon={faPenToSquare}
-                              onClick={() => setEditingCategory(category.budget_category_id)}
-                              size="lg"
-                              style={{ cursor: "pointer" }}
+                              className = "primary"
+                              icon = { faPenToSquare }
+                              onClick = { handleEditClick }
+                              size = "lg"
+                              style = { { cursor: "pointer" } }
                            />
                            <DeleteBudget
-                              budget_category_id={category.budget_category_id}
-                              type={type}
+                              budget_category_id = { category.budget_category_id }
+                              type = { type }
                            />
                         </Stack>
                      </Stack>
@@ -139,23 +152,29 @@ function CategoryItem({ category, editingCategory, setEditingCategory, type }: C
          }
       </Box>
    );
-}
+});
+
+CategoryItem.displayName = "CategoryItem";
 
 export default function BudgetCategories({ type }: BudgetCategoriesProps) {
-   // Handle form submission for creating and updating budget subcategories
    const dispatch = useDispatch(), navigate = useNavigate();
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
+   // Local state management
    const [editingCategory, setEditingCategory] = useState<string | null>(null);
    const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+
+   // Calculate totals using memoization to prevent unnecessary recalculations
    const { mainGoal, categoryTotal } = useMemo(() => {
       return calculateBudgetTotals(budget);
    }, [budget]);
 
+   // Memoize category IDs to prevent unnecessary re-renders
    const categoryIds = useMemo(() => {
       return budget.categories.map(category => category.budget_category_id ?? "");
-   }, [budget]);
+   }, [budget.categories]);
 
+   // Open new category form
    const displayNewCategoryForm = useCallback((show: boolean) => {
       setShowNewCategoryForm(show);
    }, []);
@@ -166,7 +185,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
       displayNewCategoryForm(false);
    }, [displayNewCategoryForm]);
 
-   // Configure drag and drop sensors
+   // Configure drag and drop sensors with proper activation constraints
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -179,12 +198,12 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
       })
    );
 
-   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-      // Handles the end of a drag operation
+   // Drag end handler
+   const handleDragEnd = useCallback(async(event: DragEndEvent) => {
       const { active, over } = event;
 
-      // Only proceed if dropping on a different position
-      if (active.id !== over?.id) {
+      // Only proceed if dropping on a different position and over is defined
+      if (active.id !== over?.id && over) {
          let oldIndex: number | undefined;
          let newIndex: number | undefined;
 
@@ -195,7 +214,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
             if (category.budget_category_id === active.id) {
                oldIndex = i;
             }
-            if (category.budget_category_id === over?.id) {
+            if (category.budget_category_id === over.id) {
                newIndex = i;
             }
          }
@@ -217,85 +236,88 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
             }));
 
             // Sync new order with server
-            sendApiRequest(
-               "dashboard/budgets/category/ordering", "PUT", { categories: ordering }, dispatch, navigate
-            ).then((result) => {
+            try {
+               const result = await sendApiRequest(
+                  "dashboard/budgets/category/ordering",
+                  "PUT",
+                  { categories: ordering },
+                  dispatch,
+                  navigate
+               );
+
                if (result !== 204) {
                   throw new Error("Failed to update category order");
                }
-            }).catch((error) => {
+            } catch (error) {
                // Revert optimistic update if server request fails
                console.error("Failed to update category order:", error);
                dispatch(updateBudgetCategoryOrder({
                   type,
                   categories: oldCategories
                }));
-            });
+            }
          }
       }
-   }, [budget, dispatch, navigate, type]);
+   }, [budget.categories, dispatch, navigate, type]);
 
    return (
       <Stack
-         direction="column"
-         spacing={2}
-         sx={{ mt: 3 }}
+         direction = "column"
+         spacing = { 2 }
+         sx = { { mt: 3 } }
       >
-         { /* Informational alert for main budget goal to inform users that the main goal should be at least the total of all sub-categories */}
+         { /* Warning alert when category totals exceed main budget goal */ }
          {
             categoryTotal > mainGoal && (
                <Alert
-                  color={"primary" as any}
-                  severity="info"
+                  color = { "primary" as any }
+                  severity = "info"
                >
-                  The main budget goal should be at least {displayCurrency(categoryTotal)} as the total of all sub-categories ({displayCurrency(categoryTotal - mainGoal)}) surpasses this amount.
+                  The main budget goal should be at least { displayCurrency(categoryTotal) } as the total of all sub-categories ({ displayCurrency(categoryTotal - mainGoal) }) surpasses this amount.
                </Alert>
             )
          }
-         { /* Existing sub categories */}
+         { /* Draggable category list */ }
          <DndContext
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            sensors={sensors}
+            collisionDetection = { closestCenter }
+            onDragEnd = { handleDragEnd }
+            sensors = { sensors }
          >
             <SortableContext
-               items={categoryIds}
-               strategy={verticalListSortingStrategy}
+               items = { categoryIds }
+               strategy = { verticalListSortingStrategy }
             >
                {
-                  budget.categories.map((category) => {
-
-                     return (
-                        <CategoryItem
-                           category={category}
-                           editingCategory={editingCategory}
-                           key={category.budget_category_id}
-                           setEditingCategory={setEditingCategory}
-                           type={type}
-                        />
-                     );
-                  })
+                  budget.categories.map((category) => (
+                     <CategoryItem
+                        category = { category }
+                        editingCategory = { editingCategory }
+                        key = { category.budget_category_id }
+                        setEditingCategory = { setEditingCategory }
+                        type = { type }
+                     />
+                  ))
                }
             </SortableContext>
          </DndContext>
-         { /* New category */}
+         { /* Form to add new category */ }
          <Box>
             {
                !showNewCategoryForm ? (
                   <Button
-                     className="btn-primary"
-                     color="primary"
-                     fullWidth={true}
-                     onClick={() => displayNewCategoryForm(true)}
-                     startIcon={<FontAwesomeIcon icon={faFeatherPointed} />}
-                     variant="contained"
+                     className = "btn-primary"
+                     color = "primary"
+                     fullWidth = { true }
+                     onClick = { () => displayNewCategoryForm(true) }
+                     startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
+                     variant = "contained"
                   >
                      Add Category
                   </Button>
                ) : (
                   <ConstructCategory
-                     onClose={handleCloseConstructCategory}
-                     type={type}
+                     onClose = { handleCloseConstructCategory }
+                     type = { type }
                   />
                )
             }

@@ -27,7 +27,6 @@ interface EditCategoryProps {
 
 // Create a dedicated schema for updates - partial to allow partial updates
 const updateCategorySchema = budgetCategorySchema.partial().pick({ name: true, type: true });
-
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 // Component for editing an existing budget category
@@ -46,8 +45,9 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
 
    const onSubmit = async(data: FieldValues) => {
       try {
+         // If no fields changed, just close the form
          if (Object.keys(dirtyFields).length === 0) {
-            onCancel(); // No changes
+            onCancel();
             return;
          }
 
@@ -56,35 +56,36 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
             name: data.name ?? undefined,
             type: data.type ?? undefined
          };
-         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
          const categoryUpdates = Boolean(categoryPayload.name || categoryPayload.type);
+         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
 
-         if (!categoryFields.success) {
+         if (categoryUpdates && !categoryFields.success) {
             // Invalid category updates
             handleValidationErrors(categoryFields, setError);
             return;
          }
 
-         // Prepare payload for budget update, which may be a update or create request based on the current period
+         // Prepare payload for budget update
          const budgetPayload = {
             goal: data.goal ? Number(data.goal) : undefined,
             budget_category_id: category.budget_category_id,
             month,
             year
          };
-         const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
          const budgetUpdates = Boolean(budgetPayload.goal);
+         const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
 
-         if (!budgetFields.success) {
+         if (budgetUpdates && !budgetFields.success) {
             // Invalid budget updates
             handleValidationErrors(budgetFields, setError);
             return;
          }
 
+         // Determine if we're updating the current period or creating a new one
          const isCurrentPeriod = comparePeriods(category.goals[category.goalIndex], { month, year }) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
-         // Send potential  updates in parallel requests
+         // Send potential updates in parallel requests
          const [categoryResponse, budgetResponse] = await Promise.all([
             categoryUpdates ? sendApiRequest<number>(
                `dashboard/budgets/category/${category.budget_category_id}`, "PUT", categoryPayload, dispatch, navigate, setError
@@ -99,7 +100,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
 
          // Handle successful responses
          if (categoryUpdates && categorySuccess) {
-            // Update the category on a successful request
+            // Update the category in Redux store
             dispatch(updateBudgetCategory({
                type: category.type,
                updates: {
@@ -110,7 +111,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
          }
 
          if (budgetUpdates && budgetSuccess) {
-            // Update the budget on a successful request
+            // Update the budget in Redux store
             dispatch(updateBudget({
                type: data.type || category.type,
                budget_category_id: category.budget_category_id,
@@ -119,7 +120,6 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
          }
 
          if (categorySuccess && budgetSuccess) {
-            // sendApiRequest will handle errors through setError or notification
             onCancel();
          }
       } catch (error) {
@@ -140,9 +140,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "editor-name">
-                           Name
-                        </InputLabel>
+                        <InputLabel htmlFor = "editor-name">Name</InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
@@ -165,9 +163,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "editor-goal">
-                           Goal
-                        </InputLabel>
+                        <InputLabel htmlFor = "editor-goal">Goal</InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"
@@ -198,9 +194,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                            htmlFor = "editor-type"
                            sx = { { px: 0.75 } }
                            variant = "standard"
-                        >
-                           Type
-                        </InputLabel>
+                        >Type</InputLabel>
                         <NativeSelect
                            { ...field }
                            id = "editor-type"
@@ -224,9 +218,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                   onClick = { onCancel }
                   startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
                   variant = "contained"
-               >
-                  Cancel
-               </Button>
+               >Cancel</Button>
                <Button
                   className = "btn-primary"
                   color = "primary"
@@ -235,9 +227,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                   startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                   type = "submit"
                   variant = "contained"
-               >
-                  Save
-               </Button>
+               >Save</Button>
             </Stack>
          </Stack>
       </form>

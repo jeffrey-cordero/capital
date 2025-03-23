@@ -13,10 +13,11 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { getCurrentDate, monthAbbreviations, months } from "@/lib/dates";
+import { getCurrentDate, monthAbbreviations } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
+// Type for managing edit state of budget components
 type EditState = { state: "view" | "edit", type: "Income" | "Expenses", displayWarning: boolean };
 
 export default function Budgets() {
@@ -24,29 +25,44 @@ export default function Budgets() {
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
    );
+
+   // Get current period from Redux store
    const period: Period = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Prevent future month selections
-   const today: Date = useMemo(() => getCurrentDate(), []);
-   const nextMonthDisabled = useMemo(() => {
-      return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
-   }, [period, today]);
+   // Get current date for validating period selections
+   const today = useMemo(() => getCurrentDate(), []);
 
+   // Determine if next month button should be disabled
+   const nextMonthDisabled = useMemo(() =>
+      period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear(),
+   [period.month, period.year, today]);
+
+   // Handler for opening the budget editing modal
    const openModal = useCallback((type: "Income" | "Expenses") => {
-      // Handle edit button click to open the budget modal
       setEditState({ state: "edit", displayWarning: false, type });
    }, []);
 
-   const closeModal = (force?: boolean) => {
-      const containsDirtyInput = !!document.querySelector('[data-dirty="true"]');
+   // Handler for closing the budget editing modal
+   const closeModal = useCallback((force?: boolean) => {
+      const containsDirtyInput = !!document.querySelector("[data-dirty=\"true\"]");
 
-      // Close the budget modal, but only if there are no dirty forms and the request is not forced
       if (!force && containsDirtyInput) {
+         // Show warning if there are unsaved changes
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
+         // Close modal if forced or no unsaved changes
          setEditState((prev) => ({ ...prev, state: "view" }));
       }
-   };
+   }, []);
+
+   // Handlers for month navigation
+   const handlePreviousMonth = useCallback(() => {
+      dispatch(selectMonth({ direction: "previous" }));
+   }, [dispatch]);
+
+   const handleNextMonth = useCallback(() => {
+      dispatch(selectMonth({ direction: "next" }));
+   }, [dispatch]);
 
    return (
       <Box>
@@ -57,13 +73,11 @@ export default function Budgets() {
          >
             <IconButton
                disabled = { period.year === 1800 }
-               onClick = { () => dispatch(selectMonth({ direction: "previous" })) }
+               onClick = { handlePreviousMonth }
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
-               <FontAwesomeIcon
-                  icon = { faAnglesLeft }
-               />
+               <FontAwesomeIcon icon = { faAnglesLeft }/>
             </IconButton>
             <Typography
                fontWeight = "bold"
@@ -73,13 +87,11 @@ export default function Budgets() {
             </Typography>
             <IconButton
                disabled = { nextMonthDisabled }
-               onClick = { () => dispatch(selectMonth({ direction: "next" })) }
+               onClick = { handleNextMonth }
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
-               <FontAwesomeIcon
-                  icon = { faAnglesRight }
-               />
+               <FontAwesomeIcon icon = { faAnglesRight }/>
             </IconButton>
          </Stack>
          { /* Income and expenses sections */ }
@@ -97,7 +109,7 @@ export default function Budgets() {
                type = "Expenses"
             />
          </Stack>
-         { /* Modal for editing budgets (Income or Expenses) */ }
+         { /* Modal for editing budgets */ }
          <BudgetForm
             displayWarning = { editState.displayWarning }
             onClose = { closeModal }

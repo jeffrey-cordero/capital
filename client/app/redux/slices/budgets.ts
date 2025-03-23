@@ -37,7 +37,7 @@ const budgetsSlice = createSlice({
 
          if (!category) return; // Ignore invalid category payloads
 
-         // Calculate the difference in time periods between the state period and current category period (closest to state period)
+         // Calculate the difference in time periods between the state period and current category period
          const timePeriodDifference: -1 | 0 | 1 = comparePeriods({ month, year }, category.goals[category.goalIndex]);
 
          if (timePeriodDifference !== 0) {
@@ -58,20 +58,16 @@ const budgetsSlice = createSlice({
       },
       updateBudgetCategoryOrder(state, action: PayloadAction<{ type: "Income" | "Expenses", categories: BudgetCategory[] }>) {
          const { type, categories } = action.payload;
-
-         // Update the category order in the respective type
          state.value[type].categories = categories;
       },
       addBudgetCategory(state, action: PayloadAction<{ type: "Income" | "Expenses", category: BudgetCategory }>) {
          const { type, category } = action.payload;
-
-         // Add the new category to the respective type
          state.value[type].categories.push(category);
       },
       updateBudgetCategory(state, action: PayloadAction<{ type: "Income" | "Expenses", updates: Partial<BudgetCategory> & { budget_category_id: string } }>) {
          const { type, updates } = action.payload;
 
-         // Get the category index and category, where main categories may not be updated
+         // Find the category index
          const categoryIndex: number = state.value[type].categories.findIndex(
             c => c.budget_category_id === updates.budget_category_id
          );
@@ -91,14 +87,13 @@ const budgetsSlice = createSlice({
       removeBudgetCategory(state, action: PayloadAction<{ type: "Income" | "Expenses", budget_category_id: string }>) {
          const { type, budget_category_id } = action.payload;
 
-         // Remove the category from the categories array
+         // Find and remove the category
          const categoryIndex: number = state.value[type].categories.findIndex(
             c => c.budget_category_id === budget_category_id
          );
 
          if (categoryIndex === -1) return; // Ignore invalid category payloads
 
-         // Remove the category from the categories array
          state.value[type].categories.splice(categoryIndex, 1);
       },
       selectMonth(state, action: PayloadAction<{ direction: "previous" | "next" }>) {
@@ -122,6 +117,7 @@ const budgetsSlice = createSlice({
          // Update the current period state
          state.value.period = newPeriod;
 
+         // Helper function to update goal indices based on the new period
          const updateGoalIndex = (category: WritableDraft<OrganizedBudget | BudgetCategory>) => {
             const currentIndex: number = category.goalIndex;
             const boundaryIndex: number = isNextDirection ? 0 : category.goals.length - 1;
@@ -130,17 +126,17 @@ const budgetsSlice = createSlice({
             if (currentIndex === boundaryIndex) return;
 
             // Fetch the potential new budget goal
-            const currentGoal:  BudgetGoals = category.goals[currentIndex];
+            const currentGoal: BudgetGoals = category.goals[currentIndex];
             const newGoal: BudgetGoals = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
-            // Calculate the difference in time periods between the current goal and the new period
+            // Adjust goal index based on direction and period comparison
             if (!isNextDirection) {
                const currentTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
                   { month: currentGoal.month, year: currentGoal.year },
                   { month: newPeriod.month, year: newPeriod.year }
                );
 
-               if (!isNextDirection && currentTimePeriodDifference === -1) {
+               if (currentTimePeriodDifference === -1) {
                   // Increment to previous goal periods once current goal period exceeds the new period
                   category.goalIndex++;
                }
@@ -151,7 +147,7 @@ const budgetsSlice = createSlice({
                   { month: newPeriod.month, year: newPeriod.year }
                );
 
-               if (isNextDirection && newTimePeriodDifference === 0) {
+               if (newTimePeriodDifference === 0) {
                   // Only decrement to closer goal periods on the exact period match
                   category.goalIndex--;
                }

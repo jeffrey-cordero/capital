@@ -18,9 +18,9 @@ import { handleValidationErrors } from "@/lib/validation";
 import { addBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
-// Combining category and budget validations for a single form
+// Schema that combines category and budget validations for a single form
 const constructSchema = budgetCategorySchema.omit(
-   { budget_category_id: true, user_id: true, category_order: true, type: true } // Current type is based on the parent type
+   { budget_category_id: true, user_id: true, category_order: true, type: true }
 ).merge(budgetSchema.innerType().pick(
    { goal: true })
 );
@@ -36,7 +36,7 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
    const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Initialize form with typed values and defaults
-   const { control, handleSubmit, setError, formState: { errors, isSubmitting, dirtyFields } } = useForm();
+   const { control, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm();
 
    // Handle form submission to create a new budget category
    const onSubmit = async(data: FieldValues) => {
@@ -97,23 +97,22 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
             spacing = { 1 }
             sx = { { mt: 1 } }
          >
+            { /* Name and goal input fields as type is implied by parent category */ }
             <Controller
                control = { control }
                name = "name"
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "constructor-name">
-                           Name
-                        </InputLabel>
+                        <InputLabel htmlFor = "constructor-name">Name</InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
                            autoComplete = "none"
+                           data-dirty = { field.value !== undefined }
                            id = "constructor-name"
                            label = "Name"
                            type = "text"
-                           data-dirty = { field.value !== undefined }
                            value = { field.value || "" }
                         />
                         <FormHelperText>
@@ -129,9 +128,7 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "constructor-goal">
-                           Goal
-                        </InputLabel>
+                        <InputLabel htmlFor = "constructor-goal">Goal</InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"
@@ -160,9 +157,7 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
                   onClick = { onClose }
                   startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
                   variant = "contained"
-               >
-                  Cancel
-               </Button>
+               >Cancel</Button>
                <Button
                   className = "btn-primary"
                   color = "primary"
@@ -171,9 +166,7 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
                   startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
                   type = "submit"
                   variant = "contained"
-               >
-                  Create
-               </Button>
+               >Create</Button>
             </Stack>
          </Stack>
       </form>

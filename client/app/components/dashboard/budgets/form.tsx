@@ -24,7 +24,7 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
-// Create a dedicated schema for budget goal updates
+// Schema for validating budget goal updates
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 interface BudgetFormProps {
@@ -51,7 +51,11 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
 
    // Reset form when modal opens/closes or budget changes
    useEffect(() => {
-      reset(open ? { goal: budget.goals[budget.goalIndex].goal } : undefined);
+      if (open && budget.goals && budget.goalIndex >= 0) {
+         reset({ goal: budget.goals[budget.goalIndex].goal });
+      } else if (!open) {
+         reset();
+      }
    }, [reset, open, budget.goals, budget.goalIndex]);
 
    // Handle budget goal updates with proper validation
@@ -77,7 +81,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
             month: period.month
          };
 
-         // Determine if we need to create or update a budget entry for Income or Expenses
+         // Determine if we need to create or update a budget entry
          const currentGoal = budget.goals[budget.goalIndex];
          const isCurrentPeriod = comparePeriods(currentGoal, period) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
@@ -112,9 +116,11 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
             direction = "column"
             spacing = { 3 }
          >
+            { /* Goal input section */ }
             <ModalSection title = "Goal">
                <Box>
                   <form onSubmit = { handleSubmit(onSubmit) }>
+                     { /* Main category goal input */ }
                      <Stack
                         direction = "column"
                         spacing = { 2 }
@@ -126,17 +132,15 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
                            render = {
                               ({ field }) => (
                                  <FormControl error = { Boolean(errors.goal) }>
-                                    <InputLabel htmlFor = "goal">
-                                       Goal
-                                    </InputLabel>
+                                    <InputLabel htmlFor = "goal">Goal</InputLabel>
                                     <OutlinedInput
                                        { ...field }
                                        aria-label = "Goal"
+                                       data-dirty = { field.value !== budget.goals[budget.goalIndex].goal }
                                        id = "goal"
                                        inputProps = { { step: 0.01, min: 0 } }
                                        label = "Goal"
                                        type = "number"
-                                       data-dirty = { field.value !== budget.goals[budget.goalIndex].goal }
                                        value = { field.value || "" }
                                     />
                                     <FormHelperText>
@@ -158,19 +162,17 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
                               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                               type = "submit"
                               variant = "contained"
-                           >
-                              Update
-                           </Button>
+                           >Update</Button>
                         </Stack>
                      </Stack>
                   </form>
                </Box>
             </ModalSection>
+            { /* Sub-categories related to the budget category type */ }
             <ModalSection title = "Categories">
-               <BudgetCategories
-                  type = { type }
-               />
+               <BudgetCategories type = { type } />
             </ModalSection>
+            { /* Transactions related to the budget category type */ }
             <ModalSection title = "Transactions">
                <Transactions
                   filter = "budget"

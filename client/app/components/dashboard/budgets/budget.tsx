@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { type BudgetGoals, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { displayCurrency, ellipsis } from "@/lib/display";
@@ -18,9 +18,11 @@ interface CategoryItemProps {
    isMainCategory?: boolean;
 }
 
-function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
+// Individual category display with progress bar
+const CategoryItem = memo(({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) => {
    // Calculate the category values
    const goal = goals[goalIndex].goal;
+   // TODO: Replace with actual data once transaction tracking is implemented
    const current = useMemo(() => Math.random() * goal, [goal]);
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
@@ -37,7 +39,7 @@ function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategor
                sx = { { alignItems: "center" } }
             >
                <Typography
-                  sx = { { ...ellipsis, maxWidth: { xs: "40%", sm: "500px" }, fontWeight: "600", textAlign: "center" }}
+                  sx = { { ...ellipsis, maxWidth: { xs: "40%", sm: "500px" }, fontWeight: "600", textAlign: "center" } }
                   variant = "h6"
                >
                   { name }
@@ -74,15 +76,17 @@ function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategor
          />
       </Box>
    );
-}
+});
+
+CategoryItem.displayName = "CategoryItem";
 
 interface BudgetCategoryProps {
    type: "Income" | "Expenses";
    onEditClick: () => void;
 }
 
-// Component to render a list of budget categories with their progress bars and potential subcategories
-export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
+// Component to render a list of budget categories with their progress bars
+const BudgetCategory = ({ type, onEditClick }: BudgetCategoryProps) => {
    // Get the main budget category
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
@@ -115,44 +119,44 @@ export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
          >
             <AnimatePresence mode = "popLayout">
                {
-                  budget.categories.map((category) => {
-                     return (
-                        <motion.div
-                           animate = { { opacity: 1, y: 0 } }
-                           exit = { { opacity: 0, y: 10 } }
-                           initial = { { opacity: 0, y: -10 } }
-                           key = { category.budget_category_id }
-                           layout = "position"
-                           transition = {
-                              {
-                                 type: "spring",
-                                 stiffness: 100,
-                                 damping: 15,
-                                 mass: 1,
-                                 duration: 0.1
-                              }
+                  budget.categories.map((category) => (
+                     <motion.div
+                        animate = { { opacity: 1, y: 0 } }
+                        exit = { { opacity: 0, y: 10 } }
+                        initial = { { opacity: 0, y: -10 } }
+                        key = { category.budget_category_id }
+                        layout = "position"
+                        transition = {
+                           {
+                              type: "spring",
+                              stiffness: 100,
+                              damping: 15,
+                              mass: 1,
+                              duration: 0.1
                            }
-                        >
-                           <CategoryItem
-                              goalIndex = { category.goalIndex }
-                              goals = { category.goals }
-                              name = { String(category.name) }
-                              type = { type }
-                           />
-                        </motion.div>
-                     );
-                  })
+                        }
+                     >
+                        <CategoryItem
+                           goalIndex = { category.goalIndex }
+                           goals = { category.goals }
+                           name = { String(category.name) }
+                           type = { type }
+                        />
+                     </motion.div>
+                  ))
                }
             </AnimatePresence>
          </Stack>
       </Stack>
    );
-}
+};
+
 interface BudgetProps {
    type: "Income" | "Expenses";
    onEditClick: () => void;
 }
 
+// Wrapper component for the budget category display
 export default function Budget({ type, onEditClick }: BudgetProps) {
    return (
       <BudgetCategory
@@ -160,4 +164,4 @@ export default function Budget({ type, onEditClick }: BudgetProps) {
          type = { type }
       />
    );
-}
+};
