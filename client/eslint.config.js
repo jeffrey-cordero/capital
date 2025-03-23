@@ -24,7 +24,7 @@ export default [
          "import-newlines": pluginImports,
          "simple-import-sort": pluginSort,
          "react-hooks": pluginReactHooks,
-         "spellcheck": pluginSpellCheck
+         spellcheck: pluginSpellCheck
       },
       rules: {
          "no-undef": "off",
@@ -37,9 +37,9 @@ export default [
          "comma-spacing": "error",
          "arrow-spacing": "error",
          "space-infix-ops": "error",
-         "semi": ["error", "always"],
+         semi: ["error", "always"],
          "consistent-return": "error",
-         "quotes": ["error", "double"],
+         quotes: ["error", "double"],
          "no-trailing-spaces": "error",
          "eol-last": ["error", "never"],
          "no-duplicate-imports": "error",
@@ -50,7 +50,7 @@ export default [
          "simple-import-sort/imports": "error",
          "simple-import-sort/exports": "error",
          "jsx-quotes": ["error", "prefer-double"],
-         "indent": ["error", 3, { SwitchCase: 1 }],
+         indent: ["error", 3, { SwitchCase: 1 }],
          "space-before-blocks": ["error", "always"],
          "object-curly-spacing": ["error", "always"],
          "keyword-spacing": ["error", { after: true }],

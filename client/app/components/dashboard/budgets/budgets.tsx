@@ -51,7 +51,7 @@ export default function Budgets() {
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
          // Close modal if forced or no unsaved changes
-         setEditState((prev) => ({ ...prev, state: "view" }));
+         setEditState((prev) => ({ ...prev, state: "view", displayWarning: false }));
       }
    }, []);
 
@@ -77,7 +77,7 @@ export default function Budgets() {
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
-               <FontAwesomeIcon icon = { faAnglesLeft }/>
+               <FontAwesomeIcon icon = { faAnglesLeft } />
             </IconButton>
             <Typography
                fontWeight = "bold"
@@ -91,7 +91,7 @@ export default function Budgets() {
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
-               <FontAwesomeIcon icon = { faAnglesRight }/>
+               <FontAwesomeIcon icon = { faAnglesRight } />
             </IconButton>
          </Stack>
          { /* Income and expenses sections */ }

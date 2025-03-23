@@ -1,7 +1,7 @@
 import { Box, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
-import { AccountTrends } from "@/components/dashboard/accounts/charts";
+import AccountTrends from "@/components/dashboard/accounts/charts";
 import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
 export default function Finances() {

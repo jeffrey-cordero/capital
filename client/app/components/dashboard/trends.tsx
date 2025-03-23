@@ -36,20 +36,18 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
    const theme = useTheme();
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
 
-   // Use theme colors for consistent styling
+   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
+   const changeYear = useCallback((direction: "previous" | "next") => {
+      setYear(prev => prev + (direction === "previous" ? -1 : 1));
+   }, []);
+
+   // Memoize the chart component contents
+   const yearAbbreviations = useMemo(() => getYearAbbreviations(year), [year]);
    const colorPalette = useMemo(() => [
       theme.palette.primary.dark,
       theme.palette.primary.main,
       theme.palette.primary.light
    ], [theme.palette.primary]);
-
-   const yearAbbreviations = useMemo(() => getYearAbbreviations(year), [year]);
-
-   const changeYear = useCallback((direction: "previous" | "next") => {
-      setYear(prev => prev + (direction === "previous" ? -1 : 1));
-   }, []);
-
-   // Memoize the chart content
    const chart = useMemo(() => (
       <BarChart
          borderRadius = { 8 }
@@ -60,23 +58,10 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
          resolveSizeBeforeRender = { true }
          series = { years }
          slotProps = { { legend: { hidden: true } } }
-         xAxis = {
- [{
-    scaleType: "band",
-    categoryGapRatio: 0.5,
-    data: yearAbbreviations
- }] as any
-         }
-         yAxis = {
-            [{
-               domainLimit: "nice",
-               valueFormatter: displayVolume
-            }]
-         }
+         xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
+         yAxis = {[{ domainLimit: "nice", valueFormatter: displayVolume }]}
       />
-   ), [colorPalette, isCard, yearAbbreviations, years]);
-
-   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
+   ), [colorPalette, isCard, yearAbbreviations, years]);   
 
    return (
       <Box sx = { { position: "relative" } }>

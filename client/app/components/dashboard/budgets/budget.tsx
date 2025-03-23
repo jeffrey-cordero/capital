@@ -19,10 +19,9 @@ interface CategoryItemProps {
 }
 
 // Individual category display with progress bar
-const CategoryItem = memo(({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) => {
+const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
    // Calculate the category values
    const goal = goals[goalIndex].goal;
-   // TODO: Replace with actual data once transaction tracking is implemented
    const current = useMemo(() => Math.random() * goal, [goal]);
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
@@ -65,12 +64,7 @@ const CategoryItem = memo(({ name, goals, goalIndex, type, onEditClick, isMainCa
          </Stack>
          <LinearProgress
             color = { color }
-            sx = {
-               {
-                  height: "1.65rem",
-                  borderRadius: "12px"
-               }
-            }
+            sx = { { height: "1.65rem", borderRadius: "12px" } }
             value = { progress }
             variant = "determinate"
          />
@@ -78,15 +72,13 @@ const CategoryItem = memo(({ name, goals, goalIndex, type, onEditClick, isMainCa
    );
 });
 
-CategoryItem.displayName = "CategoryItem";
-
 interface BudgetCategoryProps {
    type: "Income" | "Expenses";
    onEditClick: () => void;
 }
 
 // Component to render a list of budget categories with their progress bars
-const BudgetCategory = ({ type, onEditClick }: BudgetCategoryProps) => {
+const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
    // Get the main budget category
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 

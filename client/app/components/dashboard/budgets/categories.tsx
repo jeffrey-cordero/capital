@@ -50,7 +50,7 @@ interface CategoryItemProps {
    type: "Income" | "Expenses";
 }
 
-const CategoryItem = memo(({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) => {
+const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) {
    const isEditing = editingCategory === category.budget_category_id;
    const goal = category.goals[category.goalIndex].goal;
 
@@ -153,8 +153,6 @@ const CategoryItem = memo(({ category, editingCategory, setEditingCategory, type
       </Box>
    );
 });
-
-CategoryItem.displayName = "CategoryItem";
 
 export default function BudgetCategories({ type }: BudgetCategoriesProps) {
    const dispatch = useDispatch(), navigate = useNavigate();

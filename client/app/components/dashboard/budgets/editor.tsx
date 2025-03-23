@@ -51,7 +51,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
             return;
          }
 
-         // Prepare payloads for updates
+         // Prepare payloads for parallel requests
          const categoryPayload = {
             name: data.name ?? undefined,
             type: data.type ?? undefined
@@ -65,7 +65,6 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
             return;
          }
 
-         // Prepare payload for budget update
          const budgetPayload = {
             goal: data.goal ? Number(data.goal) : undefined,
             budget_category_id: category.budget_category_id,
@@ -119,6 +118,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
             }));
          }
 
+         // Close the form if both updates were successful
          if (categorySuccess && budgetSuccess) {
             onCancel();
          }
@@ -218,7 +218,9 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                   onClick = { onCancel }
                   startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
                   variant = "contained"
-               >Cancel</Button>
+               >
+                  Cancel
+               </Button>
                <Button
                   className = "btn-primary"
                   color = "primary"
@@ -227,7 +229,9 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                   startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                   type = "submit"
                   variant = "contained"
-               >Save</Button>
+               >
+                  Save
+               </Button>
             </Stack>
          </Stack>
       </form>
