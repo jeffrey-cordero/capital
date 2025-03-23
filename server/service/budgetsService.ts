@@ -13,7 +13,7 @@ import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as budgetsRepository from "@/repository/budgetsRepository";
 
 // Cache duration in seconds for user budgets (25 minutes)
-const BUDGET_CACHE_DURATION = 25 * 60;
+const BUDGET_CACHE_DURATION = 30 * 60;
 
 // Helper function to generate budgets cache key
 const getBudgetsCacheKey = (user_id: string) => `budgets:${user_id}`;
@@ -62,15 +62,18 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
 }
 
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
+   // Validate required category ID first for early return
+   if (!category.budget_category_id) {
+      return sendValidationErrors(null, "Invalid budget category fields",
+         { budget_category_id: "Budget category ID is required" }
+      );
+   }
+
    // Validate category data structure
    const fields = budgetCategorySchema.partial().safeParse(category);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid budget category fields");
-   } else if (!category.budget_category_id) {
-      return sendValidationErrors(null, "Invalid budget category fields",
-         { budget_category_id: "Budget category ID is required" }
-      );
    } else if (category.name === null) {
       return sendValidationErrors(null, "Invalid budget category fields",
          { name: "Budget category name can't be null" }
@@ -81,22 +84,23 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    const result = await budgetsRepository.updateCategory(category);
 
    // Handle different update scenarios
-   if (result === "failure") {
-      return sendServiceResponse(404, "Budget category not found", undefined,
-         { category: "Budget category does not exist based on the provided ID" }
-      );
-   } else if (result === "no_updates") {
-      // No updates to budget category, prevent unnecessary cache invalidation
-      return sendServiceResponse(204);
-   } else if (result === "main_category_conflict") {
-      return sendServiceResponse(409, "Budget category conflicts", undefined,
-         { category: "Main budget categories can't be updated" }
-      );
+   switch (result) {
+      case "failure":
+         return sendServiceResponse(404, "Budget category not found", undefined,
+            { category: "Budget category does not exist based on the provided ID" }
+         );
+      case "no_updates":
+         return sendServiceResponse(204);
+      case "main_category_conflict":
+         return sendServiceResponse(409, "Budget category conflicts", undefined,
+            { category: "Main budget categories (Income/Expenses) can't be updated" }
+         );
+      case "success":
+         clearBudgetCache(user_id);
+         return sendServiceResponse(204);
+      default:
+         return sendServiceResponse(500, "Unexpected error updating budget category");
    }
-
-   // Success - invalidate cache and return success response
-   clearBudgetCache(user_id);
-   return sendServiceResponse(204);
 }
 
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {

@@ -36,7 +36,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
    if (req.params.id === "ordering") {
       // Update the ordering of budget categories
       return submitServiceRequest(res,
-         async() => budgetsService.updateCategoryOrdering(user_id, (req.body.categories ?? []) as string[])
+         async() => budgetsService.updateCategoryOrdering(user_id, req.body.categories as string[])
       );
    } else if (req.path.includes("/budgets/budget")) {
       // Update a budget for a specific year/month

@@ -59,9 +59,9 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
          series = { years }
          slotProps = { { legend: { hidden: true } } }
          xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
-         yAxis = {[{ domainLimit: "nice", valueFormatter: displayVolume }]}
+         yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
       />
-   ), [colorPalette, isCard, yearAbbreviations, years]);   
+   ), [colorPalette, isCard, yearAbbreviations, years]);
 
    return (
       <Box sx = { { position: "relative" } }>

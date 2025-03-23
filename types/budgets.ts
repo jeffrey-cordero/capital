@@ -5,9 +5,13 @@ import { zodPreprocessNumber } from "./numerics";
 // Common validation constants
 const MIN_NAME_LENGTH = 1;
 const MAX_NAME_LENGTH = 30;
-const MAX_INT = 2_147_483_647;
+const MAX_INT = 2_147_483_647; // Maximum PostgreSQL integer value
 const CURRENT_YEAR = new Date().getUTCFullYear();
 const MAX_CURRENT_MONTH = new Date().getUTCMonth() + 1;
+const MAX_GOAL_AMOUNT = 999_999_999_999_999.99; // 15 digits + 2 decimals
+
+// Reserved words that cannot be used as category names
+const RESERVED_WORDS = ["income", "expenses"];
 
 export const budgetSchema = z.object({
    budget_category_id: z.string().trim().uuid({
@@ -17,8 +21,8 @@ export const budgetSchema = z.object({
       message: "Goal must be a valid number"
    }).min(0, {
       message: "Goal must be at least $0"
-   }).max(999_999_999_999_999.99, {
-      message: "Goal cannot exceed $999,999,999,999,999.99"
+   }).max(MAX_GOAL_AMOUNT, {
+      message: `Goal cannot exceed $${MAX_GOAL_AMOUNT.toLocaleString()}`
    })),
    month: zodPreprocessNumber(z.coerce.number({
       message: "Month must be a valid number"
@@ -38,9 +42,6 @@ export const budgetSchema = z.object({
    message: "Month must not be in a future month for the current year",
    path: ["month"]
 });
-
-// Reserved words that cannot be used as category names
-const RESERVED_WORDS = ["income", "expenses"];
 
 export const budgetCategorySchema = z.object({
    user_id: z.string().trim().uuid({
@@ -86,6 +87,7 @@ export const budgetCategorySchema = z.object({
 });
 
 export type Period = { month: number, year: number };
+
 export type BudgetType = "Income" | "Expenses";
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 export type BudgetGoals = Omit<Budget, "budget_category_id">;
