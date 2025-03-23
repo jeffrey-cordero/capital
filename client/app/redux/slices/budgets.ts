@@ -8,26 +8,7 @@ import {
 } from "capital/budgets";
 import { type WritableDraft } from "immer";
 
-import { getCurrentDate } from "@/lib/dates";
-
-const calculateNewPeriod = ({ month, year }: Period, direction: "previous" | "next"): Period => {
-   if (direction === "previous") {
-      return { month: month === 1 ? 12 : month - 1, year: month === 1 ? year - 1 : year };
-   } else {
-      return { month: month === 12 ? 1 : month + 1, year: month === 12 ? year + 1 : year };
-   }
-};
-
-export const comparePeriods = (p1: Period, p2: Period): -1 | 0 | 1 => {
-   // Returns 0 if the periods are the same, 1 if p1 is before p2, -1 if p1 is after p2
-   if (p1.year === p2.year && p1.month === p2.month) {
-      return 0;
-   } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
-      return 1;
-   } else {
-      return -1;
-   }
-};
+import { calculateNewPeriod, comparePeriods, getCurrentDate } from "@/lib/dates";
 
 const today: Date = getCurrentDate();
 
@@ -153,25 +134,27 @@ const budgetsSlice = createSlice({
             const newGoal: BudgetGoals = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
             // Calculate the difference in time periods between the current goal and the new period
-            const currentTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
-               { month: currentGoal.month, year: currentGoal.year },
-               { month: newPeriod.month, year: newPeriod.year }
-            );
+            if (!isNextDirection) {
+               const currentTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+                  { month: currentGoal.month, year: currentGoal.year },
+                  { month: newPeriod.month, year: newPeriod.year }
+               );
 
-            if (!isNextDirection && currentTimePeriodDifference === -1) {
-               // Increment to previous goal periods once current goal period exceeds the new period
-               category.goalIndex++;
-            } else if (!isNextDirection) return; // Skip further processing for the previous direction request
+               if (!isNextDirection && currentTimePeriodDifference === -1) {
+                  // Increment to previous goal periods once current goal period exceeds the new period
+                  category.goalIndex++;
+               }
+            } else {
+               // Calculate the difference in time periods between the new goal and the new period
+               const newTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+                  { month: newGoal.month, year: newGoal.year },
+                  { month: newPeriod.month, year: newPeriod.year }
+               );
 
-            // Calculate the difference in time periods between the new goal and the new period
-            const newTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
-               { month: newGoal.month, year: newGoal.year },
-               { month: newPeriod.month, year: newPeriod.year }
-            );
-
-            if (isNextDirection && newTimePeriodDifference === 0) {
-               // Only decrement to closer goal periods on the exact period match
-               category.goalIndex--;
+               if (isNextDirection && newTimePeriodDifference === 0) {
+                  // Only decrement to closer goal periods on the exact period match
+                  category.goalIndex--;
+               }
             }
          };
 

@@ -126,9 +126,10 @@ export default function AccountCard({ account }: AccountCardProps) {
                      src = { getImageSource() }
                      sx = {
                         {
-                           height: { xs: 250, sm: 215 },
+                           height: { xs: 215, sm: 200 },
                            width: "100%",
                            cursor: "grab",
+                           touchAction: "none",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
                         }
                      }

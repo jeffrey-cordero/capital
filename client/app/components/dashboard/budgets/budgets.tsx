@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { getCurrentDate, months } from "@/lib/dates";
+import { getCurrentDate, monthAbbreviations, months } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
@@ -37,18 +37,16 @@ export default function Budgets() {
       setEditState({ state: "edit", displayWarning: false, type });
    }, []);
 
-   const closeModal = useCallback((force?: boolean) => {
-      const containsDirtyForm = ["budget-form", "constructor-form", "editor-form"].some(
-         (form) => (document.getElementById(form) as HTMLFormElement)?.dataset.dirty === "true"
-      );
+   const closeModal = (force?: boolean) => {
+      const containsDirtyInput = !!document.querySelector('[data-dirty="true"]');
 
       // Close the budget modal, but only if there are no dirty forms and the request is not forced
-      if (!force && containsDirtyForm) {
+      if (!force && containsDirtyInput) {
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
          setEditState((prev) => ({ ...prev, state: "view" }));
       }
-   }, []);
+   };
 
    return (
       <Box>
@@ -58,6 +56,7 @@ export default function Budgets() {
             sx = { { justifyContent: "space-between", alignItems: "center" } }
          >
             <IconButton
+               disabled = { period.year === 1800 }
                onClick = { () => dispatch(selectMonth({ direction: "previous" })) }
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
@@ -70,7 +69,7 @@ export default function Budgets() {
                fontWeight = "bold"
                variant = "h6"
             >
-               { `${months[period.month - 1]} ${period.year}` }
+               { `${monthAbbreviations[period.month - 1]} ${period.year}` }
             </Typography>
             <IconButton
                disabled = { nextMonthDisabled }

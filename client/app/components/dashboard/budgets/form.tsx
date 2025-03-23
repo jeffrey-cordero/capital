@@ -19,8 +19,9 @@ import Transactions from "@/components/dashboard/accounts/transactions";
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
+import { comparePeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
-import { comparePeriods, updateBudget } from "@/redux/slices/budgets";
+import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 // Create a dedicated schema for budget goal updates
@@ -113,11 +114,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
          >
             <ModalSection title = "Goal">
                <Box>
-                  <form
-                     data-dirty = { Object.keys(dirtyFields).length > 0 }
-                     id = "budget-form"
-                     onSubmit = { handleSubmit(onSubmit) }
-                  >
+                  <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
                         direction = "column"
                         spacing = { 2 }
@@ -139,6 +136,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
                                        inputProps = { { step: 0.01, min: 0 } }
                                        label = "Goal"
                                        type = "number"
+                                       data-dirty = { field.value !== budget.goals[budget.goalIndex].goal }
                                        value = { field.value || "" }
                                     />
                                     <FormHelperText>

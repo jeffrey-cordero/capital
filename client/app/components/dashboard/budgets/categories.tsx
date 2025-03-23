@@ -18,12 +18,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { faBars, faFeatherPointed, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import {
+   Alert,
+   Box,
+   Button,
+   Stack,
+   Typography
+} from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import { calculateBudgetTotals } from "@/components/dashboard/budgets/charts";
 import ConstructCategory from "@/components/dashboard/budgets/constructor";
 import DeleteBudget from "@/components/dashboard/budgets/delete";
 import EditCategory from "@/components/dashboard/budgets/editor";
@@ -60,67 +67,71 @@ function CategoryItem({ category, editingCategory, setEditingCategory, type }: C
 
    return (
       <Box
-         key = { category.budget_category_id }
-         ref = { setNodeRef }
-         style = { style }
+         key={category.budget_category_id}
+         ref={setNodeRef}
+         style={style}
       >
          {
             isEditing ? (
                <EditCategory
-                  category = { category }
-                  onCancel = { () => setEditingCategory(null) }
+                  category={category}
+                  onCancel={() => setEditingCategory(null)}
                />
             ) : (
                <Stack
-                  direction = "row"
-                  spacing = { 1 }
-                  sx = { { alignItems: "center", px: 1 } }
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center", px: 1 }}
                >
                   <FontAwesomeIcon
-                     icon = { faBars }
-                     { ...listeners }
-                     { ...attributes }
-                     size = "lg"
-                     style = { { cursor: "grab", outline: "none" } }
+                     icon={faBars}
+                     {...listeners}
+                     {...attributes}
+                     size="lg"
+                     style={{ cursor: "grab", outline: "none", touchAction: "none" }}
                   />
                   <Stack
-                     direction = "row"
-                     sx = { { width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" } }
+                     direction={{ xs: "column", sm: "row" }}
+                     sx={{ width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" }}
                   >
                      <Stack
-                        direction = "row"
-                        spacing = { 1 }
-                        sx = { { alignItems: "center" } }
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: "center" }}
                      >
                         <Typography
-                           sx = { { ...ellipsis, maxWidth: "320px", pr: 1 } }
-                           variant = "h6"
+                           sx = {{ wordBreak: "break-all", textAlign: "center" }}
+                           variant="subtitle1"
                         >
-                           { category.name }
+                           {category.name}
                         </Typography>
                      </Stack>
                      <Stack
-                        direction = "row"
-                        spacing = { 1 }
-                        sx = { { alignItems: "center" } }
+                        direction={ { xs: "column", sm: "row" } }
+                        spacing={1}
+                        sx={{ alignItems: "center" }}
                      >
-                        <Typography
-                           sx = { { ...ellipsis, fontWeight: "600" } }
-                           variant = "subtitle1"
-                        >
-                           { displayCurrency(goal) }
-                        </Typography>
-                        <FontAwesomeIcon
-                           className = "primary"
-                           icon = { faPenToSquare }
-                           onClick = { () => setEditingCategory(category.budget_category_id) }
-                           size = "lg"
-                           style = { { cursor: "pointer" } }
-                        />
-                        <DeleteBudget
-                           budget_category_id = { category.budget_category_id }
-                           type = { type }
-                        />
+                        <Box>
+                           <Typography
+                              sx={{ ...ellipsis, fontWeight: "600" }}
+                              variant="subtitle2"
+                           >
+                              {displayCurrency(goal)}
+                           </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1}>
+                           <FontAwesomeIcon
+                              className="primary"
+                              icon={faPenToSquare}
+                              onClick={() => setEditingCategory(category.budget_category_id)}
+                              size="lg"
+                              style={{ cursor: "pointer" }}
+                           />
+                           <DeleteBudget
+                              budget_category_id={category.budget_category_id}
+                              type={type}
+                           />
+                        </Stack>
                      </Stack>
                   </Stack>
                </Stack>
@@ -137,6 +148,9 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
 
    const [editingCategory, setEditingCategory] = useState<string | null>(null);
    const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+   const { mainGoal, categoryTotal } = useMemo(() => {
+      return calculateBudgetTotals(budget);
+   }, [budget]);
 
    const categoryIds = useMemo(() => {
       return budget.categories.map(category => category.budget_category_id ?? "");
@@ -165,7 +179,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
       })
    );
 
-   const handleDragEnd = useCallback(async(event: DragEndEvent) => {
+   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
       // Handles the end of a drag operation
       const { active, over } = event;
 
@@ -223,54 +237,65 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
 
    return (
       <Stack
-         direction = "column"
-         spacing = { 2 }
-         sx = { { mt: 1 } }
+         direction="column"
+         spacing={2}
+         sx={{ mt: 3 }}
       >
-         { /* Existing sub categories */ }
+         { /* Informational alert for main budget goal to inform users that the main goal should be at least the total of all sub-categories */}
+         {
+            categoryTotal > mainGoal && (
+               <Alert
+                  color={"primary" as any}
+                  severity="info"
+               >
+                  The main budget goal should be at least {displayCurrency(categoryTotal)} as the total of all sub-categories ({displayCurrency(categoryTotal - mainGoal)}) surpasses this amount.
+               </Alert>
+            )
+         }
+         { /* Existing sub categories */}
          <DndContext
-            collisionDetection = { closestCenter }
-            onDragEnd = { handleDragEnd }
-            sensors = { sensors }
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
          >
             <SortableContext
-               items = { categoryIds }
-               strategy = { verticalListSortingStrategy }
+               items={categoryIds}
+               strategy={verticalListSortingStrategy}
             >
                {
                   budget.categories.map((category) => {
 
                      return (
                         <CategoryItem
-                           category = { category }
-                           editingCategory = { editingCategory }
-                           key = { category.budget_category_id }
-                           setEditingCategory = { setEditingCategory }
-                           type = { type }
+                           category={category}
+                           editingCategory={editingCategory}
+                           key={category.budget_category_id}
+                           setEditingCategory={setEditingCategory}
+                           type={type}
                         />
                      );
                   })
                }
             </SortableContext>
          </DndContext>
-         { /* New category */ }
-         <Box sx = { { mt: 12 } }>
+         { /* New category */}
+         <Box>
             {
                !showNewCategoryForm ? (
                   <Button
-                     className = "btn-primary"
-                     color = "primary"
-                     fullWidth = { true }
-                     onClick = { () => displayNewCategoryForm(true) }
-                     startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
-                     variant = "contained"
+                     className="btn-primary"
+                     color="primary"
+                     fullWidth={true}
+                     onClick={() => displayNewCategoryForm(true)}
+                     startIcon={<FontAwesomeIcon icon={faFeatherPointed} />}
+                     variant="contained"
                   >
                      Add Category
                   </Button>
                ) : (
                   <ConstructCategory
-                     onClose = { handleCloseConstructCategory }
-                     type = { type }
+                     onClose={handleCloseConstructCategory}
+                     type={type}
                   />
                )
             }

@@ -1,14 +1,15 @@
-import { Stack, Typography } from "@mui/material";
-import { BarChart } from "@mui/x-charts";
+import { Chip } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { type Account, liabilityTypes } from "capital/accounts";
 import { useSelector } from "react-redux";
 
-import { TrendCard } from "@/components/dashboard/trends";
-import { getCurrentDate, getYearAbbreviations, normalizeDate } from "@/lib/dates";
-import { displayCurrency, displayVolume } from "@/lib/display";
+import { Trends } from "@/components/dashboard/trends";
+import { getCurrentDate, normalizeDate } from "@/lib/dates";
+import { displayCurrency } from "@/lib/display";
 import { type RootState } from "@/redux/store";
 
-export function AccountTrends({ elevation }: { elevation: number }) {
+export function AccountTrends({ isCard }: { isCard: boolean }) {
+   const theme = useTheme();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
 
    // Generate data points for the last 12 months until transactions are implemented
@@ -59,60 +60,28 @@ export function AccountTrends({ elevation }: { elevation: number }) {
       return acc + (multiplier * Number(record.balance || 0));
    }, 0);
 
-   // Prepare chart data
-   const chartContent = historicalAccounts.length > 0 ? (
-      <BarChart
-         borderRadius = { 8 }
-         colors = {
-            accounts.map(acc =>
-               liabilityTypes.has(acc.type) ? "hsl(0, 90%, 50%)" : "hsl(210, 98%, 48%)"
-            )
+   return (
+      <Trends
+         extraInfo = {
+            <Chip
+               color = "error"
+               label = "-12%"
+               size = "small"
+            />
          }
-         grid = { { horizontal: true } }
-         height = { elevation === 0 ? 400 : 300 }
-         margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
-         resolveSizeBeforeRender = { true }
-         series = {
+         isCard = { isCard }
+         subtitle = "Account balances"
+         title = "Net Worth"
+         value = { displayCurrency(netWorth) }
+         years = {
             accounts.map((account, index) => ({
                id: account.account_id || String(index),
                label: account.name,
                data: historicalAccounts[index].map(acc => acc.balance),
-               stack: String(index)
+               stack: String(index),
+               color: liabilityTypes.has(account.type) ? theme.palette.error.main : theme.palette.primary.main
             }))
          }
-         slotProps = { { legend: { hidden: true } } }
-         xAxis = {
-            [{
-               scaleType: "band",
-               categoryGapRatio: 0.5,
-               data: getYearAbbreviations()
-            }] as any
-         }
-         yAxis = {
-            [{
-               domainLimit: "nice",
-               valueFormatter: displayVolume
-            }]
-         }
-      />
-   ) : (
-      <Stack sx = { { justifyContent: "center", textAlign: "center", height: "300px" } }>
-         <Typography
-            fontWeight = "bold"
-            variant = "body1"
-         >
-            No available accounts
-         </Typography>
-      </Stack>
-   );
-
-   return (
-      <TrendCard
-         chart = { chartContent }
-         elevation = { elevation }
-         subtitle = "Account balances for the past 12 months"
-         title = "Net Worth"
-         value = { displayCurrency(netWorth) }
       />
    );
 }

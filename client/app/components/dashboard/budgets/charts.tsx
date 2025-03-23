@@ -1,26 +1,32 @@
 import {
    Box,
    Chip,
+   LinearProgress,
    Stack,
    styled,
    Typography,
    useTheme
 } from "@mui/material";
-import { BarChart, PieChart, useDrawingArea } from "@mui/x-charts";
+import { PieChart, useDrawingArea } from "@mui/x-charts";
 import { type OrganizedBudget } from "capital/budgets";
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import { TrendCard } from "@/components/dashboard/trends";
-import { getYearAbbreviations } from "@/lib/dates";
-import { displayCurrency, displayVolume } from "@/lib/display";
+import { Trends } from "@/components/dashboard/trends";
+import { displayCurrency, displayPercentage, ellipsis } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-interface BudgetCategory {
-   name: string;
-   goal: number;
-   current: number;
-   color: string;
-}
+
+export function calculateBudgetTotals(budget: OrganizedBudget): { mainGoal: number, categoryTotal: number } {
+   // Get the most recent month's data
+   const mainGoal: number = Number(budget.goals[budget.goalIndex].goal) || 0;
+
+   // Sum up all category goals for the most recent month/year
+   const categoryTotal = budget.categories.reduce((acc, record) => {
+      return acc + Number(record.goals[record.goalIndex].goal);
+   }, 0);
+
+   return { mainGoal, categoryTotal };
+};
 
 interface StyledTextProps {
    variant: "primary" | "secondary";
@@ -77,18 +83,18 @@ function PieCenterLabel({ primaryText, secondaryText }: PieCenterLabelProps) {
    return (
       <React.Fragment>
          <StyledText
-            variant = "primary"
-            x = { left + width / 2 }
-            y = { primaryY }
+            variant="primary"
+            x={left + width / 2}
+            y={primaryY}
          >
-            { primaryText }
+            {primaryText}
          </StyledText>
          <StyledText
-            variant = "secondary"
-            x = { left + width / 2 }
-            y = { secondaryY }
+            variant="secondary"
+            x={left + width / 2}
+            y={secondaryY}
          >
-            { secondaryText }
+            {secondaryText}
          </StyledText>
       </React.Fragment>
    );
@@ -96,36 +102,33 @@ function PieCenterLabel({ primaryText, secondaryText }: PieCenterLabelProps) {
 
 interface BudgetProgressChartProps {
    title: string;
-   categories: BudgetCategory[];
+   type: "Income" | "Expenses";
+   data: { label: string, percentage: number, value: number, color: string }[];
    totalGoal: number;
    totalCurrent: number;
 }
 
-function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: BudgetProgressChartProps) {
+function BudgetProgressChart({ title, data, type, totalGoal, totalCurrent }: BudgetProgressChartProps) {
    // Calculate percentage of total budget used
    const percentUsed = Math.min(100, Math.round((totalCurrent / totalGoal) * 100)) || 0;
 
-   // Prepare data for pie chart
-   const chartData = categories.map(cat => ({
-      label: cat.name,
-      value: cat.goal
-   }));
-
    return (
       <Stack
-         direction = "column"
-         spacing = { -3 }
-         sx = { { flexGrow: 1, textAlign: "center" } }
+         direction="column"
+         sx={{ flexGrow: 1, textAlign: "center" }}
       >
          <Typography
-            variant = "h6"
+            variant="h6"
          >
-            { title }
+            {title}
          </Typography>
-         <Box sx = { { display: "flex", alignItems: "center" } }>
+         <Stack
+            direction="column"
+            sx={{ alignItems: "center", gap: 2, pb: 2 }}
+         >
             <PieChart
-               height = { 300 }
-               margin = {
+               height={250}
+               margin={
                   {
                      left: 80,
                      right: 80,
@@ -133,10 +136,10 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: Bud
                      bottom: 80
                   }
                }
-               series = {
+               series={
                   [
                      {
-                        data: chartData,
+                        data: data,
                         innerRadius: 75,
                         outerRadius: 100,
                         paddingAngle: 0,
@@ -144,154 +147,138 @@ function BudgetProgressChart({ title, categories, totalGoal, totalCurrent }: Bud
                      }
                   ]
                }
-               slotProps = {
+               slotProps={
                   {
-                     legend: { hidden: true }
+                     legend: {
+                        hidden: true
+                     }
                   }
                }
-               width = { 260 }
             >
                <PieCenterLabel
-                  primaryText = { displayCurrency(totalCurrent) }
-                  secondaryText = { `${percentUsed}% Used` }
+                  primaryText={displayCurrency(totalCurrent)}
+                  secondaryText={`${percentUsed}% Used`}
                />
             </PieChart>
-         </Box>
+            {
+               data.map((category, index) => (
+                  <Stack
+                     direction="row"
+                     key={index}
+                     sx={{ width: "100%", alignItems: "center", gap: 2, pb: 2, px: { xs: 2, sm: 5 } }}
+                  >
+                     <Stack sx={{ gap: 1, flexGrow: 1 }}>
+                        <Stack
+                           direction="column"
+                           spacing={0.5}
+                           sx={{ justifyContent: "space-between", alignItems: "center" }}
+                        >
+                           <Typography
+                              sx={{ ...ellipsis, maxWidth: { xs: "200px", sm: "500px" }, fontWeight: "600" }}
+                              variant="body2"
+                           >
+                              {category.label}
+                           </Typography>
+                           <Typography
+                              sx={{ ...ellipsis, color: "text.secondary" }}
+                              variant="body2"
+                           >
+                              {displayPercentage(category.percentage)}
+                           </Typography>
+                        </Stack>
+                        <LinearProgress
+                           aria-label={`${category.label} progress`}
+                           color={type === "Income" ? "success" : "error"}
+                           value={0}
+                           variant="determinate"
+                        />
+                     </Stack>
+                  </Stack>
+               ))
+            }
+         </Stack>
       </Stack>
    );
 }
 
-// Helper function to calculate total budget goals
-const calculateTotal = (budget: OrganizedBudget) => {
-   // Get the most recent month's data
-   const mainGoal: number = budget.goals[budget.goalIndex].goal || 0;
-
-   // Sum up all category goals for the most recent month/year
-   const categoryTotal = budget.categories.reduce((acc, record) => {
-      return acc + record.goals[record.goalIndex].goal;
-   }, 0);
-
-   return { mainGoal, categoryTotal };
-};
-
 export function BudgetPieChart({ type }: { type: "Income" | "Expenses" }) {
-   const theme = useTheme();
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Calculate totals (main goal and category total)
-   const { mainGoal, categoryTotal } = calculateTotal(budget);
+   const { mainGoal, categoryTotal } = calculateBudgetTotals(budget);
+
+   const hue = type === "Income" ? 120 : 0;
+   const saturation = type === "Income" ? 44 : 90;
 
    // Prepare data for pie chart
-   const pieData = budget.categories.map(category => ({
-      id: category.budget_category_id,
-      value: category.goals[category.goalIndex].goal,
+   const base = mainGoal > categoryTotal ? mainGoal : categoryTotal;
+   const pieData = budget.categories.map((category, index) => ({
       label: category.name || "",
-      color: theme.palette.primary.main
+      percentage: 100 * (Number(category.goals[category.goalIndex].goal) / base),
+      value: Number(category.goals[category.goalIndex].goal),
+      color: `hsl(${hue}, ${saturation}%, ${60 - ((index + 1) * 5)}%)`
    }));
 
-   if (Math.abs(mainGoal - categoryTotal) > 0) {
+   if (mainGoal > categoryTotal) {
       // Add an additional data point for the main goal, if there is a difference
       pieData.unshift({
-         id: type,
-         value: Math.abs(mainGoal - categoryTotal),
          label: type,
-         color: theme.palette.primary.light
+         percentage: 100 * (Math.abs(mainGoal - categoryTotal) / (base)),
+         value: Math.abs(mainGoal - categoryTotal),
+         color: `hsl(${hue}, ${saturation}%, ${60 - (budget.categories.length * 5)}%)`
       });
    }
 
-   // Prepare data for progress chart
-   const progressCategories: BudgetCategory[] = budget.categories.map((category, index) => {
-      const goal = category.goals[category.goalIndex].goal;
-      return {
-         name: category.name || "Unnamed",
-         goal,
-         current: 0,
-         color: `hsl(220, 50%, ${65 - (index * 10)}%)`
-      };
-   });
-
    return (
       <Box>
-         <Box sx = { { mt: 4 } }>
+         <Box sx={{ mt: 4 }}>
             <BudgetProgressChart
-               categories = { progressCategories }
-               title = { type }
-               totalCurrent = { 0 }
-               totalGoal = { mainGoal }
+               data={pieData}
+               title={type}
+               totalCurrent={0}
+               totalGoal={mainGoal}
+               type={type}
             />
          </Box>
       </Box>
    );
 }
 
-export function BudgetTrends({ elevation }: { elevation: number }) {
+export function BudgetTrends({ isCard }: { isCard: boolean }) {
    const theme = useTheme();
-
-   // Use theme colors for consistent styling
-   const colorPalette = [
-      theme.palette.primary.dark,
-      theme.palette.primary.main,
-      theme.palette.primary.light
-   ];
-
-   // Mock data until transactions are implemented
-   const chartContent = (
-      <BarChart
-         borderRadius = { 8 }
-         colors = { colorPalette }
-         grid = { { horizontal: true } }
-         height = { elevation === 0 ? 400 : 300 }
-         margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
-         resolveSizeBeforeRender = { true }
-         series = {
-            [
-               {
-                  id: "income",
-                  label: "Income",
-                  data: [45234, 33872, 29198, 49125, 41317, 27389, 29398, 45234, 33872, 29198, 49125, 41317],
-                  stack: "A",
-                  color: theme.palette.success.main
-               },
-               {
-                  id: "expenses",
-                  label: "Expenses",
-                  data: [45234, 33872, 29198, 42125, 51317, 27389, 29398, 45234, 33872, 22198, 12125, 2317],
-                  stack: "B",
-                  color: theme.palette.error.main
-               }
-            ]
-         }
-         slotProps = { { legend: { hidden: true } } }
-         xAxis = {
-            [{
-               scaleType: "band",
-               categoryGapRatio: 0.5,
-               data: getYearAbbreviations()
-            }] as any
-         }
-         yAxis = {
-            [{
-               domainLimit: "nice",
-               valueFormatter: displayVolume
-            }]
-         }
-      />
-   );
-
    return (
-      <TrendCard
-         chart = { chartContent }
-         elevation = { elevation }
-         extraInfo = {
-            <Chip
-               color = "success"
-               label = "+52%"
-               size = "small"
-            />
-         }
-         subtitle = "Income vs. Expenses for the past 12 months"
-         title = "Budget"
-         value = "$0.00"
-      />
+      <Box sx={{ position: "relative" }}>
+         <Trends
+            extraInfo={
+               <Chip
+                  color="success"
+                  label="+52%"
+                  size="small"
+               />
+            }
+            isCard={isCard}
+            subtitle="Income vs. Expenses"
+            title="Budget"
+            value="$0.00"
+            years={
+               [
+                  {
+                     id: "income",
+                     label: "Income",
+                     data: [45234, 33872, 29198, 49125, 41317, 27389, 29398, 45234, 33872, 29198, 49125, 41317],
+                     stack: "A",
+                     color: theme.palette.success.main
+                  },
+                  {
+                     id: "expenses",
+                     label: "Expenses",
+                     data: [45234, 33872, 29198, 42125, 51317, 27389, 29398, 45234, 33872, 22198, 12125, 2317],
+                     stack: "B",
+                     color: theme.palette.error.main
+                  }
+               ]
+            }
+         />
+      </Box>
    );
 }

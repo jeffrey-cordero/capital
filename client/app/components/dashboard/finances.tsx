@@ -24,10 +24,10 @@ export default function Finances() {
                />
             </Box>
             <Grid size = { 12 }>
-               <AccountTrends elevation = { 3 } />
+               <AccountTrends isCard = { true } />
             </Grid>
             <Grid size = { 12 }>
-               <BudgetTrends elevation = { 3 } />
+               <BudgetTrends isCard = { true } />
             </Grid>
          </Stack>
       </Box>

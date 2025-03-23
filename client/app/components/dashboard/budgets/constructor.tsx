@@ -91,14 +91,11 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
    };
 
    return (
-      <form
-         data-dirty = { Object.keys(dirtyFields).length > 0 }
-         id = "constructor-form"
-         onSubmit = { handleSubmit(onSubmit) }
-      >
+      <form onSubmit = { handleSubmit(onSubmit) }>
          <Stack
             direction = "column"
-            spacing = { 1  }
+            spacing = { 1 }
+            sx = { { mt: 1 } }
          >
             <Controller
                control = { control }
@@ -116,6 +113,7 @@ export default function ConstructCategory({ onClose, type }: ConstructCategoryPr
                            id = "constructor-name"
                            label = "Name"
                            type = "text"
+                           data-dirty = { field.value !== undefined }
                            value = { field.value || "" }
                         />
                         <FormHelperText>

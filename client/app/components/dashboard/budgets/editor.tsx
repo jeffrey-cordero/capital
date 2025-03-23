@@ -15,8 +15,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
+import { comparePeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
-import { comparePeriods, updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
+import { updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 interface EditCategoryProps {
@@ -127,14 +128,11 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
    };
 
    return (
-      <form
-         data-dirty = { Object.keys(dirtyFields).length > 0 }
-         id = "editor-form"
-         onSubmit = { handleSubmit(onSubmit) }
-      >
+      <form onSubmit = { handleSubmit(onSubmit) }>
          <Stack
             direction = "column"
             spacing = { 2 }
+            sx = { { mt: 1 } }
          >
             <Controller
                control = { control }

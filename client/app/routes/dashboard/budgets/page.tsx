@@ -11,9 +11,9 @@ export default function Page() {
          sx = { { py: 4, px: 2 } }
       >
          <Grid
-            columnSpacing = { 4 }
+            columnSpacing = { 2 }
             container = { true }
-            rowSpacing = { 4 }
+            rowSpacing = { 2 }
             sx = { { width: "100%", height: "100%" } }
          >
             <Grow
@@ -59,6 +59,7 @@ export default function Page() {
                >
                   <Grid
                      container = { true }
+                     rowSpacing = { 4 }
                   >
                      <Grid
                         size = { { xs: 12 } }
@@ -71,18 +72,21 @@ export default function Page() {
                               className = "floating"
                               component = "img"
                               src = "/svg/budgeting.svg"
-                              sx = { { width: 500, height: "auto", mb: -5 } }
+                              sx = { { width: 500, height: "auto", mb: -10 } }
                            />
                         </Box>
                      </Grid>
                      <Grid size = { { xs: 12, md: 6 } }>
                         <BudgetPieChart type = "Income" />
                      </Grid>
-                     <Grid size = { { xs: 12, md: 6 } }>
+                     <Grid
+                        size = { { xs: 12, md: 6 } }
+                        sx = { { mt: { xs: -7, md: 0 } } }
+                     >
                         <BudgetPieChart type = "Expenses" />
                      </Grid>
                      <Grid size = { { xs: 12 } }>
-                        <BudgetTrends elevation = { 0 } />
+                        <BudgetTrends isCard = { false } />
                      </Grid>
                   </Grid>
                </Grow>

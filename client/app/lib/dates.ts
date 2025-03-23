@@ -1,3 +1,5 @@
+import type { Period } from "capital/budgets";
+
 export const getCurrentDate = () => {
    return new Date(new Date().setUTCHours(0, 0, 0, 0));
 };
@@ -7,7 +9,7 @@ export const months = [
    "July", "August", "September", "October", "November", "December"
 ];
 
-const monthAbbreviations = [
+export const monthAbbreviations = [
    "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
    "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
 ];
@@ -25,15 +27,16 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
-export function getYearAbbreviations(referenceDate = getCurrentDate()): string[] {
+export function getYearAbbreviations(year?: number): string[] {
    // Format the year array to "MM. YYYY" format
-   const year = [];
+   const yearAbbreviations = [];
+   const referenceDate = year ? new Date(year, 0, 1) : getCurrentDate();
 
    for (const month of monthAbbreviations) {
-      year.push(`${month} ${referenceDate.getUTCFullYear()}`);
+      yearAbbreviations.push(`${month} ${referenceDate.getUTCFullYear()}`);
    }
 
-   return year;
+   return yearAbbreviations;
 }
 
 export function timeSinceLastUpdate(date: string) {
@@ -58,3 +61,22 @@ export function timeSinceLastUpdate(date: string) {
       return parts.join(", ") + " ago";
    }
 }
+
+export function calculateNewPeriod({ month, year }: Period, direction: "previous" | "next"): Period {
+   if (direction === "previous") {
+      return { month: month === 1 ? 12 : month - 1, year: month === 1 ? year - 1 : year };
+   } else {
+      return { month: month === 12 ? 1 : month + 1, year: month === 12 ? year + 1 : year };
+   }
+};
+
+export function comparePeriods(p1: Period, p2: Period): -1 | 0 | 1 {
+   // Returns 0 if the periods are the same, 1 if p1 is before p2, -1 if p1 is after p2
+   if (p1.year === p2.year && p1.month === p2.month) {
+      return 0;
+   } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
+      return 1;
+   } else {
+      return -1;
+   }
+};

@@ -1,18 +1,11 @@
-import { faCaretDown, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-   Box,
-   Collapse,
-   LinearProgress,
-   Stack,
-   Typography
-} from "@mui/material";
+import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { type BudgetGoals, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import { Expand } from "@/components/global/expand";
 import { displayCurrency, ellipsis } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -33,10 +26,10 @@ function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategor
    const color = type === "Income" ? "success" : "error";
 
    return (
-      <Box sx = { { pl: !isMainCategory ? 4 : 0, pr: !isMainCategory ? 6 : 0 } }>
+      <Box sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }>
          <Stack
-            direction = "row"
-            sx = { { justifyContent: "space-between", alignItems: "center", mb: 1 } }
+            direction = "column"
+            sx = { { justifyContent: { xs: "flex-start", sm: "space-between" }, alignItems: "center", mb: 1 } }
          >
             <Stack
                direction = "row"
@@ -44,7 +37,7 @@ function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategor
                sx = { { alignItems: "center" } }
             >
                <Typography
-                  sx = { { ...ellipsis } }
+                  sx = { { ...ellipsis, maxWidth: { xs: "40%", sm: "500px" }, fontWeight: "600", textAlign: "center" }}
                   variant = "h6"
                >
                   { name }
@@ -62,7 +55,7 @@ function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategor
                }
             </Stack>
             <Typography
-               sx = { { ...ellipsis, fontWeight: "600" } }
+               sx = { { fontWeight: "600", wordBreak: "break-word", textAlign: "center" } }
                variant = "subtitle1"
             >
                { displayCurrency(current) } / { displayCurrency(goal) }
@@ -92,17 +85,11 @@ interface BudgetCategoryProps {
 export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
    // Get the main budget category
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
-   const [isExpanded, setIsExpanded] = useState(true);
-
-   // Toggle expanded state of subcategories
-   const toggleExpanded = useCallback(() => {
-      setIsExpanded(!isExpanded);
-   }, [isExpanded]);
 
    return (
       <Stack
          direction = "column"
-         spacing = { 1 }
+         spacing = { 2 }
       >
          { /* Parent category */ }
          <Stack
@@ -120,62 +107,44 @@ export function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
                   type = { type }
                />
             </Box>
-            <Box sx = { { display: "flex", alignItems: "center", justifyContent: "center", pt: isExpanded ? 3.5 : 3 } }>
-               <Expand
-                  disableRipple = { true }
-                  expand = { isExpanded }
-                  onClick = { toggleExpanded }
-               >
-                  <FontAwesomeIcon
-                     icon = { faCaretDown }
-                     size = "xl"
-                  />
-               </Expand>
-            </Box>
          </Stack>
          { /* Child categories */ }
-         <Collapse
-            easing = { { enter: "linear", exit: "linear" } }
-            in = { isExpanded }
-            unmountOnExit = { true }
+         <Stack
+            direction = "column"
+            spacing = { 1 }
          >
-            <Stack
-               direction = "column"
-               spacing = { 1 }
-            >
-               <AnimatePresence mode = "popLayout">
-                  {
-                     budget.categories.map((category) => {
-                        return (
-                           <motion.div
-                              animate = { { opacity: 1, y: 0 } }
-                              exit = { { opacity: 0, y: 10 } }
-                              initial = { { opacity: 0, y: -10 } }
-                              key = { category.budget_category_id }
-                              layout = "position"
-                              transition = {
-                                 {
-                                    type: "spring",
-                                    stiffness: 100,
-                                    damping: 15,
-                                    mass: 1,
-                                    duration: 0.1
-                                 }
+            <AnimatePresence mode = "popLayout">
+               {
+                  budget.categories.map((category) => {
+                     return (
+                        <motion.div
+                           animate = { { opacity: 1, y: 0 } }
+                           exit = { { opacity: 0, y: 10 } }
+                           initial = { { opacity: 0, y: -10 } }
+                           key = { category.budget_category_id }
+                           layout = "position"
+                           transition = {
+                              {
+                                 type: "spring",
+                                 stiffness: 100,
+                                 damping: 15,
+                                 mass: 1,
+                                 duration: 0.1
                               }
-                           >
-                              <CategoryItem
-                                 goalIndex = { category.goalIndex }
-                                 goals = { category.goals }
-                                 name = { String(category.name) }
-                                 type = { type }
-                              />
-                           </motion.div>
-                        );
-                     })
-                  }
-               </AnimatePresence>
-            </Stack>
-         </Collapse>
+                           }
+                        >
+                           <CategoryItem
+                              goalIndex = { category.goalIndex }
+                              goals = { category.goals }
+                              name = { String(category.name) }
+                              type = { type }
+                           />
+                        </motion.div>
+                     );
+                  })
+               }
+            </AnimatePresence>
+         </Stack>
       </Stack>
    );
 }

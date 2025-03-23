@@ -49,7 +49,7 @@ export default function Page() {
                         className = "floating"
                         component = "img"
                         src = "/svg/transactions.svg"
-                        sx = { { width: 325, height: "auto", mb: 10 } }
+                        sx = { { width: 325, height: "auto", mb: 2 } }
                      />
                   </Box>
                   <Transactions />
@@ -69,7 +69,7 @@ export default function Page() {
                         className = "floating"
                         component = "img"
                         src = "/svg/accounting.svg"
-                        sx = { { width: 400, height: "auto" } }
+                        sx = { { width: 400, height: "auto", mb: 2 } }
                      />
                   </Box>
                   <AccountTrends elevation = { 0 } />
