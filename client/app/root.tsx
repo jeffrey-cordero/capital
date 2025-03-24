@@ -12,6 +12,13 @@ import queryClient from "@/tanstack/client";
 
 import type { Route } from "./+types/root";
 
+/**
+ * Links function for the root layout
+ *
+ * @returns {Route.LinksFunction} The links function
+ * @description
+ * - Adds the preconnect and stylesheet links for the fonts and icons
+ */
 export const links: Route.LinksFunction = () => [
    { rel: "preconnect", href: "https://fonts.googleapis.com" },
    {
@@ -30,7 +37,7 @@ export const links: Route.LinksFunction = () => [
 
 /**
  * Layout component that sets the theme based on localStorage or preferred color scheme
- * 
+ *
  * @param {React.ReactNode} children - The children to render
  * @returns {React.ReactNode} The rendered component
  */
@@ -68,7 +75,12 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
    );
 }
 
-export default function App() {
+/**
+ * App component that provides the Redux and React Query Providers
+ *
+ * @returns {React.ReactNode} The rendered component
+ */
+export default function App(): React.ReactNode {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
@@ -78,7 +90,12 @@ export default function App() {
    );
 }
 
-export function ErrorBoundary() {
+/**
+ * Error boundary component that displays an error message
+ *
+ * @returns {React.ReactNode} The rendered component
+ */
+export function ErrorBoundary(): React.ReactNode {
    return (
       <Container
          className = "center"

@@ -2,7 +2,7 @@ import type { BudgetPeriod } from "capital/budgets";
 
 /**
  * Gets the current date in UTC
- * 
+ *
  * @returns {Date} The current date in UTC
  */
 export const getCurrentDate = () => {
@@ -27,7 +27,7 @@ export const monthAbbreviations = [
 
 /**
  * Normalizes a date string based on the current view
- * 
+ *
  * @param {string} date - The date string
  * @param {string} [view] - The view to normalize the date for
  * @returns {Date} The normalized date
@@ -52,7 +52,7 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
 
 /**
  * Gets the year abbreviations
- * 
+ *
  * @param {number} [year] - The year
  * @returns {string[]} The year abbreviations in format "MM. YYYY"
  */
@@ -67,7 +67,7 @@ export function getYearAbbreviations(year?: number): string[] {
 
 /**
  * Calculates the time since the last update
- * 
+ *
  * @param {string} date - The date string
  * @returns {string} The time since the last update
  * @description
@@ -99,7 +99,7 @@ export function timeSinceLastUpdate(date: string): string {
 
 /**
  * Calculates the new period
- * 
+ *
  * @param {BudgetPeriod} period - The current period
  * @param {string} direction - The direction to calculate the new period
  * @returns {BudgetPeriod} The new period
@@ -122,7 +122,7 @@ export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, directio
 
 /**
  * Compares two budget periods
- * 
+ *
  * @param {BudgetPeriod} p1 - The first period
  * @param {BudgetPeriod} p2 - The second period
  * @returns {number} The comparison result

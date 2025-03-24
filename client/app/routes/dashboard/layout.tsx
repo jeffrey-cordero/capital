@@ -1,9 +1,6 @@
 import type { Dispatch } from "@reduxjs/toolkit";
 import { useQuery } from "@tanstack/react-query";
-import type { Account } from "capital/accounts";
-import type { OrganizedBudgets } from "capital/budgets";
-import type { MarketTrends } from "capital/marketTrends";
-import type { News } from "capital/news";
+import type { Dashboard } from "capital/dashboard";
 import { useDispatch } from "react-redux";
 import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 
@@ -13,13 +10,18 @@ import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
 
-interface Dashboard {
-   news: News;
-   trends: MarketTrends;
-   accounts: Account[];
-   budgets: OrganizedBudgets;
-}
 
+/**
+ * Fetches the dashboard data
+ *
+ * @param dispatch - The dispatch function to dispatch actions to the Redux store
+ * @param navigate - The navigate function for potential authentication-based redirection
+ * @returns {Promise<Dashboard | null>} The dashboard data
+ * @see {Dashboard}
+ * @description
+ * - Fetches the dashboard data
+ * - Sets the global accounts, budgets, and markets state for rendering purposes
+ */
 export async function fetchDashboard(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
@@ -42,14 +44,23 @@ export async function fetchDashboard(
    }
 }
 
-export default function Layout() {
+/**
+ * The layout component for the dashboard pages
+ *
+ * @returns {React.ReactNode} The layout component
+ * @description
+ * - Fetches the dashboard data
+ * - Displays the loading component while fetching or error has occurred
+ * - Displays the outlet (react-router) if the dashboard data is retrieved
+ */
+export default function Layout(): React.ReactNode {
    // Fetch the dashboard content to be shared amongst the pages with a 15 minute refresh interval
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({
       queryKey: ["dashboard"],
       queryFn: () => fetchDashboard(dispatch, navigate),
-      staleTime: 15 * 60 * 1000,
-      gcTime: 30 * 60 * 1000
+      staleTime: 15 * 60 * 1000, // 15 minute refresh interval
+      gcTime: 30 * 60 * 1000 // 30 minute cache time
    });
 
    if (isLoading || isError || data === null) {

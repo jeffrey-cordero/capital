@@ -1,8 +1,15 @@
 import { createTheme } from "@mui/material/styles";
 import type { TypographyOptions } from "@mui/material/styles/createTypography";
 
+/**
+ * @description Default theme configuration
+ */
 const defaultTheme = createTheme();
 
+/**
+ * @description MUI typography
+ * @see https://mui.com/material-ui/customization/theming/
+ */
 export const typography: TypographyOptions = {
    fontFamily: "Inter, sans-serif",
    h1: {

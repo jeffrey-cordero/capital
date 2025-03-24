@@ -9,7 +9,7 @@ export const ellipsis = {
 
 /**
  * Helper function for formatting numbers
- * 
+ *
  * @param {number} value - The value to format
  * @param {number} minFraction - Minimum number of fraction digits
  * @param {number} maxFraction - Maximum number of fraction digits
@@ -24,7 +24,7 @@ function formatNumber(value: number, minFraction: number = 2, maxFraction: numbe
 
 /**
  * Displays a currency value, such as `-$1,234.56` or `$1,234.56`
- * 
+ *
  * @param {number} value - The value to display
  * @returns {string} The formatted currency value
  */
@@ -34,7 +34,7 @@ export function displayCurrency(value: number): string {
 
 /**
  * Displays a numeric value, such as `1,234.56`
- * 
+ *
  * @param {number} value - The value to display
  * @param {boolean} [decimals] - Whether to display decimals
  * @returns {string} The formatted numeric value
@@ -45,7 +45,7 @@ export function displayNumeric(value: number, decimals: boolean = true): string 
 
 /**
  * Displays a percentage value, such as `12.34%`
- * 
+ *
  * @param {number} percentage - The percentage to display
  * @returns {string} The formatted percentage value
  */
@@ -55,7 +55,7 @@ export function displayPercentage(percentage: number): string {
 
 /**
  * Displays a volume value, such as `1.2B`, `1.2M`, and `1.2K`
- * 
+ *
  * @param {number} volume - The volume to display
  * @returns {string} The formatted volume value
  */
@@ -73,7 +73,7 @@ export function displayVolume(volume: number): string {
 
 /**
  * Displays a localized date value, such as `01/01/2024`
- * 
+ *
  * @param {string} date - The date to display
  * @returns {string} The formatted date value
  */

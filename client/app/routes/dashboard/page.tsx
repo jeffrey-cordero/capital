@@ -5,7 +5,14 @@ import Finances from "@/components/dashboard/finances";
 import Markets from "@/components/dashboard/markets";
 import Articles from "@/components/dashboard/news";
 
-export default function Page() {
+/**
+ * The dashboard page component
+ *
+ * @returns {React.ReactNode} The dashboard page component
+ * @description
+ * - Displays the dashboard page with the finances, markets, and articles components
+ */
+export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"

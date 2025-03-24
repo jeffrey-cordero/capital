@@ -3,7 +3,7 @@ import type { SafeParseReturnType } from "zod";
 
 /**
  * Helper method to handle Zod schema validation errors
- * 
+ *
  * @param {SafeParseReturnType<any, any>} fields - The fields to validate
  * @param {UseFormSetError<any>} setError - The setError function to set the error for the form leverage react-hook-form
  * @see {@link SafeParseReturnType}

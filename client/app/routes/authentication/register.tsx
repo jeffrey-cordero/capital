@@ -24,7 +24,17 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addNotification } from "@/redux/slices/notifications";
 
-export default function Register() {
+/**
+ * The registration component
+ *
+ * @returns {React.ReactNode} The registration component
+ * @description
+ * - Displays the registration form with a name, username, password, verify password, and email field
+ * - Displays a button to register a user
+ * - Displays a link to the login page
+ * - On successful registration, the user is redirected to the dashboard
+ */
+export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,

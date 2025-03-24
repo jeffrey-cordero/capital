@@ -2,9 +2,17 @@ import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
 import Accounts from "@/components/dashboard/accounts/accounts";
-import { AccountTrends } from "@/components/dashboard/accounts/charts";
+import AccountTrends from "@/components/dashboard/accounts/charts";
 import Transactions from "@/components/dashboard/accounts/transactions";
-export default function Page() {
+
+/**
+ * The accounts page component
+ *
+ * @returns {React.ReactNode} The accounts page component
+ * @description
+ * - Displays the accounts page with the accounts, transactions, and account trends components
+ */
+export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
@@ -72,7 +80,7 @@ export default function Page() {
                         sx = { { width: 400, height: "auto", mb: 2 } }
                      />
                   </Box>
-                  <AccountTrends elevation = { 0 } />
+                  <AccountTrends isCard = { false } />
                </Grid>
             </Grow>
          </Grid>

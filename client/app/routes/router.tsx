@@ -8,7 +8,16 @@ import { SideBar } from "@/components/global/sidebar";
 import type { RootState } from "@/redux/store";
 import { constructTheme } from "@/styles/mui/theme";
 
-export default function Router() {
+/**
+ * The router component for the application
+ *
+ * @returns {React.ReactNode} The router component
+ * @description
+ * - Handles authentication-based routing
+ * - Sets the MUI theme based on the mode
+ * - Displays the notifications, sidebar, and outlet (react-router)
+ */
+export default function Router(): React.ReactNode {
    // Authentication-based routing and MUI baselines
    const navigate = useNavigate();
    const theme: "light" | "dark" = useSelector(

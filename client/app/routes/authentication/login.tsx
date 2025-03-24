@@ -24,13 +24,29 @@ import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 
+/**
+ * The login schema to only include the username and password fields
+ *
+ * @description
+ * - The login schema is used to validate the user credentials
+ */
 const loginSchema = z.object({
    // Access innerType() to get the base schema from refined userSchema
    username: userSchema.innerType().shape.username,
    password: userSchema.innerType().shape.password
 });
 
-export default function Login() {
+/**
+ * The login component
+ *
+ * @returns {React.ReactNode} The login component
+ * @description
+ * - Displays the login form with a username and password field
+ * - Displays a button to login a user
+ * - Displays a link to the register page
+ * - On successful login, the user is redirected to the dashboard
+ */
+export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,

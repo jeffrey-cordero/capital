@@ -7,6 +7,16 @@ import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
 
+/**
+ * Fetches the authentication status within the landing pages
+ *
+ * @param dispatch - The dispatch function to dispatch actions to the Redux store
+ * @param navigate - The navigate function for potential authentication-based redirection
+ * @returns {Promise<boolean>} The authentication status
+ * @description
+ * - Fetches the authentication status within the landing pages
+ * - Sets the global authentication state for routing purposes
+ */
 export async function fetchAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
@@ -18,13 +28,22 @@ export async function fetchAuthentication(
 
    if (typeof status === "object" && status !== null) {
       // Set the global authentication state for routing purposes
-      dispatch(authenticate(status.authenticated));
+      dispatch(authenticate(Boolean(status.authenticated)));
    }
 
-   return typeof status === "object" && status?.authenticated === true ? null : false;
+   return typeof status === "object" ? Boolean(status?.authenticated) : false;
 };
 
-export default function Layout() {
+/**
+ * The layout component for the authentication pages
+ *
+ * @returns {React.ReactNode} The layout component
+ * @description
+ * - Fetches the authentication status within the initial landing pages
+ * - Displays the loading component while fetching or error has occurred
+ * - Displays the outlet (react-router) if the authentication status is retrieved
+ */
+export default function Layout(): React.ReactNode {
    // Fetch the authentication status within the initial landing pages
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({

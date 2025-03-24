@@ -16,9 +16,9 @@ const SPECIAL_PATHS = {
 } as const;
 
 /**
- * The server URL based on the SERVER_URL environment variable
+ * The server URL based on the VITE_SERVER_URL environment variable
  */
-const SERVER_URL = import.meta.env.SERVER_URL;
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 /**
  * The expected API response structure after parsing the JSON response
@@ -30,7 +30,7 @@ type ApiResponse<T> = {
 
 /**
  * Sends an API request to the server
- * 
+ *
  * @param {string} path - The path to send the request to
  * @param {string} method - The method to send the request with (GET, POST, PUT, DELETE)
  * @param {unknown} body - The body to send with the request

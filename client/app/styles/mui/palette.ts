@@ -8,6 +8,10 @@ import {
    red
 } from "@/styles/mui/colors";
 
+/**
+ * @description MUI palette
+ * @see https://mui.com/material-ui/customization/theming/
+ */
 export const palette: PaletteOptions = {
    primary: {
       main: brand[400],

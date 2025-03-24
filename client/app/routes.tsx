@@ -1,5 +1,10 @@
 import { layout, route, type RouteConfig } from "@react-router/dev/routes";
 
+/**
+ * The routes for the application for the react-router provider mapping to their respective base components and/or layouts.
+ *
+ * @returns {RouteConfig} The routes
+ */
 export default [
    layout("routes/authentication/layout.tsx", [
       route("/", "routes/page.tsx"),
