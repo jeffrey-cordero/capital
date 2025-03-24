@@ -70,6 +70,7 @@ export function sendServiceResponse(code: number, message?: string, data?: any, 
  * - Executes the provided service method and formats the response
  * - Handles both successful responses and internal server errors
  * - Sets appropriate HTTP status codes and JSON response based on the outcome
+ * - Acts a global error handler for all service requests (500 Bad Request)
  */
 export const submitServiceRequest = async(
    res: Response,

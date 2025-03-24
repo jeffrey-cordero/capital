@@ -6,21 +6,47 @@ import type { NavigateFunction } from "react-router";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
-// Special API paths that require different handling
+/**
+ * Special API paths that require different handling
+ */
 const SPECIAL_PATHS = {
    LOGIN: "authentication/login",
    AUTHENTICATION: "authentication",
    DASHBOARD: "dashboard"
 } as const;
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+/**
+ * The server URL based on the SERVER_URL environment variable
+ */
+const SERVER_URL = import.meta.env.SERVER_URL;
 
-// Type for the expected API response structure
+/**
+ * The expected API response structure after parsing the JSON response
+ */
 type ApiResponse<T> = {
    data?: T;
    errors?: Record<string, string>;
 };
 
+/**
+ * Sends an API request to the server
+ * 
+ * @param {string} path - The path to send the request to
+ * @param {string} method - The method to send the request with (GET, POST, PUT, DELETE)
+ * @param {unknown} body - The body to send with the request
+ * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
+ * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
+ * @param {UseFormSetError<any>} [setError] - The setError function to set the error for the form leverage react-hook-form
+ * @returns {Promise<T | number | null>} The response data or status code}
+ * @see {@link HTTP_STATUS}
+ * @description
+ * - Handles authentication and redirection cases
+ * - Handles server errors with specific error messages
+ * - Updates authentication state if not checking authentication
+ * - Handles different response types
+ * - Add's global notification for internal server errors
+ * - Status code `204` returned for successful updates (no content), otherwise data of type `T` is returned
+ */
 export async function sendApiRequest<T>(
    path: string,
    method: string,
@@ -43,7 +69,7 @@ export async function sendApiRequest<T>(
          credentials: "include"
       });
 
-      // Handle authentication and redirection cases
+      // Handle potential authentication redirection
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
          window.location.pathname = "/login";
          return null;

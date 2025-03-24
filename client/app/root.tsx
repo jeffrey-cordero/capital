@@ -28,7 +28,13 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+/**
+ * Layout component that sets the theme based on localStorage or preferred color scheme
+ * 
+ * @param {React.ReactNode} children - The children to render
+ * @returns {React.ReactNode} The rendered component
+ */
+export function Layout({ children }: { children: React.ReactNode }): React.ReactNode {
    useEffect(() => {
       // Initialize the theme based on localStorage or preferred color scheme
       const preferredTheme: string | undefined = localStorage.theme;
