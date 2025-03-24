@@ -46,4 +46,5 @@ export const userSchema = z.object({
   path: ["verifyPassword"]
 });
 
+// Represents core user information
 export type User = z.infer<typeof userSchema>;

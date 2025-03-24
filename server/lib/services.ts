@@ -5,7 +5,15 @@ import { SafeParseReturnType } from "zod";
 import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
-// Shared service logic for sending validation errors based on Zod schemas
+
+/**
+ * Formats validation errors based on Zod schema validation results for API responses
+ *
+ * @param {SafeParseReturnType<any, any> | null} fields - Zod schema validation results (success = false)
+ * @param {string} message - Error message to include in the response
+ * @param {Record<string, string>} [errors] - Additional error details
+ * @returns {ServerResponse} Validation errors response
+ */
 export function sendValidationErrors(
    fields: SafeParseReturnType<any, any> | null,
    message: string,
@@ -34,7 +42,16 @@ export function sendValidationErrors(
    }
 }
 
-// Shared service logic for sending server responses
+/**
+ * Sends a server response with the specified code, message, data, and errors
+ *
+ * @param {number} code - HTTP status code
+ * @param {string} [message] - Optional message to include in the response
+ * @param {any} [data] - Optional data to include in the response
+ * @param {Record<string, string>} [errors] - Optional additional error details
+ * @see {@link ServerResponse}
+ * @returns {ServerResponse} Server response
+ */
 export function sendServiceResponse(code: number, message?: string, data?: any, errors?: Record<string, string>): ServerResponse {
    return {
       code: code,
@@ -44,8 +61,21 @@ export function sendServiceResponse(code: number, message?: string, data?: any, 
    };
 }
 
-// Shared controller logic for returning content from service requests or handling potential errors
-export async function submitServiceRequest(res: Response, serviceMethod: () => Promise<ServerResponse>) {
+/**
+ * Submits a service request and handles the API response formatting
+ *
+ * @param {Response} res - Express response object to send the formatted response
+ * @param {Function} serviceMethod - Async function to execute that returns service data
+ * @returns {Promise<Response>} Express response after processing the service request
+ * @description
+ * - Executes the provided service method and formats the response
+ * - Handles both successful responses and internal server errors
+ * - Sets appropriate HTTP status codes and JSON response based on the outcome
+ */
+export const submitServiceRequest = async(
+   res: Response,
+   serviceMethod: () => Promise<ServerResponse>
+): Promise<any> => {
    try {
       const result: ServerResponse = await serviceMethod();
 

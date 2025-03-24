@@ -14,7 +14,7 @@ import {
    Typography
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type News, type Story } from "capital/news";
+import { type News, type NewsArticle } from "capital/news";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -33,14 +33,14 @@ const DEFAULT_VALUES = {
    IMAGE: "/svg/backup.svg"
 } as const;
 
-interface StoryItemProps extends Story {
+interface NewsItemProps extends NewsArticle {
    description: string[];
    link: string[];
    pubDate: string[];
    title: string[];
 }
 
-function StoryItem({ description, link, pubDate, title, ...rest }: StoryItemProps) {
+function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps) {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
 
@@ -174,7 +174,7 @@ function StoryItem({ description, link, pubDate, title, ...rest }: StoryItemProp
    );
 }
 
-export default function Stories() {
+export default function Articles() {
    // Safely access news items with optional chaining
    const news: News = useSelector((state: RootState) => state.markets.news);
    const newsItems = (news?.channel?.[0]?.item || []).slice(0, 10);
@@ -205,12 +205,12 @@ export default function Stories() {
                sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
             >
                {
-                  newsItems.map((item: Story, index: number) => (
+                  newsItems.map((item: NewsArticle, index: number) => (
                      <Grid
                         key = { `news-${index}` }
                         size = { { xs: 12, md: 6, lg: 12 } }
                      >
-                        <StoryItem { ...item } />
+                        <NewsItem { ...item } />
                      </Grid>
                   ))
                }

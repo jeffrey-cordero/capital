@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid2";
 
 import Finances from "@/components/dashboard/finances";
 import Markets from "@/components/dashboard/markets";
-import Stories from "@/components/dashboard/news";
+import Articles from "@/components/dashboard/news";
 
 export default function Page() {
    return (
@@ -51,7 +51,7 @@ export default function Page() {
                   size = { { xs: 12, lg: 4 } }
                   sx = { { minHeight: "100%" } }
                >
-                  <Stories />
+                  <Articles />
                </Grid>
             </Grow>
          </Grid>

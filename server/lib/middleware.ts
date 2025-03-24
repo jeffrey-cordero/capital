@@ -4,6 +4,15 @@ import jwt from "jsonwebtoken";
 import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
+/**
+ * Configures the JWT token for the user
+ * 
+ * @param {Response} res - Express response object
+ * @param {string} user_id - User ID to include in the token
+ * @description
+ * - Generates a JWT token with a 24 hour expiration
+ * - Stores the token in the client cookies with HTTPOnly and secure flags
+ */
 export function configureToken(res: Response, user_id: string): void {
    // Generate the JWT token
    const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
@@ -17,7 +26,17 @@ export function configureToken(res: Response, user_id: string): void {
    });
 }
 
-export function authenticateToken(required: boolean) {
+/**
+ * Middleware function to authenticate the user based on the JWT token
+ * 
+ * @param {boolean} required - Whether the token is required for the endpoint
+ * @returns {Function} Express middleware function
+ * @description
+ * - Checks if a token is present and valid
+ * - Attaches the user ID to the request object for further processing (Next Function)
+ * - Handles expired or invalid tokens by clearing the cookie and returning a 403 error
+ */
+export function authenticateToken(required: boolean): Function {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
       // Fetch the token from the request cookies

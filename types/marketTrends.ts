@@ -1,8 +1,10 @@
+// Economic indicator data for financial analysis, such as GDP, unemployment rate, etc.
 export type IndicatorTrend = {
    date: string;
    value: string;
 };
 
+// Stock indicator data for trending stocks, including price, change, volume, etc.
 export type StockIndicator = {
    ticker: string,
    price: string,
@@ -19,4 +21,5 @@ export type StockTrends = {
    most_actively_traded: StockIndicator[]
 };
 
+// Represents market trend data for financial analysis
 export type MarketTrends = Record<string, IndicatorTrend[] | StockTrends>;

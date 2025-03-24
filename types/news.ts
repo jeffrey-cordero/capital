@@ -8,7 +8,7 @@ export type News = {
          title: string; 
          link: string 
       }[];
-      "item": Story[];
+      "item": NewsArticle[];
       "language": string[];
       "lastBuildDate": string[];
       "link": string[];
@@ -16,7 +16,7 @@ export type News = {
    }[];
 }
 
-export type Story = {
+export type NewsArticle = {
    "dc:creator": string[];
    "description": string[];
    "link": string[];

@@ -89,8 +89,12 @@ export const budgetCategorySchema = z.object({
 export type Period = { month: number, year: number };
 
 export type BudgetType = "Income" | "Expenses";
+
+// Represents a budget with basic details for the specified period
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 export type BudgetGoals = Omit<Budget, "budget_category_id">;
+
+// Represents a budget category basic details with goals for the specified periods
 export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & { goals: BudgetGoals[], goalIndex: number };
 
 export type OrganizedBudget = {

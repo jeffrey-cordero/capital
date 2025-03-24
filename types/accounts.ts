@@ -19,7 +19,8 @@ export const liabilityTypes = new Set(["Debt", "Credit Card", "Loan"]);
 export const types = new Set(ACCOUNT_TYPES);
 export const images = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 
-export type Account = {
+// Represents a financial account with basic details
+export interface Account {
    account_id: string;
    name: string;
    type: string;
