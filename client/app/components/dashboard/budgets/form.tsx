@@ -19,7 +19,7 @@ import Transactions from "@/components/dashboard/accounts/transactions";
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
-import { comparePeriods } from "@/lib/dates";
+import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
@@ -83,7 +83,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
 
          // Determine if we need to create or update a budget entry
          const currentGoal = budget.goals[budget.goalIndex];
-         const isCurrentPeriod = comparePeriods(currentGoal, period) === 0;
+         const isCurrentPeriod = compareBudgetPeriods(currentGoal, period) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Submit the API request

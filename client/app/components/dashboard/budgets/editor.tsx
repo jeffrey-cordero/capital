@@ -15,7 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
-import { comparePeriods } from "@/lib/dates";
+import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
@@ -81,7 +81,7 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
          }
 
          // Determine if we're updating the current period or creating a new one
-         const isCurrentPeriod = comparePeriods(category.goals[category.goalIndex], { month, year }) === 0;
+         const isCurrentPeriod = compareBudgetPeriods(category.goals[category.goalIndex], { month, year }) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Send potential updates in parallel requests

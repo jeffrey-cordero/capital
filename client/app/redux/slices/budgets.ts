@@ -8,7 +8,7 @@ import {
 } from "capital/budgets";
 import { type WritableDraft } from "immer";
 
-import { calculateNewPeriod, comparePeriods, getCurrentDate } from "@/lib/dates";
+import { calculateNewBudgetPeriod, compareBudgetPeriods, getCurrentDate } from "@/lib/dates";
 
 const today: Date = getCurrentDate();
 
@@ -38,7 +38,7 @@ const budgetsSlice = createSlice({
          if (!category) return; // Ignore invalid category payloads
 
          // Calculate the difference in time periods between the state period and current category period
-         const timePeriodDifference: -1 | 0 | 1 = comparePeriods({ month, year }, category.goals[category.goalIndex]);
+         const timePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods({ month, year }, category.goals[category.goalIndex]);
 
          if (timePeriodDifference !== 0) {
             // Handle new budget goals, which are either closer or farther from the current category period
@@ -109,7 +109,7 @@ const budgetsSlice = createSlice({
          }
 
          // Calculate the new period
-         const newPeriod: BudgetPeriod = calculateNewPeriod(
+         const newPeriod: BudgetPeriod = calculateNewBudgetPeriod(
             { month: state.value.period.month, year: state.value.period.year },
             direction
          );
@@ -131,7 +131,7 @@ const budgetsSlice = createSlice({
 
             // Adjust goal index based on direction and period comparison
             if (!isNextDirection) {
-               const currentTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+               const currentTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
                   { month: currentGoal.month, year: currentGoal.year },
                   { month: newPeriod.month, year: newPeriod.year }
                );
@@ -142,7 +142,7 @@ const budgetsSlice = createSlice({
                }
             } else {
                // Calculate the difference in time periods between the new goal and the new period
-               const newTimePeriodDifference: -1 | 0 | 1 = comparePeriods(
+               const newTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
                   { month: newGoal.month, year: newGoal.year },
                   { month: newPeriod.month, year: newPeriod.year }
                );

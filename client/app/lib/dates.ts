@@ -1,22 +1,41 @@
 import type { BudgetPeriod } from "capital/budgets";
 
-// Get the current date in UTC
+/**
+ * Gets the current date in UTC
+ * 
+ * @returns {Date} The current date in UTC
+ */
 export const getCurrentDate = () => {
    return new Date(new Date().setUTCHours(0, 0, 0, 0));
 };
 
-// Full month names
+/**
+ * Full month names
+ */
 export const months = [
    "January", "February", "March", "April", "May", "June",
    "July", "August", "September", "October", "November", "December"
 ];
 
-// Abbreviated month names with periods
+/**
+ * Abbreviated month names with periods
+ */
 export const monthAbbreviations = [
    "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
    "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
 ];
 
+/**
+ * Normalizes a date string based on the current view
+ * 
+ * @param {string} date - The date string
+ * @param {string} [view] - The view to normalize the date for
+ * @returns {Date} The normalized date
+ * @description
+ * - For MTD, the date string requires MM/YYYY format
+ * - For YTD, the date string requires YYYY format
+ * - Otherwise, the date string is assumed to be in YYYY-MM-DD format
+ */
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
@@ -31,6 +50,12 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    }
 }
 
+/**
+ * Gets the year abbreviations
+ * 
+ * @param {number} [year] - The year
+ * @returns {string[]} The year abbreviations in format "MM. YYYY"
+ */
 export function getYearAbbreviations(year?: number): string[] {
    // Format the year array to "MM. YYYY" format
    const referenceDate = year ? new Date(year, 0, 1) : getCurrentDate();
@@ -40,7 +65,16 @@ export function getYearAbbreviations(year?: number): string[] {
    );
 }
 
-export function timeSinceLastUpdate(date: string) {
+/**
+ * Calculates the time since the last update
+ * 
+ * @param {string} date - The date string
+ * @returns {string} The time since the last update
+ * @description
+ * - Returns "now" for very recent updates
+ * - Otherwise, returns the time since the last update in a human-readable format, such as "1 day ago" or "5 days, 2 hours ago"
+ */
+export function timeSinceLastUpdate(date: string): string {
    // Calculate the time difference in milliseconds
    const difference = new Date().getTime() - new Date(date).getTime();
 
@@ -63,7 +97,16 @@ export function timeSinceLastUpdate(date: string) {
    return parts.join(", ") + " ago";
 }
 
-export function calculateNewPeriod({ month, year }: BudgetPeriod, direction: "previous" | "next"): BudgetPeriod {
+/**
+ * Calculates the new period
+ * 
+ * @param {BudgetPeriod} period - The current period
+ * @param {string} direction - The direction to calculate the new period
+ * @returns {BudgetPeriod} The new period
+ * @description
+ * - Calculates the new period based on the current period and the direction
+ */
+export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, direction: "previous" | "next"): BudgetPeriod {
    if (direction === "previous") {
       return {
          month: month === 1 ? 12 : month - 1,
@@ -77,7 +120,18 @@ export function calculateNewPeriod({ month, year }: BudgetPeriod, direction: "pr
    }
 }
 
-export function comparePeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
+/**
+ * Compares two budget periods
+ * 
+ * @param {BudgetPeriod} p1 - The first period
+ * @param {BudgetPeriod} p2 - The second period
+ * @returns {number} The comparison result
+ * @description
+ * - Returns -1 if p1 is before p2
+ * - Returns 0 if p1 and p2 are the same
+ * - Returns 1 if p1 is after p2
+ */
+export function compareBudgetPeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
    if (p1.year === p2.year && p1.month === p2.month) {
       // p1 and p2 are the same period
       return 0;
@@ -89,3 +143,61 @@ export function comparePeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
       return -1;
    }
 }
+
+/**
+ * Type definition for currency formatting options
+ */
+// ... existing code ...
+
+/**
+ * Formats a number as currency
+ * 
+ * @param {number} amount - The amount to format
+ * @param {FormatCurrencyOptions} [options] - Formatting options
+ * @param {string} [options.locale='en-US'] - The locale to use
+ * @param {string} [options.currency='USD'] - The currency code
+ * @param {boolean} [options.showSymbol=true] - Whether to show the currency symbol
+ * @param {number} [options.minimumFractionDigits=2] - Minimum fraction digits
+ * @param {number} [options.maximumFractionDigits=2] - Maximum fraction digits
+ * @returns {string} The formatted currency string
+ */
+// ... existing code ...
+
+/**
+ * Formats a number as a percentage
+ * 
+ * @param {number} value - The value to format as percentage (e.g., 0.1 for 10%)
+ * @param {number} [minimumFractionDigits=0] - Minimum fraction digits
+ * @param {number} [maximumFractionDigits=0] - Maximum fraction digits
+ * @param {string} [locale='en-US'] - The locale to use
+ * @returns {string} The formatted percentage string
+ */
+// ... existing code ...
+
+/**
+ * Formats a number with thousands separators
+ * 
+ * @param {number} value - The number to format
+ * @param {number} [minimumFractionDigits=0] - Minimum fraction digits
+ * @param {number} [maximumFractionDigits=0] - Maximum fraction digits
+ * @param {string} [locale='en-US'] - The locale to use
+ * @returns {string} The formatted number string
+ */
+// ... existing code ...
+
+/**
+ * Truncates text to a specified length and adds ellipsis if needed
+ * 
+ * @param {string} text - The text to truncate
+ * @param {number} [maxLength=20] - Maximum length before truncation
+ * @returns {string} The truncated text
+ */
+// ... existing code ...
+
+/**
+ * Capitalizes the first letter of a string
+ * 
+ * @param {string} text - The text to capitalize
+ * @returns {string} The text with first letter capitalized
+ */
+// ... existing code ...
