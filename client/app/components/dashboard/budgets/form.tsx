@@ -9,7 +9,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { budgetSchema, type OrganizedBudget, type Period } from "capital/budgets";
+import { type BudgetPeriod, budgetSchema, type OrganizedBudget } from "capital/budgets";
 import { useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -38,7 +38,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
    const dispatch = useDispatch(), navigate = useNavigate();
 
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
-   const period: Period = useSelector((state: RootState) => state.budgets.value.period);
+   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
    // Setup form with react-hook-form
    const {

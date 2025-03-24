@@ -6,17 +6,41 @@ import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as accountsRepository from "@/repository/accountsRepository";
 
-// Cache duration in seconds for account data (10 minutes)
+/**
+ * Cache duration in seconds for account data (10 minutes)
+ */
 const ACCOUNT_CACHE_DURATION = 10 * 60;
 
-// Helper function to generate account cache key
-const getAccountCacheKey = (user_id: string) => `accounts:${user_id}`;
+/**
+ * Helper function to generate account cache key
+ *
+ * @param {string} user_id - User ID
+ * @returns {string} Account cache key
+ * @description
+ * - Generates a cache key for the account data based on the user ID (accounts:${user_id})
+ */
+const getAccountCacheKey = (user_id: string): string => `accounts:${user_id}`;
 
-// Helper function to clear account cache on successful account updates
-const clearAccountCache = (user_id: string) => {
+/**
+ * Helper function to clear account cache on successful account updates
+ *
+ * @param {string} user_id - User ID
+ * @description
+ * - Removes the account cache key from Redis
+ */
+const clearAccountCache = (user_id: string): void => {
    removeCacheValue(getAccountCacheKey(user_id));
 };
 
+/**
+ * Fetches accounts from cache or database and returns them as a server response
+ *
+ * @param {string} user_id - User ID
+ * @returns {Promise<ServerResponse>} Server response - 200 ({ accounts: Account[] })
+ * @description
+ * - Fetches accounts from cache or database and returns them as a server response
+ * - Writes most recent data to cache if accounts are fetched from the database
+ */
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Try to get accounts from cache first for better performance
    const cacheKey: string = getAccountCacheKey(user_id);
@@ -33,6 +57,17 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    return sendServiceResponse(200, "Accounts", result);
 }
 
+/**
+ * Creates a new account and initial history record
+ *
+ * @param {string} user_id - User ID
+ * @param {Account} account - Account object to create
+ * @returns {Promise<ServerResponse>} Server response - 201 ({ account_id: string }) or 400 (errors: Record<string, string>)
+ * @description
+ * - Validates the account data structure
+ * - Creates a new account and initial history record
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function createAccount(user_id: string, account: Account): Promise<ServerResponse> {
    // Validate account data structure
    const fields = accountSchema.strict().safeParse(account);
@@ -49,6 +84,18 @@ export async function createAccount(user_id: string, account: Account): Promise<
    return sendServiceResponse(201, "Account created", { account_id });
 }
 
+/**
+ * Updates an account or its history record
+ *
+ * @param {string} type - Type of update to perform ("details" | "history")
+ * @param {string} user_id - User ID
+ * @param {Partial<Account & AccountHistory>} account - Account object to update
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({account: string})
+ * @description
+ * - Validates the account data structure
+ * - Updates an account or its history record
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function updateAccount(
    type: "details" | "history",
    user_id: string,
@@ -59,7 +106,7 @@ export async function updateAccount(
       return sendValidationErrors(null, "Invalid account fields",
          { account_id: "Missing account ID" });
    } else if (Object.keys(account).length <= 1) {
-      // account_id + at least one field
+      // Requires at least one field to update (account_id is required)
       return sendValidationErrors(null, "No account fields to update");
    }
 
@@ -99,6 +146,17 @@ export async function updateAccount(
    return sendServiceResponse(204);
 }
 
+/**
+ * Updates the ordering of accounts
+ *
+ * @param {string} user_id - User ID
+ * @param {string[]} accounts - Array of account IDs
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({accounts: string})
+ * @description
+ * - Validates the account IDs array
+ * - Updates the ordering of accounts in the database
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate account IDs array
    if (!accounts?.length) {
@@ -133,6 +191,18 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    return sendServiceResponse(204);
 }
 
+/**
+ * Deletes an account history record
+ *
+ * @param {string} user_id - User ID
+ * @param {string} account_id - Account ID
+ * @param {string} last_updated - Last updated date
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({history: string}) or 409 ({history: string})
+ * @description
+ * - Validates the account ID and date
+ * - Deletes an account history record
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
    // Validate account ID and date
    if (!account_id || !last_updated) {
@@ -166,6 +236,17 @@ export async function deleteAccountHistory(user_id: string, account_id: string, 
    return sendServiceResponse(204);
 }
 
+/**
+ * Deletes an account
+ *
+ * @param {string} user_id - User ID
+ * @param {string} account_id - Account ID
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({account: string})
+ * @description
+ * - Validates the account ID
+ * - Deletes an account
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
    // Validate account ID
    if (!account_id) {

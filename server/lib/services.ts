@@ -5,7 +5,6 @@ import { SafeParseReturnType } from "zod";
 import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
-
 /**
  * Formats validation errors based on Zod schema validation results for API responses
  *
@@ -93,4 +92,4 @@ export const submitServiceRequest = async(
          { server: error.message || error.code || "An unknown error occurred" }
       );
    }
-}
+};

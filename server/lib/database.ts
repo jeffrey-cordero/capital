@@ -4,12 +4,16 @@ import { Pool, PoolClient } from "pg";
 
 /**
  * Connection pool for database connections
+ *
+ * @description
+ * - Creates a connection pool for the database
+ * - Uses the environment variables for the database configuration (DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME)
  */
 const pool = new Pool({
    host: process.env.DB_HOST || "postgres",
-   user: process.env.USER,
-   password: process.env.PASSWORD,
-   database: "capital",
+   user: process.env.DB_USER,
+   password: process.env.DB_PASSWORD,
+   database: process.env.DB_NAME,
    port: Number(process.env.DB_PORT) || 5432,
    max: 50
 });

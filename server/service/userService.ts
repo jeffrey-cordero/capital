@@ -7,10 +7,25 @@ import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
 
-// Helper function to normalize user input for case-insensitive comparison
+/**
+ * Helper function to normalize user input for case-insensitive comparison (username, email)
+ *
+ * @param {string} input - User input to normalize
+ * @returns {string} Normalized user input
+ */
 const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
 
-// Helper function to check for username/email conflicts and generate error messages
+/**
+ * Helper function to check for username/email conflicts and generate error messages
+ *
+ * @param {User[]} existingUsers - Array of existing users
+ * @param {string} username - Username to check
+ * @param {string} email - Email to check
+ * @returns {Record<string, string>} Error messages
+ * @description
+ * - Normalizes the username and email for case-insensitive comparison
+ * - Checks for conflicts and generates error messages
+ */
 const generateConflictErrors = (existingUsers: User[], username: string, email: string): Record<string, string> => {
    const normalizedUsername = normalizeUserInput(username);
    const normalizedEmail = normalizeUserInput(email);
@@ -28,6 +43,21 @@ const generateConflictErrors = (existingUsers: User[], username: string, email: 
    }, {});
 };
 
+/**
+ * Creates a new user
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {User} user - User object
+ * @returns {Promise<ServerResponse>} Server response - 201 ({ success: true }) or 400 (errors: Record<string, string>) or 409 (Record<string, string>)
+ * @description
+ * - Validates the user fields against the user schema
+ * - Checks for username/email conflicts
+ * - Hashes provided password
+ * - Creates a new user
+ * - Configures a JWT token for authentication
+ * - Returns a server response with the user's authentication status
+ */
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields against the user schema
    const fields = userSchema.safeParse(user);

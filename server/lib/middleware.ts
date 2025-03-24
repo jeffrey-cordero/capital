@@ -6,7 +6,7 @@ import { sendErrors } from "@/lib/response";
 
 /**
  * Configures the JWT token for the user
- * 
+ *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID to include in the token
  * @description
@@ -28,7 +28,7 @@ export function configureToken(res: Response, user_id: string): void {
 
 /**
  * Middleware function to authenticate the user based on the JWT token
- * 
+ *
  * @param {boolean} required - Whether the token is required for the endpoint
  * @returns {Function} Express middleware function
  * @description
@@ -36,7 +36,7 @@ export function configureToken(res: Response, user_id: string): void {
  * - Attaches the user ID to the request object for further processing (Next Function)
  * - Handles expired or invalid tokens by clearing the cookie and returning a 403 error
  */
-export function authenticateToken(required: boolean): Function {
+export function authenticateToken(required: boolean): any {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
       // Fetch the token from the request cookies

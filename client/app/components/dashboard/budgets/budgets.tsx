@@ -7,7 +7,7 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import { type Period } from "capital/budgets";
+import { type BudgetPeriod } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -27,7 +27,7 @@ export default function Budgets() {
    );
 
    // Get current period from Redux store
-   const period: Period = useSelector((state: RootState) => state.budgets.value.period);
+   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
    // Get current date for validating period selections
    const today = useMemo(() => getCurrentDate(), []);

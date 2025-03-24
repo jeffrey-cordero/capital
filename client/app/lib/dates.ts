@@ -1,4 +1,4 @@
-import type { Period } from "capital/budgets";
+import type { BudgetPeriod } from "capital/budgets";
 
 // Get the current date in UTC
 export const getCurrentDate = () => {
@@ -63,7 +63,7 @@ export function timeSinceLastUpdate(date: string) {
    return parts.join(", ") + " ago";
 }
 
-export function calculateNewPeriod({ month, year }: Period, direction: "previous" | "next"): Period {
+export function calculateNewPeriod({ month, year }: BudgetPeriod, direction: "previous" | "next"): BudgetPeriod {
    if (direction === "previous") {
       return {
          month: month === 1 ? 12 : month - 1,
@@ -77,7 +77,7 @@ export function calculateNewPeriod({ month, year }: Period, direction: "previous
    }
 }
 
-export function comparePeriods(p1: Period, p2: Period): -1 | 0 | 1 {
+export function comparePeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
    if (p1.year === p2.year && p1.month === p2.month) {
       // p1 and p2 are the same period
       return 0;

@@ -9,6 +9,16 @@ import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse } from "@/lib/services";
 import { findByUsername } from "@/repository/userRepository";
 
+/**
+ * Authenticates a user with a access token through JWT verification
+ *
+ * @param {Response} res - Express response object
+ * @param {string} token - JWT token
+ * @returns {Promise<ServerResponse>} Server response - 200 ({ authenticated: true | false })
+ * @description
+ * - Verifies the JWT token
+ * - Returns a server response with the user's authentication status
+ */
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
       // Verify the JWT token, handling expected thrown errors
@@ -32,6 +42,17 @@ export async function getAuthentication(res: Response, token: string): Promise<S
    }
 }
 
+/**
+ * Authenticates a user with username and password credentials
+ *
+ * @param {string} username - User's username
+ * @param {string} password - User's password
+ * @returns {Promise<ServerResponse>} Server response - 200 ({ success: true }) or 401 ({ username: "Invalid credentials", password: "Invalid credentials" })
+ * @description
+ * - Authenticates a user with username and password credentials
+ * - Configures a JWT token for authentication purposes
+ * - Returns a server response with the user's authentication status
+ */
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
    // Authenticate user based on the provided credentials
    const user: User | null = await findByUsername(username);
@@ -49,6 +70,13 @@ export async function authenticateUser(res: Response, username: string, password
    }
 }
 
+/**
+ * Logs out a user by clearing the authentication token cookies
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<ServerResponse>} Server response - 200 ({ success: true })
+ */
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
    // Clear the authentication token cookies
    res.clearCookie("token");

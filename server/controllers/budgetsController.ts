@@ -63,7 +63,7 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
  *    - `req.body` should be of type `Budget`
  * - Otherwise, updates budget category details (PUT /dashboard/budgets/category/:id)
  *    - `req.body` should be of type `BudgetCategory`
- *  - `req.params.id` should be the `budget_category_id` of the existing budget category for non-ordering updates
+ *    - `req.params.id` should be the `budget_category_id` of the existing budget category for non-ordering updates
  */
 export const PUT = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
@@ -104,7 +104,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  * @returns {Promise<Response>} Response after deletion - 204 (no content), 400, or 404
  * @description
  * - Deletes a budget category and all associated budgets
- *    - `req.params.id` should be the `budget_category_id` of the existing budget category
+ * - `req.params.id` should be the `budget_category_id` of the existing budget category
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(res, async() => budgetsService.deleteCategory(res.locals.user_id, req.params.id))

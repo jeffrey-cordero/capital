@@ -6,14 +6,14 @@ export type IndicatorTrend = {
 
 // Stock indicator data for trending stocks, including price, change, volume, etc.
 export type StockIndicator = {
-   ticker: string,
-   price: string,
-   change_amount: string,
-   change_percentage: string,
-   volume: string
+   ticker: string;
+   price: string;
+   change_amount: string;
+   change_percentage: string;
+   volume: string;
 };
 
-export type StockTrends = {
+export type StockTrends ={
    metadata: string;
    last_updated: string;
    top_gainers: StockIndicator[],

@@ -8,7 +8,7 @@ const divider: string = "=".repeat(32);
 
 /**
  * File transport for logging to a rotating file
- * 
+ *
  * @description
  * - Logs messages to a file with a rotating file name (logs/%DATE%.log)
  * - Formats log entries with timestamps and appropriate levels
@@ -23,7 +23,7 @@ const fileTransport = new DailyRotateFile({
 
 /**
  * Console transport for logging to the console
- * 
+ *
  * @description
  * - Logs messages to the console with colorized output
  * - Formats log entries with timestamps and appropriate levels
@@ -41,7 +41,7 @@ const consoleTransport = new transports.Console({
 
 /**
  * Application logger for recording events and errors
- * 
+ *
  * @description
  * - Provides methods for different logging levels (debug, info, warn, error)
  * - Formats log entries with timestamps and appropriate levels

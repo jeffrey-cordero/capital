@@ -3,6 +3,12 @@ import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
+/**
+ * Fetches all accounts for a user
+ *
+ * @param {string} user_id - The user ID
+ * @returns {Promise<Account[]>} The accounts
+ */
 export async function findByUserId(user_id: string): Promise<Account[]> {
    // Fetch accounts with their history records in a single efficient query
    const search = `
@@ -53,6 +59,16 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    }, []);
 }
 
+/**
+ * Creates a new account
+ *
+ * @param {string} user_id - The user ID
+ * @param {Account} account - The account
+ * @returns {Promise<string>} The account ID
+ * @description
+ * - Creates a new account
+ * - Returns the account ID
+ */
 export async function create(user_id: string, account: Account): Promise<string> {
    return await transaction(async(client: PoolClient) => {
       // Create account record with basic details
@@ -79,6 +95,16 @@ export async function create(user_id: string, account: Account): Promise<string>
    }) as string;
 }
 
+/**
+ * Updates the details of an account, which includes the name, balance, type, image, and account order
+ *
+ * @param {string} account_id - The account ID
+ * @param {Partial<Account & AccountHistory>} updates - The updates
+ * @returns {Promise<boolean>} True if the account was updated, false otherwise
+ * @description
+ * - Updates the details of an account
+ * - Returns true if the account was updated, false otherwise
+ */
 export async function updateDetails(
    account_id: string,
    updates: Partial<Account & AccountHistory>
@@ -125,6 +151,17 @@ export async function updateDetails(
    return result.length > 0;
 }
 
+/**
+ * Updates the history of an account
+ *
+ * @param {string} account_id - The account ID
+ * @param {number} balance - The balance
+ * @param {Date} last_updated - The last updated date
+ * @returns {Promise<boolean>} True if the history was updated, false otherwise
+ * @description
+ * - Updates the history of an account
+ * - Returns true if the history was updated, false otherwise
+ */
 export async function updateHistory(
    account_id: string,
    balance: number,
@@ -147,6 +184,16 @@ export async function updateHistory(
    return result.length > 0;
 }
 
+/**
+ * Removes a history record from an account
+ *
+ * @param {string} account_id - The account ID
+ * @param {Date} last_updated - The last updated date
+ * @returns {Promise<"conflict" | "success" | "missing">} The result of the removal
+ * @description
+ * - Removes a history record from an account
+ * - Returns "conflict" if the history record is the last one, "success" if the history record was removed, or "missing" if the history record was not found
+ */
 export async function removeHistory(
    account_id: string,
    last_updated: Date
@@ -181,6 +228,16 @@ export async function removeHistory(
    }, "SERIALIZABLE") as "conflict" | "success" | "missing";
 }
 
+/**
+ * Updates the ordering of accounts
+ *
+ * @param {string} user_id - The user ID
+ * @param {Partial<Account>[]} updates - The updates
+ * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
+ * @description
+ * - Updates the ordering of accounts
+ * - Returns true if the ordering was updated, false otherwise
+ */
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
    // Bulk update account ordering in a single efficient query
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
@@ -203,6 +260,16 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
    return result.length > 0;
 }
 
+/**
+ * Deletes an account
+ *
+ * @param {string} user_id - The user ID
+ * @param {string} account_id - The account ID
+ * @returns {Promise<boolean>} True if the account was deleted, false otherwise
+ * @description
+ * - Deletes an account
+ * - Returns true if the account was deleted, false otherwise
+ */
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    return await transaction(async(client: PoolClient) => {
       // Temporarily disable trigger to allow cascade delete

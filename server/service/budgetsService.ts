@@ -12,17 +12,41 @@ import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as budgetsRepository from "@/repository/budgetsRepository";
 
-// Cache duration in seconds for user budgets (25 minutes)
+/**
+ * Cache duration in seconds for user budgets (30 minutes)
+ */
 const BUDGET_CACHE_DURATION = 30 * 60;
 
-// Helper function to generate budgets cache key
-const getBudgetsCacheKey = (user_id: string) => `budgets:${user_id}`;
+/**
+ * Helper function to generate budgets cache key
+ *
+ * @param {string} user_id - User ID
+ * @returns {string} Budgets cache key
+ * @description
+ * - Generates a cache key for the budgets data based on the user ID (budgets:${user_id})
+ */
+const getBudgetsCacheKey = (user_id: string): string => `budgets:${user_id}`;
 
-// Helper function to clear budget cache on successful budget updates
-const clearBudgetCache = (user_id: string) => {
+/**
+ * Helper function to clear budget cache on successful budget updates
+ *
+ * @param {string} user_id - User ID
+ * @description
+ * - Removes the budget cache key from Redis
+ */
+const clearBudgetCache = (user_id: string): void => {
    removeCacheValue(getBudgetsCacheKey(user_id));
 };
 
+/**
+ * Fetches budgets from cache or database and returns them as a server response
+ *
+ * @param {string} user_id - User ID
+ * @returns {Promise<ServerResponse>} Server response - 200 (OrganizedBudgets)
+ * @description
+ * - Fetches budgets from cache or database and returns them as a server response
+ * - Writes most recent data to cache if budgets are fetched from the database
+ */
 export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    // Try to get from cache first for better performance
    const cacheKey = getBudgetsCacheKey(user_id);
@@ -39,6 +63,17 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    return sendServiceResponse(200, "Budgets", result);
 }
 
+/**
+ * Creates a new budget category
+ *
+ * @param {string} user_id - User ID
+ * @param {Budget & BudgetCategory} category - Budget category object
+ * @returns {Promise<ServerResponse>} Server response - 201 ({ budget_category_id: string }) or 400 (errors: Record<string, string>)
+ * @description
+ * - Validates the budget and category fields against the budget category schema
+ * - Creates new budget category and initial budget records
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
    // Validate budget and category fields using schema separately to ensure Zod refines are applied
    const budgetFields = budgetSchema.safeParse(category);
@@ -61,6 +96,17 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    return sendServiceResponse(201, "Budget category created", { budget_category_id: result });
 }
 
+/**
+ * Updates a budget category
+ *
+ * @param {string} user_id - User ID
+ * @param {Partial<BudgetCategory>} category - Budget category object
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({budget_category_id: string}) or 409 ({budget_category_id: string})
+ * @description
+ * - Validates the budget category fields
+ * - Updates the budget category
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
    // Validate required category ID first for early return
    if (!category.budget_category_id) {
@@ -87,13 +133,13 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    switch (result) {
       case "failure":
          return sendServiceResponse(404, "Budget category not found", undefined,
-            { category: "Budget category does not exist based on the provided ID" }
+            { budget_category_id: "Budget category does not exist based on the provided ID" }
          );
       case "no_updates":
          return sendServiceResponse(204);
       case "main_category_conflict":
          return sendServiceResponse(409, "Budget category conflicts", undefined,
-            { category: "Main budget categories (Income/Expenses) can't be updated" }
+            { budget_category_id: "Main budget categories (Income/Expenses) can't be updated" }
          );
       case "success":
          clearBudgetCache(user_id);
@@ -103,6 +149,17 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    }
 }
 
+/**
+ * Updates the ordering of budget categories
+ *
+ * @param {string} user_id - User ID
+ * @param {string[]} categoryIds - Array of category IDs
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({categories: string})
+ * @description
+ * - Validates the category IDs array
+ * - Updates the ordering of budget categories
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {
    // Validate category IDs array
    if (!Array.isArray(categoryIds) || !categoryIds.length) {
@@ -141,6 +198,17 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    return sendServiceResponse(204);
 }
 
+/**
+ * Creates a new budget
+ *
+ * @param {string} user_id - User ID
+ * @param {Budget} budget - Budget object
+ * @returns {Promise<ServerResponse>} Server response - 201 ({ success: true }) or 204 (no content) or 400 (errors: Record<string, string>) or 404 ({budget_category_id: string})
+ * @description
+ * - Validates the budget fields
+ * - Creates a new budget or updates an existing one following the UPSERT pattern
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
    // Validate budget fields
    const fields = budgetSchema.safeParse(budget);
@@ -167,12 +235,23 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
       : sendServiceResponse(204);
 }
 
+/**
+ * Updates a budget
+ *
+ * @param {string} user_id - User ID
+ * @param {Budget} budget - Budget object
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({budget_category_id: string})
+ * @description
+ * - Validates the budget fields
+ * - Updates the budget
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate budget and category fields separately to ensure Zod refines are applied
-   const budgetFields = budgetSchema.safeParse(budget);
+   // Validate budget fields
+   const fields = budgetSchema.safeParse(budget);
 
-   if (!budgetFields.success) {
-      return sendValidationErrors(budgetFields, "Invalid budget fields");
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid budget fields");
    }
 
    // Update budget
@@ -189,6 +268,17 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
    return sendServiceResponse(204);
 }
 
+/**
+ * Deletes a budget category
+ *
+ * @param {string} user_id - User ID
+ * @param {string} budget_category_id - Budget category ID
+ * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 ({budget_category_id: string}) or 404 ({budget_category_id: string})
+ * @description
+ * - Validates the budget category ID
+ * - Deletes the budget category
+ * - Invalidates cache to ensure fresh data on next fetch
+ */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    // Validate category ID
    const uuidSchema = z.string().trim().uuid();
@@ -204,7 +294,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
 
    if (!result) {
       return sendServiceResponse(404, "Budget category not found", undefined,
-         { category: "Budget category does not exist based on the provided budget category ID" }
+         { budget_category_id: "Budget category does not exist based on the provided budget category ID" }
       );
    }
 

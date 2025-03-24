@@ -2,9 +2,9 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
    type BudgetCategory,
    type BudgetGoals,
+   type BudgetPeriod,
    type OrganizedBudget,
-   type OrganizedBudgets,
-   type Period
+   type OrganizedBudgets
 } from "capital/budgets";
 import { type WritableDraft } from "immer";
 
@@ -109,7 +109,7 @@ const budgetsSlice = createSlice({
          }
 
          // Calculate the new period
-         const newPeriod: Period = calculateNewPeriod(
+         const newPeriod: BudgetPeriod = calculateNewPeriod(
             { month: state.value.period.month, year: state.value.period.year },
             direction
          );

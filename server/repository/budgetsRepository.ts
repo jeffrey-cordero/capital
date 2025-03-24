@@ -3,6 +3,15 @@ import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
+/**
+ * Fetches all budgets for a user
+ *
+ * @param {string} user_id - The user ID
+ * @returns {Promise<OrganizedBudgets>} The organized budgets
+ * @description
+ * - Fetches all budgets for a user with categories and their respective budget goals
+ * - Returns the organized budgets
+ */
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single efficient query
    const overall = `
@@ -73,6 +82,17 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    return result;
 }
 
+/**
+ * Creates a new budget category and initial budget goal record
+ *
+ * @param {string} user_id - The user ID
+ * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - The budget category
+ * @param {PoolClient} externalClient - The optional external client, which is used for nested transactions
+ * @returns {Promise<string>} The budget category ID
+ * @description
+ * - Creates a new budget category
+ * - Returns the budget category ID
+ */
 export async function createCategory(
    user_id: string,
    category: Omit<Budget & BudgetCategory, "budget_category_id">,
@@ -111,6 +131,15 @@ export async function createCategory(
    }) as string;
 }
 
+/**
+ * Updates a budget category, which includes the name, type, and category order
+ *
+ * @param {Partial<BudgetCategory>} updates - The updates
+ * @returns {Promise<"success" | "failure" | "main_category_conflict" | "no_updates">} The result of the update
+ * @description
+ * - Updates a budget category
+ * - "success" is returned if the update was successful, "failure" if the update failed, "main_category_conflict" if the main category cannot be updated, and "no_updates" if no updates were provided
+ */
 export async function updateCategory(
    updates: Partial<BudgetCategory>
 ): Promise<"success" | "failure" | "main_category_conflict" | "no_updates"> {
@@ -160,6 +189,16 @@ export async function updateCategory(
    }
 }
 
+/**
+ * Deletes a budget category
+ *
+ * @param {string} user_id - The user ID
+ * @param {string} budget_category_id - The budget category ID
+ * @returns {Promise<boolean>} True if the budget category was deleted, false otherwise
+ * @description
+ * - Deletes a budget category
+ * - Returns true if the budget category was deleted, false otherwise
+ */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
    const removal = `
       DELETE FROM budget_categories
@@ -172,6 +211,16 @@ export async function deleteCategory(user_id: string, budget_category_id: string
    return result.length > 0;
 }
 
+/**
+ * Updates the ordering of budget categories
+ *
+ * @param {string} user_id - The user ID
+ * @param {Partial<BudgetCategory>[]} updates - The updates
+ * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
+ * @description
+ * - Updates the ordering of budget categories
+ * - Returns true if the ordering was updated, false otherwise
+ */
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
    // Skip processing if no updates provided
    if (!Array.isArray(updates) || updates.length === 0) return true;
@@ -196,6 +245,15 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
    return result.length > 0;
 }
 
+/**
+ * Creates a new budget or updates an existing one
+ *
+ * @param {Budget} budget - The budget
+ * @returns {Promise<"created" | "updated" | "failure">} The result of the creation or update
+ * @description
+ * - Creates a new budget or updates an existing one following the UPSERT pattern
+ * - "created" is returned if the budget was created, "updated" if the budget was updated, and "failure" if the creation or update failed
+ */
 export async function createBudget(budget: Budget): Promise<"created" | "updated" |"failure"> {
    // Creates a new budget or updates existing one
    const creation = `
@@ -214,6 +272,15 @@ export async function createBudget(budget: Budget): Promise<"created" | "updated
    return result[0].inserted ? "created" : "updated";
 }
 
+/**
+ * Updates a budget, which includes the goal
+ *
+ * @param {Budget} updates - The updates
+ * @returns {Promise<boolean>} True if the budget was updated, false otherwise
+ * @description
+ * - Updates a budget, which includes the goal
+ * - Returns true if the budget was updated, false otherwise
+ */
 export async function updateBudget(updates: Budget): Promise<boolean> {
    const updateQuery = `
       UPDATE budgets
