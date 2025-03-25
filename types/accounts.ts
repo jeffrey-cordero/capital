@@ -2,24 +2,31 @@ import { z } from 'zod';
 
 import { zodPreprocessNumber } from './numerics';
 
-// Common validation constants
+/**
+ * Common validation constants
+ */
 const MIN_NAME_LENGTH = 1;
 const MAX_NAME_LENGTH = 30;
 const MAX_INT = 2_147_483_647;
 const MIN_BALANCE = -99_999_999_999.99;
 const MAX_BALANCE = 99_999_999_999.99;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-// Account types and images
-export const ACCOUNT_TYPES = [
-   "Checking", "Savings", "Credit Card", "Debt", 
+/**
+ * Helper data structures for account types and images
+ */
+const ACCOUNT_TYPES = [
+   "Checking", "Savings", "Credit Card", "Debt",
    "Retirement", "Investment", "Loan", "Property", "Other"
 ] as const;
 
-export const liabilityTypes = new Set(["Debt", "Credit Card", "Loan"]);
+export const liabilities = new Set(["Debt", "Credit Card", "Loan"]);
 export const types = new Set(ACCOUNT_TYPES);
 export const images = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 
-// Represents a financial account with basic details
+/**
+ * Represents a financial account with basic details
+ */
 export interface Account {
    account_id: string;
    name: string;
@@ -30,11 +37,17 @@ export interface Account {
    history: AccountHistory[];
 }
 
+/**
+ * Represents a financial account history
+ */
 export type AccountHistory = {
    balance: number;
    last_updated: string;
 }
 
+/**
+ * Represents a financial account schema
+ */
 export const accountSchema = z.object({
    account_id: z.string().trim().uuid({
       message: "Account ID must be a valid UUID"
@@ -68,9 +81,9 @@ export const accountSchema = z.object({
    }))
 });
 
-// One day in milliseconds for date validation
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
+/**
+ * Represents a financial account history schema
+ */
 export const accountHistorySchema = z.object({
    balance: accountSchema.shape.balance,
    history_balance: accountSchema.shape.balance.optional(),

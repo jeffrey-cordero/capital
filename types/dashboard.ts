@@ -4,14 +4,7 @@ import type { MarketTrends } from "./markets";
 import type { News } from "./news";
 
 /**
- * The dashboard interface for the dashboard page
- *
- * @see {@link Account}
- * @see {@link OrganizedBudgets}
- * @see {@link MarketTrends}
- * @see {@link News}
- * @description
- * - The dashboard interface is used to represent the dashboard data
+ * Represents the dashboard interface for the dashboard page
  */
 export interface Dashboard {
    news: News;

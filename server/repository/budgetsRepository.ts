@@ -1,4 +1,4 @@
-import { Budget, BudgetCategory, BudgetType, OrganizedBudgets } from "capital/budgets";
+import { Budget, BudgetCategory, BudgetGoal, BudgetType, OrganizedBudgets } from "capital/budgets";
 import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
@@ -9,13 +9,10 @@ import { FIRST_PARAM, query, transaction } from "@/lib/database";
 const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
 
 /**
- * Fetches all budgets for a user
+ * Fetches all budget categories for a user with their respective budget goals.
  *
  * @param {string} user_id - The user ID
  * @returns {Promise<OrganizedBudgets>} The organized budgets
- * @description
- * - Fetches all budgets for a user with categories and their respective budget goals
- * - Returns the organized budgets
  */
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single efficient query
@@ -56,7 +53,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       };
 
       // Extract budget data
-      const budget: Omit<Budget, "budget_category_id"> = {
+      const budget: BudgetGoal = {
          goal: row.goal,
          year: row.year,
          month: row.month
@@ -69,7 +66,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          continue;
       }
 
-      // Check if category already exists in our result
+      // Check if category already exists in our map
       const categoryIndex = categoriesMap[row.budget_category_id];
 
       if (categoryIndex === undefined) {
@@ -88,15 +85,12 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 }
 
 /**
- * Creates a new budget category and initial budget goal record
+ * Creates a new budget category and initial budget goal record.
  *
  * @param {string} user_id - The user ID
  * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - The budget category
- * @param {PoolClient} externalClient - The optional external client, which is used for nested transactions
+ * @param {PoolClient} [externalClient] - The optional external client for nested transactions
  * @returns {Promise<string>} The budget category ID
- * @description
- * - Creates a new budget category
- * - Returns the budget category ID
  */
 export async function createCategory(
    user_id: string,
@@ -115,35 +109,27 @@ export async function createCategory(
       `;
       const result = await client.query<{ budget_category_id: string }>(
          creation,
-         [user_id, category.type, category.name?.trim(), category.category_order]
+         [user_id, category.type.trim(), category.name?.trim(), category.category_order]
       );
 
       // Create the initial budget record for this category
       const budget_category_id: string = result.rows[0].budget_category_id;
       const budget = `
          INSERT INTO budgets (budget_category_id, goal, year, month)
-         VALUES ($1, $2, $3, $4)
+         VALUES ($1, $2, $3, $4);
       `;
 
-      await client.query(budget, [
-         budget_category_id,
-         category.goal,
-         category.year,
-         category.month
-      ]);
+      await client.query(budget, [budget_category_id, category.goal, category.year, category.month]);
 
       return budget_category_id;
    }) as string;
 }
 
 /**
- * Updates a budget category, which includes the name, type, and category order
+ * Updates the basic details of a budget category.
  *
  * @param {Partial<BudgetCategory>} updates - The updates
  * @returns {Promise<"success" | "failure" | "main_category_conflict" | "no_updates">} The result of the update
- * @description
- * - Updates a budget category
- * - "success" is returned if the update was successful, "failure" if the update failed, "main_category_conflict" if the main category cannot be updated, and "no_updates" if no updates were provided
  */
 export async function updateCategory(
    updates: Partial<BudgetCategory>
@@ -160,7 +146,7 @@ export async function updateCategory(
          values.push(updates[field as keyof BudgetCategory]);
          params++;
 
-         // Trim string fields (except category_order which is numeric)
+         // Trim string-related fields
          if (field !== "category_order") {
             values[values.length - 1] = String(values[values.length - 1])?.trim();
          }
@@ -170,7 +156,7 @@ export async function updateCategory(
    // Skip query if no fields to update
    if (fields.length === 0) return "no_updates";
 
-   // Add category ID to the values array for the WHERE clause
+   // Add budget category ID to the values array for the WHERE clause
    values.push(updates.budget_category_id);
 
    const updateQuery = `
@@ -182,6 +168,7 @@ export async function updateCategory(
 
    try {
       const result = await query(updateQuery, values) as { budget_category_id: string }[];
+
       return result.length > 0 ? "success" : "failure";
    } catch (error: any) {
       // Catch main category conflicts, where changes are forbidden for data integrity
@@ -195,14 +182,11 @@ export async function updateCategory(
 }
 
 /**
- * Deletes a budget category
+ * Deletes a budget category.
  *
  * @param {string} user_id - The user ID
  * @param {string} budget_category_id - The budget category ID
  * @returns {Promise<boolean>} True if the budget category was deleted, false otherwise
- * @description
- * - Deletes a budget category
- * - Returns true if the budget category was deleted, false otherwise
  */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
    const removal = `
@@ -217,20 +201,17 @@ export async function deleteCategory(user_id: string, budget_category_id: string
 }
 
 /**
- * Updates the ordering of budget categories
+ * Updates the ordering of budget categories.
  *
  * @param {string} user_id - The user ID
  * @param {Partial<BudgetCategory>[]} updates - The updates
  * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
- * @description
- * - Updates the ordering of budget categories
- * - Returns true if the ordering was updated, false otherwise
  */
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
    // Skip processing if no updates provided
    if (!Array.isArray(updates) || updates.length === 0) return true;
 
-   // Bulk update category ordering in a single efficient query
+   // Bulk update category ordering formatting
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.budget_category_id),
@@ -251,13 +232,10 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 /**
- * Creates a new budget
+ * Creates a new budget.
  *
  * @param {Budget} budget - The budget
- * @returns {Promise<"created" | "updated" | "failure">} The result of the creation or update
- * @description
- * - Creates a new budget
- * - "created" is returned if the budget was created, and "failure" if the creation failed
+ * @returns {Promise<"created" | "failure">} The result of the creation or update
  */
 export async function createBudget(budget: Budget): Promise<"created" | "failure"> {
    // Creates a new budget or updates existing one
@@ -274,13 +252,10 @@ export async function createBudget(budget: Budget): Promise<"created" | "failure
 }
 
 /**
- * Updates a budget, which includes the goal
+ * Updates a budget goal.
  *
  * @param {Budget} updates - The updates
- * @returns {Promise<boolean>} True if the budget was updated, false otherwise
- * @description
- * - Updates a budget, which includes the goal
- * - Returns true if the budget was updated, false otherwise
+ * @returns {Promise<boolean>} True if the budget goal was updated, false otherwise
  */
 export async function updateBudget(updates: Budget): Promise<boolean> {
    const updateQuery = `
@@ -289,7 +264,7 @@ export async function updateBudget(updates: Budget): Promise<boolean> {
       WHERE budget_category_id = $2
       AND year = $3
       AND month = $4
-      RETURNING budgets.budget_category_id;
+      RETURNING budget_category_id;
    `;
 
    const result = await query(updateQuery,

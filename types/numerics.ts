@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const zodPreprocessNumber = (schema: z.ZodNumber) => {
+/**
+ * Helper function to preprocess numbers for validation measures.
+ *
+ * @param {z.ZodNumber} schema - The schema to preprocess
+ * @returns {z.ZodEffects<any>} The preprocessed schema for further validation
+ */
+export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
    // Helper function to preprocess numbers for validation measures
    return z.preprocess(
       (value) => {
@@ -19,7 +25,6 @@ export const zodPreprocessNumber = (schema: z.ZodNumber) => {
          } else {
             return NaN; // Force validation failure for other types
          }
-      },
-      schema
+      }, schema
    );
 }

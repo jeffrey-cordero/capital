@@ -1,7 +1,7 @@
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
-import { type BudgetGoals, type OrganizedBudget } from "capital/budgets";
+import { type BudgetGoal, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -11,7 +11,7 @@ import type { RootState } from "@/redux/store";
 
 interface CategoryItemProps {
    name: string;
-   goals: BudgetGoals[];
+   goals: BudgetGoal[];
    goalIndex: number;
    type: "Income" | "Expenses";
    onEditClick?: () => void;

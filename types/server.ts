@@ -1,3 +1,6 @@
+/**
+ * Represents a server response
+ */
 export type ServerResponse = {
    code: number;
    message?: string;
@@ -5,7 +8,9 @@ export type ServerResponse = {
    errors?: Record<string, string>;
 };
 
-// Common HTTP status codes used in the application
+/**
+ * Represents common HTTP status codes used in the application
+ */
 export const HTTP_STATUS = {
    OK: 200,
    CREATED: 201,

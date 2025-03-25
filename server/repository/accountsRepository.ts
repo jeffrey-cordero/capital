@@ -222,17 +222,14 @@ export async function removeHistory(
 }
 
 /**
- * Updates the ordering of accounts
+ * Updates the ordering of accounts.
  *
  * @param {string} user_id - The user ID
  * @param {Partial<Account>[]} updates - The updates
  * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
- * @description
- * - Updates the ordering of accounts
- * - Returns true if the ordering was updated, false otherwise
  */
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
-   // Bulk update account ordering in a single efficient query
+   // Bulk update account ordering formatting
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.account_id),
@@ -259,13 +256,10 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
  * @param {string} user_id - The user ID
  * @param {string} account_id - The account ID
  * @returns {Promise<boolean>} True if the account was deleted, false otherwise
- * @description
- * - Deletes an account
- * - Returns true if the account was deleted, false otherwise
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    return await transaction(async(client: PoolClient) => {
-      // Temporarily disable trigger to allow cascade delete
+      // Temporarily disable trigger to allow deletion through CASCADE
       await client.query(
          "ALTER TABLE accounts_history DISABLE TRIGGER prevent_last_history_record_delete_trigger;"
       );

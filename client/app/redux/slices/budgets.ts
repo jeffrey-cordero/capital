@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
    type BudgetCategory,
-   type BudgetGoals,
+   type BudgetGoal,
    type BudgetPeriod,
    type OrganizedBudget,
    type OrganizedBudgets
@@ -126,8 +126,8 @@ const budgetsSlice = createSlice({
             if (currentIndex === boundaryIndex) return;
 
             // Fetch the potential new budget goal
-            const currentGoal: BudgetGoals = category.goals[currentIndex];
-            const newGoal: BudgetGoals = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
+            const currentGoal: BudgetGoal = category.goals[currentIndex];
+            const newGoal: BudgetGoal = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
             // Adjust goal index based on direction and period comparison
             if (!isNextDirection) {

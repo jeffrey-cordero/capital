@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-// Common validation constants
+/**
+ * Common validation constants
+ */
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 30;
 const MIN_NAME_LENGTH = 3;
@@ -9,6 +11,9 @@ const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 
+/**
+ * Represents a user schema
+ */
 export const userSchema = z.object({
   user_id: z.string().trim().uuid({
     message: "User ID must be a valid UUID"
@@ -46,5 +51,7 @@ export const userSchema = z.object({
   path: ["verifyPassword"]
 });
 
-// Represents core user information
+/**
+ * Represents core user information
+ */
 export type User = z.infer<typeof userSchema>;
