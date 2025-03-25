@@ -2,7 +2,7 @@ const fs = require("fs").promises;
 
 import { Mutex } from "async-mutex";
 import type { Dashboard } from "capital/dashboard";
-import { IndicatorTrend, MarketTrends, StockTrends } from "capital/marketTrends";
+import { IndicatorTrend, MarketTrends, StockTrends } from "capital/markets";
 import { News } from "capital/news";
 import { ServerResponse } from "capital/server";
 import { parseStringPromise } from "xml2js";
@@ -13,8 +13,9 @@ import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 import { fetchBudgets } from "@/service/budgetsService";
+
 /**
- * Mutex to ensure only one API call happens at a time as concurrent API calls can cause rate limiting issues
+ * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
  */
 const mutex = new Mutex();
 
@@ -31,26 +32,22 @@ const NEWS_CACHE_DURATION = 15 * 60;
 const NEWS_BACKUP_CACHE_DURATION = 5 * 60;
 
 /**
- * Helper function to generate Alpha Vantage API URL with proper key
+ * Helper function to generate Alpha Vantage API URL with the provided function name and parameters,
+ * requiring the `XRapidAPIKey` environment variable to be set
  *
  * @param {string} name - The function name to fetch
  * @param {string} params - The parameters to fetch from the function
  * @returns {string} The formatted Alpha Vantage API URL
- * @description
- * - Generates a formatted Alpha Vantage API URL with the provided function name and parameters
- * - Appends the API key to the URL
- * - Requires the XRapidAPIKey environment variable to be set
  */
 const getAlphaVantageUrl = (name: string, params: string = ""): string => {
    return `https://www.alphavantage.co/query?function=${name}${params}&apikey=${process.env.XRapidAPIKey}`;
 };
 
 /**
- * Fetches stock trends from the Alpha Vantage API
+ * Fetches stock trends (Top Gainers, Losers, Most Active) from the Alpha Vantage API
  *
  * @returns {Promise<StockTrends>} The stock trends
- * @description
- * - Retrieves stock trends (Top Gainers, Losers, Most Active)
+ * @throws {Error} If the stock API response is invalid or the API call fails
  */
 async function fetchStocks(): Promise<StockTrends> {
    // Retrieve stock trends (Top Gainers, Losers, Most Active)
@@ -71,10 +68,9 @@ async function fetchStocks(): Promise<StockTrends> {
  *
  * @param {string} indicator - The indicator to fetch
  * @returns {Promise<IndicatorTrend[]>} The economic indicators
- * @description
- * - Retrieves economic indicators (GDP, Inflation, Unemployment, etc.)
+ * @throws {Error} If the indicator API response is invalid or the API call fails
 */
-async function fetchIndicators(indicator: string): Promise<IndicatorTrend[]> {
+async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTrend[]> {
    // Retrieve economic indicators (GDP, Inflation, Unemployment, etc.)
    const response = await fetch(getAlphaVantageUrl(indicator, "&interval=quarterly"), {
       method: "GET"
@@ -89,28 +85,22 @@ async function fetchIndicators(indicator: string): Promise<IndicatorTrend[]> {
 }
 
 /**
- * Loads the backup market trends file
+ * Loads the backup market trends file.
  *
  * @returns {Promise<MarketTrends>} The market trends
- * @description
- * - Loads the backup market trends file
  */
 async function loadBackupMarketTrends(): Promise<MarketTrends> {
-   return JSON.parse(await fs.readFile("resources/marketTrends.json", "utf8")) as MarketTrends;
+   return JSON.parse(await fs.readFile("resources/markets.json", "utf8")) as MarketTrends;
 }
 
 /**
- * Fetches market trends from the database or API
+ * Fetches most-recent market trends from the cache, database, or external API's.
  *
  * @returns {Promise<ServerResponse>} The market trends
- * @description
- * - Retrieves market trends (Stocks, GDP, Inflation, Unemployment, etc.)
- * - Caches the market trends for 24 hours or 5 minutes if the API call fails
- * - Uses the backup market trends file if the API call fails
  */
 export async function fetchMarketTrends(): Promise<ServerResponse> {
    try {
-      // Try to get market trends from cache first for better performance
+      // Try to get market trends from cache first
       const cache = await getCacheValue("marketTrends");
 
       if (cache) {
@@ -126,31 +116,31 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
          return sendServiceResponse(200, "Market Trends", stored.data as MarketTrends);
       }
 
-      // Need to fetch fresh data - acquire mutex to prevent duplicate API calls
+      // Need to fetch from external API's - acquire mutex to prevent duplicate API calls
       const release = await mutex.acquire();
 
       try {
-         // Double-check if another request already updated the data while we were waiting
+         // Double-check if another request already updated the database
          const updates = await dashboardRepository.getMarketTrends();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - MARKET_TRENDS_CACHE_DURATION * 1000)) {
             return sendServiceResponse(200, "Market Trends", updates.data as MarketTrends);
          }
 
-         // Define indicators to fetch
+         // Define economic indicators / stock trends to fetch
          const indicators = [
             { key: "Stocks", fetch: fetchStocks },
-            { key: "GDP", fetch: () => fetchIndicators("REAL_GDP") },
-            { key: "Inflation", fetch: () => fetchIndicators("INFLATION") },
-            { key: "Unemployment", fetch: () => fetchIndicators("UNEMPLOYMENT") },
-            { key: "Treasury Yield", fetch: () => fetchIndicators("TREASURY_YIELD") },
-            { key: "Federal Interest Rate", fetch: () => fetchIndicators("FEDERAL_FUNDS_RATE") }
+            { key: "GDP", fetch: () => fetchEconomicIndicators("REAL_GDP") },
+            { key: "Inflation", fetch: () => fetchEconomicIndicators("INFLATION") },
+            { key: "Unemployment", fetch: () => fetchEconomicIndicators("UNEMPLOYMENT") },
+            { key: "Treasury Yield", fetch: () => fetchEconomicIndicators("TREASURY_YIELD") },
+            { key: "Federal Interest Rate", fetch: () => fetchEconomicIndicators("FEDERAL_FUNDS_RATE") }
          ];
 
-         // Fetch all indicators in parallel for better performance
+         // Fetch all indicators in parallel
          const trends = await Promise.all(indicators.map(indicator => indicator.fetch()));
 
-         // Construct market trends object
+         // Construct market trends object for response
          const marketTrends: MarketTrends = {};
          indicators.forEach((indicator, index) => {
             marketTrends[indicator.key] = trends[index] as any;
@@ -172,7 +162,7 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
       // Log error and use backup data
       logger.error(error.stack);
 
-      // Use the backup JSON market trends file with a 5 minute cache duration
+      // Use the backup JSON file and cache for a shorter duration
       const backupData = await loadBackupMarketTrends();
       setCacheValue("marketTrends", MARKET_TRENDS_BACKUP_CACHE_DURATION, JSON.stringify(backupData));
 
@@ -181,60 +171,53 @@ export async function fetchMarketTrends(): Promise<ServerResponse> {
 }
 
 /**
- * Fetches the latest financial news from the Dow Jones RSS feed
+ * Fetches the latest financial news from the Dow Jones RSS feed.
  *
  * @returns {Promise<News>} The latest financial news
- * @description
- * - Retrieves the latest financial news from the Dow Jones RSS feed
+ * @throws {Error} If the RSS feed is invalid or the API call fails
  */
 export async function fetchRSSFeed(): Promise<News> {
    // Retrieve the latest financial news from the Dow Jones RSS feed
    const response = await fetch(
       "https://www.spglobal.com/spdji/en/rss/rss-details/?rssFeedName=mw_topstories"
    ).then(async(response) => await response.text());
-   const parsedData = await parseStringPromise(response);
+   const data = await parseStringPromise(response);
 
-   if (!parsedData?.rss || !parsedData?.rss?.channel || !parsedData?.rss?.channel?.item?.length) {
+   if (!data?.rss?.channel?.item?.length) {
       // Potential rate limit error or new API response structure
-      throw new Error(parsedData?.rss || "Invalid RSS feed response");
+      throw new Error(data?.rss || "Invalid RSS Feed");
    }
 
-   return parsedData.rss as News;
+   return data.rss as News;
 }
 
 /**
- * Loads the backup news file
+ * Loads the backup news file.
  *
  * @returns {Promise<News>} The latest financial news
- * @description
- * - Loads the backup news file
  */
 async function loadBackupNews(): Promise<News> {
    const xmlData = await fs.readFile("resources/news.xml", "utf8");
-   const parsedData = await parseStringPromise(xmlData);
+   const data = await parseStringPromise(xmlData);
 
-   return parsedData?.rss as News;
+   return data?.rss as News;
 }
 
 /**
- * Fetches the latest financial news from the Dow Jones RSS feed
+ * Fetches the latest financial news from the cache or public Dow Jones RSS feed.
  *
  * @returns {Promise<ServerResponse>} The latest financial news
- * @description
- * - Retrieves the latest financial news from the Dow Jones RSS feed
- * - Caches the news for 15 minutes or 5 minutes if the API call fails
- * - Uses the backup news file if the API call fails
  */
 export async function fetchNews(): Promise<ServerResponse> {
    try {
-      // Try to get news from cache first for better performance
+      // Try to get news from cache first
       const cache = await getCacheValue("news");
 
       if (cache) {
          return sendServiceResponse(200, "Financial News", JSON.parse(cache) as News);
       }
 
-      // Rely on backup news file for now until RSS feed is normalized due to ongoing RSS feed changes
+      // Rely on backup news file for now until RSS feed is normalized due to ongoing changes
       const data = await loadBackupNews();
       setCacheValue("news", NEWS_CACHE_DURATION, JSON.stringify(data));
 
@@ -243,7 +226,7 @@ export async function fetchNews(): Promise<ServerResponse> {
       // Log error and use backup data
       logger.error(error.stack);
 
-      // Use the backup XML news file with a 5 minute cache duration
+      // Use the backup XML news file and cache for a shorter duration
       const backupData = await loadBackupNews();
       setCacheValue("news", NEWS_BACKUP_CACHE_DURATION, JSON.stringify(backupData));
 
@@ -252,17 +235,13 @@ export async function fetchNews(): Promise<ServerResponse> {
 }
 
 /**
- * Fetches the dashboard data for the user
+ * Fetches the dashboard data for the user.
  *
  * @param {string} user_id - The user ID
- * @returns {Promise<ServerResponse>} The dashboard data
- * @see {@link Dashboard}
- * @description
- * - Retrieves the dashboard data for the user
- * - Combines all data into a single dashboard response (Trends, News, Accounts, Budgets, etc.)
+ * @returns {Promise<ServerResponse>} A server response of `200` (`Dashboard`)
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   // Fetch all dashboard components in parallel for better performance
+   // Fetch all dashboard components in parallel
    const [marketTrends, news, accounts, budgets] = await Promise.all([
       fetchMarketTrends(),
       fetchNews(),

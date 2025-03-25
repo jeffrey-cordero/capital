@@ -73,18 +73,20 @@ export default function Accounts() {
             dispatch(setAccounts(newAccounts));
 
             // Sync new order with server
-            const ordering = newAccounts.map(account => account.account_id);
-            sendApiRequest<number>(
-               "dashboard/accounts/ordering", "PUT", { accountsIds: ordering }, dispatch, navigate
-            ).then((result) => {
-               if (result !== 204) {
+            try {
+               const accountIds: string[] = newAccounts.map(account => account.account_id);
+               const response = await sendApiRequest<number>(
+                  "dashboard/accounts/ordering", "PUT", { accountsIds: accountIds }, dispatch, navigate
+               );
+
+               if (response !== 204) {
                   throw new Error("Failed to update account order");
                }
-            }).catch((error) => {
+            } catch (error) {
                // Revert optimistic update if server request fails
-               console.error("Failed to update account order:", error);
                dispatch(setAccounts(oldAccounts));
-            });
+               console.error("Failed to update account order:", error);
+            }
          }
       }
    }, [accounts, dispatch, navigate]);

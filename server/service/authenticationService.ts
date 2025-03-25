@@ -10,14 +10,11 @@ import { sendServiceResponse } from "@/lib/services";
 import { findByUsername } from "@/repository/userRepository";
 
 /**
- * Authenticates a user with a access token through JWT verification
+ * Authenticates a user with a access token through JWT verification.
  *
  * @param {Response} res - Express response object
- * @param {string} token - JWT token
- * @returns {Promise<ServerResponse>} Server response - 200 ({ authenticated: true | false })
- * @description
- * - Verifies the JWT token
- * - Returns a server response with the user's authentication status
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<ServerResponse>} A server response of `200` (`{ authenticated: true | false }`)
  */
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
@@ -43,15 +40,12 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 }
 
 /**
- * Authenticates a user with username and password credentials
+ * Authenticates a user with username and password credentials, configuring a
+ * JWT token for authentication purposes on success.
  *
  * @param {string} username - User's username
  * @param {string} password - User's password
- * @returns {Promise<ServerResponse>} Server response - 200 ({ success: true }) or 401 ({ username: "Invalid credentials", password: "Invalid credentials" })
- * @description
- * - Authenticates a user with username and password credentials
- * - Configures a JWT token for authentication purposes
- * - Returns a server response with the user's authentication status
+ * @returns {Promise<ServerResponse>} A server response of `200` (`{ success: true }`) or `401` with respective errors
  */
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
    // Authenticate user based on the provided credentials
@@ -71,11 +65,11 @@ export async function authenticateUser(res: Response, username: string, password
 }
 
 /**
- * Logs out a user by clearing the authentication token cookies
+ * Logs out a user.
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<ServerResponse>} Server response - 200 ({ success: true })
+ * @returns {Promise<ServerResponse>} A server response of `200` (`{ success: true }`)
  */
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
    // Clear the authentication token cookies

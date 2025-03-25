@@ -20,7 +20,7 @@ import { authenticate } from "@/redux/slices/authentication";
 export async function fetchAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
-): Promise<boolean | null> {
+): Promise<"fetched" | null> {
    // Fetch authentication status within the landing pages
    const status = await sendApiRequest<{ authenticated: boolean }>(
       "authentication", "GET", null, dispatch, navigate
@@ -30,10 +30,10 @@ export async function fetchAuthentication(
       // Set the global authentication state for routing purposes
       dispatch(authenticate(Boolean(status.authenticated)));
 
-      return null; // null to continue the loading process until auto-redirect
-   }
+      return "fetched"; // auto-redirect handled by routing middleware
+   } 
 
-   return false; // false to remain on the current page
+   return null;
 };
 
 /**

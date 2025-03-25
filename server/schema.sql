@@ -101,7 +101,7 @@ BEFORE UPDATE ON budget_categories
 FOR EACH ROW
    EXECUTE FUNCTION prevent_main_budget_category_updates();
 
-CREATE TABLE market_trends_api_cache (
+CREATE TABLE market_trends_api_data (
    time TIMESTAMP PRIMARY KEY,
    data JSONB NOT NULL
 );

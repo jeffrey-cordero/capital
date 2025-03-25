@@ -5,14 +5,11 @@ import { query, transaction } from "@/lib/database";
 import { createCategory } from "@/repository/budgetsRepository";
 
 /**
- * Finds conflicting users based on username and/or email
+ * Finds conflicting users based on username and/or email.
  *
  * @param {string} username - The username
  * @param {string} email - The email
- * @returns {Promise<User[]>} The conflicting users
- * @description
- * - Finds conflicting users based on the normalized username and/or email
- * - Returns an array of conflicting users, which may be empty if there are no conflicts
+ * @returns {Promise<User[]>} The potential conflicting users
  */
 export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
@@ -28,10 +25,10 @@ export async function findConflictingUsers(username: string, email: string): Pro
 }
 
 /**
- * Finds a user by their unique username
+ * Finds a user by their unique username.
  *
  * @param {string} username - The username
- * @returns {Promise<User | null>} The user
+ * @returns {Promise<User | null>} The potential user
  */
 export async function findByUsername(username: string): Promise<User | null> {
    // Find user by their unique username
@@ -45,19 +42,16 @@ export async function findByUsername(username: string): Promise<User | null> {
 }
 
 /**
- * Creates a new user
+ * Creates a new user with their initial Income and Expenses budget records.
  *
- * @param {User} user - The user
- * @returns {Promise<string>} The user ID
- * @description
- * - Creates a new user with their initial Income and Expenses budget records
- * - Returns the user ID
+ * @param {User} user - The user to be inserted
+ * @returns {Promise<string>} The inserted user ID
  */
 export async function create(user: User): Promise<string> {
    return await transaction(async(client: PoolClient) => {
       // Create the new user with provided fields
       const creation = `
-         INSERT INTO users (username, name, password, email) 
+         INSERT INTO users (username, name, password, email)
          VALUES ($1, $2, $3, $4)
          RETURNING user_id;
       `;
@@ -70,7 +64,7 @@ export async function create(user: User): Promise<string> {
       const month = today.getUTCMonth() + 1;
       const year = today.getUTCFullYear();
 
-      // Create Income category with initial budget
+      // Create Income and Expenses budget categories with initial budgets
       await createCategory(result.rows[0].user_id, {
          type: "Income",
          name: null,
@@ -82,7 +76,6 @@ export async function create(user: User): Promise<string> {
          goals: []
       }, client);
 
-      // Create Expenses category with initial budget
       await createCategory(result.rows[0].user_id, {
          type: "Expenses",
          name: null,

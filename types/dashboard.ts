@@ -1,6 +1,6 @@
 import type { Account } from "./accounts";
 import type { OrganizedBudgets } from "./budgets";
-import type { MarketTrends } from "./marketTrends";
+import type { MarketTrends } from "./markets";
 import type { News } from "./news";
 
 /**

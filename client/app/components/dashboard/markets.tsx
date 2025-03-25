@@ -8,7 +8,7 @@ import {
    Typography
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/marketTrends";
+import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/markets";
 import { useSelector } from "react-redux";
 
 import Graph, { getChipColor } from "@/components/global/graph";

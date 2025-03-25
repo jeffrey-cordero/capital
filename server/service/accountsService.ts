@@ -12,39 +12,44 @@ import * as accountsRepository from "@/repository/accountsRepository";
 const ACCOUNT_CACHE_DURATION = 10 * 60;
 
 /**
- * Helper function to generate account cache key
+ * Helper function to generate account cache key for Redis.
  *
  * @param {string} user_id - User ID
  * @returns {string} Account cache key
- * @description
- * - Generates a cache key for the account data based on the user ID (accounts:${user_id})
  */
 const getAccountCacheKey = (user_id: string): string => `accounts:${user_id}`;
 
 /**
- * Helper function to clear account cache on successful account updates
+ * Helper function to clear account cache on successful account updates.
  *
  * @param {string} user_id - User ID
- * @description
- * - Removes the account cache key from Redis
  */
 const clearAccountCache = (user_id: string): void => {
    removeCacheValue(getAccountCacheKey(user_id));
 };
 
 /**
- * Fetches accounts from cache or database and returns them as a server response
+ * Helper function to send a successful update response.
  *
  * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} Server response - 200 ({ accounts: Account[] })
- * @description
- * - Fetches accounts from cache or database and returns them as a server response
- * - Writes most recent data to cache if accounts are fetched from the database
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content)
+ */
+const clearCacheOnSuccess = (user_id: string): ServerResponse => {
+   // Invalidate cache to ensure fresh data on next fetch
+   clearAccountCache(user_id);
+   return sendServiceResponse(204);
+};
+
+/**
+ * Fetches user financial accounts from cache or database.
+ *
+ * @param {string} user_id - User ID
+ * @returns {Promise<ServerResponse>} A server response of `200` (`Account[]`)
  */
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
-   // Try to get accounts from cache first for better performance
-   const cacheKey: string = getAccountCacheKey(user_id);
-   const cache: string | null = await getCacheValue(cacheKey);
+   // Try to get accounts from cache first
+   const key: string = getAccountCacheKey(user_id);
+   const cache: string | null = await getCacheValue(key);
 
    if (cache) {
       return sendServiceResponse(200, "Accounts", JSON.parse(cache) as Account[]);
@@ -52,31 +57,27 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
 
    // Cache miss - fetch from database and store in cache
    const result: Account[] = await accountsRepository.findByUserId(user_id);
-   setCacheValue(cacheKey, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
+   setCacheValue(key, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
 
    return sendServiceResponse(200, "Accounts", result);
 }
 
 /**
- * Creates a new account and initial history record
+ * Creates a new account and initial history record.
  *
  * @param {string} user_id - User ID
  * @param {Account} account - Account object to create
- * @returns {Promise<ServerResponse>} Server response - 201 ({ account_id: string }) or 400 (errors: Record<string, string>)
- * @description
- * - Validates the account data structure
- * - Creates a new account and initial history record
- * - Invalidates cache to ensure fresh data on next fetch
+ * @returns {Promise<ServerResponse>} A server response of `201` (`{ account_id: string }`) or `400` with respective errors
  */
 export async function createAccount(user_id: string, account: Account): Promise<ServerResponse> {
-   // Validate account data structure
+   // Validate input against account schema
    const fields = accountSchema.strict().safeParse(account);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid account fields");
    }
 
-   // Create account and initial history record
+   // Create account and it's initial history record
    const account_id: string = await accountsRepository.create(user_id, account);
 
    // Invalidate cache to ensure fresh data on next fetch
@@ -85,16 +86,12 @@ export async function createAccount(user_id: string, account: Account): Promise<
 }
 
 /**
- * Updates an account or its history record
+ * Updates an account or its history record.
  *
  * @param {string} type - Type of update to perform ("details" | "history")
  * @param {string} user_id - User ID
  * @param {Partial<Account & AccountHistory>} account - Account object to update
- * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({account: string})
- * @description
- * - Validates the account data structure
- * - Updates an account or its history record
- * - Invalidates cache to ensure fresh data on next fetch
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/404` with respective errors
  */
 export async function updateAccount(
    type: "details" | "history",
@@ -106,14 +103,13 @@ export async function updateAccount(
       return sendValidationErrors(null, "Invalid account fields",
          { account_id: "Missing account ID" });
    } else if (Object.keys(account).length <= 1) {
-      // Requires at least one field to update (account_id is required)
       return sendValidationErrors(null, "No account fields to update");
    }
 
    let result: boolean;
 
    if (type === "details") {
-      // Validate and update account details
+      // Validate input against account schema
       const fields = accountSchema.partial().safeParse(account);
 
       if (!fields.success) {
@@ -122,7 +118,7 @@ export async function updateAccount(
 
       result = await accountsRepository.updateDetails(account.account_id, account);
    } else {
-      // Validate and update account history
+      // Validate input against account history schema
       const fields = accountHistorySchema.safeParse(account as AccountHistory);
 
       if (!fields.success) {
@@ -141,30 +137,24 @@ export async function updateAccount(
          { account: "Account does not exist based on the provided ID" });
    }
 
-   // Success - invalidate cache and return success response
-   clearAccountCache(user_id);
-   return sendServiceResponse(204);
+   return clearCacheOnSuccess(user_id);
 }
 
 /**
- * Updates the ordering of accounts
+ * Updates the ordering of accounts.
  *
  * @param {string} user_id - User ID
  * @param {string[]} accounts - Array of account IDs
- * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({accounts: string})
- * @description
- * - Validates the account IDs array
- * - Updates the ordering of accounts in the database
- * - Invalidates cache to ensure fresh data on next fetch
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
-   // Validate account IDs array
-   if (!accounts?.length) {
+   // Validate array of account IDs
+   if (!Array.isArray(accounts) || !accounts?.length) {
       return sendValidationErrors(null, "Invalid account ordering fields",
          { accounts: "Account ID array must be non-empty" });
    }
 
-   // Validate each UUID and create updates array
+   // Validate each account ID against UUID schema
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
 
@@ -186,25 +176,19 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
          { accounts: "No possible ordering updates based on provided account IDs" });
    }
 
-   // Success - invalidate cache and return success response
-   clearAccountCache(user_id);
-   return sendServiceResponse(204);
+   return clearCacheOnSuccess(user_id);
 }
 
 /**
- * Deletes an account history record
+ * Deletes an account history record.
  *
  * @param {string} user_id - User ID
  * @param {string} account_id - Account ID
  * @param {string} last_updated - Last updated date
- * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({history: string}) or 409 ({history: string})
- * @description
- * - Validates the account ID and date
- * - Deletes an account history record
- * - Invalidates cache to ensure fresh data on next fetch
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
  */
 export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-   // Validate account ID and date
+   // Validate account ID and date inputs
    if (!account_id || !last_updated) {
       const errors: Record<string, string> = {};
 
@@ -231,24 +215,18 @@ export async function deleteAccountHistory(user_id: string, account_id: string, 
          { history: "At least one history record must remain for this account" });
    }
 
-   // Success - invalidate cache and return success response
-   clearAccountCache(user_id);
-   return sendServiceResponse(204);
+   return clearCacheOnSuccess(user_id);
 }
 
 /**
- * Deletes an account
+ * Deletes an account.
  *
  * @param {string} user_id - User ID
  * @param {string} account_id - Account ID
- * @returns {Promise<ServerResponse>} Server response - 204 (no content) or 400 (errors: Record<string, string>) or 404 ({account: string})
- * @description
- * - Validates the account ID
- * - Deletes an account
- * - Invalidates cache to ensure fresh data on next fetch
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   // Validate account ID
+   // Validate account ID input
    if (!account_id) {
       return sendValidationErrors(null, "Invalid account fields",
          { account_id: "Account ID is required" });
@@ -262,7 +240,5 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
          { account: "Account does not exist based on the provided ID" });
    }
 
-   // Success - invalidate cache and return success response
-   clearAccountCache(user_id);
-   return sendServiceResponse(204);
+   return clearCacheOnSuccess(user_id);
 }

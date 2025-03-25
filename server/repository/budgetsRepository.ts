@@ -4,6 +4,11 @@ import { PoolClient } from "pg";
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 /**
+ * The fields that can be updated for a budget category
+ */
+const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
+
+/**
  * Fetches all budgets for a user
  *
  * @param {string} user_id - The user ID
@@ -149,7 +154,7 @@ export async function updateCategory(
    let params = FIRST_PARAM;
 
    // Only include fields that are present in the updates
-   ["name", "type", "category_order"].forEach((field: string) => {
+   BUDGET_CATEGORY_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof BudgetCategory]);
@@ -246,30 +251,26 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 /**
- * Creates a new budget or updates an existing one
+ * Creates a new budget
  *
  * @param {Budget} budget - The budget
  * @returns {Promise<"created" | "updated" | "failure">} The result of the creation or update
  * @description
- * - Creates a new budget or updates an existing one following the UPSERT pattern
- * - "created" is returned if the budget was created, "updated" if the budget was updated, and "failure" if the creation or update failed
+ * - Creates a new budget
+ * - "created" is returned if the budget was created, and "failure" if the creation failed
  */
-export async function createBudget(budget: Budget): Promise<"created" | "updated" |"failure"> {
+export async function createBudget(budget: Budget): Promise<"created" | "failure"> {
    // Creates a new budget or updates existing one
    const creation = `
       INSERT INTO budgets (budget_category_id, goal, year, month)
       VALUES ($1, $2, $3, $4)
-      ON CONFLICT (budget_category_id, year, month)
-      DO UPDATE SET goal = EXCLUDED.goal
-      RETURNING budget_category_id, (xmax = 0) AS inserted;
+      RETURNING budget_category_id;
    `;
    const result = await query(creation,
       [budget.budget_category_id, budget.goal, budget.year, budget.month]
-   ) as { budget_category_id: string, inserted: boolean }[];
+   ) as { budget_category_id: string }[];
 
-   if (result.length === 0) return "failure";
-
-   return result[0].inserted ? "created" : "updated";
+   return result.length > 0 ? "created" : "failure";
 }
 
 /**

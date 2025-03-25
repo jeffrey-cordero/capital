@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { MarketTrends } from "capital/marketTrends";
+import type { MarketTrends } from "capital/markets";
 import type { News } from "capital/news";
 
 const marketSlice = createSlice({

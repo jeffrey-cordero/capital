@@ -4,7 +4,12 @@ import { PoolClient } from "pg";
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 /**
- * Fetches all accounts for a user
+ * The fields that can be updated for an account
+ */
+const ACCOUNT_UPDATES = ["name", "type", "image", "account_order"] as const;
+
+/**
+ * Fetches all accounts for a user with their history records.
  *
  * @param {string} user_id - The user ID
  * @returns {Promise<Account[]>} The accounts
@@ -21,7 +26,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
    `;
    const result: (Account & AccountHistory)[] = await query(search, [user_id]);
 
-   // Track positions to efficiently build account objects with history
+   // Track positions of accounts in the result array
    const positions: Record<string, number> = {};
 
    // Process query results into structured account objects with history arrays
@@ -60,14 +65,11 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
 }
 
 /**
- * Creates a new account
+ * Creates a new account.
  *
  * @param {string} user_id - The user ID
- * @param {Account} account - The account
- * @returns {Promise<string>} The account ID
- * @description
- * - Creates a new account
- * - Returns the account ID
+ * @param {Account} account - The account to be inserted
+ * @returns {Promise<string>} The inserted account ID
  */
 export async function create(user_id: string, account: Account): Promise<string> {
    return await transaction(async(client: PoolClient) => {
@@ -96,14 +98,11 @@ export async function create(user_id: string, account: Account): Promise<string>
 }
 
 /**
- * Updates the details of an account, which includes the name, balance, type, image, and account order
+ * Updates the basic details of an account.
  *
  * @param {string} account_id - The account ID
  * @param {Partial<Account & AccountHistory>} updates - The updates
  * @returns {Promise<boolean>} True if the account was updated, false otherwise
- * @description
- * - Updates the details of an account
- * - Returns true if the account was updated, false otherwise
  */
 export async function updateDetails(
    account_id: string,
@@ -115,7 +114,7 @@ export async function updateDetails(
    let params = FIRST_PARAM;
 
    // Only include fields that are present in the updates
-   ["name", "type", "image", "account_order"].forEach((field: string) => {
+   ACCOUNT_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${params}`);
          values.push(updates[field as keyof (Account & AccountHistory)]);
@@ -128,7 +127,7 @@ export async function updateDetails(
       }
    });
 
-   // Handle balance updates through the history table if provided
+   // Handle balance updates through the history table, if provided
    if (updates.balance !== undefined) {
       await updateHistory(account_id, updates.balance, new Date());
    }
@@ -152,15 +151,12 @@ export async function updateDetails(
 }
 
 /**
- * Updates the history of an account
+ * Inserts or updates a history record for an account.
  *
  * @param {string} account_id - The account ID
  * @param {number} balance - The balance
  * @param {Date} last_updated - The last updated date
  * @returns {Promise<boolean>} True if the history was updated, false otherwise
- * @description
- * - Updates the history of an account
- * - Returns true if the history was updated, false otherwise
  */
 export async function updateHistory(
    account_id: string,
@@ -185,14 +181,11 @@ export async function updateHistory(
 }
 
 /**
- * Removes a history record from an account
+ * Removes a history record from an account.
  *
  * @param {string} account_id - The account ID
  * @param {Date} last_updated - The last updated date
  * @returns {Promise<"conflict" | "success" | "missing">} The result of the removal
- * @description
- * - Removes a history record from an account
- * - Returns "conflict" if the history record is the last one, "success" if the history record was removed, or "missing" if the history record was not found
  */
 export async function removeHistory(
    account_id: string,

@@ -226,7 +226,6 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
             const newCategories = arrayMove(categories, oldIndex, newIndex).map(
                (category, index) => ({ ...category, budget_category_order: index })
             );
-            const ordering: string[] = newCategories.map(category => category.budget_category_id);
 
             dispatch(updateBudgetCategoryOrder({
                type,
@@ -235,10 +234,11 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
 
             // Sync new order with server
             try {
+               const categoryIds: string[] = newCategories.map(category => category.budget_category_id);
                const result = await sendApiRequest(
                   "dashboard/budgets/category/ordering",
                   "PUT",
-                  { categoryIds: ordering },
+                  { categoryIds },
                   dispatch,
                   navigate
                );
