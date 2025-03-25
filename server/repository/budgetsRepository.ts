@@ -1,4 +1,10 @@
-import { Budget, BudgetCategory, BudgetGoal, BudgetType, OrganizedBudgets } from "capital/budgets";
+import {
+   Budget,
+   BudgetCategory,
+   BudgetGoal,
+   BudgetType,
+   OrganizedBudgets
+} from "capital/budgets";
 import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";

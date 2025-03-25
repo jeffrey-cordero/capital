@@ -8,14 +8,11 @@ import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
 
 /**
- * Fetches the authentication status within the landing pages
+ * Fetches the authentication status within the landing pages.
  *
  * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
  * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
- * @returns {Promise<boolean>} The authentication status
- * @description
- * - Fetches the authentication status within the landing pages
- * - Sets the global authentication state for routing purposes
+ * @returns {Promise<boolean>} The authentication status or null for auto-redirecting user's to the dashboard
  */
 export async function fetchAuthentication(
    dispatch: Dispatch<any>,
@@ -38,13 +35,9 @@ export async function fetchAuthentication(
 };
 
 /**
- * The layout component for the authentication pages
+ * The layout component for the landing pages.
  *
- * @returns {React.ReactNode} The layout component
- * @description
- * - Fetches the authentication status within the initial landing pages
- * - Displays the loading component while fetching or error has occurred
- * - Displays the outlet (react-router) if the authentication status is retrieved
+ * @returns {React.ReactNode} The landing pages layout component
  */
 export default function Layout(): React.ReactNode {
    // Fetch the authentication status within the initial landing pages

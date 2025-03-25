@@ -57,7 +57,7 @@ export default function Page(): React.ReactNode {
                         className = "floating"
                         component = "img"
                         src = "/svg/transactions.svg"
-                        sx = { { width: 325, height: "auto", mb: 2 } }
+                        sx = { { width: 315, height: "auto", mb: 2 } }
                      />
                   </Box>
                   <Transactions />

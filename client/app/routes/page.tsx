@@ -3,11 +3,9 @@ import Stack from "@mui/material/Stack";
 import { useNavigate } from "react-router";
 
 /**
- * Returns the meta content for the page
+ * Returns the meta content for the page.
  *
  * @returns {MetaFunction} The meta content
- * @description
- * - Sets the title, author, and description for the page
  */
 export function meta() {
    return [
@@ -17,11 +15,9 @@ export function meta() {
 }
 
 /**
- * The page component for the landing page
+ * The page component for the landing page.
  *
- * @returns {React.ReactNode} The page component
- * @description
- * - Displays the landing page with a logo, title, and buttons for login and register
+ * @returns {React.ReactNode} The landing page component
  */
 export default function Page(): React.ReactNode {
    const navigate = useNavigate();

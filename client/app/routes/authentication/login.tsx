@@ -25,26 +25,17 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 
 /**
- * The login schema to only include the username and password fields
- *
- * @description
- * - The login schema is used to validate the user credentials
+ * The login schema to only include the username and password fields.
  */
 const loginSchema = z.object({
-   // Access innerType() to get the base schema from refined userSchema
    username: userSchema.innerType().shape.username,
    password: userSchema.innerType().shape.password
 });
 
 /**
- * The login component
+ * The login page component.
  *
- * @returns {React.ReactNode} The login component
- * @description
- * - Displays the login form with a username and password field
- * - Displays a button to login a user
- * - Displays a link to the register page
- * - On successful login, the user is redirected to the dashboard
+ * @returns {React.ReactNode} The login page component
  */
 export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
@@ -60,10 +51,10 @@ export default function Login(): React.ReactNode {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid fields
+         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit the user credentials
+         // Submit the credentials for authentication
          const credentials = {
             username: data.username.trim(),
             password: data.password.trim()

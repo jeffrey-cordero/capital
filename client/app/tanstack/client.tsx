@@ -1,12 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 
 /**
- * The React Query client for the application
+ * The React Query client for the application with no retries.
  *
- * @returns {QueryClient} The query client
- * @description
- * - The query client is used to fetch and cache data from the server
- * - No retries are allowed to prevent infinite loops
+ * @returns {QueryClient} The query client for the application
  */
 const queryClient = new QueryClient({
    defaultOptions: {

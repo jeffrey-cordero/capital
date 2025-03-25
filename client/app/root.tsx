@@ -13,11 +13,9 @@ import queryClient from "@/tanstack/client";
 import type { Route } from "./+types/root";
 
 /**
- * Links function for the root layout
+ * Returns the links for the root layout.
  *
- * @returns {Route.LinksFunction} The links function
- * @description
- * - Adds the preconnect and stylesheet links for the fonts and icons
+ * @returns {Route.LinksFunction} The links functions
  */
 export const links: Route.LinksFunction = () => [
    { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -36,10 +34,10 @@ export const links: Route.LinksFunction = () => [
 ];
 
 /**
- * Layout component that sets the theme based on localStorage or preferred color scheme
+ * Main layout component that initializes the theme based on localStorage or preferred color scheme.
  *
  * @param {React.ReactNode} children - The children to render
- * @returns {React.ReactNode} The rendered component
+ * @returns {React.ReactNode} The main application layout
  */
 export function Layout({ children }: { children: React.ReactNode }): React.ReactNode {
    useEffect(() => {
@@ -76,9 +74,9 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
 }
 
 /**
- * App component that provides the Redux and React Query Providers
+ * Main application component that provides the Redux and React Query Providers.
  *
- * @returns {React.ReactNode} The rendered component
+ * @returns {React.ReactNode} The main application component
  */
 export default function App(): React.ReactNode {
    return (
@@ -91,9 +89,9 @@ export default function App(): React.ReactNode {
 }
 
 /**
- * Error boundary component that displays an error message
+ * Global error boundary component that displays an error message.
  *
- * @returns {React.ReactNode} The rendered component
+ * @returns {React.ReactNode} The error boundary component
  */
 export function ErrorBoundary(): React.ReactNode {
    return (

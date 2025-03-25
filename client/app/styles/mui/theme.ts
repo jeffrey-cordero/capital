@@ -7,10 +7,11 @@ import { shadows } from "@/styles/mui/shadow";
 import { typography } from "@/styles/mui/typography";
 
 /**
- * @param mode - The mode of the theme
- * @returns The constructed theme
+ * Constructs a MUI theme based on the mode.
+ *
+ * @param {("light" | "dark")} mode - The mode of the theme
+ * @returns The constructed theme instance for the application
  * @see https://mui.com/material-ui/customization/theming/
- * @description Constructs a MUI theme based on the mode
  */
 export const constructTheme = (mode: "light" | "dark") => (
    createTheme({

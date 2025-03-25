@@ -5,7 +5,7 @@ import type { ChartsComponents } from "@mui/x-charts/themeAugmentation";
 import { gray } from "@/styles/mui/colors";
 
 /**
- * @description MUI Charts components
+ * MUI Charts component overrides.
  * @see https://mui.com/material-ui/customization/theming/
  */
 export const charts: ChartsComponents<Theme> = {

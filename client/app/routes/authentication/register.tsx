@@ -25,14 +25,9 @@ import { handleValidationErrors } from "@/lib/validation";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
- * The registration component
+ * The registration page component.
  *
- * @returns {React.ReactNode} The registration component
- * @description
- * - Displays the registration form with a name, username, password, verify password, and email field
- * - Displays a button to register a user
- * - Displays a link to the login page
- * - On successful registration, the user is redirected to the dashboard
+ * @returns {React.ReactNode} The registration page component
  */
 export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
@@ -49,10 +44,10 @@ export default function Register(): React.ReactNode {
       const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid fields
+         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit fields for user registration
+         // Submit the credentials for registration
          const registration = {
             username: data.username.trim(),
             name: data.name.trim(),

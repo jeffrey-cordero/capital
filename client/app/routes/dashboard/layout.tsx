@@ -11,15 +11,11 @@ import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
 
 /**
- * Fetches the dashboard data
+ * Fetches the dashboard data.
  *
  * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
  * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
  * @returns {Promise<Dashboard | null>} The dashboard data
- * @see {@link Dashboard}
- * @description
- * - Fetches the dashboard data
- * - Sets the global accounts, budgets, and markets state for rendering purposes
  */
 export async function fetchDashboard(
    dispatch: Dispatch<any>,
