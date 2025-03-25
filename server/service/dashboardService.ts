@@ -1,6 +1,7 @@
 const fs = require("fs").promises;
 
 import { Mutex } from "async-mutex";
+import type { Dashboard } from "capital/dashboard";
 import { IndicatorTrend, MarketTrends, StockTrends } from "capital/marketTrends";
 import { News } from "capital/news";
 import { ServerResponse } from "capital/server";
@@ -12,7 +13,6 @@ import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 import { fetchBudgets } from "@/service/budgetsService";
-import type { Dashboard } from "capital/dashboard";
 /**
  * Mutex to ensure only one API call happens at a time as concurrent API calls can cause rate limiting issues
  */
@@ -256,7 +256,7 @@ export async function fetchNews(): Promise<ServerResponse> {
  *
  * @param {string} user_id - The user ID
  * @returns {Promise<ServerResponse>} The dashboard data
- * @see {Dashboard}
+ * @see {@link Dashboard}
  * @description
  * - Retrieves the dashboard data for the user
  * - Combines all data into a single dashboard response (Trends, News, Accounts, Budgets, etc.)

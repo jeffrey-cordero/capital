@@ -6,10 +6,10 @@ import type { News } from "./news";
 /**
  * The dashboard interface for the dashboard page
  *
- * @see {Account}
- * @see {OrganizedBudgets}
- * @see {MarketTrends}
- * @see {News}
+ * @see {@link Account}
+ * @see {@link OrganizedBudgets}
+ * @see {@link MarketTrends}
+ * @see {@link News}
  * @description
  * - The dashboard interface is used to represent the dashboard data
  */

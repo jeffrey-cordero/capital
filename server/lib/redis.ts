@@ -5,34 +5,26 @@ import Redis from "ioredis";
 import { logger } from "@/lib/logger";
 
 /**
- * Initializes and connects to the Redis server
- *
- * @returns {Promise<RedisClientType>} Connected Redis client
- * @description
- * - Connects to the Redis server using the provided URL
- * - Sets a retry strategy for connection attempts (150ms)
+ * Initializes and connects to the Redis server, where the application follows a
+ * retry strategy of `150ms` for connection attempts and cache aside / lazy-loading
+ * approach for caching values
  */
 const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
    retryStrategy: (times) => {
-      // Retry connection at most once within 150ms
       if (times <= 1) {
-         return 150;
+         return 150; // 150ms retry strategy
       } else {
-         return null;
+         return null; // No retries after the first attempt
       }
    }
 });
 
 /**
- * Logs Redis connection errors
- *
- * @param {Error} error - The error object
- * @description
- * - Logs connection errors while method handler's will log more specific errors
+ * Logs Redis connection errors and acts as a fallback for unexpected errors
  */
 redisClient.on("error", (error: any) => {
    if (error.code === "ECONNREFUSED") {
-      // Log connection errors while method handler's will log more specific errors
+      // Log connection errors, where method handler's log more specific errors
       logger.error(`redisClient.connect(): ${error.message}\n\n${error.stack}`);
    }
 });
@@ -42,8 +34,6 @@ redisClient.on("error", (error: any) => {
  *
  * @param {string} key - Redis key to fetch
  * @returns {Promise<any>} Parsed value or null if key doesn't exist
- * @description
- * - Retrieves a value from Redis by key with error logging
  */
 export async function getCacheValue(key: string): Promise<string | null> {
    try {
@@ -56,14 +46,11 @@ export async function getCacheValue(key: string): Promise<string | null> {
 }
 
 /**
- * Sets a key-value pair in Redis with a specific time to live (TTL)
+ * Sets a key-value pair in Redis with a specific time to live (`TTL`) in seconds
  *
  * @param {string} key - Redis key to set
- * @param {number} time - Time to live (TTL) in seconds
- * @param {string} value - Value to store (will be JSON stringified)
- * @description
- * - Sets a key-value pair in Redis with a specific time to live (TTL)
- * - Logs errors while method handler's will log more specific errors
+ * @param {number} time - Time to live (`TTL`) in seconds
+ * @param {string} value - Value to store in Redis cache
  */
 export function setCacheValue(key: string, time: number, value: string): void {
    redisClient.setex(key, time, value).catch((error: any) => {
@@ -75,9 +62,6 @@ export function setCacheValue(key: string, time: number, value: string): void {
  * Removes a key from Redis
  *
  * @param {string} key - Redis key to delete
- * @description
- * - Removes a key from Redis with error logging
- * - Method handler's will log more specific errors
  */
 export function removeCacheValue(key: string): void {
    redisClient.del(key).catch((error: any) => {

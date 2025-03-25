@@ -4,10 +4,6 @@ import { Pool, PoolClient } from "pg";
 
 /**
  * Connection pool for database connections
- *
- * @description
- * - Creates a connection pool for the database
- * - Uses the environment variables for the database configuration (DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME)
  */
 const pool = new Pool({
    host: process.env.DB_HOST || "postgres",
@@ -26,7 +22,7 @@ export const FIRST_PARAM = 1;
 /**
  * Executes a query on the database pool
  *
- * @param {string} query - The SQL query to execute
+ * @param {string} query - The prepared SQL query to execute
  * @param {any[]} parameters - Array of parameters for the query
  * @returns {Promise<any[]>} Resulting rows from the query
  */
@@ -36,16 +32,13 @@ export async function query(query: string, parameters: any[]): Promise<any[]> {
 }
 
 /**
- * Wraps multiple database operations in a transaction
+ * Wraps multiple database operations in a transaction with automatic
+ * `BEGIN`, `COMMIT`, and `ROLLBACK` statements.
  *
- * @param {Function} statements - Async function containing database operations
- * @param {string} isolationLevel - The isolation level for the transaction
- * @returns {Promise<any>} Result of the transaction statements
- * @throws {Error} If transaction fails or is rolled back
- * @description
- * - Automatically handles BEGIN, COMMIT, and ROLLBACK statements
- * - Provides the client to the statements for executing queries
- * - Ensures proper resource cleanup after transaction completion
+ * @param {() => Promise<any>} statements - Async function containing database operations.
+ * @param {string} [isolationLevel] - The isolation level for the transaction.
+ * @returns {Promise<any>} The result of the transaction statements.
+ * @throws {Error} If the transaction fails or is rolled back.
  */
 export async function transaction(
    statements: (client: PoolClient) => Promise<any>,

@@ -238,7 +238,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
                const result = await sendApiRequest(
                   "dashboard/budgets/category/ordering",
                   "PUT",
-                  { categories: ordering },
+                  { categoryIds: ordering },
                   dispatch,
                   navigate
                );

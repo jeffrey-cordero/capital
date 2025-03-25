@@ -6,13 +6,11 @@ import { submitServiceRequest } from "@/lib/services";
 import * as userService from "@/service/userService";
 
 /**
- * Creates a new user account
+ * Creates a new user account (`POST /user`)
  *
  * @param {Request} req - Express request object containing user data
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} Response after user creation - 201 ({ success: true }), 400, or 409 if user exists
- * @description
- * - `req.body` should be of type `User`
+ * @returns {Promise<Response>} The service response for the user creation request
  */
 export const POST = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(res, async() => userService.createUser(req, res, req.body as User))

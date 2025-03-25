@@ -75,7 +75,7 @@ export default function Accounts() {
             // Sync new order with server
             const ordering = newAccounts.map(account => account.account_id);
             sendApiRequest<number>(
-               "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
+               "dashboard/accounts/ordering", "PUT", { accountsIds: ordering }, dispatch, navigate
             ).then((result) => {
                if (result !== 204) {
                   throw new Error("Failed to update account order");

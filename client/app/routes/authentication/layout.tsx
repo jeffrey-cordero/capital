@@ -10,8 +10,8 @@ import { authenticate } from "@/redux/slices/authentication";
 /**
  * Fetches the authentication status within the landing pages
  *
- * @param dispatch - The dispatch function to dispatch actions to the Redux store
- * @param navigate - The navigate function for potential authentication-based redirection
+ * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
+ * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
  * @returns {Promise<boolean>} The authentication status
  * @description
  * - Fetches the authentication status within the landing pages
@@ -29,9 +29,11 @@ export async function fetchAuthentication(
    if (typeof status === "object" && status !== null) {
       // Set the global authentication state for routing purposes
       dispatch(authenticate(Boolean(status.authenticated)));
+
+      return null; // null to continue the loading process until auto-redirect
    }
 
-   return typeof status === "object" ? Boolean(status?.authenticated) : false;
+   return false; // false to remain on the current page
 };
 
 /**

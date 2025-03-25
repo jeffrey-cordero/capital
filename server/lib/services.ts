@@ -6,11 +6,12 @@ import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
- * Formats validation errors based on Zod schema validation results for API responses
+ * Formats validation errors based on Zod schema validation results for API
+ * responses with a `400` status code.
  *
- * @param {SafeParseReturnType<any, any> | null} fields - Zod schema validation results (success = false)
+ * @param {SafeParseReturnType<any, any> | null} fields - Zod schema validation results (`fields.success = false`)
  * @param {string} message - Error message to include in the response
- * @param {Record<string, string>} [errors] - Additional error details
+ * @param {Record<string, string>} [errors] - Optional prepared error details, which assumes `fields` is `null`
  * @returns {ServerResponse} Validation errors response
  */
 export function sendValidationErrors(
@@ -42,13 +43,13 @@ export function sendValidationErrors(
 }
 
 /**
- * Sends a server response with the specified code, message, data, and errors
+ * Sends a response from a service request with the specified code, message,
+ * data, and errors.
  *
  * @param {number} code - HTTP status code
  * @param {string} [message] - Optional message to include in the response
  * @param {any} [data] - Optional data to include in the response
- * @param {Record<string, string>} [errors] - Optional additional error details
- * @see {@link ServerResponse}
+ * @param {Record<string, string>} [errors] - Optional prepared error details
  * @returns {ServerResponse} Server response
  */
 export function sendServiceResponse(code: number, message?: string, data?: any, errors?: Record<string, string>): ServerResponse {
@@ -61,21 +62,16 @@ export function sendServiceResponse(code: number, message?: string, data?: any, 
 }
 
 /**
- * Submits a service request and handles the API response formatting
+ * Submits a service request and handles the API response formatting, acting as a
+ * global error handler for all service requests.
  *
  * @param {Response} res - Express response object to send the formatted response
- * @param {Function} serviceMethod - Async function to execute that returns service data
- * @returns {Promise<Response>} Express response after processing the service request
- * @description
- * - Executes the provided service method and formats the response
- * - Handles both successful responses and internal server errors
- * - Sets appropriate HTTP status codes and JSON response based on the outcome
- * - Acts a global error handler for all service requests (500 Bad Request)
+ * @param {Function} serviceMethod - Async function representing the service request
  */
 export const submitServiceRequest = async(
    res: Response,
    serviceMethod: () => Promise<ServerResponse>
-): Promise<any> => {
+): Promise<void> => {
    try {
       const result: ServerResponse = await serviceMethod();
 
