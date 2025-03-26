@@ -29,23 +29,15 @@ type ApiResponse<T> = {
 };
 
 /**
- * Sends an API request to the server
+ * Sends an API request to the server.
  *
  * @param {string} path - The path to send the request to
- * @param {string} method - The method to send the request with (GET, POST, PUT, DELETE)
+ * @param {string} method - The method to send the request with (`GET`, `POST`, `PUT`, `DELETE`)
  * @param {unknown} body - The body to send with the request
  * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
  * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
- * @param {UseFormSetError<any>} [setError] - The setError function to set the error for the form leverage react-hook-form
- * @returns {Promise<T | number | null>} The response data or status code}
- * @see {@link HTTP_STATUS}
- * @description
- * - Handles authentication and redirection cases
- * - Handles server errors with specific error messages
- * - Updates authentication state if not checking authentication
- * - Handles different response types
- * - Add's global notification for internal server errors
- * - Status code `204` returned for successful updates (no content), otherwise data of type `T` is returned
+ * @param {UseFormSetError<any>} [setError] - The optional `setError` react-hook-form function to automate form error handling
+ * @returns {Promise<T | number | null>} The response data or status code
  */
 export async function sendApiRequest<T>(
    path: string,
@@ -69,7 +61,7 @@ export async function sendApiRequest<T>(
          credentials: "include"
       });
 
-      // Handle potential authentication redirection
+      // Handle potential redirection cases
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
          window.location.pathname = "/login";
          return null;
@@ -85,7 +77,7 @@ export async function sendApiRequest<T>(
          throw new Error(responseData.errors?.server || "An unknown error occurred");
       }
 
-      // Update authentication state if not checking authentication
+      // Update authentication state if not called within the authentication layout
       if (!isAuthentication) {
          const isDashboard = path.startsWith(SPECIAL_PATHS.DASHBOARD);
          const isSuccessfulLogin = isLogin && response.status === HTTP_STATUS.OK;
@@ -104,6 +96,7 @@ export async function sendApiRequest<T>(
          // Handle validation errors from the server
          const responseData: ApiResponse<T> = await response.json();
 
+         // Error handling for form validation errors
          Object.entries(responseData.errors || {}).forEach(([field, message]) => {
             setError?.(field, { type: "server", message });
          });

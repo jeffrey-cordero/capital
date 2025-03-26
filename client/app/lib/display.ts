@@ -1,5 +1,6 @@
+
 /**
- * Utility methods to ensure consistent formatting for values across the various components
+ * The CSS properties for an ellipsis within MUI styled components.
  */
 export const ellipsis = {
    whiteSpace: "nowrap",
@@ -8,7 +9,7 @@ export const ellipsis = {
 };
 
 /**
- * Helper function for formatting numbers
+ * Helper function for formatting numbers.
  *
  * @param {number} value - The value to format
  * @param {number} minFraction - Minimum number of fraction digits

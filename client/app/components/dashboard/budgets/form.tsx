@@ -83,7 +83,10 @@ export default function BudgetForm({ type, displayWarning, open, onClose }: Budg
 
          // Determine if we need to create or update a budget entry
          const currentGoal = budget.goals[budget.goalIndex];
-         const isCurrentPeriod = compareBudgetPeriods(currentGoal, period) === 0;
+         const isCurrentPeriod = compareBudgetPeriods(
+            { month: currentGoal.month, year: currentGoal.year },
+            { month: period.month, year: period.year }
+         ) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Submit the API request

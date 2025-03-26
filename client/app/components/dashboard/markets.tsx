@@ -151,7 +151,7 @@ function Stocks({ data }: StocksProps) {
    );
 }
 export default function Markets() {
-   const trends: MarketTrends = useSelector((state: RootState) => state.markets.trends);
+   const trends: MarketTrends = useSelector((state: RootState) => state.markets.value.trends);
 
    // Extract and format indicators data
    const indicators = Object.keys(trends)

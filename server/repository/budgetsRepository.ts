@@ -33,14 +33,9 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    const results = await query(overall, [user_id]) as (Budget & BudgetCategory)[];
 
    // Initialize organized structure with Income and Expenses sections
-   const today = new Date(new Date().setHours(0, 0, 0, 0));
    const result: OrganizedBudgets = {
       Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] },
-      Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] },
-      period: {
-         month: today.getUTCMonth() + 1,
-         year: today.getUTCFullYear()
-      }
+      Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] }
    };
    const categoriesMap: Record<string, number> = {};
 

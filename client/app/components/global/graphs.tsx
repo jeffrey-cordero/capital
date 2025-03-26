@@ -1,4 +1,22 @@
-export function AreaGradient({ color, id }: { color: string; id: string }) {
+/**
+ * The props for the AreaGradient component.
+ *
+ * @interface AreaGradientProps
+ * @property {string} color - The color of the gradient
+ * @property {string} id - The id of the gradient
+ */
+interface AreaGradientProps {
+   color: string;
+   id: string;
+}
+
+/**
+ * The AreaGradient component.
+ *
+ * @param {AreaGradientProps} props - The props for the AreaGradient component
+ * @returns {React.ReactNode} The AreaGradient component
+ */
+export function AreaGradient({ color, id }: AreaGradientProps): React.ReactNode {
    return (
       <defs>
          <linearGradient

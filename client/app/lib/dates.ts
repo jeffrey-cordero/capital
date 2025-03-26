@@ -1,11 +1,11 @@
 import type { BudgetPeriod } from "capital/budgets";
 
 /**
- * Gets the current date in UTC
+ * Gets the current date in UTC (midnight)
  *
  * @returns {Date} The current date in UTC
  */
-export const getCurrentDate = () => {
+export const getCurrentDate = (): Date => {
    return new Date(new Date().setUTCHours(0, 0, 0, 0));
 };
 
@@ -26,18 +26,15 @@ export const monthAbbreviations = [
 ];
 
 /**
- * Normalizes a date string based on the current view
+ * Normalizes a date string based on the current `view` into a valid Date object.
+ * `"MTD"` requires `MM/YYYY` format, `"YTD"` requires `YYYY` format, otherwise
+ * `YYYY-MM-DD` format is required.
  *
  * @param {string} date - The date string
  * @param {string} [view] - The view to normalize the date for
  * @returns {Date} The normalized date
- * @description
- * - For MTD, the date string requires MM/YYYY format
- * - For YTD, the date string requires YYYY format
- * - Otherwise, the date string is assumed to be in YYYY-MM-DD format
  */
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
-   // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
       const [month, year] = date.split("/");
 
@@ -45,19 +42,17 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      // Set time to midnight UTC
-      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
+      return new Date(`${date}T00:00:00`);
    }
 }
 
 /**
  * Gets the year abbreviations
  *
- * @param {number} [year] - The year
- * @returns {string[]} The year abbreviations in format "MM. YYYY"
+ * @param {number} [year] - The year to use for the reference date, defaulting to the current year
+ * @returns {string[]} The year abbreviations in format `"MM. YYYY"`
  */
 export function getYearAbbreviations(year?: number): string[] {
-   // Format the year array to "MM. YYYY" format
    const referenceDate = year ? new Date(year, 0, 1) : getCurrentDate();
 
    return monthAbbreviations.map(month =>
@@ -66,13 +61,11 @@ export function getYearAbbreviations(year?: number): string[] {
 }
 
 /**
- * Calculates the time since the last update
+ * Calculates the time since the last update in a human-readable format, such as `"now"`,
+ * `"1 day ago"`, or `"5 days, 2 hours ago"`
  *
  * @param {string} date - The date string
  * @returns {string} The time since the last update
- * @description
- * - Returns "now" for very recent updates
- * - Otherwise, returns the time since the last update in a human-readable format, such as "1 day ago" or "5 days, 2 hours ago"
  */
 export function timeSinceLastUpdate(date: string): string {
    // Calculate the time difference in milliseconds
@@ -98,13 +91,11 @@ export function timeSinceLastUpdate(date: string): string {
 }
 
 /**
- * Calculates the new period
+ * Calculates the new budget period based on the current period and the direction.
  *
  * @param {BudgetPeriod} period - The current period
  * @param {string} direction - The direction to calculate the new period
  * @returns {BudgetPeriod} The new period
- * @description
- * - Calculates the new period based on the current period and the direction
  */
 export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, direction: "previous" | "next"): BudgetPeriod {
    if (direction === "previous") {
@@ -121,25 +112,18 @@ export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, directio
 }
 
 /**
- * Compares two budget periods
+ * Compares two budget periods to determine their order.
  *
  * @param {BudgetPeriod} p1 - The first period
  * @param {BudgetPeriod} p2 - The second period
- * @returns {number} The comparison result
- * @description
- * - Returns -1 if p1 is before p2
- * - Returns 0 if p1 and p2 are the same
- * - Returns 1 if p1 is after p2
+ * @returns {-1 | 0 | 1} `-1` if p1 is before p2 (farther from today), `0` if p1 and p2 are the same, `1` if p1 is after p2 (closer to today)
  */
 export function compareBudgetPeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
    if (p1.year === p2.year && p1.month === p2.month) {
-      // p1 and p2 are the same period
       return 0;
    } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
-      // p1 is before p2
       return 1;
    } else {
-      // p1 is after p2
       return -1;
    }
 }

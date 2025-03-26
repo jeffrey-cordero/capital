@@ -81,7 +81,10 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
          }
 
          // Determine if we're updating the current period or creating a new one
-         const isCurrentPeriod = compareBudgetPeriods(category.goals[category.goalIndex], { month, year }) === 0;
+         const isCurrentPeriod = compareBudgetPeriods(
+            { month: category.goals[category.goalIndex].month, year: category.goals[category.goalIndex].year },
+            { month, year }
+         ) === 0;
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Send potential updates in parallel requests

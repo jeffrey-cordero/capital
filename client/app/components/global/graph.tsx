@@ -19,6 +19,17 @@ import { AreaGradient } from "@/components/global/graphs";
 import { normalizeDate } from "@/lib/dates";
 import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
 
+/**
+ * The props for the Graph component.
+ *
+ * @interface GraphProps
+ * @property {string} title - The title of the graph
+ * @property {boolean} card - Whether the graph is within a card to handle styling cases
+ * @property {boolean} average - Whether the graph should display the average value or the last value within the year view
+ * @property {boolean} indicators - Whether the graph should display the indicators (GDP, etc.) or hide the selection input
+ * @property {string} defaultOption - The default option for the graph
+ * @property {Record<string, { date: string, value: string }[]>} data - The data for the graph
+ */
 interface GraphProps {
    title: string;
    card: boolean;
@@ -28,7 +39,14 @@ interface GraphProps {
    data: Record<string, { date: string, value: string }[]>;
 }
 
-export function getGraphColor(theme: Theme, value: number) {
+/**
+ * Gets the color of the graph based on the trend direction.
+ *
+ * @param {Theme} theme - The MUI theme
+ * @param {number} value - The value of the graph
+ * @returns {string} The color of the graph
+ */
+export function getGraphColor(theme: Theme, value: number): string {
    if (value === 0) {
       return theme.palette.text.primary;
    } else if (value > 0) {
@@ -38,7 +56,13 @@ export function getGraphColor(theme: Theme, value: number) {
    }
 }
 
-export function getChipColor(trend: number) {
+/**
+ * Gets the color of the chip based on the trend direction.
+ *
+ * @param {number} trend - The trend of the graph
+ * @returns {string} The color of the chip
+ */
+export function getChipColor(trend: number): string {
    if (trend === 0) {
       return "default" as const;
    } else if (trend > 0) {
@@ -48,7 +72,13 @@ export function getChipColor(trend: number) {
    }
 }
 
-export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps) {
+/**
+ * The Graph component.
+ *
+ * @param {GraphProps} props - The props for the Graph component
+ * @returns {React.ReactNode} The Graph component
+ */
+export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps): React.ReactNode {
    const theme = useTheme();
    const { watch, control } = useForm();
 
@@ -91,8 +121,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                // Calculate value based on average setting
                const value = yearData.length === 0 ? 0
                   : average
-                     ? yearData.reduce((acc, record) => acc + Number(record.value), 0) / yearData.length
-                     : yearData[yearData.length - 1].value;
+                     ? yearData.reduce((acc, record) => acc + Number(record.value), 0) / yearData.length // average value
+                     : yearData[yearData.length - 1].value; // last value
 
                return {
                   date: year.toString(),
@@ -101,7 +131,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             });
 
             // For line charts with single data point, add a previous year data point to prevent empty graph
-            if (yearlyData.length === 1 && graph !== "Bar") {
+            if (yearlyData.length === 1 && graph === "Line") {
                yearlyData.unshift({
                   date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
@@ -129,18 +159,18 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             }, []);
 
             // For line charts with single data point, add previous month to prevent empty graph
-            if (monthlyData.length === 1 && graph !== "Bar") {
+            if (monthlyData.length === 1 && graph === "Line") {
                const monthYear = monthlyData[0].date.split("/");
 
                // Handle month rollover, accounting for year change when month is January
                if (monthYear[0] !== "01") {
                   monthlyData.unshift({
-                     date: (Number(monthYear[0]) - 1).toString().padStart(2, "0") + "/" + monthYear[1],
+                     date: (Number(monthYear[0]) - 1).toString().padStart(2, "0") + "/" + monthYear[1], // previous month
                      value: monthlyData[0].value
                   });
                } else {
                   monthlyData.unshift({
-                     date: "12/" + (Number(monthYear[1]) - 1),
+                     date: "12/" + (Number(monthYear[1]) - 1), // previous year
                      value: monthlyData[0].value
                   });
                }
@@ -157,22 +187,24 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    // Process data and handle empty datasets
    const filteredRange = constructGraphData();
    const filtered = filteredRange.length > 0 ?
-      filteredRange : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }];
+      filteredRange // filtered data
+      : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }]; // default empty data
 
    // Calculate growth trend as percentage change from start to end
-   const trend = filtered.length > 0 ? (
-      (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value))
-      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100) : (0);
+   const trend = filtered.length === 0 ? 0 : (
+      (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value)) // final - initial
+      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100); // initial - avoid division by zero
 
    // Visual styling based on trend direction
    const color = getGraphColor(theme, trend);
    const chip = getChipColor(trend);
 
    // Date range for filter controls
-   const fromValue = from === "" ? range[0]?.date : from;
-   const toValue = to === "" ? range[range.length - 1]?.date : to;
-   const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0];
-   const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0];
+   const fromValue = from === "" ? range[0]?.date : from; // default to oldest date
+   const toValue = to === "" ? range[range.length - 1]?.date : to; // default to newest date
+
+   const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0]; // oldest date
+   const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0]; // newest date
 
    return (
       <Card
@@ -190,7 +222,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          variant = "elevation"
       >
          <CardContent sx = { { p: card ? 2.5 : 0 } }>
-            { /* Controls for graph type, view and data selection */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
                sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: card ? 0 : 1 } }
@@ -281,7 +312,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   }
                />
             </Stack>
-            { /* Current value and trend display */ }
             <Stack sx = { { justifyContent: "space-between", px: card ? 0 : 1 } }>
                <Stack
                   direction = "row"
@@ -306,13 +336,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      { indicators ? option === "GDP" ? "B" : "%" : "" }
                   </Typography>
                   <Chip
-                     color = { chip }
+                     color = { chip as any }
                      label = { displayPercentage(Number(trend.toFixed(2))) }
                      size = "small"
                   />
                </Stack>
             </Stack>
-            { /* Chart display based on selected type */ }
             {
                graph === "Line" ? (
                   <LineChart
@@ -414,7 +443,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   />
                )
             }
-            { /* Date range filter controls */ }
             <Stack
                direction = { { xs: "column", sm: "row" } }
                sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: card ? 0 : 1 } }

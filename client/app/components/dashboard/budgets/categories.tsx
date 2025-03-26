@@ -262,7 +262,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
       <Stack
          direction = "column"
          spacing = { 2 }
-         sx = { { mt: 3 } }
+         sx = { { mt: 1 } }
       >
          { /* Warning alert when category totals exceed main budget goal */ }
          {

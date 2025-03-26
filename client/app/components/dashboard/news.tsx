@@ -176,7 +176,7 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
 
 export default function Articles() {
    // Safely access news items with optional chaining
-   const news: News = useSelector((state: RootState) => state.markets.news);
+   const news: News = useSelector((state: RootState) => state.markets.value.news);
    const newsItems = (news?.channel?.[0]?.item || []).slice(0, 10);
 
    return (

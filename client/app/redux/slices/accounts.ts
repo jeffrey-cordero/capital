@@ -21,7 +21,7 @@ const accountsSlice = createSlice({
       /**
        * Sets the accounts state in the Redux store.
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts.
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
        * @param {PayloadAction<Account[]>} action - The dispatched action containing the payload
        */
       setAccounts(state: WritableDraft<AccountState>, action: PayloadAction<Account[]>) {
@@ -30,11 +30,8 @@ const accountsSlice = createSlice({
       /**
        * Adds an account to the accounts state.
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts.
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
        * @param {PayloadAction<Account>} action - The dispatched action containing the payload
-       * @see {@link Account}
-       * @description
-       * - Adds an account to the accounts state
        */
       addAccount(state: WritableDraft<AccountState>, action: PayloadAction<Account>) {
          state.value.push(action.payload);
@@ -42,13 +39,8 @@ const accountsSlice = createSlice({
       /**
        * Updates an account in the accounts state.
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts.
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
        * @param {PayloadAction<{ account: Account, history?: AccountHistory }>} action - The dispatched action containing the payload
-       * @see {@link Account}
-       * @see {@link AccountHistory}
-       * @description
-       * - Updates an account in the accounts state
-       * - Updates the account's balance to the most recent history record updates, if applicable
        */
       updateAccount(state: WritableDraft<AccountState>, action: PayloadAction<{ account: Account, history?: AccountHistory }>) {
          const account: Account = { ...action.payload.account };
@@ -73,7 +65,7 @@ const accountsSlice = createSlice({
                      last_updated: updateDate.toISOString()
                   });
 
-                  // Keep the old record if dates don't match
+                  // Keep the old record if timestamps don't match
                   if (updateTimestamp !== currentTimestamp) {
                      acc.push(record);
                   }
@@ -84,7 +76,7 @@ const accountsSlice = createSlice({
                return acc;
             }, []);
 
-            // Append history record if it's the most recent
+            // Append history record if it's the oldest
             if (!historyInserted) {
                account.history.push({
                   balance: history.balance,
@@ -93,7 +85,7 @@ const accountsSlice = createSlice({
             }
          }
 
-         // Update account in state with latest balance
+         // Update account in state with the closest balance
          state.value = state.value.map((acc) =>
             account.account_id === acc.account_id ? { ...account, balance: account.history[0].balance } : acc
          );
@@ -101,15 +93,10 @@ const accountsSlice = createSlice({
       /**
        * Removes an account from the accounts state.
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts.
-       * @param {PayloadAction<string>} action - The dispatched action containing the payload.
-       * @see {@link Account}
-       * @description
-       * - Removes an account from the accounts state
-       * - Filters out the account with the matching `account_id` from the payload
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
+       * @param {PayloadAction<string>} action - The dispatched action containing the payload
        */
       removeAccount(state: WritableDraft<AccountState>, action: PayloadAction<string>) {
-         // Filter out the account with matching ID
          state.value = state.value.filter(account => account.account_id !== action.payload);
       }
    }

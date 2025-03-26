@@ -11,12 +11,27 @@ import {
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 
+/**
+ * The props for the Confirmation component.
+ *
+ * @interface ConfirmationProps
+ * @property {string} type - The type of confirmation to display
+ * @property {string} message - The message to display within the confirmation dialog
+ * @property {() => void} onConfirmation - The function to call when the user confirms the action
+ */
 interface ConfirmationProps {
    type: "button" | "icon";
    message: string;
    onConfirmation: () => void;
 }
-export default function Confirmation({ message, onConfirmation, type }: ConfirmationProps) {
+
+/**
+ * The Confirmation component across the application.
+ *
+ * @param {ConfirmationProps} props - The props for the Confirmation component
+ * @returns {React.ReactNode} The Confirmation component
+ */
+export default function Confirmation({ message, onConfirmation, type }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 

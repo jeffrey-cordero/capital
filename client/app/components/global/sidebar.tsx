@@ -19,7 +19,7 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { type Dispatch, useState } from "react";
+import { type Dispatch, useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { type NavigateFunction, useLocation, useNavigate } from "react-router";
 
@@ -27,6 +27,12 @@ import { sendApiRequest } from "@/lib/api";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
+/**
+ * The function to clear the user's authentication and re-route to the login page.
+ *
+ * @param {Dispatch<any>} dispatch - The dispatch function
+ * @param {NavigateFunction} navigate - The navigate function
+ */
 export async function clearAuthentication(
    dispatch: Dispatch<any>,
    navigate: NavigateFunction
@@ -41,14 +47,23 @@ export async function clearAuthentication(
    }
 };
 
-// Navigation link type definition
+/**
+ * The type definition for the navigation link.
+ *
+ * @interface NavigationLink
+ * @property {string} path - The path of the navigation link
+ * @property {string} title - The title of the navigation link
+ * @property {IconDefinition} icon - The icon of the navigation link
+ */
 interface NavigationLink {
    path: string;
    title: string;
    icon: IconDefinition;
 }
 
-// Landing page navigation links
+/**
+ * The landing page navigation links.
+ */
 const landing: NavigationLink[] = [{
    path: "/",
    title: "Home",
@@ -63,7 +78,9 @@ const landing: NavigationLink[] = [{
    icon: faUserPlus
 }];
 
-// Dashboard navigation links for authenticated users
+/**
+ * The dashboard navigation links for authenticated users.
+ */
 const dashboard: NavigationLink[] = [{
    path: "/dashboard",
    title: "Dashboard",
@@ -90,7 +107,9 @@ const dashboard: NavigationLink[] = [{
    icon: faGears
 }];
 
-// Preserve existing MaterialUISwitch styling exactly as is
+/**
+ * The styled MaterialUISwitch component to match the application's theme.
+ */
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    width: 58,
    height: 30,
@@ -147,22 +166,41 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    }
 }));
 
+/**
+ * The props for the SideBarContent component.
+ *
+ * @interface SideBarContentProps
+ * @property {NavigationLink[]} links - The navigation links
+ * @property {() => void} onClose - The function to call when the sidebar is closed
+ */
 interface SideBarContentProps {
    links: NavigationLink[];
    onClose: () => void;
 }
 
-export function SideBar() {
-   const [open, setOpen] = useState(false);
+/**
+ * The SideBar component to render the sidebar.
+ *
+ * @returns {React.ReactNode} The SideBar component
+ */
+export function SideBar(): React.ReactNode {
    const authenticated = useSelector((state: RootState) => state.authentication.value);
    const theme = useTheme();
+   const [open, setOpen] = useState(false);
+
+   const openSideBar = useCallback(() => {
+      setOpen(true);
+   }, []);
+
+   const closeSideBar = useCallback(() => {
+      setOpen(false);
+   }, []);
 
    return (
       <Box>
-         { /* Hamburger menu button */ }
          <IconButton
             color = "primary"
-            onClick = { () => setOpen(true) }
+            onClick = { openSideBar }
             sx = {
                {
                   position: "absolute",
@@ -174,10 +212,8 @@ export function SideBar() {
          >
             <FontAwesomeIcon icon = { faBarsStaggered } />
          </IconButton>
-
-         { /* Sidebar drawer */ }
          <Drawer
-            onClose = { () => setOpen(false) }
+            onClose = { closeSideBar }
             open = { open }
             sx = {
                {
@@ -195,19 +231,38 @@ export function SideBar() {
          >
             <SideBarContent
                links = { authenticated ? dashboard : landing }
-               onClose = { () => setOpen(false) }
+               onClose = { closeSideBar }
             />
          </Drawer>
       </Box>
    );
 }
 
-function SideBarContent({ links, onClose }: SideBarContentProps) {
+/**
+ * The SideBarContent component to render the sidebar content.
+ *
+ * @param {SideBarContentProps} props - The props for the SideBarContent component
+ * @returns {React.ReactNode} The SideBarContent component
+ */
+function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme(), location = useLocation();
+
+   const navigateToPage = useCallback((path: string) => {
+      navigate(path);
+      onClose();
+   }, [navigate, onClose]);
+
+   const logout = useCallback(async() => {
+      await clearAuthentication(dispatch, navigate);
+      onClose();
+   }, [dispatch, navigate, onClose]);
+
+   const updateTheme = useCallback(() => {
+      dispatch(toggleTheme());
+   }, [dispatch]);
 
    return (
       <Box sx = { { position: "relative", height: "100%", textAlign: "center" } }>
-         { /* Logo and title section */ }
          <Stack>
             <Box
                alt = "Logo"
@@ -222,13 +277,10 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                Capital
             </Typography>
          </Stack>
-
-         { /* Navigation container */ }
          <Box
             component = "nav"
             sx = { { display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" } }
          >
-            { /* Navigation links */ }
             <Box
                component = "ul"
                sx = { { gap: 0.5, pl: 1 } }
@@ -245,12 +297,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                         >
                            <ListItemButton
                               disableGutters = { true }
-                              onClick = {
-                                 () => {
-                                    navigate(link.path);
-                                    onClose();
-                                 }
-                              }
+                              onClick = { () => navigateToPage(link.path) }
                               sx = {
                                  {
                                     pl: 1.5,
@@ -294,11 +341,9 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                }
             </Box>
 
-            { /* Footer controls section */ }
             <Box sx = { { position: "relative", mb: 22 } }>
                {
                   links === dashboard ? (
-                  // Dashboard mode: Theme toggle and logout
                      <Box>
                         <Stack
                            direction = "column"
@@ -318,12 +363,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                            <IconButton
                               aria-label = "Logout"
                               disableRipple = { true }
-                              onClick = {
-                                 async() => {
-                                    await clearAuthentication(dispatch, navigate);
-                                    onClose();
-                                 }
-                              }
+                              onClick = { logout }
                               size = "medium"
                               sx = {
                                  {
@@ -336,12 +376,11 @@ function SideBarContent({ links, onClose }: SideBarContentProps) {
                         </Stack>
                      </Box>
                   ) : (
-                  // Landing mode: Theme toggle only
                      <Box>
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }
                            id = "theme-switch"
-                           onChange = { () => dispatch(toggleTheme()) }
+                           onChange = { updateTheme }
                            sx = { { m: 1 } }
                         />
                      </Box>

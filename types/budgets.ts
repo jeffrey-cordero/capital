@@ -137,5 +137,4 @@ export type OrganizedBudget = {
 export interface OrganizedBudgets {
    Income: OrganizedBudget;
    Expenses: OrganizedBudget;
-   period: BudgetPeriod;
 }
