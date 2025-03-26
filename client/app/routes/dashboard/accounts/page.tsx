@@ -6,11 +6,9 @@ import AccountTrends from "@/components/dashboard/accounts/charts";
 import Transactions from "@/components/dashboard/accounts/transactions";
 
 /**
- * The accounts page component
+ * The accounts page component.
  *
  * @returns {React.ReactNode} The accounts page component
- * @description
- * - Displays the accounts page with the accounts, transactions, and account trends components
  */
 export default function Page(): React.ReactNode {
    return (
@@ -29,7 +27,6 @@ export default function Page(): React.ReactNode {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               { /* Accounts */ }
                <Grid size = { { xs: 12 } }>
                   <Box className = "animation-container">
                      <Box
@@ -49,7 +46,6 @@ export default function Page(): React.ReactNode {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               { /* Transactions */ }
                <Grid size = { { xs: 12 } }>
                   <Box className = "animation-container">
                      <Box
@@ -69,7 +65,6 @@ export default function Page(): React.ReactNode {
                timeout = { 1000 }
                unmountOnExit = { true }
             >
-               { /* Account Trends */ }
                <Grid size = { { xs: 12 } }>
                   <Box className = "animation-container">
                      <Box

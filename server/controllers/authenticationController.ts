@@ -5,9 +5,9 @@ import { submitServiceRequest } from "@/lib/services";
 import * as authenticationService from "@/service/authenticationService";
 
 /**
- * Verifies current authentication status
+ * Handles GET requests for verifying current authentication status.
  *
- * @param {Request} req - Express request object containing the JWT token in cookies (`{ token: string }`)
+ * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the authentication status request
  */
@@ -16,9 +16,9 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
 );
 
 /**
- * Authenticates user login attempt
+ * Handles POST requests for authenticating user login attempts.
  *
- * @param {Request} req - Express request object containing user credentials in body (`{ username: string, password: string }`)
+ * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the login request
  */
@@ -27,7 +27,7 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) =>
 );
 
 /**
- * Logs out current user
+ * Handles POST requests for logging out current users.
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object

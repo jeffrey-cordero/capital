@@ -5,21 +5,12 @@ import { type WritableDraft } from "immer";
 import { normalizeDate } from "@/lib/dates";
 
 /**
- * The state of the accounts slice
- *
- * @see {@link Account}
- * @see {@link AccountHistory}
+ * The state of the accounts slice.
  */
 type AccountState = { value: Account[]; }
 
 /**
- * The accounts slice for the accounts page
- *
- * @see {@link Account}
- * @see {@link AccountHistory}
- * @description
- * - The accounts slice is used to manage the accounts state
- * - Handles the addition, updating, and removal of accounts
+ * The accounts slice for account state management.
  */
 const accountsSlice = createSlice({
    name: "accounts",
@@ -32,9 +23,6 @@ const accountsSlice = createSlice({
        *
        * @param {WritableDraft<AccountState>} state - The current state of the accounts.
        * @param {PayloadAction<Account[]>} action - The dispatched action containing the payload
-       * @see {@link Account}
-       * @description
-       * - Sets the accounts state to the payload of the dispatched action
        */
       setAccounts(state: WritableDraft<AccountState>, action: PayloadAction<Account[]>) {
          state.value = action.payload;

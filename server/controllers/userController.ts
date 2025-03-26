@@ -6,9 +6,9 @@ import { submitServiceRequest } from "@/lib/services";
 import * as userService from "@/service/userService";
 
 /**
- * Creates a new user account (`POST /user`)
+ * Handles POST requests for creating a new user account.
  *
- * @param {Request} req - Express request object containing user data
+ * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the user creation request
  */

@@ -6,7 +6,8 @@ import { authenticateToken } from "@/lib/middleware";
 const usersRouter = express.Router();
 
 /**
- * User router for handling user creation/update requests
+ * POST /users
+ *    req.body: User
  */
 usersRouter.post("/", authenticateToken(false), controller.POST);
 

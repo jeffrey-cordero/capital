@@ -40,22 +40,17 @@ export async function fetchDashboard(
 }
 
 /**
- * The layout component for the dashboard pages
+ * The layout component for the dashboard pages.
  *
- * @returns {React.ReactNode} The layout component
- * @description
- * - Fetches the dashboard data
- * - Displays the loading component while fetching or error has occurred
- * - Displays the outlet (react-router) if the dashboard data is retrieved
+ * @returns {React.ReactNode} The dashboard layout component
  */
 export default function Layout(): React.ReactNode {
-   // Fetch the dashboard content to be shared amongst the pages with a 15 minute refresh interval
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({
       queryKey: ["dashboard"],
       queryFn: () => fetchDashboard(dispatch, navigate),
-      staleTime: 15 * 60 * 1000, // 15 minute refresh interval
-      gcTime: 30 * 60 * 1000 // 30 minute cache time
+      staleTime: 15 * 60 * 1000,
+      gcTime: 30 * 60 * 1000
    });
 
    if (isLoading || isError || data === null) {

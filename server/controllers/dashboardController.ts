@@ -5,10 +5,10 @@ import { submitServiceRequest } from "@/lib/services";
 import * as dashboardService from "@/service/dashboardService";
 
 /**
- * Fetches dashboard data for the authenticated user (`GET /dashboard`)
+ * Handles GET requests for fetching dashboard data for the authenticated user.
  *
  * @param {Request} req - Express request object
- * @param {Response} res - Express response object containing `user_id` in locals
+ * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the dashboard fetch request
  */
 export const GET = asyncHandler(async(req: Request, res: Response) =>

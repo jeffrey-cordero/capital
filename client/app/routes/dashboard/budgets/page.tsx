@@ -4,7 +4,12 @@ import Grid from "@mui/material/Grid2";
 import Budgets from "@/components/dashboard/budgets/budgets";
 import { BudgetPieChart, BudgetTrends } from "@/components/dashboard/budgets/charts";
 
-export default function Page() {
+/**
+ * The budgets page component.
+ *
+ * @returns {React.ReactNode} The budgets page component
+ */
+export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
@@ -26,7 +31,6 @@ export default function Page() {
                   size = { { xs: 12 } }
                   sx = { { textAlign: "center" } }
                >
-                  { /* Budget image */ }
                   <Box className = "animation-container">
                      <Box
                         alt = "Budgets"
@@ -38,7 +42,6 @@ export default function Page() {
                   </Box>
                </Grid>
             </Grow>
-            { /* Budget Summaries */ }
             <Grow
                in = { true }
                mountOnEnter = { true }
@@ -49,7 +52,6 @@ export default function Page() {
                   <Budgets />
                </Grid>
             </Grow>
-            { /* Budget Charts */ }
             <Grid size = { { xs: 12 } }>
                <Grow
                   in = { true }
@@ -65,7 +67,6 @@ export default function Page() {
                         size = { { xs: 12 } }
                         sx = { { textAlign: "center", justifyContent: "center" } }
                      >
-                        { /* Budgeting image */ }
                         <Box className = "animation-container">
                            <Box
                               alt = "Budgeting"

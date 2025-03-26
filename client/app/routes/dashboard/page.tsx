@@ -6,11 +6,9 @@ import Markets from "@/components/dashboard/markets";
 import Articles from "@/components/dashboard/news";
 
 /**
- * The dashboard page component
+ * The dashboard page component.
  *
  * @returns {React.ReactNode} The dashboard page component
- * @description
- * - Displays the dashboard page with the finances, markets, and articles components
  */
 export default function Page(): React.ReactNode {
    return (

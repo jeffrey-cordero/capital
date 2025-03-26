@@ -13,26 +13,71 @@ const dashboardRouter = express.Router();
 dashboardRouter.use(authenticateToken(true));
 
 /**
- * Dashboard router for handling user dashboard requests
+ * GET /dashboard/
  */
-dashboardRouter.get("/", authenticateToken(true), dashboardController.GET);
+dashboardRouter.get("/", dashboardController.GET);
 
 /**
- * Accounts router for handling user accounts requests
+ * GET /dashboard/accounts
  */
 dashboardRouter.get("/accounts", accountsController.GET);
+
+/**
+ * POST /dashboard/accounts
+ *    req.body: Account
+ */
 dashboardRouter.post("/accounts", accountsController.POST);
+
+/**
+ * PUT /dashboard/accounts/:id
+ *    req.params.id: Account ID || "ordering"
+ *    req.body: Partial<Account & AccountHistory> || { accountsIds: string[] }
+ */
 dashboardRouter.put("/accounts/:id", accountsController.PUT);
+
+/**
+ * DELETE /dashboard/accounts/:id
+ *    req.params.id: Account ID
+ *    req.body: { last_updated?: string }
+ */
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 
 /**
- * Budgets router for handling user budgets requests
+ * GET /dashboard/budgets
  */
 dashboardRouter.get("/budgets", budgetsController.GET);
+
+/**
+ * POST /dashboard/budgets/category
+ *    req.body: BudgetCategory & Budget
+ */
 dashboardRouter.post("/budgets/category", budgetsController.POST);
+
+/**
+ * POST /dashboard/budgets/budget/:id
+ *    req.body: Budget
+ *    req.params.id: Budget Category ID
+ */
 dashboardRouter.post("/budgets/budget/:id", budgetsController.POST);
+
+/**
+ * PUT /dashboard/budgets/budget/:id
+ *    req.params.id: Budget Category ID
+ *    req.body: Budget
+ */
 dashboardRouter.put("/budgets/budget/:id", budgetsController.PUT);
+
+/**
+ * PUT /dashboard/budgets/category/:id
+ *    req.params.id: Budget Category ID || "ordering"
+ *    req.body: BudgetCategory || { categoryIds: string[] }
+ */
 dashboardRouter.put("/budgets/category/:id", budgetsController.PUT);
+
+/**
+ * DELETE /dashboard/budgets/category/:id
+ *    req.params.id: Budget Category ID
+ */
 dashboardRouter.delete("/budgets/category/:id", budgetsController.DELETE);
 
 export default dashboardRouter;

@@ -6,10 +6,10 @@ import { submitServiceRequest } from "@/lib/services";
 import * as accountsService from "@/service/accountsService";
 
 /**
- * Fetches all financial accounts for a user (`GET /dashboard/accounts`)
+ * Handles GET requests for fetching all financial accounts for a user.
  *
- * @param {Request} req - The request object
- * @param {Response} res - The response object containing `user_id` in locals
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the fetch request
  */
 export const GET = asyncHandler(async(req: Request, res: Response) =>
@@ -17,10 +17,10 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
 );
 
 /**
- * Creates a new financial account for a user (`POST /dashboard/accounts`)
+ * Handles POST requests for creating a new financial account for a user.
  *
- * @param {Request} req - The request object containing account data in body (`Account`)
- * @param {Response} res - The response object containing `user_id` in locals
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the creation request
  */
 export const POST = asyncHandler(async(req: Request, res: Response) =>
@@ -28,13 +28,10 @@ export const POST = asyncHandler(async(req: Request, res: Response) =>
 );
 
 /**
- * Updates account information based on the request parameters (`PUT /dashboard/accounts/:id` or
- * `PUT /dashboard/accounts/ordering`). If the request path includes "ordering", then account
- * ordering is updated. Otherwise, account details or history records are updated based on the
- * presence of `last_updated`.
+ * Handles PUT requests for updating account details, accounts ordering, or history records.
  *
- * @param {Request} req - The request object containing update data in body (`{ accountsIds: string[] }` or `Partial<Account & AccountHistory>`)
- * @param {Response} res - The response object containing `user_id` in locals
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the update request
  */
 export const PUT = asyncHandler(async(req: Request, res: Response) => {
@@ -56,12 +53,10 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
 });
 
 /**
- * Deletes account data based on the request parameters (`DELETE /dashboard/accounts/:id`). If
- * the `req.body.last_updated` is present, then a specific history record is deleted. Otherwise,
- * the entire account and its history are deleted.
+ * Handles DELETE requests for deleting account history records or entire accounts.
  *
- * @param {Request} req - The request object containing `account_id` in params and `last_updated` in body
- * @param {Response} res - The response object containing `user_id` in locals
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the deletion request
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
