@@ -11,22 +11,43 @@ import Grid from "@mui/material/Grid2";
 import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/markets";
 import { useSelector } from "react-redux";
 
-import Graph, { getChipColor } from "@/components/global/graph";
+import Graph from "@/components/global/graph";
+import { getChipColor } from "@/lib/charts";
 import { timeSinceLastUpdate } from "@/lib/dates";
 import { displayVolume } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
+/**
+ * The props for the Stocks component.
+ *
+ * @interface StocksProps
+ * @property {StockTrends} data - The data for the stocks component
+ */
 interface StocksProps {
    data: StockTrends;
 }
 
+/**
+ * The props for the TrendCard component.
+ *
+ * @interface TrendProps
+ * @property {string} title - The title for the trend card
+ * @property {StockIndicator[]} data - The data for the trend card
+ * @property {string} image - The image for the trend card
+ */
 interface TrendProps {
    title: string;
    data: StockIndicator[];
    image: string;
 }
 
-function StockTrendCard({ title, data, image }: TrendProps) {
+/**
+ * The TrendCard component to render the trend card.
+ *
+ * @param {TrendProps} props - The props for the TrendCard component
+ * @returns {React.ReactNode} The TrendCard component
+ */
+function StockTrendCard({ title, data, image }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
@@ -34,7 +55,6 @@ function StockTrendCard({ title, data, image }: TrendProps) {
          variant = "elevation"
       >
          <CardContent>
-            { /* Card header with image and title */ }
             <Box sx = { { textAlign: "center" } }>
                <Box
                   alt = "Stock"
@@ -49,7 +69,6 @@ function StockTrendCard({ title, data, image }: TrendProps) {
                   { title }
                </Typography>
             </Box>
-            { /* Stock entries list */ }
             {
                data.map((stock, index) => (
                   <Stack
@@ -57,7 +76,6 @@ function StockTrendCard({ title, data, image }: TrendProps) {
                      key = { index }
                      sx = { { gap: 1, mb: 2 } }
                   >
-                     { /* Stock header with ticker and change percentage */ }
                      <Stack
                         direction = "row"
                         sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1 } }
@@ -76,12 +94,11 @@ function StockTrendCard({ title, data, image }: TrendProps) {
                            </Link>
                         </Typography>
                         <Chip
-                           color = { getChipColor(parseFloat(stock.change_percentage)) }
+                           color = { getChipColor(parseFloat(stock.change_percentage)) as any }
                            label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
                            size = "small"
                         />
                      </Stack>
-                     { /* Stock details - price and volume */ }
                      <Stack
                         direction = "column"
                         sx = { { gap: 1 } }
@@ -110,7 +127,13 @@ function StockTrendCard({ title, data, image }: TrendProps) {
    );
 }
 
-function Stocks({ data }: StocksProps) {
+/**
+ * The Stocks component to render the stocks component.
+ *
+ * @param {StocksProps} props - The props for the Stocks component
+ * @returns {React.ReactNode} The Stocks component
+ */
+function Stocks({ data }: StocksProps): React.ReactNode {
    const { top_gainers, top_losers, most_actively_traded } = data;
 
    return (
@@ -150,7 +173,13 @@ function Stocks({ data }: StocksProps) {
       </Stack>
    );
 }
-export default function Markets() {
+
+/**
+ * The Markets component to render the market trends, such as indicators and stocks.
+ *
+ * @returns {React.ReactNode} The Markets component
+ */
+export default function Markets(): React.ReactNode {
    const trends: MarketTrends = useSelector((state: RootState) => state.markets.value.trends);
 
    // Extract and format indicators data
@@ -172,7 +201,6 @@ export default function Markets() {
          id = "markets"
          sx = { { justifyContent: "space-between" } }
       >
-         { /* Header image */ }
          <Box className = "animation-container">
             <Box
                alt = "Stocks"
@@ -182,7 +210,6 @@ export default function Markets() {
                sx = { { width: 390, height: "auto", mx: "auto" } }
             />
          </Box>
-         { /* Last update timestamp */ }
          <Box sx = { { mt: -3, mb: 3 } }>
             <Typography
                fontWeight = "bold"
@@ -199,16 +226,14 @@ export default function Markets() {
                { timeSinceLastUpdated }
             </Typography>
          </Box>
-         { /* Market indicators graph */ }
          <Graph
             average = { true }
             card = { true }
             data = { indicators }
             defaultOption = "GDP"
             indicators = { true }
-            title = "Indicator"
+            title = "Indicators"
          />
-         { /* Stock trends section */ }
          <Stocks data = { stocks } />
       </Stack>
    );

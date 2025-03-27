@@ -22,10 +22,14 @@ import { Expand } from "@/components/global/expand";
 import { displayDate, ellipsis } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
-// Regex to validate MarketWatch image URLs
+/**
+ * Regex to validate external image URLs
+ */
 const MARKET_WATCH_IMAGE_REGEX = /^https:\/\/images\.mktw\.net\/.*/;
 
-// Default values for missing content
+/**
+ * Default values for missing article content
+ */
 const DEFAULT_VALUES = {
    AUTHOR: "No Author",
    TITLE: "No Title",
@@ -33,6 +37,16 @@ const DEFAULT_VALUES = {
    IMAGE: "/svg/backup.svg"
 } as const;
 
+/**
+ * Props for the NewsItem component
+ *
+ * @interface NewsItemProps
+ * @extends NewsArticle - Inherits all properties from the NewsArticle interface
+ * @property {string[]} description - The description of the article
+ * @property {string[]} link - The link of the article
+ * @property {string[]} pubDate - The publish date of the article
+ * @property {string[]} title - The title of the article
+ */
 interface NewsItemProps extends NewsArticle {
    description: string[];
    link: string[];
@@ -40,11 +54,17 @@ interface NewsItemProps extends NewsArticle {
    title: string[];
 }
 
-function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps) {
+/**
+ * NewsItem component to display a single news article
+ *
+ * @param {NewsItemProps} props - The props for the NewsItem component
+ * @returns {React.ReactNode} The NewsItem component
+ */
+function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps): React.ReactNode {
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
 
-   // Extract and validate story data
+   // Extract or use default values
    const author = rest["dc:creator"]?.[0] || DEFAULT_VALUES.AUTHOR;
    const authorInitial = author.charAt(0).toUpperCase();
    const image = rest["media:content"]?.[0]?.$.url || DEFAULT_VALUES.IMAGE;
@@ -62,7 +82,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
          elevation = { 3 }
          sx = { { margin: "auto", borderRadius: 2 } }
       >
-         { /* Author header with timestamp and external link */ }
          <CardHeader
             avatar = {
                <Avatar
@@ -104,7 +123,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                </Stack>
             }
          />
-         { /* Story image */ }
          <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
             <CardMedia
                alt = "Story Image"
@@ -122,7 +140,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                title = "News"
             />
          </Stack>
-         { /* Story title */ }
          <CardContent sx = { { pb: 1 } }>
             <Typography
                sx = {
@@ -142,7 +159,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                { storyTitle }
             </Typography>
          </CardContent>
-         { /* Expand/collapse controls */ }
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1, pt: 0 } }>
             <Expand
                disableRipple = { true }
@@ -155,7 +171,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                />
             </Expand>
          </CardActions>
-         { /* Expandable description */ }
          <Collapse
             in = { expanded }
             timeout = "auto"
@@ -174,10 +189,14 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
    );
 }
 
-export default function Articles() {
-   // Safely access news items with optional chaining
+/**
+ * Articles component to display the news articles
+ *
+ * @returns {React.ReactNode} The Articles component
+ */
+export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.markets.value.news);
-   const newsItems = (news?.channel?.[0]?.item || []).slice(0, 10);
+   const items = (news?.channel?.[0]?.item || []).slice(0, 10);
 
    return (
       <Box
@@ -188,7 +207,6 @@ export default function Articles() {
             direction = "column"
             sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
          >
-            { /* Header image */ }
             <Box className = "animation-container">
                <Box
                   alt = "News"
@@ -198,14 +216,13 @@ export default function Articles() {
                   sx = { { width: 225, height: "auto", mx: "auto", mt: { xs: 3, lg: 0 } } }
                />
             </Box>
-            { /* News grid */ }
             <Grid
                columnSpacing = { 3.1 }
                container = { true }
                sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
             >
                {
-                  newsItems.map((item: NewsArticle, index: number) => (
+                  items.map((item, index) => (
                      <Grid
                         key = { `news-${index}` }
                         size = { { xs: 12, md: 6, lg: 12 } }

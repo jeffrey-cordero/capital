@@ -15,33 +15,58 @@ import { useCallback, useMemo, useState } from "react";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayVolume, ellipsis } from "@/lib/display";
 
+/**
+ * The data for the year
+ *
+ * @type YearData
+ * @property {string} id - The id of the yearly data
+ * @property {string} label - The label of the yearly data
+ * @property {number[]} data - The data for the given year
+ * @property {string} color - The color for the given year
+ */
 type YearData = {
    id: string;
    label: string;
    data: number[];
-   stack: string;
    color: string;
 }
 
+/**
+ * The props for the Trends component
+ *
+ * @interface TrendProps
+ * @property {boolean} isCard - Whether the component is within a card or standalone
+ * @property {string} title - The title of the component
+ * @property {string} value - The value of the component
+ * @property {string} subtitle - The subtitle of the component
+ * @property {YearData[]} data - The yearly data for the component
+ * @property {React.ReactNode} extraInfo - The extra info for the component
+ */
 interface TrendProps {
    isCard: boolean;
    title: string;
    value: string;
    subtitle: string;
-   years: YearData[];
+   data: YearData[];
    extraInfo?: React.ReactNode;
 }
 
-export function Trends({ title, value, subtitle, isCard, years, extraInfo }: TrendProps) {
+/**
+ * The Trends component to display the trends of the given data
+ *
+ * @param {TrendProps} props - The props for the Trends component
+ * @returns {React.ReactNode} The Trends component
+ */
+export function Trends({ title, value, subtitle, isCard, data, extraInfo }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
 
-   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
-   const changeYear = useCallback((direction: "previous" | "next") => {
+   const updateYear = useCallback((direction: "previous" | "next") => {
       setYear(prev => prev + (direction === "previous" ? -1 : 1));
    }, []);
 
-   // Memoize the chart component contents
+   // Memoize the essential chart-related values
+   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
    const yearAbbreviations = useMemo(() => getYearAbbreviations(year), [year]);
    const colorPalette = useMemo(() => [
       theme.palette.primary.dark,
@@ -56,12 +81,12 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
          height = { isCard ? 300 : 450 }
          margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
          resolveSizeBeforeRender = { true }
-         series = { years }
+         series = { data }
          slotProps = { { legend: { hidden: true } } }
          xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
          yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
       />
-   ), [colorPalette, isCard, yearAbbreviations, years]);
+   ), [colorPalette, isCard, yearAbbreviations, data]);
 
    return (
       <Box sx = { { position: "relative" } }>
@@ -112,7 +137,7 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
                >
                   <IconButton
                      disabled = { year === 1800 }
-                     onClick = { () => changeYear("previous") }
+                     onClick = { () => updateYear("previous") }
                      size = "medium"
                      sx = { { color: theme.palette.primary.main } }
                   >
@@ -123,7 +148,7 @@ export function Trends({ title, value, subtitle, isCard, years, extraInfo }: Tre
                   </IconButton>
                   <IconButton
                      disabled = { year === currentYear }
-                     onClick = { () => changeYear("next") }
+                     onClick = { () => updateYear("next") }
                      size = "medium"
                      sx = { { color: theme.palette.primary.main } }
                   >

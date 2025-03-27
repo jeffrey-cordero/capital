@@ -9,13 +9,14 @@ import {
    TextField,
    Typography
 } from "@mui/material";
-import { type Theme, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { BarChart } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { AreaGradient } from "@/components/global/graphs";
+import { AreaGradient } from "@/components/global/gradient";
+import { calculatePercentageChange, getChipColor, getGraphColor } from "@/lib/charts";
 import { normalizeDate } from "@/lib/dates";
 import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
 
@@ -37,39 +38,6 @@ interface GraphProps {
    indicators: boolean;
    defaultOption: string;
    data: Record<string, { date: string, value: string }[]>;
-}
-
-/**
- * Gets the color of the graph based on the trend direction.
- *
- * @param {Theme} theme - The MUI theme
- * @param {number} value - The value of the graph
- * @returns {string} The color of the graph
- */
-export function getGraphColor(theme: Theme, value: number): string {
-   if (value === 0) {
-      return theme.palette.text.primary;
-   } else if (value > 0) {
-      return theme.palette.success.main;
-   } else {
-      return theme.palette.error.main;
-   }
-}
-
-/**
- * Gets the color of the chip based on the trend direction.
- *
- * @param {number} trend - The trend of the graph
- * @returns {string} The color of the chip
- */
-export function getChipColor(trend: number): string {
-   if (trend === 0) {
-      return "default" as const;
-   } else if (trend > 0) {
-      return "success" as const;
-   } else {
-      return "error" as const;
-   }
 }
 
 /**
@@ -191,9 +159,10 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }]; // default empty data
 
    // Calculate growth trend as percentage change from start to end
-   const trend = filtered.length === 0 ? 0 : (
-      (Number(filtered[filtered.length - 1].value) - Number(filtered[0].value)) // final - initial
-      / (Number(filtered[0].value) !== 0 ? Number(filtered[0].value) : 1) * 100); // initial - avoid division by zero
+   const trend = filtered.length === 0 ? 0 : calculatePercentageChange(
+      Number(filtered[filtered.length - 1].value),
+      Number(filtered[0].value)
+   );
 
    // Visual styling based on trend direction
    const color = getGraphColor(theme, trend);
@@ -273,7 +242,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               htmlFor = "view"
                               variant = "standard"
                            >
-                              Frequency
+                              View
                            </InputLabel>
                            <NativeSelect
                               { ...field }
@@ -297,7 +266,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               htmlFor = "graph"
                               variant = "standard"
                            >
-                              Graph
+                              Type
                            </InputLabel>
                            <NativeSelect
                               { ...field }

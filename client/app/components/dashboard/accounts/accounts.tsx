@@ -21,14 +21,19 @@ import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
 
-export default function Accounts() {
+/**
+ * The Accounts component to display the accounts in the dashboard
+ *
+ * @returns {React.ReactNode} The Accounts component
+ */
+export default function Accounts(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
-   const accountIds = useMemo(() => {
+   const ids = useMemo(() => {
       return accounts.map(account => account.account_id ?? "");
    }, [accounts]);
 
-   // Configure drag and drop sensors
+   // Configure drag and drop attributes
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -42,7 +47,6 @@ export default function Accounts() {
    );
 
    const handleDragEnd = useCallback(async(event: DragEndEvent) => {
-      // Handles the end of a drag operation
       const { active, over } = event;
 
       // Only proceed if dropping on a different position
@@ -63,10 +67,8 @@ export default function Accounts() {
 
          // Update account order if both indices are found
          if (oldIndex !== undefined && newIndex !== undefined) {
-            // Create backup of current order in case of failure on the server
+            // Update order optimistically with potential backup measures
             const oldAccounts = accounts.map(account => ({ ...account }));
-
-            // Update order optimistically
             const newAccounts = arrayMove(accounts, oldIndex, newIndex).map(
                (account, index) => ({ ...account, account_order: index })
             );
@@ -84,8 +86,8 @@ export default function Accounts() {
                }
             } catch (error) {
                // Revert optimistic update if server request fails
-               dispatch(setAccounts(oldAccounts));
                console.error("Failed to update account order:", error);
+               dispatch(setAccounts(oldAccounts));
             }
          }
       }
@@ -93,7 +95,6 @@ export default function Accounts() {
 
    return (
       <Box id = "accounts">
-         { /* Accounts grid with drag and drop */ }
          <Grid
             container = { true }
             justifyContent = "center"
@@ -106,7 +107,7 @@ export default function Accounts() {
                sensors = { sensors }
             >
                <SortableContext
-                  items = { accountIds }
+                  items = { ids }
                   strategy = { rectSortingStrategy }
                >
                   {
@@ -136,7 +137,6 @@ export default function Accounts() {
                </SortableContext>
             </DndContext>
          </Grid>
-         { /* Add account button */ }
          <Box sx = { { mt: 6 } }>
             <AccountCard account = { undefined } />
          </Box>

@@ -4,7 +4,12 @@ import Grid from "@mui/material/Grid2";
 import AccountTrends from "@/components/dashboard/accounts/charts";
 import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
-export default function Finances() {
+/**
+ * The Finances component to render the user finances, including account and budget trends.
+ *
+ * @returns {React.ReactNode} The Finances component
+ */
+export default function Finances(): React.ReactNode {
    return (
       <Box
          id = "marketTrends"

@@ -13,21 +13,9 @@ import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
+import { calculateBudgetTotals } from "@/lib/charts";
 import { displayCurrency, displayPercentage, ellipsis } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-
-export function calculateBudgetTotals(budget: OrganizedBudget): { mainGoal: number, categoryTotal: number } {
-   // Safely calculate the main goal amount with fallback to zero
-   const mainGoal = Number(budget.goals[budget.goalIndex]?.goal || 0);
-
-   // Sum up all category goals for the most recent month/year
-   const categoryTotal = budget.categories.reduce((acc, category) => {
-      const goalValue = Number(category.goals[category.goalIndex]?.goal || 0);
-      return acc + goalValue;
-   }, 0);
-
-   return { mainGoal, categoryTotal };
-}
 
 interface StyledTextProps {
    variant: "primary" | "secondary";
@@ -279,6 +267,7 @@ export function BudgetTrends({ isCard }: { isCard: boolean }) {
    return (
       <Box sx = { { position: "relative" } }>
          <Trends
+            data = { yearsData }
             extraInfo = {
                <Chip
                   color = "success"
@@ -290,7 +279,6 @@ export function BudgetTrends({ isCard }: { isCard: boolean }) {
             subtitle = "Income vs. Expenses"
             title = "Budget"
             value = "$0.00"
-            years = { yearsData }
          />
       </Box>
    );

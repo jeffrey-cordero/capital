@@ -1,69 +1,64 @@
 import { Chip } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { type Account, liabilities } from "capital/accounts";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
-import { getChipColor } from "@/components/global/graph";
-import { getCurrentDate, normalizeDate } from "@/lib/dates";
+import { calculatePercentageChange, getChipColor } from "@/lib/charts";
+import { compareBudgetPeriods, getCurrentDate, normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayPercentage } from "@/lib/display";
 import { type RootState } from "@/redux/store";
 
-// Calculate percentage change between current and past net worth
-function calculatePercentageChange(currentValue: number, historicalValue: number): number {
-   if (historicalValue === 0) return 0;
-
-   return ((currentValue - historicalValue) / Math.abs(historicalValue)) * 100;
-}
-
-export default function AccountTrends({ isCard }: { isCard: boolean }) {
+/**
+ * The AccountTrends component to display the account trends in the dashboard
+ *
+ * @param {boolean} isCard - Whether the component is within a card or standalone
+ * @returns {React.ReactNode} The AccountTrends component
+ */
+export default function AccountTrends({ isCard }: { isCard: boolean }): React.ReactNode {
    const theme = useTheme();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
 
-   // Process account data with memoization to prevent unnecessary recalculations
+   // Process account data with memoization
    const { historicalAccounts, netWorth, percentageChange } = useMemo(() => {
       const today = getCurrentDate();
 
-      // Generate data points for the last 12 months
+      // Generate data points for the last 12 months with accounts.history until transactions are implemented
       const historicalAccounts = accounts.map((account) => {
          // Convert history entries to normalized format with proper date objects
          const history = account.history.map(entry => ({
             date: normalizeDate(entry.last_updated.split("T")[0]),
             balance: Number(entry.balance || 0)
          }));
-
          let lastValidBalance = Number(account.balance || 0);
+         let index = 0;
          const historicalData = [];
 
-         for (let i = 0; i < 12; i++) {
-            // Create date for previous month (using 0 as day gets last day of previous month)
-            const monthDate = new Date(today.getUTCFullYear(), today.getUTCMonth() - i, 0);
+         for (let i = 12; i >= 0; i--) {
+            // Create date for previous month
+            const monthDate = new Date(today.getUTCFullYear(), i, 1);
 
             // Skip future months relative to current data
             if (i > today.getUTCMonth()) {
-               historicalData.push({ date: monthDate, balance: 0 });
+               historicalData.unshift({ date: monthDate, balance: 0 });
                continue;
             }
 
-            // Handle year transition
-            if (monthDate.getUTCMonth() < 0) {
-               monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
-               monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
-            }
+            // Find the closest historical record for the current month
+            while ((index < history.length - 1) 
+               && (history[index].date.getFullYear() === monthDate.getFullYear())
+               && (history[index].date.getUTCMonth() > monthDate.getUTCMonth())
+            ) index++;
+            
+            // Get the balance for the current month
+            const balance = history[index]?.balance ?? lastValidBalance;
+            historicalData.unshift({ date: monthDate, balance });
 
-            // Find the closest historical record for this month
-            const matchingRecord = history.find(
-               entry => entry.date.getTime() <= monthDate.getTime()
-            );
-
-            const balance = matchingRecord?.balance ?? lastValidBalance;
-            historicalData.push({ date: monthDate, balance });
-
-            // Update last valid balance if current balance is non-zero
-            if (balance !== 0) lastValidBalance = balance;
+            // Update last valid balance
+            lastValidBalance = balance;
          }
-
+         
          return historicalData;
       });
 
@@ -76,10 +71,10 @@ export default function AccountTrends({ isCard }: { isCard: boolean }) {
 
       // Calculate percentage change from 12 months ago to now
       const oldestNetWorth = accounts.reduce((acc, account, index) => {
-         const oldestData = historicalAccounts[index][historicalAccounts[index].length - 1];
+         const oldest = historicalAccounts[index][0]; // Jan. to Dec.
          const multiplier = liabilities.has(account.type) ? -1 : 1;
 
-         return acc + (multiplier * oldestData.balance);
+         return acc + (multiplier * oldest.balance);
       }, 0);
 
       const percentageChange = calculatePercentageChange(netWorth, oldestNetWorth);
@@ -98,9 +93,10 @@ export default function AccountTrends({ isCard }: { isCard: boolean }) {
 
    return (
       <Trends
+         data = { chartData }
          extraInfo = {
             <Chip
-               color = { getChipColor(percentageChange) }
+               color = { getChipColor(percentageChange) as any }
                label = { `${ percentageChange >= 0 ? "+" : "" }${ displayPercentage(percentageChange) }` }
                size = "small"
             />
@@ -109,7 +105,6 @@ export default function AccountTrends({ isCard }: { isCard: boolean }) {
          subtitle = "Account balances"
          title = "Net Worth"
          value = { displayCurrency(netWorth) }
-         years = { chartData }
       />
    );
 };
