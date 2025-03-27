@@ -35,7 +35,7 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
          let index = 0;
          const historicalData = [];
 
-         for (let i = 12; i >= 0; i--) {
+         for (let i = 11; i >= 0; i--) {
             // Create date for previous month
             const monthDate = new Date(today.getUTCFullYear(), i, 1);
 

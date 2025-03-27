@@ -9,6 +9,13 @@ import { useSelector } from "react-redux";
 import { displayCurrency, ellipsis } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
+/**
+ * Define the props for the CategoryItem component
+ *
+ * @interface CategoryItemProps
+ * @property {string} name - The name of the category
+ * @property {BudgetGoal[]} goals - The goals for the category
+ */
 interface CategoryItemProps {
    name: string;
    goals: BudgetGoal[];
@@ -18,11 +25,15 @@ interface CategoryItemProps {
    isMainCategory?: boolean;
 }
 
-// Individual category display with progress bar
+/**
+ * The CategoryItem component to display the category item
+ *
+ * @param {CategoryItemProps} props - The props for the CategoryItem component
+ * @returns {React.ReactNode} The CategoryItem component
+ */
 const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
-   // Calculate the category values
    const goal = goals[goalIndex].goal;
-   const current = useMemo(() => Math.random() * goal, [goal]);
+   const current = useMemo(() => Math.random() * goal, [goal]); // Placeholder until transactions are implemented
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
 
@@ -72,13 +83,13 @@ const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, 
    );
 });
 
-interface BudgetCategoryProps {
-   type: "Income" | "Expenses";
-   onEditClick: () => void;
-}
-
-// Component to render a list of budget categories with their progress bars
-const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetCategoryProps) {
+/**
+ * The BudgetCategory component to display the budget category
+ *
+ * @param {BudgetProps} props - The props for the BudgetCategory component
+ * @returns {React.ReactNode} The BudgetCategory component
+ */
+const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetProps): React.ReactNode {
    // Get the main budget category
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
@@ -87,7 +98,6 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetCate
          direction = "column"
          spacing = { 2 }
       >
-         { /* Parent category */ }
          <Stack
             direction = "row"
             spacing = { 1 }
@@ -104,7 +114,6 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetCate
                />
             </Box>
          </Stack>
-         { /* Child categories */ }
          <Stack
             direction = "column"
             spacing = { 1 }
@@ -143,13 +152,25 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetCate
    );
 };
 
+/**
+ * Define the props for the Budget component
+ *
+ * @interface BudgetProps
+ * @property {string} type - The type of budget
+ * @property {() => void} onEditClick - The function to call when the edit button is clicked on main categories
+ */
 interface BudgetProps {
    type: "Income" | "Expenses";
    onEditClick: () => void;
 }
 
-// Wrapper component for the budget category display
-export default function Budget({ type, onEditClick }: BudgetProps) {
+/**
+ * The Budget component to display the budget
+ *
+ * @param {BudgetProps} props - The props for the Budget component
+ * @returns {React.ReactNode} The Budget component
+ */
+export default function Budget({ type, onEditClick }: BudgetProps): React.ReactNode {
    return (
       <BudgetCategory
          onEditClick = { onEditClick }

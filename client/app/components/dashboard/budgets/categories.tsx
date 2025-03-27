@@ -30,27 +30,27 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import { calculateBudgetTotals } from "@/components/dashboard/budgets/charts";
 import ConstructCategory from "@/components/dashboard/budgets/constructor";
 import DeleteBudget from "@/components/dashboard/budgets/delete";
 import EditCategory from "@/components/dashboard/budgets/editor";
 import { sendApiRequest } from "@/lib/api";
+import { calculateBudgetTotals } from "@/lib/charts";
 import { displayCurrency, ellipsis } from "@/lib/display";
 import { updateBudgetCategoryOrder } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 interface BudgetCategoriesProps {
    type: "Income" | "Expenses";
+   updateDirtyFields: (_fields: object, _field: string) => void;
 }
 
-interface CategoryItemProps {
+interface CategoryItemProps extends BudgetCategoriesProps {
    category: BudgetCategory;
    editingCategory: string | null;
    setEditingCategory: (_id: string | null) => void;
-   type: "Income" | "Expenses";
 }
 
-const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type }: CategoryItemProps) {
+const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type, updateDirtyFields }: CategoryItemProps) {
    const isEditing = editingCategory === category.budget_category_id;
    const goal = category.goals[category.goalIndex].goal;
 
@@ -66,14 +66,15 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
    };
 
    // Handler for clicking the edit button
-   const handleEditClick = useCallback(() => {
+   const editCategory = useCallback(() => {
       setEditingCategory(category.budget_category_id);
    }, [category.budget_category_id, setEditingCategory]);
 
    // Handler for canceling edit
-   const handleCancelEdit = useCallback(() => {
+   const cancelCategoryEdits = useCallback(() => {
       setEditingCategory(null);
-   }, [setEditingCategory]);
+      updateDirtyFields({}, "editor");
+   }, [setEditingCategory, updateDirtyFields]);
 
    return (
       <Box
@@ -85,7 +86,8 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
             isEditing ? (
                <EditCategory
                   category = { category }
-                  onCancel = { handleCancelEdit }
+                  onCancel = { cancelCategoryEdits }
+                  updateDirtyFields = { updateDirtyFields }
                />
             ) : (
                <Stack
@@ -136,7 +138,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                            <FontAwesomeIcon
                               className = "primary"
                               icon = { faPenToSquare }
-                              onClick = { handleEditClick }
+                              onClick = { editCategory }
                               size = "lg"
                               style = { { cursor: "pointer" } }
                            />
@@ -154,7 +156,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
    );
 });
 
-export default function BudgetCategories({ type }: BudgetCategoriesProps) {
+export default function BudgetCategories({ type, updateDirtyFields }: BudgetCategoriesProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
@@ -178,10 +180,11 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
    }, []);
 
    // Handler for when a new category is successfully created
-   const handleCloseConstructCategory = useCallback(() => {
+   const closeConstructCategory = useCallback(() => {
       // Close the form after successful creation
       displayNewCategoryForm(false);
-   }, [displayNewCategoryForm]);
+      updateDirtyFields({}, "constructor");
+   }, [displayNewCategoryForm, updateDirtyFields]);
 
    // Configure drag and drop sensors with proper activation constraints
    const sensors = useSensors(
@@ -293,6 +296,7 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
                         key = { category.budget_category_id }
                         setEditingCategory = { setEditingCategory }
                         type = { type }
+                        updateDirtyFields = { updateDirtyFields }
                      />
                   ))
                }
@@ -314,8 +318,9 @@ export default function BudgetCategories({ type }: BudgetCategoriesProps) {
                   </Button>
                ) : (
                   <ConstructCategory
-                     onClose = { handleCloseConstructCategory }
+                     onClose = { closeConstructCategory }
                      type = { type }
+                     updateDirtyFields = { updateDirtyFields }
                   />
                )
             }

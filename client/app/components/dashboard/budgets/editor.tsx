@@ -23,6 +23,7 @@ import { type RootState } from "@/redux/store";
 interface EditCategoryProps {
    category: BudgetCategory;
    onCancel: () => void;
+   updateDirtyFields: (_fields: object, _field: string) => void;
 }
 
 // Create a dedicated schema for updates - partial to allow partial updates
@@ -30,16 +31,16 @@ const updateCategorySchema = budgetCategorySchema.partial().pick({ name: true, t
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 // Component for editing an existing budget category
-export default function EditCategory({ category, onCancel }: EditCategoryProps) {
+export default function EditCategory({ category, onCancel, updateDirtyFields }: EditCategoryProps) {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
    // Initialize form with current category values
-   const { control, handleSubmit, setError, formState: { errors, dirtyFields, isSubmitting } } = useForm({
+   const { control, handleSubmit, setError, reset, formState: { errors, dirtyFields, isSubmitting } } = useForm({
       defaultValues: {
          name: category.name,
-         goal: category.goals[category.goalIndex].goal,
-         type: category.type as "Income" | "Expenses"
+         goal: String(category.goals[category.goalIndex].goal),
+         type: category.type
       }
    });
 
@@ -112,17 +113,26 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
             }));
          }
 
-         if (budgetUpdates && budgetSuccess) {
+         // Close the form if both updates were successful
+         if (categorySuccess && budgetSuccess) {
             // Update the budget in Redux store
             dispatch(updateBudget({
                type: data.type || category.type,
                budget_category_id: category.budget_category_id,
                goal: Number(data.goal)
             }));
-         }
 
-         // Close the form if both updates were successful
-         if (categorySuccess && budgetSuccess) {
+            // Clear the form with the new values
+            reset({
+               name: categoryPayload.name || category.name,
+               goal: String(budgetPayload.goal || category.goals[category.goalIndex].goal),
+               type: categoryPayload.type || category.type
+            }, { keepDirty: false });
+
+            // Clear dirty fields before closing
+            updateDirtyFields({}, "editor");
+
+            // Close the form
             onCancel();
          }
       } catch (error) {
@@ -131,7 +141,10 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
    };
 
    return (
-      <form onSubmit = { handleSubmit(onSubmit) }>
+      <form
+         onChange = { () => updateDirtyFields(dirtyFields, "editor") }
+         onSubmit = { handleSubmit(onSubmit) }
+      >
          <Stack
             direction = "column"
             spacing = { 2 }
@@ -197,7 +210,9 @@ export default function EditCategory({ category, onCancel }: EditCategoryProps) 
                            htmlFor = "editor-type"
                            sx = { { px: 0.75 } }
                            variant = "standard"
-                        >Type</InputLabel>
+                        >
+                           Type
+                        </InputLabel>
                         <NativeSelect
                            { ...field }
                            id = "editor-type"

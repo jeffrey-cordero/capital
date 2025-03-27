@@ -8,7 +8,7 @@ import {
    useTheme
 } from "@mui/material";
 import { type BudgetPeriod } from "capital/budgets";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
@@ -17,52 +17,72 @@ import { getCurrentDate, monthAbbreviations } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
-// Type for managing edit state of budget components
-type EditState = { state: "view" | "edit", type: "Income" | "Expenses", displayWarning: boolean };
+/**
+ * Type for managing edit state of budget components
+ *
+ * @type {EditState}
+ */
+type EditState = {
+   state: "view" | "edit";
+   type: "Income" | "Expenses";
+   displayWarning: boolean;
+};
 
-export default function Budgets() {
+/**
+ * The Budgets component to display the budgets
+ *
+ * @returns {React.ReactNode} The Budgets component
+ */
+export default function Budgets(): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
    );
-
-   // Get current period from Redux store
+   const dirtyFields = useRef<Record<string, boolean>>({});
    const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Get current date for validating period selections
-   const today = useMemo(() => getCurrentDate(), []);
-
-   // Determine if next month button should be disabled
-   const nextMonthDisabled = useMemo(() =>
-      period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear(),
-   [period.month, period.year, today]);
-
-   // Handler for opening the budget editing modal
    const openModal = useCallback((type: "Income" | "Expenses") => {
-      setEditState({ state: "edit", displayWarning: false, type });
+      setEditState({ state: "edit", type, displayWarning: false });
    }, []);
 
-   // Handler for closing the budget editing modal
    const closeModal = useCallback((force?: boolean) => {
-      const containsDirtyInput = !!document.querySelector("[data-dirty=\"true\"]");
-
-      if (!force && containsDirtyInput) {
-         // Show warning if there are unsaved changes
+      if (force === true) {
+         // Force close, clear dirty state
+         dirtyFields.current = {};
+         setEditState((prev) => ({ ...prev, state: "view", displayWarning: false }));
+      } else if (Object.keys(dirtyFields.current).length > 0) {
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
-         // Close modal if forced or no unsaved changes
          setEditState((prev) => ({ ...prev, state: "view", displayWarning: false }));
       }
    }, []);
 
-   // Handlers for month navigation
-   const handlePreviousMonth = useCallback(() => {
+   const viewPreviousMonth = useCallback(() => {
       dispatch(selectMonth({ direction: "previous" }));
    }, [dispatch]);
 
-   const handleNextMonth = useCallback(() => {
+   const viewNextMonth = useCallback(() => {
       dispatch(selectMonth({ direction: "next" }));
    }, [dispatch]);
+
+   // Prevent selecting future budget periods
+   const today = useMemo(() => getCurrentDate(), []);
+   const selectNextMonthDisabled = useMemo(() => {
+      return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
+   }, [period.month, period.year, today]);
+
+   // Update dirty fields within child components to check during modal close
+   const updateDirtyFields = useCallback((fields: object, field: string) => {
+      if (Object.keys(fields).length > 0) {
+         dirtyFields.current[field] = true;
+      } else {
+         delete dirtyFields.current[field];
+      }
+
+      if (Object.keys(dirtyFields.current).length === 0) {
+         setEditState((prev) => ({ ...prev, displayWarning: false }));
+      }
+   }, []);
 
    return (
       <Box>
@@ -73,7 +93,7 @@ export default function Budgets() {
          >
             <IconButton
                disabled = { period.year === 1800 }
-               onClick = { handlePreviousMonth }
+               onClick = { viewPreviousMonth }
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
@@ -86,8 +106,8 @@ export default function Budgets() {
                { `${monthAbbreviations[period.month - 1]} ${period.year}` }
             </Typography>
             <IconButton
-               disabled = { nextMonthDisabled }
-               onClick = { handleNextMonth }
+               disabled = { selectNextMonthDisabled }
+               onClick = { viewNextMonth }
                size = "medium"
                sx = { { color: theme.palette.primary.main } }
             >
@@ -115,6 +135,7 @@ export default function Budgets() {
             onClose = { closeModal }
             open = { editState.state === "edit" }
             type = { editState.type }
+            updateDirtyFields = { updateDirtyFields }
          />
       </Box>
    );
