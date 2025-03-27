@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid2";
 
 import Accounts from "@/components/dashboard/accounts/accounts";
 import AccountTrends from "@/components/dashboard/accounts/charts";
-import Transactions from "@/components/dashboard/accounts/transactions";
+import Transactions from "@/components/dashboard/transactions/transactions";
 
 /**
  * The accounts page component.

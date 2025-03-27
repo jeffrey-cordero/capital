@@ -7,7 +7,16 @@ import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
 import { removeAccount } from "@/redux/slices/accounts";
 
-export default function AccountDeletion({ account }: { account: Account }) {
+const message = "Are you sure you want to delete your account? This action will permanently erase all your account history. \
+However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.";
+
+/**
+ * The AccountDeletion component to delete an account
+ *
+ * @param {Account} account - The account to delete
+ * @returns {React.ReactNode} The AccountDeletion component
+ */
+export default function AccountDeletion({ account }: { account: Account }): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
 
    const onSubmit = useCallback(async() => {
@@ -26,10 +35,7 @@ export default function AccountDeletion({ account }: { account: Account }) {
 
    return (
       <Confirmation
-         message = {
-            `Are you sure you want to delete your account? This action will permanently erase all your account history. 
-            However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.`
-         }
+         message = { message }
          onConfirmation = { onSubmit }
          type = "button"
       />

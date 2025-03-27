@@ -15,7 +15,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import Transactions from "@/components/dashboard/accounts/transactions";
+import Transactions from "@/components/dashboard/transactions/transactions";
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";

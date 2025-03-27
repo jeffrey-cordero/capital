@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
 import { calculatePercentageChange, getChipColor } from "@/lib/charts";
-import { compareBudgetPeriods, getCurrentDate, normalizeDate } from "@/lib/dates";
+import { getCurrentDate, normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayPercentage } from "@/lib/display";
 import { type RootState } from "@/redux/store";
 
@@ -45,12 +45,12 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
                continue;
             }
 
-            // Find the closest historical record for the current month
-            while ((index < history.length - 1) 
+            // Find the closest historical record for the current month within the same year
+            while ((index < history.length - 1)
                && (history[index].date.getFullYear() === monthDate.getFullYear())
                && (history[index].date.getUTCMonth() > monthDate.getUTCMonth())
             ) index++;
-            
+
             // Get the balance for the current month
             const balance = history[index]?.balance ?? lastValidBalance;
             historicalData.unshift({ date: monthDate, balance });
@@ -58,7 +58,7 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
             // Update last valid balance
             lastValidBalance = balance;
          }
-         
+
          return historicalData;
       });
 
@@ -69,9 +69,9 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
          return acc + (multiplier * Number(record.balance || 0));
       }, 0);
 
-      // Calculate percentage change from 12 months ago to now
+      // Calculate percentage change from beginning of the year to the current month
       const oldestNetWorth = accounts.reduce((acc, account, index) => {
-         const oldest = historicalAccounts[index][0]; // Jan. to Dec.
+         const oldest = historicalAccounts[index][0];
          const multiplier = liabilities.has(account.type) ? -1 : 1;
 
          return acc + (multiplier * oldest.balance);

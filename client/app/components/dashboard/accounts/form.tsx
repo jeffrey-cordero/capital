@@ -19,7 +19,7 @@ import { useNavigate } from "react-router";
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
-import Transactions from "@/components/dashboard/accounts/transactions";
+import Transactions from "@/components/dashboard/transactions/transactions";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { getCurrentDate } from "@/lib/dates";
@@ -27,13 +27,27 @@ import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
 
+/**
+ * The AccountForm component to create and update accounts
+ *
+ * @interface AccountFormProps
+ * @property {Account | undefined} account - The account to create or update
+ * @property {boolean} open - Whether the modal is open
+ * @property {() => void} onClose - The function to call when the modal is closed
+ */
 interface AccountFormProps {
    account: Account | undefined;
    open: boolean;
    onClose: () => void;
 }
 
-export default function AccountForm({ account, open, onClose }: AccountFormProps) {
+/**
+ * The AccountForm component to create and update accounts
+ *
+ * @param {AccountFormProps} props - The props for the AccountForm component
+ * @returns {React.ReactNode} The AccountForm component
+ */
+export default function AccountForm({ account, open, onClose }: AccountFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const updating = account !== undefined;
@@ -50,24 +64,17 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       formState: { isSubmitting, errors, dirtyFields }
    } = useForm();
 
-   // Reset form when modal opens/closes or account changes
+   // Reset form to match passed account data or clear the form (account is undefined)
    useEffect(() => {
-      if (open) {
-         reset(account);
-      } else {
-         reset();
-      }
+      reset(account ? account : undefined);
    }, [account, reset, open]);
 
-   // Memoize account types to prevent unnecessary re-renders
+   // Memoize account types for selection input
    const accountTypes = useMemo(() => Array.from(types), []);
 
+   // Handles form submission for both create and update operations
    const onSubmit = async(data: FieldValues) => {
-      // Handles form submission for both create and update operations
-      if (updating && !account) {
-         // Invalid state, return without submitting
-         return;
-      }
+      if (updating && !account) return; // Invalid state, return without submitting
 
       const account_order: number = account?.account_order ?? accounts.length;
 
@@ -161,7 +168,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                         spacing = { 2 }
                         sx = { { mt: 3 } }
                      >
-                        { /* Account name input */ }
                         <Controller
                            control = { control }
                            name = "name"
@@ -188,7 +194,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
-                        { /* Account balance input */ }
                         <Controller
                            control = { control }
                            name = "balance"
@@ -214,7 +219,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
-                        { /* Account type selection */ }
                         <Controller
                            control = { control }
                            defaultValue = "Checking"
@@ -251,7 +255,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               )
                            }
                         />
-                        { /* Form actions */ }
                         <Stack
                            direction = "column"
                            spacing = { 1 }
@@ -287,7 +290,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   </form>
                </Box>
             </ModalSection>
-            { /* Additional sections for existing accounts */ }
             {
                updating && (
                   <ModalSection title = "Analytics">

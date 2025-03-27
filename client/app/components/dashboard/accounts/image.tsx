@@ -25,11 +25,27 @@ import {
 
 import { Modal, ModalSection } from "@/components/global/modal";
 
-// Extract the image validation schema from the account schema
+/**
+ * The image validation schema from the account schema
+ */
 const imageSchema = accountSchema.shape.image;
-// Convert the images Set to an array for easier indexing
+
+/**
+ * The images array for the carousel
+ */
 const imagesArray = Array.from(images);
 
+/**
+ * The AccountImage component props
+ *
+ * @interface AccountImageProps
+ * @property {string} value - The value of the image
+ * @property {FieldErrors<FieldValues>} errors - The errors for the account form
+ * @property {UseFormSetError<FieldValues>} setError - The setError function for the account form
+ * @property {UseFormClearErrors<FieldValues>} clearErrors - The clearErrors function for the account form
+ * @property {UseFormSetValue<FieldValues>} setValue - The setValue function for the account form
+ * @property {Control<FieldValues>} control - The control of the account form
+ */
 interface AccountImageProps {
    value: string;
    errors: FieldErrors<FieldValues>;
@@ -39,6 +55,12 @@ interface AccountImageProps {
    control: Control<FieldValues>;
 }
 
+/**
+ * The AccountImage component to display and select an image for an account
+ *
+ * @param {AccountImageProps} props - The props for the AccountImage component
+ * @returns {React.ReactNode} The AccountImage component
+ */
 export default function AccountImage({
    control,
    errors,
@@ -46,23 +68,25 @@ export default function AccountImage({
    clearErrors,
    value,
    setValue
-}: AccountImageProps) {
-   // Allows users to view and select images from a carousel and input a custom URL
+}: AccountImageProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
-
-   // Current position in the image carousel, if applicable
    const [activeStep, setActiveStep] = useState<number>(
       Math.max(imagesArray.indexOf(value), 0)
    );
 
-   // Memoize the current image path to prevent unnecessary re-renders
-   const currentImagePath = useMemo(() =>
-      `/images/${imagesArray[activeStep]}.png`,
-   [activeStep]
-   );
+   // Clear the main image selection when the URL input is focused
+   const handleUrlFocus = useCallback(() => {
+      if (images.has(value)) {
+         setValue("image", "", { shouldDirty: true });
+      }
+   }, [value, setValue]);
 
-   // Validate and save the image when closing the modal
-   const saveImage = useCallback(() => {
+   // Modal method handlers
+   const openModal = useCallback(() => {
+      setOpen(true);
+   }, []);
+
+   const closeModal = useCallback(() => {
       const fields = imageSchema.safeParse(value);
 
       if (!fields.success) {
@@ -75,8 +99,15 @@ export default function AccountImage({
       }
    }, [value, setError]);
 
-   // Handle image selection from the carousel
-   const handleImageSelect = useCallback(() => {
+   const viewPreviousImage = useCallback(() => {
+      setActiveStep(prev => prev === 0 ? imagesArray.length - 1 : prev - 1);
+   }, []);
+
+   const viewNextImage = useCallback(() => {
+      setActiveStep(prev => prev === imagesArray.length - 1 ? 0 : prev + 1);
+   }, []);
+
+   const selectImage = useCallback(() => {
       clearErrors("image");
       setValue(
          "image",
@@ -85,42 +116,20 @@ export default function AccountImage({
       );
    }, [clearErrors, setValue, value, activeStep]);
 
-   // Navigate to previous image in carousel
-   const handlePrevImage = useCallback(() => {
-      setActiveStep(prev => prev === 0 ? imagesArray.length - 1 : prev - 1);
-   }, []);
-
-   // Navigate to next image in carousel
-   const handleNextImage = useCallback(() => {
-      setActiveStep(prev => prev === imagesArray.length - 1 ? 0 : prev + 1);
-   }, []);
-
-   // Handle opening the modal
-   const handleOpenModal = useCallback(() => {
-      setOpen(true);
-   }, []);
-
-   // Handle custom URL input focus
-   const handleUrlFocus = useCallback(() => {
-      if (images.has(value)) {
-         setValue("image", "", { shouldDirty: true });
-      }
-   }, [value, setValue]);
-
    return (
       <Box>
          <Button
             className = "btn-primary"
             color = "info"
             fullWidth = { true }
-            onClick = { handleOpenModal }
+            onClick = { openModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }
             variant = "contained"
          >
             Image
          </Button>
          <Modal
-            onClose = { saveImage }
+            onClose = { closeModal }
             open = { open }
             sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
@@ -131,8 +140,8 @@ export default function AccountImage({
                      sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
                   >
                      <Avatar
-                        onClick = { handleImageSelect }
-                        src = { currentImagePath }
+                        onClick = { selectImage }
+                        src = { `/images/${imagesArray[activeStep]}.png` }
                         sx = {
                            {
                               width: "100%",
@@ -150,7 +159,7 @@ export default function AccountImage({
                         activeStep = { activeStep }
                         backButton = {
                            <Button
-                              onClick = { handlePrevImage }
+                              onClick = { viewPreviousImage }
                               size = "small"
                            >
                               <FontAwesomeIcon
@@ -161,7 +170,7 @@ export default function AccountImage({
                         }
                         nextButton = {
                            <Button
-                              onClick = { handleNextImage }
+                              onClick = { viewNextImage }
                               size = "small"
                            >
                               <FontAwesomeIcon
