@@ -121,15 +121,15 @@ const budgetsSlice = createSlice({
          if (categoryIndex === -1) return; // Ignore invalid category payloads
 
          const category: BudgetCategory = state.value[type].categories[categoryIndex];
+         const updatedCategory: BudgetCategory = { ...category, ...updates };
 
          // Handle a potential swap of category types
          if (updates.type && updates.type !== category.type) {
             state.value[category.type].categories.splice(categoryIndex, 1);
-            state.value[updates.type].categories.push(category);
+            state.value[updates.type].categories.push(updatedCategory);
+         } else {
+            state.value[type].categories[categoryIndex] = updatedCategory;
          }
-
-         // Update the category with the new values
-         Object.assign(category, { ...category, ...updates });
       },
       /**
        * Removes a category from the Redux store for a specific budget type.

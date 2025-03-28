@@ -102,7 +102,6 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
             />
          }
          isCard = { isCard }
-         subtitle = "Account balances"
          title = "Net Worth"
          value = { displayCurrency(netWorth) }
       />

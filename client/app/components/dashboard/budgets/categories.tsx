@@ -16,14 +16,18 @@ import {
    verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faBars, faFeatherPointed, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faFeatherPointed, faGripVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Alert,
    Box,
    Button,
+   List,
+   ListItemButton,
+   ListItemIcon,
+   ListItemText,
    Stack,
-   Typography
+   useTheme
 } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -35,7 +39,7 @@ import DeleteBudget from "@/components/dashboard/budgets/delete";
 import EditCategory from "@/components/dashboard/budgets/editor";
 import { sendApiRequest } from "@/lib/api";
 import { calculateBudgetTotals } from "@/lib/charts";
-import { displayCurrency, ellipsis } from "@/lib/display";
+import { displayCurrency, horizontalScroll } from "@/lib/display";
 import { updateBudgetCategoryOrder } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
@@ -51,6 +55,7 @@ interface CategoryItemProps extends BudgetCategoriesProps {
 }
 
 const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type, updateDirtyFields }: CategoryItemProps) {
+   const theme = useTheme();
    const isEditing = editingCategory === category.budget_category_id;
    const goal = category.goals[category.goalIndex].goal;
 
@@ -95,42 +100,29 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                   spacing = { 1 }
                   sx = { { alignItems: "center", px: 1 } }
                >
-                  <FontAwesomeIcon
-                     icon = { faBars }
-                     { ...listeners }
-                     { ...attributes }
-                     size = "lg"
-                     style = { { cursor: "grab", outline: "none", touchAction: "none" } }
-                  />
-                  <Stack
-                     direction = { { xs: "column", sm: "row" } }
-                     sx = { { width: "100%", justifyContent: { xs: "center", sm: "space-between" }, alignItems: "center" } }
+                  <List
+                     component = "div"
+                     disablePadding = { true }
+                     sx = { { width: "100%" } }
                   >
-                     <Stack
-                        direction = "row"
-                        spacing = { 1 }
-                        sx = { { alignItems: "center" } }
+                     <ListItemButton
+                        disableRipple = { true }
+                        disableTouchRipple = { true }
+                        sx = { { justifyContent: "center", cursor: "default", "&:hover": { backgroundColor: "transparent" }, p: 0 } }
                      >
-                        <Typography
-                           sx = { { wordBreak: "break-all", textAlign: "center" } }
-                           variant = "subtitle1"
-                        >
-                           { category.name }
-                        </Typography>
-                     </Stack>
-                     <Stack
-                        direction = { { xs: "column", sm: "row" } }
-                        spacing = { 1 }
-                        sx = { { alignItems: "center" } }
-                     >
-                        <Box>
-                           <Typography
-                              sx = { { ...ellipsis, fontWeight: "600" } }
-                              variant = "subtitle2"
-                           >
-                              { displayCurrency(goal) }
-                           </Typography>
-                        </Box>
+                        <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
+                           <FontAwesomeIcon
+                              icon = { faGripVertical }
+                              style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.2rem", width: "1.2rem" } }
+                              { ...listeners }
+                              { ...attributes }
+                           />
+                        </ListItemIcon>
+                        <ListItemText
+                           primary = { category.name }
+                           secondary = { displayCurrency(goal) }
+                           sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
+                        />
                         <Stack
                            direction = "row"
                            spacing = { 1 }
@@ -147,8 +139,8 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                               type = { type }
                            />
                         </Stack>
-                     </Stack>
-                  </Stack>
+                     </ListItemButton>
+                  </List>
                </Stack>
             )
          }

@@ -37,7 +37,7 @@ export default function Page(): React.ReactNode {
                         className = "floating"
                         component = "img"
                         src = "/svg/budget.svg"
-                        sx = { { width: 250, height: "auto" } }
+                        sx = { { width: 225, height: "auto" } }
                      />
                   </Box>
                </Grid>

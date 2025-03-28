@@ -1,3 +1,4 @@
+import type { Theme } from "@mui/material";
 
 /**
  * The CSS properties for an ellipsis within MUI styled components.
@@ -7,6 +8,28 @@ export const ellipsis = {
    overflow: "hidden",
    textOverflow: "ellipsis"
 };
+
+/**
+ * The CSS properties for a horizontal scrollable container.
+ */
+export const horizontalScroll = (theme: Theme) => ({
+   whiteSpace: "nowrap",
+   overflowX: "auto",
+   overflowY: "hidden",
+   "&::-webkit-scrollbar": {
+      height: "0px",
+      transition: "height 0.5s ease",
+   },
+   "&:hover": {
+      "&::-webkit-scrollbar": {
+         height: "5px"
+      },
+      "&::-webkit-scrollbar-thumb": {
+         backgroundColor: theme.palette.grey[400],
+         borderRadius: "4px"
+      }
+   }
+});
 
 /**
  * Helper function for formatting numbers.

@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faPencil, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faGripVertical, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
@@ -10,7 +10,6 @@ import {
    CardContent,
    Fab,
    Stack,
-   Tooltip,
    Typography,
    useTheme
 } from "@mui/material";
@@ -19,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import AccountForm from "@/components/dashboard/accounts/form";
-import { displayCurrency, displayDate, ellipsis } from "@/lib/display";
+import { displayCurrency, displayDate, horizontalScroll } from "@/lib/display";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
@@ -143,31 +142,25 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                         {
                            height: { xs: 215, sm: 200 },
                            width: "100%",
-                           cursor: "grab",
-                           touchAction: "none",
+                           cursor: "pointer",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
                         }
                      }
                      variant = "square"
-                     { ...attributes }
-                     { ...listeners }
                   />
                </Typography>
-               <Tooltip
-                  onClick = { openAccountModal }
-                  title = "Edit Account"
+               <Fab
+                  color = "primary"
+                  size = "small"
+                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none" } }
+                  { ...attributes }
+                  { ...listeners }
                >
-                  <Fab
-                     color = "primary"
-                     size = "small"
-                     sx = { { bottom: "75px", right: "15px", position: "absolute" } }
-                  >
-                     <FontAwesomeIcon icon = { faPencil } />
-                  </Fab>
-               </Tooltip>
+                  <FontAwesomeIcon icon = { faGripVertical } />
+               </Fab>
                <CardContent sx = { { p: 3, pt: 2 } }>
                   <Typography
-                     sx = { { ...ellipsis, pr: 4 } }
+                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                      variant = "h6"
                   >
                      { account.name }
@@ -177,7 +170,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
                      <Typography
-                        sx = { { ...ellipsis, maxWidth: "95%", pr: 3 } }
+                        sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "subtitle2"
                      >
                         { displayCurrency(account.balance) }

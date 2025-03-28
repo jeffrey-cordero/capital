@@ -1,12 +1,12 @@
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, LinearProgress, Stack, Typography, useTheme } from "@mui/material";
 import { type BudgetGoal, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import { displayCurrency, ellipsis } from "@/lib/display";
+import { displayCurrency, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
@@ -32,52 +32,53 @@ interface CategoryItemProps {
  * @returns {React.ReactNode} The CategoryItem component
  */
 const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
+   const theme = useTheme();
    const goal = goals[goalIndex].goal;
-   const current = useMemo(() => Math.random() * goal, [goal]); // Placeholder until transactions are implemented
+   const current = 0; // Placeholder until transactions are implemented
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
 
    return (
-      <Box sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }>
+      <Box sx={{ px: !isMainCategory ? { xs: 2, sm: 4 } : 0 }}>
          <Stack
-            direction = "column"
-            sx = { { justifyContent: { xs: "flex-start", sm: "space-between" }, alignItems: "center", mb: 1 } }
+            direction="column"
+            sx={{ width: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", mb: 1.5, mx: "auto" }}
          >
             <Stack
-               direction = "row"
-               spacing = { 1 }
-               sx = { { alignItems: "center" } }
+               direction="row"
+               spacing={1}
+               sx={{ ...horizontalScroll(theme), maxWidth: "90%", justifyContent: "flex-start", alignItems: "center", textAlign: "center" }}
             >
                <Typography
-                  sx = { { ...ellipsis, maxWidth: { xs: "40%", sm: "500px" }, fontWeight: "600", textAlign: "center" } }
-                  variant = "h6"
+                  sx={{ fontWeight: "600" }}
+                  variant="h6"
                >
-                  { name }
+                  {name}
                </Typography>
                {
                   onEditClick && (
                      <FontAwesomeIcon
-                        className = "primary"
-                        icon = { faPenToSquare }
-                        onClick = { onEditClick }
-                        size = "lg"
-                        style = { { cursor: "pointer", zIndex: 1000 } }
+                        className="primary"
+                        icon={faPenToSquare}
+                        onClick={onEditClick}
+                        size="lg"
+                        style={{ cursor: "pointer", zIndex: 1000 }}
                      />
                   )
                }
             </Stack>
             <Typography
-               sx = { { fontWeight: "600", wordBreak: "break-word", textAlign: "center" } }
-               variant = "subtitle1"
+               sx={{ ...horizontalScroll(theme), maxWidth: "90%", fontWeight: "600", textAlign: "center" }}
+               variant="subtitle1"
             >
-               { displayCurrency(current) } / { displayCurrency(goal) }
+               {displayCurrency(current)} / {displayCurrency(goal)}
             </Typography>
          </Stack>
          <LinearProgress
-            color = { color }
-            sx = { { height: "1.65rem", borderRadius: "12px" } }
-            value = { progress }
-            variant = "determinate"
+            color={color}
+            sx={{ height: "2rem", borderRadius: "16px" }}
+            value={progress}
+            variant="determinate"
          />
       </Box>
    );
@@ -95,39 +96,34 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetProp
 
    return (
       <Stack
-         direction = "column"
-         spacing = { 2 }
+         direction="column"
       >
-         <Stack
-            direction = "row"
-            spacing = { 1 }
-            sx = { { position: "relative" } }
+         <Box
+            sx={{ position: "relative", width: "100%", mx: "auto", mb: 2.5 }}
          >
-            <Box sx = { { flexGrow: 1 } }>
-               <CategoryItem
-                  goalIndex = { budget.goalIndex }
-                  goals = { budget.goals }
-                  isMainCategory = { true }
-                  name = { type }
-                  onEditClick = { onEditClick }
-                  type = { type }
-               />
-            </Box>
-         </Stack>
-         <Stack
-            direction = "column"
-            spacing = { 1 }
-         >
-            <AnimatePresence mode = "popLayout">
+            <CategoryItem
+               goalIndex={budget.goalIndex}
+               goals={budget.goals}
+               isMainCategory={true}
+               name={type}
+               onEditClick={onEditClick}
+               type={type}
+            />
+         </Box>
+         <AnimatePresence mode="popLayout">
+            <Stack
+               direction="column"
+               spacing={2}
+            >
                {
                   budget.categories.map((category) => (
                      <motion.div
-                        animate = { { opacity: 1, y: 0 } }
-                        exit = { { opacity: 0, y: 10 } }
-                        initial = { { opacity: 0, y: -10 } }
-                        key = { category.budget_category_id }
-                        layout = "position"
-                        transition = {
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: -10 }}
+                        key={category.budget_category_id}
+                        layout="position"
+                        transition={
                            {
                               type: "spring",
                               stiffness: 100,
@@ -138,16 +134,16 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetProp
                         }
                      >
                         <CategoryItem
-                           goalIndex = { category.goalIndex }
-                           goals = { category.goals }
-                           name = { String(category.name) }
-                           type = { type }
+                           goalIndex={category.goalIndex}
+                           goals={category.goals}
+                           name={String(category.name)}
+                           type={type}
                         />
                      </motion.div>
                   ))
                }
-            </AnimatePresence>
-         </Stack>
+            </Stack>
+         </AnimatePresence>
       </Stack>
    );
 };
@@ -173,8 +169,8 @@ interface BudgetProps {
 export default function Budget({ type, onEditClick }: BudgetProps): React.ReactNode {
    return (
       <BudgetCategory
-         onEditClick = { onEditClick }
-         type = { type }
+         onEditClick={onEditClick}
+         type={type}
       />
    );
 };

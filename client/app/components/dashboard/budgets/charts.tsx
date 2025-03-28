@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
 import { calculateBudgetTotals } from "@/lib/charts";
-import { displayCurrency, displayPercentage, ellipsis } from "@/lib/display";
+import { displayCurrency, displayPercentage, ellipsis, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 interface StyledTextProps {
@@ -99,6 +99,7 @@ interface BudgetProgressChartProps {
 
 function BudgetProgressChart({ title, data, type, totalGoal, totalCurrent }: BudgetProgressChartProps) {
    // Calculate percentage of total budget used
+   const theme = useTheme();
    const percentUsed = Math.min(100, Math.round((totalCurrent / totalGoal) * 100)) || 0;
 
    return (
@@ -154,22 +155,22 @@ function BudgetProgressChart({ title, data, type, totalGoal, totalCurrent }: Bud
                   <Stack
                      direction = "row"
                      key = { index }
-                     sx = { { width: "100%", alignItems: "center", gap: 2, pb: 2, px: { xs: 2, sm: 5 } } }
+                     sx = { { width: "100%", alignItems: "center", gap: 2, pb: 2, px: { xs: 0, sm: 2, md: 5 } } }
                   >
-                     <Stack sx = { { gap: 1, flexGrow: 1 } }>
+                     <Stack sx = { { gap: 1, flexGrow: 1, maxWidth: "100%" } }>
                         <Stack
                            direction = "column"
                            spacing = { 0.5 }
-                           sx = { { justifyContent: "space-between", alignItems: "center" } }
+                           sx = { { width: "100%", mx: "auto", justifyContent: "space-between", alignItems: "center" } }
                         >
                            <Typography
-                              sx = { { ...ellipsis, maxWidth: { xs: "200px", sm: "500px" }, fontWeight: "600" } }
+                              sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 1rem)", fontWeight: "600" } }
                               variant = "body2"
                            >
                               { category.label }
                            </Typography>
                            <Typography
-                              sx = { { ...ellipsis, color: "text.secondary" } }
+                              sx = { { ...horizontalScroll(theme), maxWidth: "90%", color: "text.secondary" } }
                               variant = "body2"
                            >
                               { displayPercentage(category.percentage) }
@@ -276,7 +277,6 @@ export function BudgetTrends({ isCard }: { isCard: boolean }) {
                />
             }
             isCard = { isCard }
-            subtitle = "Income vs. Expenses"
             title = "Budget"
             value = "$0.00"
          />

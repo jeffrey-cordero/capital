@@ -11,7 +11,8 @@ import {
    Collapse,
    IconButton,
    Stack,
-   Typography
+   Typography,
+   useTheme
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type News, type NewsArticle } from "capital/news";
@@ -19,7 +20,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 
 import { Expand } from "@/components/global/expand";
-import { displayDate, ellipsis } from "@/lib/display";
+import { displayDate, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
@@ -61,6 +62,7 @@ interface NewsItemProps extends NewsArticle {
  * @returns {React.ReactNode} The NewsItem component
  */
 function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps): React.ReactNode {
+   const theme = useTheme();
    const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
 
@@ -94,11 +96,10 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
             title = {
                <Stack
                   direction = "row"
-                  sx = { { ...ellipsis, justifyContent: "space-between", flexWrap: "wrap" } }
+                  sx = { { ...horizontalScroll(theme), justifyContent: "space-between", maxWidth: "90%" } }
                >
                   <Stack spacing = { 0 }>
                      <Typography
-                        sx = { { ...ellipsis, maxWidth: "225px" } }
                         variant = "subtitle2"
                      >
                         { author }
@@ -107,19 +108,6 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                         { displayDate(publishDate) }
                      </Typography>
                   </Stack>
-                  <IconButton
-                     aria-label = "Read More"
-                     disableRipple = { true }
-                     href = { storyLink }
-                     size = "small"
-                     target = "_blank"
-                  >
-                     <FontAwesomeIcon
-                        className = "primary"
-                        icon = { faUpRightFromSquare }
-                        style = { { padding: "0 7px" } }
-                     />
-                  </IconButton>
                </Stack>
             }
          />
@@ -181,7 +169,21 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                   color = "textSecondary"
                   variant = "body2"
                >
-                  { storyDescription }
+                  { storyDescription } 
+                  <IconButton
+                     aria-label = "Read More"
+                     disableRipple = { true }
+                     href = { storyLink }
+                     size = "small"
+                     target = "_blank"
+                     sx = {{ pl: 1 }}
+                  >
+                     <FontAwesomeIcon
+                        className = "primary"
+                        size = "xs"
+                        icon = { faUpRightFromSquare }
+                     />
+                  </IconButton>
                </Typography>
             </CardContent>
          </Collapse>

@@ -9,7 +9,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
+import { type Budget, type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -53,26 +53,24 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
          }
 
          // Prepare payloads for parallel requests
-         const categoryPayload = {
-            name: data.name ?? undefined,
-            type: data.type ?? undefined
-         };
-         const categoryUpdates = Boolean(categoryPayload.name || categoryPayload.type);
-         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
+         const categoryPayload: Partial<BudgetCategory> = {};
 
+         if (dirtyFields["name"]) categoryPayload.name = data.name;
+         if (dirtyFields["type"]) categoryPayload.type = data.type;
+
+         const categoryUpdates = Object.keys(categoryPayload).length > 0;
+         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
          if (categoryUpdates && !categoryFields.success) {
             // Invalid category updates
             handleValidationErrors(categoryFields, setError);
             return;
          }
 
-         const budgetPayload = {
-            goal: data.goal ? Number(data.goal) : undefined,
-            budget_category_id: category.budget_category_id,
-            month,
-            year
-         };
-         const budgetUpdates = Boolean(budgetPayload.goal);
+         const budgetPayload: Partial<Budget> = { budget_category_id: category.budget_category_id, month, year };
+
+         if (dirtyFields["goal"]) budgetPayload.goal = Number(data.goal);
+
+         const budgetUpdates = budgetPayload.goal !== undefined;
          const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
 
          if (budgetUpdates && !budgetFields.success) {
@@ -93,7 +91,7 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
             categoryUpdates ? sendApiRequest<number>(
                `dashboard/budgets/category/${category.budget_category_id}`, "PUT", categoryPayload, dispatch, navigate, setError
             ) : Promise.resolve(null),
-            budgetUpdates ? sendApiRequest<{ success: boolean } | number>(
+            budgetUpdates ? sendApiRequest<number | { success: boolean }>(
                `dashboard/budgets/budget/${category.budget_category_id}`, method, budgetPayload, dispatch, navigate, setError
             ) : Promise.resolve(null)
          ]);

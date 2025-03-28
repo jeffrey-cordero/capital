@@ -6,6 +6,7 @@ import {
    Button,
    FormControl,
    FormHelperText,
+   IconButton,
    InputLabel,
    MobileStepper,
    OutlinedInput,
@@ -158,26 +159,30 @@ export default function AccountImage({
                      <MobileStepper
                         activeStep = { activeStep }
                         backButton = {
-                           <Button
+                           <IconButton
+                              color = "primary"
                               onClick = { viewPreviousImage }
-                              size = "small"
+                              size = "medium"
+                              sx = {{ pr: 1 }}
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesLeft }
-                                 size = "xl"
+                                 size = "sm"
                               />
-                           </Button>
+                           </IconButton>
                         }
                         nextButton = {
-                           <Button
+                           <IconButton
+                              color = "primary"
                               onClick = { viewNextImage }
-                              size = "small"
+                              size = "medium"
+                              sx = {{ pl: 1 }}
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesRight }
-                                 size = "xl"
+                                 size = "sm"
                               />
-                           </Button>
+                           </IconButton>
                         }
                         position = "static"
                         steps = { imagesArray.length }

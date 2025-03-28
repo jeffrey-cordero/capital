@@ -91,12 +91,12 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Submit the API request
-         const result = await sendApiRequest(
+         const result = await sendApiRequest<number | { success: boolean }>(
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
          // Handle a successful response
-         if (result === 201 || result === 204) {
+         if (result === 204 || (result instanceof Object && result?.success)) {
             // Update Redux store
             dispatch(updateBudget({
                type,

@@ -1,4 +1,4 @@
-import { faBackward, faForward } from "@fortawesome/free-solid-svg-icons";
+import { faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
@@ -13,7 +13,7 @@ import { BarChart } from "@mui/x-charts";
 import { useCallback, useMemo, useState } from "react";
 
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
-import { displayVolume, ellipsis } from "@/lib/display";
+import { displayVolume, horizontalScroll } from "@/lib/display";
 
 /**
  * The data for the year
@@ -46,7 +46,6 @@ interface TrendProps {
    isCard: boolean;
    title: string;
    value: string;
-   subtitle: string;
    data: YearData[];
    extraInfo?: React.ReactNode;
 }
@@ -57,7 +56,7 @@ interface TrendProps {
  * @param {TrendProps} props - The props for the Trends component
  * @returns {React.ReactNode} The Trends component
  */
-export function Trends({ title, value, subtitle, isCard, data, extraInfo }: TrendProps): React.ReactNode {
+export function Trends({ title, value, isCard, data, extraInfo }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
 
@@ -97,33 +96,37 @@ export function Trends({ title, value, subtitle, isCard, data, extraInfo }: Tren
          >
             <CardContent sx = { { p: isCard ? 2.5 : 0, textAlign: isCard ? "left" : "center" } }>
                <Typography
-                  component = "h2"
                   gutterBottom = { true }
-                  variant = "subtitle2"
-               >{ title } Trends</Typography>
+                  variant = { isCard ? "subtitle2" : "h6" }
+                  sx = {{ mb: 0, fontWeight: "600" }}
+               >
+                  { title }
+               </Typography>
                <Stack sx = { { justifyContent: "space-between" } }>
                   <Stack
-                     direction = "row"
+                     direction = { isCard ? "row" : "column" }
                      sx = {
                         {
+                           ...horizontalScroll(theme),
+                           maxWidth: "100%",
                            justifyContent: isCard ? "flex-start" : "center",
-                           alignContent: "center",
                            alignItems: "center",
-                           gap: 1
+                           textAlign: isCard ? "left" : "center",
+                           columnGap: 1,
+                           rowGap: 0.5,
+                           mx: "auto",
+                           ml: isCard ? 0 : "auto"
                         }
                      }
                   >
                      <Typography
                         component = "p"
-                        sx = { { ...ellipsis, maxWidth: "95%" } }
-                        variant = "h4"
-                     >{ value }</Typography>
+                        variant = "h6"
+                     >
+                        { value }
+                     </Typography>
                      { extraInfo }
                   </Stack>
-                  <Typography
-                     sx = { { color: "text.secondary" } }
-                     variant = "caption"
-                  >{ subtitle }</Typography>
                </Stack>
                { chart }
             </CardContent>
@@ -142,7 +145,7 @@ export function Trends({ title, value, subtitle, isCard, data, extraInfo }: Tren
                      sx = { { color: theme.palette.primary.main } }
                   >
                      <FontAwesomeIcon
-                        icon = { faBackward }
+                        icon = { faAnglesLeft }
                         size = "sm"
                      />
                   </IconButton>
@@ -153,7 +156,7 @@ export function Trends({ title, value, subtitle, isCard, data, extraInfo }: Tren
                      sx = { { color: theme.palette.primary.main } }
                   >
                      <FontAwesomeIcon
-                        icon = { faForward }
+                        icon = { faAnglesRight }
                         size = "sm"
                      />
                   </IconButton>
