@@ -1,4 +1,4 @@
-import { faClockRotateLeft, faFeatherPointed } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Button,
@@ -162,7 +162,7 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
             >
                <Button
                   className = "btn-primary"
-                  color = "info"
+                  color = "secondary"
                   disabled = { isSubmitting }
                   fullWidth = { true }
                   onClick = { onClose }
@@ -174,7 +174,7 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                   color = "primary"
                   fullWidth = { true }
                   loading = { isSubmitting }
-                  startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
+                  startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                   type = "submit"
                   variant = "contained"
                >Create</Button>

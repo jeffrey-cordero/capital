@@ -18,7 +18,7 @@ export default function Page(): React.ReactNode {
          <Grid
             columnSpacing = { 2 }
             container = { true }
-            rowSpacing = { 2 }
+            rowSpacing = { 4 }
             sx = { { width: "100%", height: "100%" } }
          >
             <Grow
@@ -82,7 +82,7 @@ export default function Page(): React.ReactNode {
                      </Grid>
                      <Grid
                         size = { { xs: 12, md: 6 } }
-                        sx = { { mt: { xs: -7, md: 0 } } }
+                        sx = { { mt: { xs: -4, md: 0 } } }
                      >
                         <BudgetPieChart type = "Expenses" />
                      </Grid>

@@ -30,7 +30,7 @@ export default function Callout({ type, children, sx }: CalloutProps): React.Rea
          <Grid size = { { xs: 12, md: 8, lg: 6 } }>
             <Paper
                elevation = { 3 }
-               sx = { { p: 3, borderTop: 10,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "6px" } }
+               sx = { { p: 3, borderTop: 8,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "6px" } }
             >
                { children }
             </Paper>

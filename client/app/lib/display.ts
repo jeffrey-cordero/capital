@@ -1,16 +1,7 @@
 import type { Theme } from "@mui/material";
 
 /**
- * The CSS properties for an ellipsis within MUI styled components.
- */
-export const ellipsis = {
-   whiteSpace: "nowrap",
-   overflow: "hidden",
-   textOverflow: "ellipsis"
-};
-
-/**
- * The CSS properties for a horizontal scrollable container.
+ * The CSS properties for a horizontal scrollable container for long text.
  */
 export const horizontalScroll = (theme: Theme) => ({
    whiteSpace: "nowrap",
@@ -18,7 +9,7 @@ export const horizontalScroll = (theme: Theme) => ({
    overflowY: "hidden",
    "&::-webkit-scrollbar": {
       height: "0px",
-      transition: "height 0.5s ease",
+      transition: "height 0.5s ease"
    },
    "&:hover": {
       "&::-webkit-scrollbar": {

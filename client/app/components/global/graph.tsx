@@ -193,7 +193,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          <CardContent sx = { { p: card ? 2.5 : 0 } }>
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: card ? 0 : 1 } }
+               sx = { { gap: 2, flexWrap: "wrap", justifyContent: { xs: "center", lg: "flex-start" }, alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: card ? 0 : 1 } }
             >
                {
                   indicators && (
@@ -283,14 +283,15 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             </Stack>
             <Stack sx = { { justifyContent: "space-between", px: card ? 0 : 1 } }>
                <Stack
-                  direction = "row"
+                  direction = { { xs: "column", lg: "row" } }
                   sx = {
                      {
-                        justifyContent: { xs: "center", sm: "flex-start" },
+                        justifyContent: { xs: "center", lg: "flex-start" },
                         alignContent: "center",
                         alignItems: "center",
                         flexWrap: "wrap",
-                        gap: 1,
+                        columnGap: 1,
+                        rowGap: 0.5,
                         my: { xs: 1.5, sm: 0.5 }
                      }
                   }
@@ -323,13 +324,13 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      series = {
                         [
                            {
-                              id: "direct",
-                              label: "Direct",
+                              id: "value",
+                              label: "Value",
                               showMark: false,
                               curve: "linear",
                               area: true,
                               data: filtered.map(d => Number(d.value)),
-                              valueFormatter: (date) => date?.toFixed(2) + (average && view === "Year" ? " (avg)" : "")
+                              valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
                            }
                         ]
                      }
@@ -342,8 +343,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      }
                      sx = {
                         {
-                           "& .MuiAreaElement-series-direct": {
-                              fill: "url('#direct')"
+                           "& .MuiAreaElement-series-value": {
+                              fill: "url('#value')"
                            }
                         }
                      }
@@ -364,7 +365,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   >
                      <AreaGradient
                         color = { color }
-                        id = "direct"
+                        id = "value"
                      />
                   </LineChart>
                ) : (
@@ -377,8 +378,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      series = {
                         [
                            {
-                              id: "direct",
-                              label: "Direct",
+                              id: "value",
+                              label: "Value",
                               data: filtered.map(d => Number(d.value))
                            }
                         ]

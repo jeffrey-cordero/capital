@@ -16,7 +16,7 @@ import {
    verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faFeatherPointed, faGripVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faGripVertical, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Alert,
@@ -113,7 +113,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                         <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
                            <FontAwesomeIcon
                               icon = { faGripVertical }
-                              style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.2rem", width: "1.2rem" } }
+                              style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
                               { ...listeners }
                               { ...attributes }
                            />
@@ -149,7 +149,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
 });
 
 export default function BudgetCategories({ type, updateDirtyFields }: BudgetCategoriesProps) {
-   const dispatch = useDispatch(), navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
    // Local state management
@@ -259,18 +259,18 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
          spacing = { 2 }
          sx = { { mt: 1 } }
       >
-         { /* Warning alert when category totals exceed main budget goal */ }
          {
             categoryTotal > mainGoal && (
                <Alert
-                  color = { "primary" as any }
+                  color = "info"
                   severity = "info"
+                  sx = { { border: "0px", fontWeight: "bold", color: theme.palette.info.main } }
+                  variant = "outlined"
                >
                   The main budget goal should be at least { displayCurrency(categoryTotal) } as the total of all sub-categories ({ displayCurrency(categoryTotal - mainGoal) }) surpasses this amount.
                </Alert>
             )
          }
-         { /* Draggable category list */ }
          <DndContext
             collisionDetection = { closestCenter }
             onDragEnd = { handleDragEnd }
@@ -294,7 +294,6 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                }
             </SortableContext>
          </DndContext>
-         { /* Form to add new category */ }
          <Box>
             {
                !showNewCategoryForm ? (
@@ -303,7 +302,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                      color = "primary"
                      fullWidth = { true }
                      onClick = { () => displayNewCategoryForm(true) }
-                     startIcon = { <FontAwesomeIcon icon = { faFeatherPointed } /> }
+                     startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                      variant = "contained"
                   >
                      Add Category

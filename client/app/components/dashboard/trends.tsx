@@ -77,7 +77,7 @@ export function Trends({ title, value, isCard, data, extraInfo }: TrendProps): R
          borderRadius = { 8 }
          colors = { colorPalette }
          grid = { { horizontal: true } }
-         height = { isCard ? 300 : 450 }
+         height = { isCard ? 300 : 500 }
          margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
          resolveSizeBeforeRender = { true }
          series = { data }
@@ -91,31 +91,30 @@ export function Trends({ title, value, isCard, data, extraInfo }: TrendProps): R
       <Box sx = { { position: "relative" } }>
          <Card
             elevation = { isCard ? 3 : 0 }
-            sx = { { borderRadius: 2 } }
+            sx = { { borderRadius: 2, backgroundColor: isCard ? undefined : "transparent" } }
             variant = "elevation"
          >
-            <CardContent sx = { { p: isCard ? 2.5 : 0, textAlign: isCard ? "left" : "center" } }>
+            <CardContent sx = { { p: isCard ? 2.5 : 0, textAlign: isCard ? { xs: "center", lg: "left" } : "center" } }>
                <Typography
                   gutterBottom = { true }
-                  variant = { isCard ? "subtitle2" : "h6" }
-                  sx = {{ mb: 0, fontWeight: "600" }}
+                  sx = { { mb: 0, fontWeight: "600" } }
+                  variant = "subtitle2"
                >
                   { title }
                </Typography>
                <Stack sx = { { justifyContent: "space-between" } }>
                   <Stack
-                     direction = { isCard ? "row" : "column" }
+                     direction = { isCard ? { xs: "column", lg: "row" } : "column" }
                      sx = {
                         {
                            ...horizontalScroll(theme),
                            maxWidth: "100%",
-                           justifyContent: isCard ? "flex-start" : "center",
                            alignItems: "center",
                            textAlign: isCard ? "left" : "center",
                            columnGap: 1,
                            rowGap: 0.5,
                            mx: "auto",
-                           ml: isCard ? 0 : "auto"
+                           ml: isCard ? { xs: "auto", lg: 0 } : "auto"
                         }
                      }
                   >

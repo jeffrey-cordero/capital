@@ -7,6 +7,7 @@ import {
    orange,
    red
 } from "@/styles/mui/colors";
+import { grey } from "@mui/material/colors";
 
 /**
  * MUI palette overrides.
@@ -19,14 +20,14 @@ export const palette: PaletteOptions = {
       contrastText: brand[50]
    },
    secondary: {
-      main: orange[400],
-      dark: orange[300],
-      contrastText: orange[50]
+      main: grey[400],
+      dark: grey[300],
+      contrastText: grey[50]
    },
    info: {
-      main: gray[400],
-      dark: gray[300],
-      contrastText: gray[50]
+      main: brand[400],
+      dark: brand[300],
+      contrastText: brand[50]
    },
    warning: {
       main: orange[400],

@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
 import { calculateBudgetTotals } from "@/lib/charts";
-import { displayCurrency, displayPercentage, ellipsis, horizontalScroll } from "@/lib/display";
+import { displayCurrency, displayPercentage, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 interface StyledTextProps {
@@ -179,6 +179,7 @@ function BudgetProgressChart({ title, data, type, totalGoal, totalCurrent }: Bud
                         <LinearProgress
                            aria-label = { `${category.label} progress` }
                            color = { type === "Income" ? "success" : "error" }
+                           sx = { { height: "1.85rem", borderRadius: "16px" } }
                            value = { category.percentage }
                            variant = "determinate"
                         />

@@ -228,7 +228,7 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
             >
                <Button
                   className = "btn-primary"
-                  color = "info"
+                  color = "secondary"
                   disabled = { isSubmitting }
                   fullWidth = { true }
                   onClick = { onCancel }

@@ -169,19 +169,19 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                   color = "textSecondary"
                   variant = "body2"
                >
-                  { storyDescription } 
+                  { storyDescription }
                   <IconButton
                      aria-label = "Read More"
                      disableRipple = { true }
                      href = { storyLink }
                      size = "small"
+                     sx = { { pl: 1 } }
                      target = "_blank"
-                     sx = {{ pl: 1 }}
                   >
                      <FontAwesomeIcon
                         className = "primary"
-                        size = "xs"
                         icon = { faUpRightFromSquare }
+                        size = "xs"
                      />
                   </IconButton>
                </Typography>

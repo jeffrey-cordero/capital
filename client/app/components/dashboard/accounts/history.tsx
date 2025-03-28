@@ -259,7 +259,7 @@ function HistoryModal({ account }: { account: Account }): React.ReactNode {
       <Box>
          <Button
             className = "btn-primary"
-            color = "info"
+            color = "secondary"
             fullWidth = { true }
             loading = { isSubmitting }
             onClick = { () => setOpen(true) }
@@ -275,7 +275,7 @@ function HistoryModal({ account }: { account: Account }): React.ReactNode {
             sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
             <ModalSection title = "History">
-               <Box>
+               <Box sx = { { mt: 1 } }>
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
                         direction = "column"
@@ -330,7 +330,7 @@ function HistoryModal({ account }: { account: Account }): React.ReactNode {
                                     <FormControl error = { Boolean(errors.last_updated) }>
                                        <TextField
                                           { ...field }
-                                          color = { errors.last_updated ? "error" : "info" }
+                                          color = { errors.last_updated ? "error" : "secondary" }
                                           error = { Boolean(errors.last_updated) }
                                           fullWidth = { true }
                                           id = "balance-date"

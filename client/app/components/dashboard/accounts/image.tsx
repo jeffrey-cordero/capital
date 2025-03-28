@@ -121,7 +121,7 @@ export default function AccountImage({
       <Box>
          <Button
             className = "btn-primary"
-            color = "info"
+            color = "secondary"
             fullWidth = { true }
             onClick = { openModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }
@@ -163,7 +163,7 @@ export default function AccountImage({
                               color = "primary"
                               onClick = { viewPreviousImage }
                               size = "medium"
-                              sx = {{ pr: 1 }}
+                              sx = { { pr: 1 } }
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesLeft }
@@ -176,7 +176,7 @@ export default function AccountImage({
                               color = "primary"
                               onClick = { viewNextImage }
                               size = "medium"
-                              sx = {{ pl: 1 }}
+                              sx = { { pl: 1 } }
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesRight }
