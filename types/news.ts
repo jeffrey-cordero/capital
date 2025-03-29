@@ -1,3 +1,6 @@
+/**
+ * Represents news data for the dashboard page
+ */
 export type News = {
    "$": Object;
    "channel": {
@@ -8,7 +11,7 @@ export type News = {
          title: string; 
          link: string 
       }[];
-      "item": Story[];
+      "item": NewsArticle[];
       "language": string[];
       "lastBuildDate": string[];
       "link": string[];
@@ -16,7 +19,10 @@ export type News = {
    }[];
 }
 
-export type Story = {
+/**
+ * Represents a news article
+ */
+export type NewsArticle = {
    "dc:creator": string[];
    "description": string[];
    "link": string[];

@@ -12,6 +12,11 @@ import queryClient from "@/tanstack/client";
 
 import type { Route } from "./+types/root";
 
+/**
+ * Returns the links for the root layout.
+ *
+ * @returns {Route.LinksFunction} The links functions
+ */
 export const links: Route.LinksFunction = () => [
    { rel: "preconnect", href: "https://fonts.googleapis.com" },
    {
@@ -28,7 +33,13 @@ export const links: Route.LinksFunction = () => [
    }
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+/**
+ * Main layout component that initializes the theme based on localStorage or preferred color scheme.
+ *
+ * @param {React.ReactNode} children - The children to render
+ * @returns {React.ReactNode} The main application layout
+ */
+export function Layout({ children }: { children: React.ReactNode }): React.ReactNode {
    useEffect(() => {
       // Initialize the theme based on localStorage or preferred color scheme
       const preferredTheme: string | undefined = localStorage.theme;
@@ -62,7 +73,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
    );
 }
 
-export default function App() {
+/**
+ * Main application component that provides the Redux and React Query Providers.
+ *
+ * @returns {React.ReactNode} The main application component
+ */
+export default function App(): React.ReactNode {
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
@@ -72,7 +88,12 @@ export default function App() {
    );
 }
 
-export function ErrorBoundary() {
+/**
+ * Global error boundary component that displays an error message.
+ *
+ * @returns {React.ReactNode} The error boundary component
+ */
+export function ErrorBoundary(): React.ReactNode {
    return (
       <Container
          className = "center"
@@ -84,7 +105,7 @@ export function ErrorBoundary() {
                className = "floating"
                component = "img"
                src = "/svg/error.svg"
-               sx = { { width: 350, height: "auto", my: 4 } }
+               sx = { { width: 350, height: "auto", mb: -4 } }
             />
          </Box>
          <Typography

@@ -24,12 +24,20 @@ import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 
+/**
+ * The login schema to only include the username and password fields.
+ */
 const loginSchema = z.object({
-   username: userSchema.shape.username,
-   password: userSchema.shape.password
+   username: userSchema.innerType().shape.username,
+   password: userSchema.innerType().shape.password
 });
 
-export default function Login() {
+/**
+ * The login page component.
+ *
+ * @returns {React.ReactNode} The login page component
+ */
+export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,
@@ -43,10 +51,10 @@ export default function Login() {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid fields
+         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit the user credentials
+         // Submit the credentials for authentication
          const credentials = {
             username: data.username.trim(),
             password: data.password.trim()
@@ -109,7 +117,6 @@ export default function Login() {
                                     { ...field }
                                     autoComplete = "username"
                                     autoFocus = { true }
-                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
@@ -134,7 +141,6 @@ export default function Login() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "current-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }

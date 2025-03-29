@@ -1,8 +1,15 @@
 import { createTheme } from "@mui/material/styles";
 import type { TypographyOptions } from "@mui/material/styles/createTypography";
 
+/**
+ * Default theme configuration.
+ */
 const defaultTheme = createTheme();
 
+/**
+ * MUI typography overrides.
+ * @see https://mui.com/material-ui/customization/theming/
+ */
 export const typography: TypographyOptions = {
    fontFamily: "Inter, sans-serif",
    h1: {
@@ -34,7 +41,7 @@ export const typography: TypographyOptions = {
       fontWeight: 600
    },
    subtitle1: {
-      fontSize: defaultTheme.typography.pxToRem(18)
+      fontSize: defaultTheme.typography.pxToRem(16)
    },
    subtitle2: {
       fontSize: defaultTheme.typography.pxToRem(14),

@@ -1,5 +1,9 @@
 import type { Shadows } from "@mui/material";
 
+/**
+ * MUI shadows overrides.
+ * @see https://mui.com/material-ui/customization/theming/
+ */
 export const shadows: Shadows = [
    "none",
    "0px 0px 0px rgba(0, 0, 0, 0.08)",

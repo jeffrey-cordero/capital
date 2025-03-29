@@ -1,21 +1,48 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { type Account, type AccountHistory } from "capital/accounts";
+import { type WritableDraft } from "immer";
 
 import { normalizeDate } from "@/lib/dates";
 
-const authenticationSlice = createSlice({
+/**
+ * The state of the accounts slice.
+ */
+type AccountState = { value: Account[]; }
+
+/**
+ * The accounts slice for account state management.
+ */
+const accountsSlice = createSlice({
    name: "accounts",
    initialState: {
-      value: [] as Account[]
-   },
+      value: []
+   } as AccountState,
    reducers: {
-      setAccounts(state, action: PayloadAction<Account[]>) {
+      /**
+       * Sets the accounts state in the Redux store.
+       *
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
+       * @param {PayloadAction<Account[]>} action - The dispatched action containing the payload
+       */
+      setAccounts(state: WritableDraft<AccountState>, action: PayloadAction<Account[]>) {
          state.value = action.payload;
       },
-      addAccount(state, action: PayloadAction<Account>) {
+      /**
+       * Adds an account to the accounts state.
+       *
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
+       * @param {PayloadAction<Account>} action - The dispatched action containing the payload
+       */
+      addAccount(state: WritableDraft<AccountState>, action: PayloadAction<Account>) {
          state.value.push(action.payload);
       },
-      updateAccount(state, action: PayloadAction<{account: Account, history?: AccountHistory }>) {
+      /**
+       * Updates an account in the accounts state.
+       *
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
+       * @param {PayloadAction<{ account: Account, history?: AccountHistory }>} action - The dispatched action containing the payload
+       */
+      updateAccount(state: WritableDraft<AccountState>, action: PayloadAction<{ account: Account, history?: AccountHistory }>) {
          const account: Account = { ...action.payload.account };
          const history: AccountHistory | undefined = action.payload.history;
 
@@ -38,7 +65,7 @@ const authenticationSlice = createSlice({
                      last_updated: updateDate.toISOString()
                   });
 
-                  // Keep the old record if dates don't match
+                  // Keep the old record if timestamps don't match
                   if (updateTimestamp !== currentTimestamp) {
                      acc.push(record);
                   }
@@ -49,7 +76,7 @@ const authenticationSlice = createSlice({
                return acc;
             }, []);
 
-            // Append history record if it's the most recent
+            // Append history record if it's the oldest
             if (!historyInserted) {
                account.history.push({
                   balance: history.balance,
@@ -58,17 +85,22 @@ const authenticationSlice = createSlice({
             }
          }
 
-         // Update account in state with latest balance
+         // Update account in state with the closest balance
          state.value = state.value.map((acc) =>
             account.account_id === acc.account_id ? { ...account, balance: account.history[0].balance } : acc
          );
       },
-      removeAccount(state, action: PayloadAction<string>) {
-         // Filter out the account with matching ID
+      /**
+       * Removes an account from the accounts state.
+       *
+       * @param {WritableDraft<AccountState>} state - The current state of the accounts
+       * @param {PayloadAction<string>} action - The dispatched action containing the payload
+       */
+      removeAccount(state: WritableDraft<AccountState>, action: PayloadAction<string>) {
          state.value = state.value.filter(account => account.account_id !== action.payload);
       }
    }
 });
 
-export const { setAccounts, addAccount, updateAccount, removeAccount } = authenticationSlice.actions;
-export default authenticationSlice.reducer;
+export const { setAccounts, addAccount, updateAccount, removeAccount } = accountsSlice.actions;
+export default accountsSlice.reducer;

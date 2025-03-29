@@ -12,23 +12,28 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { Box, Grow, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
-import { useCallback } from "react";
-import { useDispatch } from "react-redux";
+import { useCallback, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import AccountCard from "@/components/dashboard/accounts/account";
+import AccountCard from "@/components/dashboard/accounts/card";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
+import type { RootState } from "@/redux/store";
 
-interface AccountsProps {
-   accounts: Account[];
-}
+/**
+ * The Accounts component to display the accounts in the dashboard
+ *
+ * @returns {React.ReactNode} The Accounts component
+ */
+export default function Accounts(): React.ReactNode {
+   const dispatch = useDispatch(), navigate = useNavigate();
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
+   const ids = useMemo(() => {
+      return accounts.map(account => account.account_id ?? "");
+   }, [accounts]);
 
-export default function Accounts({ accounts }: AccountsProps) {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
-
-   // Configure drag and drop sensors
+   // Configure drag and drop attributes
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -42,7 +47,6 @@ export default function Accounts({ accounts }: AccountsProps) {
    );
 
    const handleDragEnd = useCallback(async(event: DragEndEvent) => {
-      // Handles the end of a drag operation
       const { active, over } = event;
 
       // Only proceed if dropping on a different position
@@ -63,27 +67,25 @@ export default function Accounts({ accounts }: AccountsProps) {
 
          // Update account order if both indices are found
          if (oldIndex !== undefined && newIndex !== undefined) {
-            // Create backup of current order in case of failure on the server
+            // Update order optimistically with potential backup measures
             const oldAccounts = accounts.map(account => ({ ...account }));
-
-            // Update order optimistically
             const newAccounts = arrayMove(accounts, oldIndex, newIndex).map(
                (account, index) => ({ ...account, account_order: index })
             );
             dispatch(setAccounts(newAccounts));
 
+            // Sync new order with server
             try {
-               // Sync new order with server
-               const ordering = newAccounts.map(account => account.account_id);
-               const result = await sendApiRequest<number>(
-                  "dashboard/accounts/ordering", "PUT", { accounts: ordering }, dispatch, navigate
+               const accountIds: string[] = newAccounts.map(account => account.account_id);
+               const response = await sendApiRequest<number>(
+                  "dashboard/accounts/ordering", "PUT", { accountsIds: accountIds }, dispatch, navigate
                );
 
-               // Revert optimistic update if server request fails
-               if (result !== 204) {
-                  dispatch(setAccounts(oldAccounts));
+               if (response !== 204) {
+                  throw new Error("Failed to update account order");
                }
             } catch (error) {
+               // Revert optimistic update if server request fails
                console.error("Failed to update account order:", error);
                dispatch(setAccounts(oldAccounts));
             }
@@ -93,17 +95,6 @@ export default function Accounts({ accounts }: AccountsProps) {
 
    return (
       <Box id = "accounts">
-         { /* Header image */ }
-         <Box className = "animation-container">
-            <Box
-               alt = "Accounts"
-               className = "floating"
-               component = "img"
-               src = "/svg/accounts.svg"
-               sx = { { width: 350, height: "auto", mb: 6 } }
-            />
-         </Box>
-         { /* Accounts grid with drag and drop */ }
          <Grid
             container = { true }
             justifyContent = "center"
@@ -116,7 +107,7 @@ export default function Accounts({ accounts }: AccountsProps) {
                sensors = { sensors }
             >
                <SortableContext
-                  items = { accounts.map(account => account.account_id ?? "") }
+                  items = { ids }
                   strategy = { rectSortingStrategy }
                >
                   {
@@ -146,7 +137,6 @@ export default function Accounts({ accounts }: AccountsProps) {
                </SortableContext>
             </DndContext>
          </Grid>
-         { /* Add account button */ }
          <Box sx = { { mt: 6 } }>
             <AccountCard account = { undefined } />
          </Box>

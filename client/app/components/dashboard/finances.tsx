@@ -1,10 +1,15 @@
 import { Box, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type Account } from "capital/accounts";
 
-import { AccountTrends, BudgetTrends } from "@/components/dashboard/trends";
+import AccountTrends from "@/components/dashboard/accounts/charts";
+import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
-export default function Finances({ accounts }: { accounts: Account[] }) {
+/**
+ * The Finances component to render the user finances, including account and budget trends.
+ *
+ * @returns {React.ReactNode} The Finances component
+ */
+export default function Finances(): React.ReactNode {
    return (
       <Box
          id = "marketTrends"
@@ -24,10 +29,10 @@ export default function Finances({ accounts }: { accounts: Account[] }) {
                />
             </Box>
             <Grid size = { 12 }>
-               <AccountTrends accounts = { accounts } />
+               <AccountTrends isCard = { true } />
             </Grid>
             <Grid size = { 12 }>
-               <BudgetTrends />
+               <BudgetTrends isCard = { true } />
             </Grid>
          </Stack>
       </Box>

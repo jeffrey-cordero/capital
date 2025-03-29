@@ -1,42 +1,84 @@
-import { Container, Grow } from "@mui/material";
+import { Box, Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { Account } from "capital/accounts";
-import { useSelector } from "react-redux";
 
 import Accounts from "@/components/dashboard/accounts/accounts";
-import Transactions from "@/components/dashboard/accounts/transactions";
-import type { RootState } from "@/redux/store";
+import AccountTrends from "@/components/dashboard/accounts/charts";
+import Transactions from "@/components/dashboard/transactions/transactions";
 
-export default function Page() {
-   const accounts: Account[] = useSelector(
-      (root: RootState) => root.accounts.value
-   );
-
+/**
+ * The accounts page component.
+ *
+ * @returns {React.ReactNode} The accounts page component
+ */
+export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { textAlign: "center", py: 4, px: 2 } }
+         sx = { { textAlign: "center", pt: 6, pb: 4, px: 2 } }
       >
-         <Grow
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
+         <Grid
+            container = { true }
+            rowSpacing = { 6 }
+            sx = { { width: "100%", height: "100%" } }
          >
-            <Grid size = { { xs: 12 } }>
-               <Accounts accounts = { accounts } />
-            </Grid>
-         </Grow>
-         <Grow
-            in = { true }
-            mountOnEnter = { true }
-            timeout = { 1000 }
-            unmountOnExit = { true }
-         >
-            <Grid size = { { xs: 12 } }>
-               <Transactions />
-            </Grid>
-         </Grow>
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12 } }>
+                  <Box className = "animation-container">
+                     <Box
+                        alt = "Accounts"
+                        className = "floating"
+                        component = "img"
+                        src = "/svg/accounts.svg"
+                        sx = { { width: 360, height: "auto", mb: 10 } }
+                     />
+                  </Box>
+                  <Accounts />
+               </Grid>
+            </Grow>
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12 } }>
+                  <Box className = "animation-container">
+                     <Box
+                        alt = "Transactions"
+                        className = "floating"
+                        component = "img"
+                        src = "/svg/transactions.svg"
+                        sx = { { width: 315, height: "auto", mb: 2 } }
+                     />
+                  </Box>
+                  <Transactions />
+               </Grid>
+            </Grow>
+            <Grow
+               in = { true }
+               mountOnEnter = { true }
+               timeout = { 1000 }
+               unmountOnExit = { true }
+            >
+               <Grid size = { { xs: 12 } }>
+                  <Box className = "animation-container">
+                     <Box
+                        alt = "Accounting"
+                        className = "floating"
+                        component = "img"
+                        src = "/svg/accounting.svg"
+                        sx = { { width: 400, height: "auto", mb: 2 } }
+                     />
+                  </Box>
+                  <AccountTrends isCard = { false } />
+               </Grid>
+            </Grow>
+         </Grid>
       </Container>
    );
 }

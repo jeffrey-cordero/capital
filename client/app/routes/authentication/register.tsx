@@ -24,11 +24,12 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addNotification } from "@/redux/slices/notifications";
 
-const registrationSchema = userSchema.extend({
-   verifyPassword: userSchema.shape.password
-});
-
-export default function Register() {
+/**
+ * The registration page component.
+ *
+ * @returns {React.ReactNode} The registration page component
+ */
+export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const {
       control,
@@ -40,13 +41,13 @@ export default function Register() {
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
-      const fields = registrationSchema.safeParse(data);
+      const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid fields
+         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit fields for user registration
+         // Submit the credentials for registration
          const registration = {
             username: data.username.trim(),
             name: data.name.trim(),
@@ -117,7 +118,6 @@ export default function Register() {
                                     { ...field }
                                     autoComplete = "name"
                                     autoFocus = { true }
-                                    disabled = { isSubmitting }
                                     id = "name"
                                     label = "Name"
                                     type = "text"
@@ -142,7 +142,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "none"
-                                    disabled = { isSubmitting }
                                     id = "username"
                                     label = "Username"
                                     type = "text"
@@ -167,7 +166,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "new-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showPassword }) }
@@ -200,7 +198,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "new-password"
-                                    disabled = { isSubmitting }
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { clsx({ "primary": showVerifyPassword }) }
@@ -233,7 +230,6 @@ export default function Register() {
                                  <OutlinedInput
                                     { ...field }
                                     autoComplete = "email"
-                                    disabled = { isSubmitting }
                                     id = "email"
                                     label = "email"
                                     type = "email"

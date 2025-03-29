@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faPencil, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faGripVertical, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
@@ -10,47 +10,46 @@ import {
    CardContent,
    Fab,
    Stack,
-   Tooltip,
    Typography,
    useTheme
 } from "@mui/material";
 import { type Account, images } from "capital/accounts";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import AccountForm from "@/components/dashboard/accounts/form";
-import { displayCurrency, displayDate, ellipsis } from "@/lib/display";
+import { displayCurrency, displayDate, horizontalScroll } from "@/lib/display";
 import { addNotification } from "@/redux/slices/notifications";
 
+/**
+ * The props for the AccountCard component
+ *
+ * @interface AccountCardProps
+ * @property {Account | undefined} account - The account to display, where undefined implies new account creation
+ */
 interface AccountCardProps {
    account: Account | undefined;
 }
 
+/**
+ * The state of the account card (viewing, creating, updating)
+ *
+ * @type AccountState
+ */
 type AccountState = "view" | "create" | "update";
 
-export default function AccountCard({ account }: AccountCardProps) {
-   const dispatch = useDispatch();
-   const theme = useTheme();
+/**
+ * The AccountCard component to display the account card in the dashboard
+ *
+ * @param {AccountCardProps} props - The props for the AccountCard component
+ * @returns {React.ReactNode} The AccountCard component
+ */
+export default function AccountCard({ account }: AccountCardProps): React.ReactNode {
+   const dispatch = useDispatch(), theme = useTheme();
    const [state, setState] = useState<AccountState>("view");
    const [isResourceError, setIsResourceError] = useState<boolean>(false);
+   const previousImageRef = useRef(account?.image);
 
-   // Configure drag and drop functionality
-   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-      id: account?.account_id || "",
-      disabled: state !== "view" // Disable dragging when editing
-   });
-
-   const style = {
-      transform: CSS.Transform.toString(transform),
-      transition
-   };
-
-   // Reset image error state when account image changes
-   useEffect(() => {
-      setIsResourceError(false);
-   }, [account?.image]);
-
-   // Modal control handlers
    const openAccountModal = useCallback(() => {
       setState(account?.account_id ? "update" : "create");
    }, [account?.account_id]);
@@ -59,32 +58,48 @@ export default function AccountCard({ account }: AccountCardProps) {
       setState("view");
    }, []);
 
+   // Configure drag and drop attributes
+   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+      id: account?.account_id || "",
+      disabled: state !== "view"
+   });
+
+   const style = {
+      transform: CSS.Transform.toString(transform),
+      transition
+   };
+
+   useEffect(() => {
+      if (previousImageRef.current !== account?.image) {
+         // Retry image fetch for new account images
+         setIsResourceError(false);
+         previousImageRef.current = account?.image;
+      }
+   }, [account?.image]);
+
    const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-      //  Handles image loading errors and displays notification
       setIsResourceError(true);
       dispatch(addNotification({
          type: "error",
          message: `There was an issue fetching the image for ${account?.name}`
       }));
 
-      e.currentTarget.src = "";
+      e.currentTarget.src = "/svg/error.svg";
    }, [dispatch, account?.name]);
 
    const getImageSource = useCallback(() => {
-      // Determines the appropriate image source based on account data and error state
       if (!account?.image) {
-         return "/images/empty.png";
+         return "/svg/logo.svg";
       } else if (images.has(account.image)) {
          return `/images/${account.image}.png`;
       } else if (!isResourceError) {
          return account.image;
       } else {
-         return "/images/empty.png";
+         return "/svg/error.svg";
       }
    }, [account?.image, isResourceError]);
 
    if (!account) {
-      // Render empty state for account creation
       return (
          <Box>
             <Button
@@ -105,7 +120,6 @@ export default function AccountCard({ account }: AccountCardProps) {
          </Box>
       );
    } else {
-      // Render account card with details
       return (
          <div
             ref = { setNodeRef }
@@ -116,7 +130,6 @@ export default function AccountCard({ account }: AccountCardProps) {
                sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
                variant = { undefined }
             >
-               { /* Account image with drag handle */ }
                <Typography
                   className = { isResourceError ? "error" : "primary" }
                   component = "a"
@@ -127,34 +140,27 @@ export default function AccountCard({ account }: AccountCardProps) {
                      src = { getImageSource() }
                      sx = {
                         {
-                           height: { xs: 250, sm: 215 },
+                           height: { xs: 215, sm: 200 },
                            width: "100%",
-                           cursor: "grab",
+                           cursor: "pointer",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
                         }
                      }
                      variant = "square"
-                     { ...attributes }
-                     { ...listeners }
                   />
                </Typography>
-               { /* Edit button */ }
-               <Tooltip
-                  onClick = { openAccountModal }
-                  title = "Edit Account"
+               <Fab
+                  color = "primary"
+                  size = "small"
+                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none" } }
+                  { ...attributes }
+                  { ...listeners }
                >
-                  <Fab
-                     color = "primary"
-                     size = "small"
-                     sx = { { bottom: "75px", right: "15px", position: "absolute" } }
-                  >
-                     <FontAwesomeIcon icon = { faPencil } />
-                  </Fab>
-               </Tooltip>
-               { /* Account details */ }
+                  <FontAwesomeIcon icon = { faGripVertical } />
+               </Fab>
                <CardContent sx = { { p: 3, pt: 2 } }>
                   <Typography
-                     sx = { { ...ellipsis, pr: 4 } }
+                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                      variant = "h6"
                   >
                      { account.name }
@@ -164,7 +170,7 @@ export default function AccountCard({ account }: AccountCardProps) {
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
                      <Typography
-                        sx = { { ...ellipsis, maxWidth: "95%", pr: 3 } }
+                        sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "subtitle2"
                      >
                         { displayCurrency(account.balance) }
@@ -175,7 +181,6 @@ export default function AccountCard({ account }: AccountCardProps) {
                      <Typography variant = "caption">
                         { displayDate(account.history[0]?.last_updated) }
                      </Typography>
-                     { /* Account edit form modal */ }
                      <AccountForm
                         account = { account }
                         onClose = { closeAccountModal }

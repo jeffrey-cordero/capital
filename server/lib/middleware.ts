@@ -4,19 +4,31 @@ import jwt from "jsonwebtoken";
 import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
+/**
+ * Configures the JWT token for the user with a 1 hour expiration
+ *
+ * @param {Response} res - Express response object
+ * @param {string} user_id - User ID to include in the token
+ */
 export function configureToken(res: Response, user_id: string): void {
    // Generate the JWT token
-   const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
+   const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "1h" });
 
    // Store the JWT token in the client cookies
    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "strict",
-      maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === "production"
+      httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+      sameSite: "strict", // CORS-friendly
+      maxAge: 1000 * 60 * 60, // 1 hour expiration
+      secure: process.env.NODE_ENV === "production" // Only send the cookie over HTTPS in production
    });
 }
 
+/**
+ * Middleware function to authenticate the user based on the JWT token, where
+ * the `user_id` is attached to `res.locals` on success.
+ *
+ * @param {boolean} required - Whether the token is required for the endpoint
+ */
 export function authenticateToken(required: boolean) {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
@@ -25,10 +37,10 @@ export function authenticateToken(required: boolean) {
 
       if (!token && required) {
          // Token present for this endpoint, but not provided
-         return sendErrors(res, 401, "Access Denied: No Token Provided");
+         return sendErrors(res, 401, "Unauthorized: No Token Provided");
       } else if (token && !required) {
          // Token not required at this endpoint, but provided
-         return sendErrors(res, 302, "Access Denied: Token Not Required");
+         return sendErrors(res, 302, "Unauthorized: Token Not Required");
       } else if (required) {
          try {
             // Verify the JWT token, handling expected thrown errors
@@ -48,10 +60,10 @@ export function authenticateToken(required: boolean) {
                logger.error(error.stack);
             }
 
-            return sendErrors(res, 403, "Access Denied: Invalid Token");
+            return sendErrors(res, 403, "Forbidden: Invalid Token");
          }
       } else {
-         // Proceed to the next middleware or route handler
+         // Proceed to the next middleware or route handler as token is not required
          next();
       }
    };

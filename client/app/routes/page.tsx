@@ -2,6 +2,11 @@ import { Box, Container, Link, Typography } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import { useNavigate } from "react-router";
 
+/**
+ * Returns the meta content for the page.
+ *
+ * @returns {MetaFunction} The meta content
+ */
 export function meta() {
    return [
       { title: "Capital" },
@@ -9,7 +14,12 @@ export function meta() {
    ];
 }
 
-export default function Page() {
+/**
+ * The page component for the landing page.
+ *
+ * @returns {React.ReactNode} The landing page component
+ */
+export default function Page(): React.ReactNode {
    const navigate = useNavigate();
 
    return (

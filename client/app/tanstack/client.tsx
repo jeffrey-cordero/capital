@@ -1,5 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
 
+/**
+ * The React Query client for the application with no retries.
+ *
+ * @returns {QueryClient} The query client for the application
+ */
 const queryClient = new QueryClient({
    defaultOptions: {
       queries: {

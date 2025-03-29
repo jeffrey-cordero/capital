@@ -11,12 +11,27 @@ import {
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 
+/**
+ * The props for the Confirmation component.
+ *
+ * @interface ConfirmationProps
+ * @property {string} type - The type of confirmation to display
+ * @property {string} message - The message to display within the confirmation dialog
+ * @property {() => void} onConfirmation - The function to call when the user confirms the action
+ */
 interface ConfirmationProps {
+   type: "button" | "icon";
    message: string;
-   disabled: boolean;
    onConfirmation: () => void;
 }
-export default function Confirmation({ message, disabled, onConfirmation }: ConfirmationProps) {
+
+/**
+ * The Confirmation component across the application.
+ *
+ * @param {ConfirmationProps} props - The props for the Confirmation component
+ * @returns {React.ReactNode} The Confirmation component
+ */
+export default function Confirmation({ message, onConfirmation, type }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -30,19 +45,30 @@ export default function Confirmation({ message, disabled, onConfirmation }: Conf
 
    return (
       <Box>
-         <Button
-            className = "btn-primary"
-            color = "error"
-            disabled = { disabled || isSubmitting }
-            fullWidth = { true }
-            loading = { isSubmitting }
-            onClick = { openDialog }
-            startIcon = { <FontAwesomeIcon icon = { faTrashCan } /> }
-            type = "button"
-            variant = "contained"
-         >
-            Delete
-         </Button>
+         {
+            type === "button" ? (
+               <Button
+                  className = "btn-primary"
+                  color = "error"
+                  fullWidth = { true }
+                  loading = { isSubmitting }
+                  onClick = { openDialog }
+                  startIcon = { <FontAwesomeIcon icon = { faTrashCan } /> }
+                  type = "button"
+                  variant = "contained"
+               >
+                  Delete
+               </Button>
+            ) : (
+               <FontAwesomeIcon
+                  className = "primary"
+                  icon = { faTrashCan }
+                  onClick = { openDialog }
+                  size = "lg"
+                  style = { { cursor: "pointer", color: "red" } }
+               />
+            )
+         }
          <Dialog
             onClose = { closeDialog }
             open = { open }
@@ -63,14 +89,12 @@ export default function Confirmation({ message, disabled, onConfirmation }: Conf
                <DialogActions>
                   <form onSubmit = { handleSubmit(onConfirmation) }>
                      <Button
-                        disabled = { disabled || isSubmitting }
                         onClick = { closeDialog }
                      >
                         No
                      </Button>
                      <Button
                         autoFocus = { true }
-                        disabled = { disabled || isSubmitting }
                         loading = { isSubmitting }
                         type = "submit"
                      >

@@ -1,5 +1,8 @@
 import { layout, route, type RouteConfig } from "@react-router/dev/routes";
 
+/**
+ * Routing configuration for the application via react-router.
+ */
 export default [
    layout("routes/authentication/layout.tsx", [
       route("/", "routes/page.tsx"),
@@ -9,6 +12,7 @@ export default [
 
    layout("routes/dashboard/layout.tsx", [
       route("dashboard", "routes/dashboard/page.tsx"),
-      route("dashboard/accounts", "routes/dashboard/accounts/page.tsx")
+      route("dashboard/accounts", "routes/dashboard/accounts/page.tsx"),
+      route("dashboard/budgets", "routes/dashboard/budgets/page.tsx")
    ])
 ] satisfies RouteConfig;

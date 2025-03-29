@@ -6,7 +6,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { type Notification, removeNotification } from "@/redux/slices/notifications";
 import type { RootState } from "@/redux/store";
 
-export default function Notifications() {
+/**
+ * The Notifications component to render the notifications in the top-center of the screen.
+ *
+ * @returns {React.ReactNode} The Notifications component
+ */
+export default function Notifications(): React.ReactNode {
    const dispatch = useDispatch();
    const notifications: Notification[] = useSelector(
       (state: RootState) => state.notifications.value

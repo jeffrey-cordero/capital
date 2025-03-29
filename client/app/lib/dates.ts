@@ -1,7 +1,40 @@
-export const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
+import type { BudgetPeriod } from "capital/budgets";
 
+/**
+ * Gets the current date in UTC (midnight)
+ *
+ * @returns {Date} The current date in UTC
+ */
+export const getCurrentDate = (): Date => {
+   return new Date(new Date().setUTCHours(0, 0, 0, 0));
+};
+
+/**
+ * Full month names
+ */
+export const months = [
+   "January", "February", "March", "April", "May", "June",
+   "July", "August", "September", "October", "November", "December"
+];
+
+/**
+ * Abbreviated month names with periods
+ */
+export const monthAbbreviations = [
+   "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
+   "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+];
+
+/**
+ * Normalizes a date string based on the current `view` into a valid Date object.
+ * `"MTD"` requires `MM/YYYY` format, `"YTD"` requires `YYYY` format, otherwise
+ * `YYYY-MM-DD` format is required.
+ *
+ * @param {string} date - The date string
+ * @param {string} [view] - The view to normalize the date for
+ * @returns {Date} The normalized date
+ */
 export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
-   // Assumes date is in YYYY-MM-DD format
    if (view === "MTD") {
       const [month, year] = date.split("/");
 
@@ -9,42 +42,32 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(new Date(`${date}T00:00:00`).setUTCHours(0, 0, 0, 0));
+      return new Date(`${date}T00:00:00`);
    }
 }
 
-export function getLastSixMonths(referenceDate = today): string[] {
-   // Format the 6-month array to "MM. YYYY" format
-   const months = [
-      "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
-      "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
-   ];
+/**
+ * Gets the year abbreviations
+ *
+ * @param {number} [year] - The year to use for the reference date, defaulting to the current year
+ * @returns {string[]} The year abbreviations in format `"MM. YYYY"`
+ */
+export function getYearAbbreviations(year?: number): string[] {
+   const referenceDate = year ? new Date(year, 0, 1) : getCurrentDate();
 
-   const sixMonths = [];
-
-   for (let i = 0; i < 6; i++) {
-      // Calculate the date for the last day of each month
-      const monthDate = new Date(
-         referenceDate.getUTCFullYear(),
-         referenceDate.getUTCMonth() - i + 1,
-         0
-      );
-
-      // Adjust for year rollovers
-      if (monthDate.getUTCMonth() < 0) {
-         monthDate.setUTCFullYear(monthDate.getUTCFullYear() - 1);
-         monthDate.setUTCMonth(monthDate.getUTCMonth() + 12);
-      }
-
-      sixMonths.unshift(
-         months[monthDate.getUTCMonth()] + " " + monthDate.getUTCFullYear()
-      );
-   }
-
-   return sixMonths;
+   return monthAbbreviations.map(month =>
+      `${month} ${referenceDate.getUTCFullYear()}`
+   );
 }
 
-export function timeSinceLastUpdate(date: string) {
+/**
+ * Calculates the time since the last update in a human-readable format, such as `"now"`,
+ * `"1 day ago"`, or `"5 days, 2 hours ago"`
+ *
+ * @param {string} date - The date string
+ * @returns {string} The time since the last update
+ */
+export function timeSinceLastUpdate(date: string): string {
    // Calculate the time difference in milliseconds
    const difference = new Date().getTime() - new Date(date).getTime();
 
@@ -53,16 +76,54 @@ export function timeSinceLastUpdate(date: string) {
    const hours = Math.floor(minutes / 60);
    const days = Math.floor(hours / 24);
 
-   // Determine the appropriate output string
+   // Return "now" for very recent updates
    if (minutes === 0) {
       return "now";
+   }
+
+   // Build parts of the time string
+   const parts = [];
+   if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
+   if (hours >= 1 && hours % 24 !== 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
+   if (minutes >= 1 && minutes % 60 !== 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
+
+   return parts.join(", ") + " ago";
+}
+
+/**
+ * Calculates the new budget period based on the current period and the direction.
+ *
+ * @param {BudgetPeriod} period - The current period
+ * @param {string} direction - The direction to calculate the new period
+ * @returns {BudgetPeriod} The new period
+ */
+export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, direction: "previous" | "next"): BudgetPeriod {
+   if (direction === "previous") {
+      return {
+         month: month === 1 ? 12 : month - 1,
+         year: month === 1 ? year - 1 : year
+      };
    } else {
-      const parts = [];
+      return {
+         month: month === 12 ? 1 : month + 1,
+         year: month === 12 ? year + 1 : year
+      };
+   }
+}
 
-      if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-      if (hours >= 1) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-      if (minutes >= 1) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
-
-      return parts.join(", ") + " ago";
+/**
+ * Compares two budget periods to determine their order.
+ *
+ * @param {BudgetPeriod} p1 - The first period
+ * @param {BudgetPeriod} p2 - The second period
+ * @returns {-1 | 0 | 1} `-1` if p1 is before p2 (farther from today), `0` if p1 and p2 are the same, `1` if p1 is after p2 (closer to today)
+ */
+export function compareBudgetPeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
+   if (p1.year === p2.year && p1.month === p2.month) {
+      return 0;
+   } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
+      return 1;
+   } else {
+      return -1;
    }
 }

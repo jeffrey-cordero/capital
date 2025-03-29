@@ -18,6 +18,11 @@ import { useCallback, useState } from "react";
 
 import { gray } from "@/styles/mui/colors";
 
+/**
+ * The global ModalContent component to wrap the modal children components.
+ *
+ * @returns {React.ReactNode} The ModalContent component
+ */
 const ModalContent = styled("div")(
    ({ theme }) => css`
      font-family: 'IBM Plex Sans', sans-serif;
@@ -41,13 +46,27 @@ const ModalContent = styled("div")(
    `
 );
 
+/**
+ * The props for the Warning component.
+ *
+ * @interface WarningProps
+ * @property {boolean} open - Whether the warning is open
+ * @property {() => void} onClose - The function to call when the warning is closed
+ * @property {() => void} onCancel - The function to call when the warning is cancelled
+ */
 interface WarningProps {
    open: boolean;
    onClose: () => void;
    onCancel: () => void;
 }
 
-function Warning({ open, onClose, onCancel }: WarningProps) {
+/**
+ * The Warning component to confirm the user's action before closing the modal for potential data loss.
+ *
+ * @param {WarningProps} props - The props for the Warning component
+ * @returns {React.ReactNode} The Warning component
+ */
+function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
    return (
       <Dialog
          onClose = { onCancel }
@@ -90,20 +109,43 @@ function Warning({ open, onClose, onCancel }: WarningProps) {
    );
 }
 
+/**
+ * The props for the Modal component.
+ *
+ * @interface ModalProps
+ * @property {boolean} open - Whether the modal is open
+ * @property {() => void} onClose - The function to call when the modal is closed with a potential force-close
+ * @property {React.ReactNode} children - The children components to render within the modal
+ * @property {SxProps<any>} sx - The style props for the modal
+ * @property {boolean} displayWarning - Whether to display the warning component
+ */
 interface ModalProps {
    open: boolean;
-   onClose: () => void;
+   onClose: (_force?: boolean) => void;
    children: React.ReactNode;
    sx?: SxProps<any>;
    displayWarning?: boolean;
 }
 
+/**
+ * The props for the ModalSection component.
+ *
+ * @interface ModalSectionProps
+ * @property {string} title - The title of the modal section
+ * @property {React.ReactNode} children - The children components to render within the modal section
+ */
 interface ModalSectionProps {
    title: string;
    children: React.ReactNode;
 }
 
-export function ModalSection({ title, children }: ModalSectionProps) {
+/**
+ * The ModalSection component to render the modal section title and children components.
+ *
+ * @param {ModalSectionProps} props - The props for the ModalSection component
+ * @returns {React.ReactNode} The ModalSection component
+ */
+export function ModalSection({ title, children }: ModalSectionProps): React.ReactNode {
    return (
       <Box>
          <Divider>
@@ -117,7 +159,13 @@ export function ModalSection({ title, children }: ModalSectionProps) {
    );
 }
 
-export function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps) {
+/**
+ * The Modal component to render the modal with the modal content and children components.
+ *
+ * @param {ModalProps} props - The props for the Modal component
+ * @returns {React.ReactNode} The Modal component
+ */
+export function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps): React.ReactNode {
    const [warningOpen, setWarningOpen] = useState<boolean>(false);
 
    const closeModal = useCallback(() => {
@@ -132,7 +180,8 @@ export function Modal({ open, onClose, children, sx, displayWarning = false }: M
       setWarningOpen(false);
 
       if (confirmed) {
-         onClose();
+         // Force-close the modal, regardless of dirty fields checkpoints
+         onClose(true);
       }
    }, [onClose]);
 
@@ -148,7 +197,6 @@ export function Modal({ open, onClose, children, sx, displayWarning = false }: M
             unmountOnExit = { true }
          >
             <ModalContent sx = { sx }>
-               { /* Enforce max-height at the child-level as Modal.max-height causes blurry rendering */ }
                <Box sx = { { position: "relative", overflowY: "auto", maxHeight: "90vh", "&::-webkit-scrollbar": { display: "none" }, msOverflowStyle: "none", scrollbarWidth: "none" } }>
                   { children }
                   <Warning

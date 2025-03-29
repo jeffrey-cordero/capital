@@ -40,30 +40,47 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateAccount } from "@/redux/slices/accounts";
 import { addNotification } from "@/redux/slices/notifications";
 
-// Define date constraints for the date picker
+/**
+ * Define date constraints for the date picker
+ */
 const [minDate, maxDate] = [
    new Date("1800-01-01").toISOString().split("T")[0],
    new Date().toISOString().split("T")[0]
 ];
 
-// Schema for validating account history updates
+/**
+ * Schema for validating account history updates
+ */
 const accountHistoryUpdateSchema = z.object({
    history_balance: accountHistorySchema.shape.balance,
    last_updated: accountHistorySchema.shape.last_updated
 });
 
-// Type definition for the HistoryEdits component props
+/**
+ * Type definition for the HistoryEdits component props
+ *
+ * @interface HistoryEditsProps
+ * @property {Account} account - The account to display history for
+ * @property {string} month - The month to display history for
+ * @property {AccountHistory[]} history - The history records to display
+ */
 interface HistoryEditsProps {
    account: Account;
    month: string;
    history: AccountHistory[];
 }
 
-function HistoryEdits({ account, month, history }: HistoryEditsProps) {
+/**
+ * The HistoryEdits component to display and manage account history
+ *
+ * @param {HistoryEditsProps} props - The props for the HistoryEdits component
+ * @returns {React.ReactNode} The HistoryEdits component
+ */
+function HistoryEdits({ account, month, history }: HistoryEditsProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const [expanded, setExpanded] = useState<boolean>(false);
 
-   const deleteAccountHistory = useCallback(async(last_updated: string) => {
+   const onDelete = useCallback(async(last_updated: string) => {
       // Prevent deletion of the only history record
       if (account.history.length === 1) {
          dispatch(addNotification({
@@ -76,10 +93,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
 
       try {
          const result = await sendApiRequest<number>(
-            `dashboard/accounts/${account.account_id}`, "DELETE",
-            { last_updated },
-            dispatch,
-            navigate
+            `dashboard/accounts/${account.account_id}`, "DELETE", { last_updated }, dispatch, navigate
          );
 
          if (result === 204) {
@@ -155,7 +169,7 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
                            color = "hsl(0, 90%, 50%)"
                            fontSize = "15px"
                            icon = { faTrashCan }
-                           onClick = { () => deleteAccountHistory(historyItem.last_updated) }
+                           onClick = { () => onDelete(historyItem.last_updated) }
                            style = { { cursor: "pointer", paddingRight: "12px" } }
                         />
                      </ListItemButton>
@@ -167,8 +181,13 @@ function HistoryEdits({ account, month, history }: HistoryEditsProps) {
    );
 }
 
-function HistoryModal({ account, disabled }: { account: Account, disabled: boolean }) {
-   // Allows users to view history records by month and add new history records
+/**
+ * The HistoryModal component to view and manage account history
+ *
+ * @param {Account} account - The account to display history for
+ * @returns {React.ReactNode} The HistoryModal component
+ */
+function HistoryModal({ account }: { account: Account }): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const {
       control,
@@ -178,6 +197,11 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
       formState: { isSubmitting, errors }
    } = useForm();
    const [open, setOpen] = useState<boolean>(false);
+
+   const closeHistoryModal = useCallback(() => {
+      setOpen(false);
+      reset({ history_balance: "", last_updated: "" });
+   }, [reset]);
 
    // Groups account history records by month/year for organized display
    const historyByMonth = useMemo(() => {
@@ -231,22 +255,11 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
       }
    };
 
-   // Handler to close the modal
-   const closeHistoryModal = useCallback(() => {
-      setOpen(false);
-      // Reset form when closing modal to clear any previous input
-      reset({
-         history_balance: "",
-         last_updated: ""
-      });
-   }, [reset]);
-
    return (
       <Box>
          <Button
             className = "btn-primary"
-            color = "info"
-            disabled = { isSubmitting || disabled }
+            color = "secondary"
             fullWidth = { true }
             loading = { isSubmitting }
             onClick = { () => setOpen(true) }
@@ -262,14 +275,13 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
             sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", p: { xs: 2, sm: 3 }, maxHeight: "80%" } }
          >
             <ModalSection title = "History">
-               <Box>
+               <Box sx = { { mt: 1 } }>
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
                         direction = "column"
                         spacing = { 2 }
                         sx = { { mt: 0 } }
                      >
-                        { /* Display history records grouped by month */ }
                         {
                            Object.keys(historyByMonth).map((month) => (
                               <HistoryEdits
@@ -280,8 +292,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                               />
                            ))
                         }
-
-                        { /* Form for adding new history records */ }
                         <Stack
                            direction = "column"
                            spacing = { 2 }
@@ -298,21 +308,16 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                        <OutlinedInput
                                           { ...field }
                                           aria-label = "Balance"
-                                          disabled = { isSubmitting || disabled }
                                           fullWidth = { true }
                                           id = "history-balance"
-                                          inputProps = { { min: 0, step: 0.01 } }
+                                          inputProps = { { step: 0.01 } }
                                           label = "Balance"
                                           type = "number"
                                           value = { field.value || "" }
                                        />
-                                       {
-                                          errors.history_balance && (
-                                             <FormHelperText>
-                                                { errors.history_balance?.message?.toString() }
-                                             </FormHelperText>
-                                          )
-                                       }
+                                       <FormHelperText>
+                                          { errors.history_balance?.message?.toString() }
+                                       </FormHelperText>
                                     </FormControl>
                                  )
                               }
@@ -325,8 +330,7 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                     <FormControl error = { Boolean(errors.last_updated) }>
                                        <TextField
                                           { ...field }
-                                          color = { errors.last_updated ? "error" : "info" }
-                                          disabled = { isSubmitting || disabled }
+                                          color = { errors.last_updated ? "error" : "secondary" }
                                           error = { Boolean(errors.last_updated) }
                                           fullWidth = { true }
                                           id = "balance-date"
@@ -354,13 +358,9 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                                           type = "date"
                                           value = { field.value || "" }
                                        />
-                                       {
-                                          errors.last_updated && (
-                                             <FormHelperText>
-                                                { errors.last_updated?.message?.toString() }
-                                             </FormHelperText>
-                                          )
-                                       }
+                                       <FormHelperText>
+                                          { errors.last_updated?.message?.toString() }
+                                       </FormHelperText>
                                     </FormControl>
                                  )
                               }
@@ -368,7 +368,6 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
                            <Button
                               className = "btn-primary"
                               color = "primary"
-                              disabled = { isSubmitting || disabled }
                               fullWidth = { true }
                               loading = { isSubmitting }
                               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
@@ -387,9 +386,14 @@ function HistoryModal({ account, disabled }: { account: Account, disabled: boole
    );
 }
 
-export default function AccountHistoryView({ account, disabled }: { account: Account, disabled: boolean }) {
-   // Format history data for the graph component
-   const historyData = useMemo(() => {
+/**
+ * The AccountHistoryView component to display the account history
+ *
+ * @param {Account} account - The account to display history for
+ * @returns {React.ReactNode} The AccountHistoryView component
+ */
+export default function AccountHistoryView({ account }: { account: Account }): React.ReactNode {
+   const data = useMemo(() => {
       return {
          [account.name]: account.history.map((historyItem) => ({
             value: historyItem.balance.toString(),
@@ -407,14 +411,13 @@ export default function AccountHistoryView({ account, disabled }: { account: Acc
             <Graph
                average = { false }
                card = { false }
-               data = { historyData }
+               data = { data }
                defaultOption = { account.name }
                indicators = { false }
                title = "Accounts"
             />
             <HistoryModal
                account = { account }
-               disabled = { disabled }
             />
          </Stack>
       </Box>
