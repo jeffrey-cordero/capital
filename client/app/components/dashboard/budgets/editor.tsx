@@ -20,27 +20,51 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget, updateBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
+/**
+ * The props for the EditCategory component
+ *
+ * @interface EditCategoryProps
+ * @property {BudgetCategory} category - The category to edit
+ * @property {() => void} onCancel - The function to call when the form is cancelled
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
+ */
 interface EditCategoryProps {
    category: BudgetCategory;
    onCancel: () => void;
    updateDirtyFields: (_fields: object, _field: string) => void;
 }
 
-// Create a dedicated schema for updates - partial to allow partial updates
+/**
+ * The schema for updating a budget category
+ */
 const updateCategorySchema = budgetCategorySchema.partial().pick({ name: true, type: true });
+
+/**
+ * The schema for updating a budget goal
+ */
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
-// Component for editing an existing budget category
-export default function EditCategory({ category, onCancel, updateDirtyFields }: EditCategoryProps) {
+/**
+ * The EditCategory component to edit an existing budget category
+ *
+ * @param {EditCategoryProps} props - The props for the EditCategory component
+ * @returns {React.ReactNode} The EditCategory component
+ */
+export default function EditCategory({ category, onCancel, updateDirtyFields }: EditCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Initialize form with current category values
-   const { control, handleSubmit, setError, reset, formState: { errors, dirtyFields, isSubmitting } } = useForm({
+   // Initialize form with default values from the provided category
+   const {
+      control,
+      handleSubmit,
+      setError,
+      reset,
+      formState: { errors, dirtyFields, isSubmitting } } = useForm({
       defaultValues: {
          name: category.name,
-         goal: String(category.goals[category.goalIndex].goal),
-         type: category.type
+         type: category.type,
+         goal: String(category.goals[category.goalIndex].goal)
       }
    });
 
@@ -60,13 +84,18 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
 
          const categoryUpdates = Object.keys(categoryPayload).length > 0;
          const categoryFields = updateCategorySchema.safeParse(categoryPayload);
+
          if (categoryUpdates && !categoryFields.success) {
-            // Invalid category updates
+            // Invalid category fields
             handleValidationErrors(categoryFields, setError);
             return;
          }
 
-         const budgetPayload: Partial<Budget> = { budget_category_id: category.budget_category_id, month, year };
+         const budgetPayload: Partial<Budget> = {
+            budget_category_id: category.budget_category_id,
+            month,
+            year
+         };
 
          if (dirtyFields["goal"]) budgetPayload.goal = Number(data.goal);
 
@@ -74,17 +103,17 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
          const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
 
          if (budgetUpdates && !budgetFields.success) {
-            // Invalid budget updates
+            // Invalid budget fields
             handleValidationErrors(budgetFields, setError);
             return;
          }
 
-         // Determine if we're updating the current period or creating a new one
+         // Determine if we're updating the current period or creating a new one (PUT vs. POST)
          const isCurrentPeriod = compareBudgetPeriods(
             { month: category.goals[category.goalIndex].month, year: category.goals[category.goalIndex].year },
             { month, year }
          ) === 0;
-         const method = isCurrentPeriod ? "PUT" : "POST";
+         const method: string = isCurrentPeriod ? "PUT" : "POST";
 
          // Send potential updates in parallel requests
          const [categoryResponse, budgetResponse] = await Promise.all([
@@ -97,9 +126,8 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
          ]);
 
          const categorySuccess = !categoryUpdates || categoryResponse === 204;
-         const budgetSuccess = !budgetUpdates || (budgetResponse instanceof Object && budgetResponse.success) || budgetResponse === 204;
+         const budgetSuccess = !budgetUpdates || budgetResponse === 204 || (budgetResponse instanceof Object && budgetResponse.success);
 
-         // Handle successful responses
          if (categoryUpdates && categorySuccess) {
             // Update the category in Redux store
             dispatch(updateBudgetCategory({
@@ -111,26 +139,23 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
             }));
          }
 
-         // Close the form if both updates were successful
          if (categorySuccess && budgetSuccess) {
             // Update the budget in Redux store
             dispatch(updateBudget({
+               goal: Number(data.goal),
                type: data.type || category.type,
-               budget_category_id: category.budget_category_id,
-               goal: Number(data.goal)
+               budget_category_id: category.budget_category_id
             }));
 
-            // Clear the form with the new values
+            // Reset the form with the new default values
             reset({
                name: categoryPayload.name || category.name,
                goal: String(budgetPayload.goal || category.goals[category.goalIndex].goal),
                type: categoryPayload.type || category.type
             }, { keepDirty: false });
 
-            // Clear dirty fields before closing
+            // Clear the dirty fields before closing
             updateDirtyFields({}, "editor");
-
-            // Close the form
             onCancel();
          }
       } catch (error) {

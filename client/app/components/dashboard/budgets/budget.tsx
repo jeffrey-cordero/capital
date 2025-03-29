@@ -85,7 +85,7 @@ const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, 
          </Stack>
          <LinearProgress
             color = { color }
-            sx = { { height: "1.85rem", borderRadius: "16px" } }
+            sx = { { height: "1.75rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
          />
@@ -100,7 +100,6 @@ const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, 
  * @returns {React.ReactNode} The BudgetCategory component
  */
 const BudgetCategory = function BudgetCategory({ type, onEditClick }: BudgetProps): React.ReactNode {
-   // Get the main budget category
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
    return (

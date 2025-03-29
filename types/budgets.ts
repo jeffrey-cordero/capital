@@ -29,7 +29,7 @@ export const budgetSchema = z.object({
    }).min(0, {
       message: "Goal must be at least $0"
    }).max(MAX_GOAL_AMOUNT, {
-      message: `Goal cannot exceed $${MAX_GOAL_AMOUNT.toLocaleString()}`
+      message: "Goal cannot exceed $999,999,999,999,999.99"
    })),
    month: zodPreprocessNumber(z.coerce.number({
       message: "Month must be a valid number"
@@ -92,7 +92,7 @@ export const budgetCategorySchema = z.object({
    }).min(0, {
       message: "Category order must be at least 0"
    }).max(MAX_INT, {
-      message: `Category order must be at most ${MAX_INT}`
+      message: "Category order must be at most 2,147,483,647"
    })).nullable()
 });
 

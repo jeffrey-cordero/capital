@@ -20,17 +20,17 @@ export function calculatePercentageChange(current: number, initial: number): num
  * @param {OrganizedBudget} budget - The budget to calculate the totals for
  * @returns {Object} The totals for the budget
  */
-export function calculateBudgetTotals(budget: OrganizedBudget): { mainGoal: number, categoryTotal: number } {
+export function calculateBudgetTotals(budget: OrganizedBudget): { mainGoal: number, categoryGoals: number } {
    // Safely calculate the main goal amount with fallback to zero
    const mainGoal = Number(budget.goals[budget.goalIndex]?.goal || 0);
 
    // Sum up all category goals for the most recent month/year
-   const categoryTotal = budget.categories.reduce((acc, category) => {
+   const categoryGoals = budget.categories.reduce((acc, category) => {
       const goalValue = Number(category.goals[category.goalIndex]?.goal || 0);
       return acc + goalValue;
    }, 0);
 
-   return { mainGoal, categoryTotal };
+   return { mainGoal, categoryGoals };
 }
 
 /**

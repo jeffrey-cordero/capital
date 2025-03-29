@@ -7,13 +7,16 @@ export const horizontalScroll = (theme: Theme) => ({
    whiteSpace: "nowrap",
    overflowX: "auto",
    overflowY: "hidden",
+   scrollbarWidth: "none",
    "&::-webkit-scrollbar": {
       height: "0px",
       transition: "height 0.5s ease"
    },
    "&:hover": {
+      scrollbarWidth: "thin",
       "&::-webkit-scrollbar": {
-         height: "5px"
+         height: "5px",
+         scrollbarWidth: "auto"
       },
       "&::-webkit-scrollbar-thumb": {
          backgroundColor: theme.palette.grey[400],

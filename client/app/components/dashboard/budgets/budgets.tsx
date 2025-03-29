@@ -46,13 +46,10 @@ export default function Budgets(): React.ReactNode {
    }, []);
 
    const closeModal = useCallback((force?: boolean) => {
-      if (force === true) {
-         // Force close, clear dirty state
-         dirtyFields.current = {};
-         setEditState((prev) => ({ ...prev, state: "view", displayWarning: false }));
-      } else if (Object.keys(dirtyFields.current).length > 0) {
+      if (!force && Object.keys(dirtyFields.current).length > 0) {
          setEditState((prev) => ({ ...prev, displayWarning: true }));
       } else {
+         dirtyFields.current = {};
          setEditState((prev) => ({ ...prev, state: "view", displayWarning: false }));
       }
    }, []);
@@ -71,7 +68,7 @@ export default function Budgets(): React.ReactNode {
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period.month, period.year, today]);
 
-   // Update dirty fields within child components to check during modal close
+   // Update dirty fields within child form's to check during before we close the modal
    const updateDirtyFields = useCallback((fields: object, field: string) => {
       if (Object.keys(fields).length > 0) {
          dirtyFields.current[field] = true;
@@ -79,14 +76,13 @@ export default function Budgets(): React.ReactNode {
          delete dirtyFields.current[field];
       }
 
-      if (Object.keys(dirtyFields.current).length === 0) {
+      if (Object.keys(dirtyFields.current).length === 0 && editState.displayWarning) {
          setEditState((prev) => ({ ...prev, displayWarning: false }));
       }
-   }, []);
+   }, [editState.displayWarning]);
 
    return (
       <Box>
-         { /* Month and year selection buttons */ }
          <Stack
             direction = "row"
             sx = { { justifyContent: "space-between", alignItems: "center" } }
@@ -114,7 +110,6 @@ export default function Budgets(): React.ReactNode {
                <FontAwesomeIcon icon = { faAnglesRight } />
             </IconButton>
          </Stack>
-         { /* Income and expenses sections */ }
          <Stack
             direction = "column"
             spacing = { 4 }
@@ -129,7 +124,6 @@ export default function Budgets(): React.ReactNode {
                type = "Expenses"
             />
          </Stack>
-         { /* Modal for editing budgets */ }
          <BudgetForm
             displayWarning = { editState.displayWarning }
             onClose = { closeModal }

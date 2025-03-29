@@ -19,7 +19,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { faGripVertical, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-   Alert,
    Box,
    Button,
    List,
@@ -38,22 +37,42 @@ import ConstructCategory from "@/components/dashboard/budgets/constructor";
 import DeleteBudget from "@/components/dashboard/budgets/delete";
 import EditCategory from "@/components/dashboard/budgets/editor";
 import { sendApiRequest } from "@/lib/api";
-import { calculateBudgetTotals } from "@/lib/charts";
 import { displayCurrency, horizontalScroll } from "@/lib/display";
 import { updateBudgetCategoryOrder } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
+/**
+ * The props for the BudgetCategories component
+ *
+ * @interface BudgetCategoriesProps
+ * @property {string} type - The type of budget to display
+ * @property {Function} updateDirtyFields - The function to update the dirty fields
+ */
 interface BudgetCategoriesProps {
    type: "Income" | "Expenses";
    updateDirtyFields: (_fields: object, _field: string) => void;
 }
 
+/**
+ * The props for the CategoryItem component
+ *
+ * @interface CategoryItemProps
+ * @property {BudgetCategory} category - The category to display
+ * @property {string} editingCategory - The ID of the category being edited
+ * @property {Function} setEditingCategory - The function to set the editing category within the categories section
+ */
 interface CategoryItemProps extends BudgetCategoriesProps {
    category: BudgetCategory;
    editingCategory: string | null;
    setEditingCategory: (_id: string | null) => void;
 }
 
+/**
+ * The CategoryItem component to display a category within the categories section
+ *
+ * @param {CategoryItemProps} props - The props for the CategoryItem component
+ * @returns {React.ReactNode} The CategoryItem component
+ */
 const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type, updateDirtyFields }: CategoryItemProps) {
    const theme = useTheme();
    const isEditing = editingCategory === category.budget_category_id;
@@ -70,13 +89,12 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
       transition
    };
 
-   // Handler for clicking the edit button
    const editCategory = useCallback(() => {
       setEditingCategory(category.budget_category_id);
    }, [category.budget_category_id, setEditingCategory]);
 
-   // Handler for canceling edit
-   const cancelCategoryEdits = useCallback(() => {
+   const cancelEditCategory = useCallback(() => {
+      // Cancel editing the category and clear the form dirty fields
       setEditingCategory(null);
       updateDirtyFields({}, "editor");
    }, [setEditingCategory, updateDirtyFields]);
@@ -91,7 +109,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
             isEditing ? (
                <EditCategory
                   category = { category }
-                  onCancel = { cancelCategoryEdits }
+                  onCancel = { cancelEditCategory }
                   updateDirtyFields = { updateDirtyFields }
                />
             ) : (
@@ -148,37 +166,34 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
    );
 });
 
-export default function BudgetCategories({ type, updateDirtyFields }: BudgetCategoriesProps) {
-   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
-
-   // Local state management
+/**
+ * The BudgetCategories component to display the categories section
+ *
+ * @param {BudgetCategoriesProps} props - The props for the BudgetCategories component
+ * @returns {React.ReactNode} The BudgetCategories component
+ */
+export default function BudgetCategories({ type, updateDirtyFields }: BudgetCategoriesProps): React.ReactNode {
+   const dispatch = useDispatch(), navigate = useNavigate();
    const [editingCategory, setEditingCategory] = useState<string | null>(null);
    const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Calculate totals using memoization to prevent unnecessary recalculations
-   const { mainGoal, categoryTotal } = useMemo(() => {
-      return calculateBudgetTotals(budget);
-   }, [budget]);
-
-   // Memoize category IDs to prevent unnecessary re-renders
+   // Memoize category IDs for drag and drop
    const categoryIds = useMemo(() => {
       return budget.categories.map(category => category.budget_category_id ?? "");
    }, [budget.categories]);
 
-   // Open new category form
-   const displayNewCategoryForm = useCallback((show: boolean) => {
+   const createNewCategory = useCallback((show: boolean) => {
       setShowNewCategoryForm(show);
    }, []);
 
    // Handler for when a new category is successfully created
-   const closeConstructCategory = useCallback(() => {
-      // Close the form after successful creation
-      displayNewCategoryForm(false);
+   const cancelCreateNewCategory = useCallback(() => {
+      // Close the form and clear the form dirty fields
+      createNewCategory(false);
       updateDirtyFields({}, "constructor");
-   }, [displayNewCategoryForm, updateDirtyFields]);
+   }, [createNewCategory, updateDirtyFields]);
 
-   // Configure drag and drop sensors with proper activation constraints
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -191,7 +206,6 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
       })
    );
 
-   // Drag end handler
    const handleDragEnd = useCallback(async(event: DragEndEvent) => {
       const { active, over } = event;
 
@@ -204,9 +218,11 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
          const categories = budget.categories;
          for (let i = 0; i < categories.length; i++) {
             const category = categories[i];
+
             if (category.budget_category_id === active.id) {
                oldIndex = i;
             }
+
             if (category.budget_category_id === over.id) {
                newIndex = i;
             }
@@ -227,15 +243,11 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                categories: newCategories
             }));
 
-            // Sync new order with server
+            // Sync new order with server after optimistic updates
             try {
                const categoryIds: string[] = newCategories.map(category => category.budget_category_id);
                const result = await sendApiRequest(
-                  "dashboard/budgets/category/ordering",
-                  "PUT",
-                  { categoryIds },
-                  dispatch,
-                  navigate
+                  "dashboard/budgets/category/ordering", "PUT", { categoryIds }, dispatch, navigate
                );
 
                if (result !== 204) {
@@ -259,18 +271,6 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
          spacing = { 2 }
          sx = { { mt: 1 } }
       >
-         {
-            categoryTotal > mainGoal && (
-               <Alert
-                  color = "info"
-                  severity = "info"
-                  sx = { { border: "0px", fontWeight: "bold", color: theme.palette.info.main } }
-                  variant = "outlined"
-               >
-                  The main budget goal should be at least { displayCurrency(categoryTotal) } as the total of all sub-categories ({ displayCurrency(categoryTotal - mainGoal) }) surpasses this amount.
-               </Alert>
-            )
-         }
          <DndContext
             collisionDetection = { closestCenter }
             onDragEnd = { handleDragEnd }
@@ -301,7 +301,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                      className = "btn-primary"
                      color = "primary"
                      fullWidth = { true }
-                     onClick = { () => displayNewCategoryForm(true) }
+                     onClick = { () => createNewCategory(true) }
                      startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                      variant = "contained"
                   >
@@ -309,7 +309,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                   </Button>
                ) : (
                   <ConstructCategory
-                     onClose = { closeConstructCategory }
+                     onClose = { cancelCreateNewCategory }
                      type = { type }
                      updateDirtyFields = { updateDirtyFields }
                   />

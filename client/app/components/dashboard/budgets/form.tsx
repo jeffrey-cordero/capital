@@ -24,9 +24,21 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
-// Schema for validating budget goal updates
+/**
+ * The schema for validating budget goal updates
+ */
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
+/**
+ * The props for the BudgetForm component
+ *
+ * @interface BudgetFormProps
+ * @property {string} type - The type of the budget
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
+ * @property {boolean} displayWarning - Whether to display the warning component
+ * @property {boolean} open - Whether the modal is open
+ * @property {() => void} onClose - The function to call when the modal is closed
+ */
 interface BudgetFormProps {
    type: "Income" | "Expenses";
    updateDirtyFields: (_fields: object, _field: string) => void;
@@ -35,13 +47,19 @@ interface BudgetFormProps {
    onClose: () => void;
 }
 
-export default function BudgetForm({ type, displayWarning, open, onClose, updateDirtyFields }: BudgetFormProps) {
+/**
+ * The BudgetForm component to update a budget goal
+ *
+ * @param {BudgetFormProps} props - The props for the BudgetForm component
+ * @returns {React.ReactNode} The BudgetForm component
+ */
+export default function BudgetForm({ type, displayWarning, open, onClose, updateDirtyFields }: BudgetFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
 
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Setup form with react-hook-form
+   // Initialize form with default values from the budget
    const {
       control,
       setError,
@@ -52,37 +70,35 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
       defaultValues: { goal: String(budget.goals[budget.goalIndex].goal) }
    });
 
-   // Reset form default values when modal opens/closes or budget changes
+   // Reset form default values when modal visibility changes
    useEffect(() => {
       if (open) {
          reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
       }
    }, [reset, open, budget.goals, budget.goalIndex]);
 
-   // Handle budget goal updates with proper validation
    const onSubmit = async(data: FieldValues) => {
       try {
          // Check if any changes were made
          if (Object.keys(dirtyFields).length === 0) return;
 
-         // Validate the goal data using Zod schema
-         const validationResult = updateBudgetGoalSchema.safeParse({
+         const budgetFields = updateBudgetGoalSchema.safeParse({
             goal: parseFloat(data.goal.toString())
          });
 
-         if (!validationResult.success) {
-            handleValidationErrors(validationResult, setError);
+         if (!budgetFields.success) {
+            handleValidationErrors(budgetFields, setError);
             return;
          }
 
-         // Prepare validated payload
+         // Prepare budget payload for API request
          const payload = {
-            goal: validationResult.data.goal,
+            goal: budgetFields.data.goal,
             year: period.year,
             month: period.month
          };
 
-         // Determine if we need to create or update a budget entry
+         // Determine if we need to create or update a budget entry (PUT vs. POST)
          const currentGoal = budget.goals[budget.goalIndex];
          const isCurrentPeriod = compareBudgetPeriods(
             { month: currentGoal.month, year: currentGoal.year },
@@ -95,19 +111,18 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
-         // Handle a successful response
          if (result === 204 || (result instanceof Object && result?.success)) {
-            // Update Redux store
+            // Update Redux store for a successful update or creation
             dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,
-               goal: validationResult.data.goal
+               goal: budgetFields.data.goal
             }));
 
-            // Reset the form and also explicitly clear dirty fields
-            reset({ goal: String(validationResult.data.goal) }, { keepDirty: false });
+            // Reset the form default values
+            reset({ goal: String(budgetFields.data.goal) }, { keepDirty: false });
 
-            // Notify parent about the clean state
+            // Clear the dirty fields
             updateDirtyFields({}, "main");
          }
       } catch (error) {
@@ -126,14 +141,12 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             direction = "column"
             spacing = { 3 }
          >
-            { /* Goal input section */ }
             <ModalSection title = "Goal">
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
                      onSubmit = { handleSubmit(onSubmit) }
                   >
-                     { /* Main category goal input */ }
                      <Stack
                         direction = "column"
                         spacing = { 2 }
@@ -174,20 +187,20 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                               type = "submit"
                               variant = "contained"
-                           >Update</Button>
+                           >
+                              Update
+                           </Button>
                         </Stack>
                      </Stack>
                   </form>
                </Box>
             </ModalSection>
-            { /* Sub-categories related to the budget category type */ }
             <ModalSection title = "Categories">
                <BudgetCategories
                   type = { type }
                   updateDirtyFields = { updateDirtyFields }
                />
             </ModalSection>
-            { /* Transactions related to the budget category type */ }
             <ModalSection title = "Transactions">
                <Transactions
                   filter = "budget"

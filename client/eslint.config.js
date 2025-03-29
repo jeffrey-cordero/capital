@@ -65,6 +65,7 @@ export default [
          "react/jsx-sort-props": "error",
          "react/jsx-uses-react": "error",
          "react/jsx-indent": ["error", 3],
+         "react/jsx-newline": ["error", { "prevent": true }],
          "react/jsx-indent-props": ["error", 3],
          "react/jsx-no-useless-fragment": "error",
          "react/jsx-boolean-value": ["error", "always"],

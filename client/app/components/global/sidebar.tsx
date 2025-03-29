@@ -327,7 +327,6 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                               >
                                  <FontAwesomeIcon icon = { link.icon } />
                               </Box>
-
                               <Box
                                  component = "span"
                                  flexGrow = { 1 }
@@ -340,7 +339,6 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                   })
                }
             </Box>
-
             <Box sx = { { position: "relative", mb: 22 } }>
                {
                   links === dashboard ? (

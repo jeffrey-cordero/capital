@@ -18,30 +18,51 @@ import { handleValidationErrors } from "@/lib/validation";
 import { addBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
-// Schema that combines category and budget validations for a single form
+/**
+ * Schema that combines category and budget validations for a single form
+ */
 const constructSchema = budgetCategorySchema.omit(
    { budget_category_id: true, user_id: true, category_order: true, type: true }
 ).merge(budgetSchema.innerType().pick(
    { goal: true })
 );
 
+/**
+ * The ConstructCategory component to create a new budget category
+ *
+ * @interface ConstructCategoryProps
+ * @property {() => void} onClose - The function to close the form
+ * @property {"Income" | "Expenses"} type - The type of the budget category
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to update the dirty fields
+ */
 interface ConstructCategoryProps {
    onClose: () => void;
    type: "Income" | "Expenses";
    updateDirtyFields: (_fields: object, _field: string) => void;
 }
 
-export default function ConstructCategory({ onClose, type, updateDirtyFields }: ConstructCategoryProps) {
+/**
+ * The ConstructCategory component to create a new budget category
+ *
+ * @param {ConstructCategoryProps} props - The props for the ConstructCategory component
+ * @returns {React.ReactNode} The ConstructCategory component
+ */
+export default function ConstructCategory({ onClose, type, updateDirtyFields }: ConstructCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Initialize form with typed values and defaults
-   const { control, handleSubmit, setError, reset, formState: { errors, isSubmitting, dirtyFields } } = useForm({
+   // Initialize constructor form with defaults
+   const {
+      control,
+      handleSubmit,
+      setError,
+      reset,
+      formState: { errors, isSubmitting, dirtyFields }
+   } = useForm({
       defaultValues: { name: "", goal: "" }
    });
 
-   // Handle form submission to create a new budget category
    const onSubmit = async(data: FieldValues) => {
       try {
          // Validate form data against our combined schema
@@ -88,7 +109,7 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
             // Clear the form
             reset({ name: "", goal: "" }, { keepDirty: false });
 
-            // Update the dirty fields in the parent component
+            // Clear the form dirty fields
             updateDirtyFields({}, "constructor");
 
             // Close the form after successful creation
@@ -109,7 +130,6 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
             spacing = { 1 }
             sx = { { mt: 1 } }
          >
-            { /* Name and goal input fields as type is implied by parent category */ }
             <Controller
                control = { control }
                name = "name"
@@ -168,7 +188,9 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                   onClick = { onClose }
                   startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
                   variant = "contained"
-               >Cancel</Button>
+               >
+                  Cancel
+               </Button>
                <Button
                   className = "btn-primary"
                   color = "primary"
@@ -177,7 +199,9 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                   startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                   type = "submit"
                   variant = "contained"
-               >Create</Button>
+               >
+                  Create
+               </Button>
             </Stack>
          </Stack>
       </form>

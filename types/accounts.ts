@@ -8,8 +8,8 @@ import { zodPreprocessNumber } from './numerics';
 const MIN_NAME_LENGTH = 1;
 const MAX_NAME_LENGTH = 30;
 const MAX_INT = 2_147_483_647;
-const MIN_BALANCE = -99_999_999_999.99;
-const MAX_BALANCE = 99_999_999_999.99;
+const MIN_BALANCE = -999_999_999_999.99;
+const MAX_BALANCE = 999_999_999_999.99;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
@@ -60,9 +60,9 @@ export const accountSchema = z.object({
    balance: zodPreprocessNumber(z.coerce.number({
       message: "Balance must be a valid number"
    }).min(MIN_BALANCE, {
-      message: `Balance must be at least -$${Math.abs(MIN_BALANCE).toLocaleString()}`
+      message: "Balance must be at least -$999,999,999,999.99"
    }).max(MAX_BALANCE, {
-      message: `Balance cannot exceed $${MAX_BALANCE.toLocaleString()}`
+      message: "Balance cannot exceed $999,999,999,999.99"
    })),
    type: z.enum(ACCOUNT_TYPES, {
       message: `Type must be one of: ${ACCOUNT_TYPES.join(', ')}`
@@ -77,7 +77,7 @@ export const accountSchema = z.object({
    }).min(0, {
       message: "Account order must be at least 0"
    }).max(MAX_INT, {
-      message: `Account order must be at most ${MAX_INT}`
+      message: "Account order must be at most 2,147,483,647"
    }))
 });
 

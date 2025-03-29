@@ -231,7 +231,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      />
                   )
                }
-
                <Controller
                   control = { control }
                   name = "view"
