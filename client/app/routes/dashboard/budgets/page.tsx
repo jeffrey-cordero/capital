@@ -16,14 +16,14 @@ export default function Page(): React.ReactNode {
          sx = { { py: 4, px: 2 } }
       >
          <Grid
-            columnSpacing = { 2 }
             container = { true }
-            rowSpacing = { 4 }
+            rowSpacing = { 8 }
             sx = { { width: "100%", height: "100%" } }
          >
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
@@ -31,20 +31,18 @@ export default function Page(): React.ReactNode {
                   size = { { xs: 12 } }
                   sx = { { textAlign: "center" } }
                >
-                  <Box className = "animation-container">
-                     <Box
-                        alt = "Budgets"
-                        className = "floating"
-                        component = "img"
-                        src = "/svg/budget.svg"
-                        sx = { { width: 225, height: "auto" } }
-                     />
-                  </Box>
+                  <Box
+                     alt = "Budgets"
+                     component = "img"
+                     src = "/svg/budgets.svg"
+                     sx = { { height: 310, mb: -10, mt: -2 } }
+                  />
                </Grid>
             </Grow>
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
@@ -56,6 +54,7 @@ export default function Page(): React.ReactNode {
                <Grow
                   in = { true }
                   mountOnEnter = { true }
+                  style = { { transformOrigin: "center top" } }
                   timeout = { 1000 }
                   unmountOnExit = { true }
                >
@@ -67,15 +66,12 @@ export default function Page(): React.ReactNode {
                         size = { { xs: 12 } }
                         sx = { { textAlign: "center", justifyContent: "center" } }
                      >
-                        <Box className = "animation-container">
-                           <Box
-                              alt = "Budgeting"
-                              className = "floating"
-                              component = "img"
-                              src = "/svg/budgeting.svg"
-                              sx = { { width: 450, height: "auto", mb: -10 } }
-                           />
-                        </Box>
+                        <Box
+                           alt = "Trends"
+                           component = "img"
+                           src = "/svg/trends.svg"
+                           sx = { { height: 235 } }
+                        />
                      </Grid>
                      <Grid size = { { xs: 12, md: 6 } }>
                         <BudgetPieChart type = "Income" />

@@ -51,13 +51,13 @@ function StockTrendCard({ title, data, image }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, px: 1 } }
+         sx = { { textAlign: "left", borderRadius: 2, p: 1 } }
          variant = "elevation"
       >
          <CardContent>
             <Box sx = { { textAlign: "center" } }>
                <Box
-                  alt = "Stock"
+                  alt = { title }
                   component = "img"
                   src = { image }
                   sx = { { width: 200, height: "auto", mx: "auto", my: 0 } }
@@ -201,40 +201,47 @@ export default function Markets(): React.ReactNode {
          id = "markets"
          sx = { { justifyContent: "space-between" } }
       >
-         <Box className = "animation-container">
+         <Stack
+            direction = "column"
+            sx = { { my: 4 } }
+         >
             <Box
                alt = "Stocks"
-               className = "floating"
                component = "img"
                src = "/svg/economy.svg"
-               sx = { { width: 390, height: "auto", mx: "auto" } }
+               sx = { { height: 300, mx: "auto" } }
             />
-         </Box>
-         <Box sx = { { mt: -3, mb: 3 } }>
-            <Typography
-               fontWeight = "bold"
-               sx = { { px: 2 } }
-               variant = "subtitle2"
-            >
-               Last updated
-            </Typography>
-            <Typography
-               fontWeight = "bold"
-               sx = { { px: 2 } }
-               variant = "subtitle2"
-            >
-               { timeSinceLastUpdated }
-            </Typography>
-         </Box>
-         <Graph
-            average = { true }
-            card = { true }
-            data = { indicators }
-            defaultOption = "GDP"
-            indicators = { true }
-            title = "Indicators"
-         />
-         <Stocks data = { stocks } />
+            <Box>
+               <Typography
+                  fontWeight = "bold"
+                  sx = { { px: 2 } }
+                  variant = "subtitle2"
+               >
+                  Last updated
+               </Typography>
+               <Typography
+                  fontWeight = "bold"
+                  sx = { { px: 2 } }
+                  variant = "subtitle2"
+               >
+                  { timeSinceLastUpdated }
+               </Typography>
+            </Box>
+         </Stack>
+         <Stack
+            direction = "column"
+            spacing = { 2 }
+         >
+            <Graph
+               average = { true }
+               card = { true }
+               data = { indicators }
+               defaultOption = "GDP"
+               indicators = { true }
+               title = "Indicators"
+            />
+            <Stocks data = { stocks } />
+         </Stack>
       </Stack>
    );
 }

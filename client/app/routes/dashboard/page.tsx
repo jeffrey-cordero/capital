@@ -19,12 +19,13 @@ export default function Page(): React.ReactNode {
          <Grid
             columnSpacing = { 4 }
             container = { true }
-            rowSpacing = { 2 }
+            rowSpacing = { 4 }
             sx = { { width: "100%", height: "100%" } }
          >
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
@@ -34,7 +35,7 @@ export default function Page(): React.ReactNode {
                >
                   <Stack
                      direction = "column"
-                     spacing = { 1 }
+                     spacing = { 2 }
                      sx = { { minHeight:"100%", textAlign: "center", justifyContent: "space-between" } }
                   >
                      <Grid size = { { xs: 12 } }>
@@ -49,6 +50,7 @@ export default function Page(): React.ReactNode {
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >

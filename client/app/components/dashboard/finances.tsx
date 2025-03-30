@@ -15,19 +15,16 @@ export default function Finances(): React.ReactNode {
          id = "marketTrends"
          sx = { { width: "100%" } }
       >
+         <Box
+            alt = "Finances"
+            component = "img"
+            src = "/svg/finances.svg"
+            sx = { { height: 255, mb: 2.1 } }
+         />
          <Stack
             direction = "column"
-            sx = { { justifyContent: "center", alignItems: "center", gap: 2 } }
+            sx = { { justifyContent: "center", alignItems: "center", gap: 3.1 } }
          >
-            <Box className = "animation-container">
-               <Box
-                  alt = "Finances"
-                  className = "floating"
-                  component = "img"
-                  src = "/svg/finances.svg"
-                  sx = { { width: 362, height: "auto" } }
-               />
-            </Box>
             <Grid size = { 12 }>
                <AccountTrends isCard = { true } />
             </Grid>
