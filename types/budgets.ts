@@ -3,16 +3,6 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 /**
- * Common validation constants
- */
-const MIN_NAME_LENGTH = 1;
-const MAX_NAME_LENGTH = 30;
-const MAX_INT = 2_147_483_647; // Maximum PostgreSQL integer value
-const CURRENT_YEAR = new Date().getUTCFullYear();
-const MAX_CURRENT_MONTH = new Date().getUTCMonth() + 1;
-const MAX_GOAL_AMOUNT = 999_999_999_999_999.99; // 15 digits + 2 decimals
-
-/**
  * Reserved words that cannot be used as category names
  */
 const RESERVED_WORDS = ["income", "expenses"];
@@ -28,7 +18,7 @@ export const budgetSchema = z.object({
       message: "Goal must be a valid number"
    }).min(0, {
       message: "Goal must be at least $0"
-   }).max(MAX_GOAL_AMOUNT, {
+   }).max(999_999_999_999_999.99, {
       message: "Goal cannot exceed $999,999,999,999,999.99"
    })),
    month: zodPreprocessNumber(z.coerce.number({
@@ -42,10 +32,10 @@ export const budgetSchema = z.object({
       message: "Year must be a valid number"
    }).min(1800, {
       message: "Year must be at least 1800"
-   }).max(CURRENT_YEAR, {
+   }).max(new Date().getUTCFullYear(), {
       message: "Year must be not be in a future year"
    }))
-}).refine(data => data.month <= MAX_CURRENT_MONTH || data.year < CURRENT_YEAR, {
+}).refine(data => data.month <= (new Date().getUTCMonth() + 1) || data.year < new Date().getUTCFullYear(), {
    message: "Month must not be in a future month for the current year",
    path: ["month"]
 });
@@ -82,8 +72,8 @@ export const budgetCategorySchema = z.object({
       .refine(val => val !== "__RESERVED__", {
          message: "Name cannot be a null or a reserved word (Income or Expenses)"
       })
-      .refine(val => val.length >= MIN_NAME_LENGTH && val.length <= MAX_NAME_LENGTH, {
-         message: `Name must be between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters`
+      .refine(val => val.length >= 1 && val.length <= 30, {
+         message: "Name must be between 1 and 30 characters"
       })
       .nullable()
    ),
@@ -91,7 +81,7 @@ export const budgetCategorySchema = z.object({
       message: "Category order must be a valid number"
    }).min(0, {
       message: "Category order must be at least 0"
-   }).max(MAX_INT, {
+   }).max(2_147_483_647, {
       message: "Category order must be at most 2,147,483,647"
    })).nullable()
 });

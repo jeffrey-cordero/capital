@@ -20,7 +20,6 @@ CREATE TABLE accounts (
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Placeholder for transactions
 CREATE TABLE accounts_history (
    balance DECIMAL(18, 2) NOT NULL,
    last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),
@@ -31,6 +30,7 @@ CREATE TABLE accounts_history (
 CREATE OR REPLACE FUNCTION prevent_last_history_record_delete()
 RETURNS TRIGGER AS $$
 BEGIN
+   -- Prevent deletion of the last history record
    IF (SELECT COUNT(*) FROM accounts_history WHERE account_id = OLD.account_id) <= 1 THEN
       RAISE EXCEPTION 'At least one history record must remain for account %', OLD.account_id;
    END IF;
@@ -74,6 +74,7 @@ CREATE TABLE budgets (
 CREATE OR REPLACE FUNCTION prevent_main_budget_category_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
+   -- Prevent deletion of the main budget category
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be deleted';
    END IF;
@@ -89,6 +90,7 @@ FOR EACH ROW
 CREATE OR REPLACE FUNCTION prevent_main_budget_category_updates()
 RETURNS TRIGGER AS $$
 BEGIN
+   -- Prevent updates to the main budget category
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be updated';
    END IF;
@@ -100,6 +102,44 @@ CREATE TRIGGER prevent_main_budget_category_specific_update_trigger
 BEFORE UPDATE ON budget_categories
 FOR EACH ROW
    EXECUTE FUNCTION prevent_main_budget_category_updates();
+
+CREATE TABLE transactions (
+   transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   title VARCHAR(30) NOT NULL,
+   amount DECIMAL(18, 2) NOT NULL,
+   description TEXT NOT NULL DEFAULT '',
+   date DATE NOT NULL CHECK (date >= '1800-01-01' AND date <= CURRENT_DATE),
+   user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+   budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL,
+   account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_transactions_dates ON transactions (user_id, date);
+
+CREATE OR REPLACE FUNCTION update_transactions_budget_category()
+RETURNS TRIGGER AS $$
+BEGIN
+   -- Rollback to the main budget category if the sub category is deleted
+   IF OLD.name IS NOT NULL THEN
+      UPDATE transactions
+      SET budget_category_id = (
+         SELECT budget_category_id 
+         FROM budget_categories 
+         WHERE type = OLD.type
+         AND user_id = OLD.user_id
+         AND name IS NULL
+         LIMIT 1
+      )
+      WHERE budget_category_id = OLD.budget_category_id;
+   END IF;
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER update_transactions_budget_category_trigger
+BEFORE DELETE ON budget_categories
+FOR EACH ROW
+   EXECUTE FUNCTION update_transactions_budget_category();
 
 CREATE TABLE market_trends_api_data (
    time TIMESTAMP PRIMARY KEY,
