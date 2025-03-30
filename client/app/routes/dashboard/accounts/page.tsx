@@ -24,57 +24,51 @@ export default function Page(): React.ReactNode {
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12 } }>
-                  <Box className = "animation-container">
-                     <Box
-                        alt = "Accounts"
-                        className = "floating"
-                        component = "img"
-                        src = "/svg/accounts.svg"
-                        sx = { { width: 360, height: "auto", mb: 10 } }
-                     />
-                  </Box>
+                  <Box
+                     alt = "Accounts"
+                     component = "img"
+                     src = "/svg/accounts.svg"
+                     sx = { { height: 205, mb: 10 } }
+                  />
                   <Accounts />
                </Grid>
             </Grow>
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12 } }>
-                  <Box className = "animation-container">
-                     <Box
-                        alt = "Transactions"
-                        className = "floating"
-                        component = "img"
-                        src = "/svg/transactions.svg"
-                        sx = { { width: 315, height: "auto", mb: 2 } }
-                     />
-                  </Box>
+                  <Box
+                     alt = "Transactions"
+                     component = "img"
+                     src = "/svg/transactions.svg"
+                     sx = { { height: 280, mb: 2 } }
+                  />
                   <Transactions />
                </Grid>
             </Grow>
             <Grow
                in = { true }
                mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
                timeout = { 1000 }
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12 } }>
-                  <Box className = "animation-container">
-                     <Box
-                        alt = "Accounting"
-                        className = "floating"
-                        component = "img"
-                        src = "/svg/accounting.svg"
-                        sx = { { width: 400, height: "auto", mb: 2 } }
-                     />
-                  </Box>
+                  <Box
+                     alt = "Accounting"
+                     component = "img"
+                     src = "/svg/accounting.svg"
+                     sx = { { height: 290, mb: 2 } }
+                  />
                   <AccountTrends isCard = { false } />
                </Grid>
             </Grow>

@@ -113,7 +113,7 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
          />
          <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
             <CardMedia
-               alt = "Story Image"
+               alt = "Article Image"
                component = "img"
                image = { displayImage }
                onError = { () => setIsResourceError(true) }
@@ -121,7 +121,7 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                   {
                      objectFit: { xs: "contain", md: "cover" },
                      objectPosition: "center center",
-                     height: { xs: "auto", md: "200px" },
+                     height: { xs: "auto", md: "207px" },
                      backgroundColor: "white"
                   }
                }
@@ -205,19 +205,16 @@ export default function Articles(): React.ReactNode {
          id = "news"
          sx = { { textAlign: "center" } }
       >
+         <Box
+            alt = "News"
+            component = "img"
+            src = "/svg/news.svg"
+            sx = { { height: 240, mb: 2 } }
+         />
          <Stack
             direction = "column"
             sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
          >
-            <Box className = "animation-container">
-               <Box
-                  alt = "News"
-                  className = "floating"
-                  component = "img"
-                  src = "/svg/news.svg"
-                  sx = { { width: 225, height: "auto", mx: "auto", mt: { xs: 3, lg: 0 } } }
-               />
-            </Box>
             <Grid
                columnSpacing = { 3.1 }
                container = { true }
