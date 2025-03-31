@@ -31,18 +31,14 @@ export const userSchema = z.object({
     .max(MAX_NAME_LENGTH, `Name must be at most ${MAX_NAME_LENGTH} characters`),
   password: z
     .string()
-    .trim()
     .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`)
     .max(MAX_PASSWORD_LENGTH, `Password must be at most ${MAX_PASSWORD_LENGTH} characters long`)
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  verifyPassword: z
-    .string()
-    .trim(),
+  verifyPassword: z.string(),
   email: z
     .string()
-    .trim()
     .max(MAX_EMAIL_LENGTH, `Email must be at most ${MAX_EMAIL_LENGTH} characters long`)
     .email("Invalid email address"),
   verified: z.boolean().default(false)

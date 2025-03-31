@@ -112,7 +112,6 @@ export async function update(user_id: string, transaction_id: string, updates: P
       AND user_id = $${params}
       RETURNING transaction_id;
    `;
-   console.log(updateQuery);
 
    const result = await query(updateQuery, values) as { transaction_id: string }[];
 

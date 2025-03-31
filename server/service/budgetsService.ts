@@ -90,7 +90,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    }
 
    // Create category and initial budget
-   const result = await budgetsRepository.createCategory(user_id, { ...categoryFields.data, ...budgetFields.data } as any);
+   const result = await budgetsRepository.createCategory(user_id, { ...categoryFields.data, ...budgetFields.data } as Budget & BudgetCategory);
 
    // Invalidate cache to ensure fresh data on next fetch
    clearBudgetCache(user_id);

@@ -91,12 +91,15 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
             return;
          }
 
+         // Normalize the updated fields via Zod schema parsing
+         if (dirtyFields["name"]) categoryPayload.name = categoryFields.data?.name;
+         if (dirtyFields["type"]) categoryPayload.type = categoryFields.data?.type;
+
          const budgetPayload: Partial<Budget> = {
             budget_category_id: category.budget_category_id,
             month,
             year
          };
-
          if (dirtyFields["goal"]) budgetPayload.goal = Number(data.goal);
 
          const budgetUpdates = budgetPayload.goal !== undefined;
@@ -107,6 +110,9 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
             handleValidationErrors(budgetFields, setError);
             return;
          }
+
+         // Normalize the updated goal via Zod schema parsing
+         if (dirtyFields["goal"]) budgetPayload.goal = Number(budgetFields.data?.goal);
 
          // Determine if we're updating the current period or creating a new one (PUT vs. POST)
          const isCurrentPeriod = compareBudgetPeriods(
