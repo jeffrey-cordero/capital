@@ -110,7 +110,7 @@ export async function updateTransaction(user_id: string, transaction_id: string,
    }
 
    // Update the transaction
-   const result: boolean = await transactionsRepository.update(user_id, transaction_id, fields.data);
+   const result: boolean = await transactionsRepository.update(user_id, transaction_id, fields.data as Partial<Transaction>);
 
    if (!result) {
       return sendServiceResponse(404, "Transaction not found", undefined, {

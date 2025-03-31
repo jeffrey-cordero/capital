@@ -228,8 +228,8 @@ function HistoryModal({ account }: { account: Account }): React.ReactNode {
             handleValidationErrors(fields, setError);
          } else {
             const update = {
-               balance: data.history_balance,
-               last_updated: normalizeDate(data.last_updated)
+               balance: fields.data.history_balance,
+               last_updated: normalizeDate(String(fields.data.last_updated))
             };
 
             const result = await sendApiRequest<number>(
@@ -241,7 +241,7 @@ function HistoryModal({ account }: { account: Account }): React.ReactNode {
                dispatch(updateAccount({
                   account: account,
                   history: {
-                     balance: update.balance,
+                     balance: Number(update.balance),
                      last_updated: update.last_updated.toISOString().split("T")[0]
                   }
                }));

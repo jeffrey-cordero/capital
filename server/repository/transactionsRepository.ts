@@ -51,9 +51,9 @@ export async function create(user_id: string, transaction: Transaction): Promise
    `;
    const result = await query(creation, [
       user_id,
-      transaction.title.trim(),
+      transaction.title,
       transaction.amount,
-      transaction.description.trim(),
+      transaction.description,
       transaction.date,
       transaction.budget_category_id || null,
       transaction.account_id || null
@@ -84,7 +84,7 @@ export async function update(user_id: string, transaction_id: string, updates: P
 
          if (typeof updates[key] === "string" && (key === "title" || key === "description")) {
             // Normalize strings
-            values.push(String(updates[key]).trim());
+            values.push(String(updates[key]));
          } else if ((key === "budget_category_id" || key === "account_id") && updates[key] === "") {
             // Handle optional foreign keys
             values.push(null);

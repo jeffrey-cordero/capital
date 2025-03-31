@@ -56,8 +56,8 @@ export default function Login(): React.ReactNode {
       } else {
          // Submit the credentials for authentication
          const credentials = {
-            username: data.username.trim(),
-            password: data.password.trim()
+            username: fields.data.username,
+            password: fields.data.password
          };
 
          const result = await sendApiRequest<{ success: boolean }>(

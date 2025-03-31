@@ -76,9 +76,9 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
          // Prepare the payload for the API request
          const payload = {
             budget_category_id: parentCategory.budget_category_id,
-            name: data.name,
+            name: fields.data.name,
             type,
-            goal: Number(data.goal),
+            goal: Number(fields.data.goal),
             category_order: parentCategory.categories.length,
             month,
             year
@@ -101,7 +101,7 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                   goals: [{
                      month,
                      year,
-                     goal: Number(data.goal)
+                     goal: Number(fields.data.goal)
                   }]
                }
             }));

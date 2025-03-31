@@ -93,7 +93,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
 
          // Prepare budget payload for API request
          const payload = {
-            goal: budgetFields.data.goal,
+            goal: Number(budgetFields.data.goal),
             year: period.year,
             month: period.month
          };
@@ -116,11 +116,11 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,
-               goal: budgetFields.data.goal
+               goal: payload.goal
             }));
 
             // Reset the form default values
-            reset({ goal: String(budgetFields.data.goal) }, { keepDirty: false });
+            reset({ goal: String(payload.goal) }, { keepDirty: false });
 
             // Clear the dirty fields
             updateDirtyFields({}, "main");

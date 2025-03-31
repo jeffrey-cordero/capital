@@ -78,7 +78,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
    }
 
    // Create account and it's initial history record
-   const account_id: string = await accountsRepository.create(user_id, account);
+   const account_id: string = await accountsRepository.create(user_id, fields.data as Account);
 
    // Invalidate cache to ensure fresh data on next fetch
    clearAccountCache(user_id);
@@ -116,7 +116,7 @@ export async function updateAccount(
          return sendValidationErrors(fields, "Invalid account fields");
       }
 
-      result = await accountsRepository.updateDetails(account.account_id, account);
+      result = await accountsRepository.updateDetails(account.account_id, fields.data as Partial<Account & AccountHistory>);
    } else {
       // Validate input against account history schema
       const fields = accountHistorySchema.safeParse(account as AccountHistory);
@@ -127,8 +127,8 @@ export async function updateAccount(
 
       result = await accountsRepository.updateHistory(
          account.account_id,
-         Number(account.balance),
-         account.last_updated ? new Date(account.last_updated) : new Date()
+         Number(fields.data.balance),
+         fields.data.last_updated ? new Date(fields.data.last_updated) : new Date()
       );
    }
 
@@ -159,13 +159,15 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    const updates: Partial<Account>[] = [];
 
    for (let i = 0; i < accounts.length; i++) {
-      if (!uuidSchema.safeParse(accounts[i]).success) {
+      const uuidFields = uuidSchema.safeParse(accounts[i]);
+
+      if (!uuidFields.success) {
          return sendValidationErrors(null, "Invalid account ordering fields",
             { account_id: `Account ID must be a valid UUID: '${accounts[i]}'` }
          );
       }
 
-      updates.push({ account_id: accounts[i], account_order: i });
+      updates.push({ account_id: uuidFields.data, account_order: i });
    }
 
    // Update account ordering in database

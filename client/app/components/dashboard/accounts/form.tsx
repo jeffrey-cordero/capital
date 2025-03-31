@@ -89,7 +89,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          if (updating) {
             // For updates, only send modified fields
             const updatedFields = Object.keys(dirtyFields).reduce((acc: Record<string, any>, record) => {
-               acc[record] = data[record];
+               acc[record] = fields.data[record as keyof typeof fields.data];
 
                return acc;
             }, {});
@@ -119,10 +119,10 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          } else {
             // For new accounts, prepare creation data
             const creation = {
-               name: data.name.trim(),
-               balance: data.balance,
-               type: data.type,
-               image: data.image?.trim() || undefined,
+               name: fields.data.name,
+               balance: fields.data.balance,
+               type: fields.data.type,
+               image: fields.data.image || undefined,
                account_order: accounts.length
             };
 

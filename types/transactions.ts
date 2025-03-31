@@ -20,7 +20,7 @@ export const transactionSchema = z.object({
    }).max(999_999_999_999.99, {
       message: "Amount cannot exceed $999,999,999,999.99"
    })).refine((amount) => amount !== 0, {
-      message: "Amount cannot be 0"
+      message: "Amount cannot be $0"
    }),
    description: z.string().trim().max(255, {
       message: "Description must at most 255 characters"
@@ -34,10 +34,10 @@ export const transactionSchema = z.object({
    }),
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
-   }).optional(),
+   }).or(z.literal("")).optional(),
    account_id: z.string().trim().uuid({
       message: "Account ID must be a valid UUID"
-   }).optional()
+   }).or(z.literal("")).optional()
 });
 
 /**

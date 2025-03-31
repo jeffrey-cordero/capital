@@ -110,7 +110,7 @@ export async function createCategory(
       `;
       const result = await client.query<{ budget_category_id: string }>(
          creation,
-         [user_id, category.type.trim(), category.name?.trim(), category.category_order]
+         [user_id, category.type, category.name, category.category_order]
       );
 
       // Create the initial budget record for this category
@@ -149,7 +149,7 @@ export async function updateCategory(
 
          // Trim string-related fields
          if (field !== "category_order") {
-            values[values.length - 1] = String(values[values.length - 1])?.trim();
+            values[values.length - 1] = String(values[values.length - 1]);
          }
       }
    });

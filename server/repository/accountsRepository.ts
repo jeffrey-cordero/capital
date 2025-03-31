@@ -81,7 +81,7 @@ export async function create(user_id: string, account: Account): Promise<string>
       `;
       const result = await client.query<{ account_id: string }>(
          creation,
-         [user_id, account.name.trim(), account.type, account.image, account.account_order]
+         [user_id, account.name, account.type, account.image, account.account_order]
       );
       const account_id = result.rows[0].account_id;
 
@@ -122,7 +122,7 @@ export async function updateDetails(
 
          // Trim string fields (except account_order which is numeric)
          if (field !== "account_order") {
-            values[values.length - 1] = String(values[values.length - 1])?.trim();
+            values[values.length - 1] = String(values[values.length - 1]);
          }
       }
    });
