@@ -1,5 +1,7 @@
 import { Box, Typography } from "@mui/material";
 
+import TransactionsTable from "@/components/dashboard/transactions/table";
+
 /**
  * Define the props for the Transactions component
  *
@@ -34,6 +36,9 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
             >
                { filter } { identifier }
             </Typography>
+         </Box>
+         <Box sx = { { mt: 2 } }>
+            <TransactionsTable />
          </Box>
       </Box>
    );
