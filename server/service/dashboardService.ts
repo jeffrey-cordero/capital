@@ -13,6 +13,7 @@ import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
 import { fetchAccounts } from "@/service/accountsService";
 import { fetchBudgets } from "@/service/budgetsService";
+import { fetchTransactions } from "@/service/transactionsService";
 
 /**
  * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
@@ -242,11 +243,12 @@ export async function fetchNews(): Promise<ServerResponse> {
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    // Fetch all dashboard components in parallel
-   const [marketTrends, news, accounts, budgets] = await Promise.all([
+   const [marketTrends, news, accounts, budgets, transactions] = await Promise.all([
       fetchMarketTrends(),
       fetchNews(),
       fetchAccounts(user_id),
-      fetchBudgets(user_id)
+      fetchBudgets(user_id),
+      fetchTransactions(user_id)
    ]);
 
    // Combine all data into a single dashboard response
@@ -254,6 +256,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
       accounts: accounts.data,
       budgets: budgets.data,
       trends: marketTrends.data,
-      news: news.data
+      news: news.data,
+      transactions: transactions.data
    } as Dashboard);
 }

@@ -3,6 +3,7 @@ import express from "express";
 import * as accountsController from "@/controllers/accountsController";
 import * as budgetsController from "@/controllers/budgetsController";
 import * as dashboardController from "@/controllers/dashboardController";
+import * as transactionsController from "@/controllers/transactionsController";
 import { authenticateToken } from "@/lib/middleware";
 
 const dashboardRouter = express.Router();
@@ -79,5 +80,29 @@ dashboardRouter.put("/budgets/category/:id", budgetsController.PUT);
  *    req.params.id: Budget Category ID
  */
 dashboardRouter.delete("/budgets/category/:id", budgetsController.DELETE);
+
+/**
+ * GET /dashboard/transactions
+ */
+dashboardRouter.get("/transactions", transactionsController.GET);
+
+/**
+ * POST /dashboard/transactions
+ *    req.body: Transaction
+ */
+dashboardRouter.post("/transactions", transactionsController.POST);
+
+/**
+ * PUT /dashboard/transactions/:id
+ *    req.params.id: Transaction ID
+ *    req.body: Partial<Transaction>
+ */
+dashboardRouter.put("/transactions/:id", transactionsController.PUT);
+
+/**
+ * DELETE /dashboard/transactions/:id
+ *    req.params.id: Transaction ID
+ */
+dashboardRouter.delete("/transactions/:id", transactionsController.DELETE);
 
 export default dashboardRouter;

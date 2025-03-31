@@ -106,40 +106,15 @@ FOR EACH ROW
 CREATE TABLE transactions (
    transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    title VARCHAR(30) NOT NULL,
-   amount DECIMAL(18, 2) NOT NULL,
+   amount DECIMAL(18, 2) NOT NULL CHECK (amount <> 0),
    description TEXT NOT NULL DEFAULT '',
    date DATE NOT NULL CHECK (date >= '1800-01-01' AND date <= CURRENT_DATE),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-   budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL,
-   account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL
+   account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
+   budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_transactions_dates ON transactions (user_id, date);
-
-CREATE OR REPLACE FUNCTION update_transactions_budget_category()
-RETURNS TRIGGER AS $$
-BEGIN
-   -- Rollback to the main budget category if the sub category is deleted
-   IF OLD.name IS NOT NULL THEN
-      UPDATE transactions
-      SET budget_category_id = (
-         SELECT budget_category_id 
-         FROM budget_categories 
-         WHERE type = OLD.type
-         AND user_id = OLD.user_id
-         AND name IS NULL
-         LIMIT 1
-      )
-      WHERE budget_category_id = OLD.budget_category_id;
-   END IF;
-   RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER update_transactions_budget_category_trigger
-BEFORE DELETE ON budget_categories
-FOR EACH ROW
-   EXECUTE FUNCTION update_transactions_budget_category();
 
 CREATE TABLE market_trends_api_data (
    time TIMESTAMP PRIMARY KEY,

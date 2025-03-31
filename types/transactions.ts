@@ -19,7 +19,9 @@ export const transactionSchema = z.object({
       message: "Amount must be at least -$999,999,999,999.99"
    }).max(999_999_999_999.99, {
       message: "Amount cannot exceed $999,999,999,999.99"
-   })),
+   })).refine((amount) => amount !== 0, {
+      message: "Amount cannot be 0"
+   }),
    description: z.string().trim().max(255, {
       message: "Description must at most 255 characters"
    }).default(""),
@@ -27,18 +29,23 @@ export const transactionSchema = z.object({
       message: "Date must be a valid date"
    }).min(new Date("1800-01-01"), {
       message: "Date must be at least 1800-01-01"
-   }).max(new Date(new Date().getTime() + (24 * 60 * 60 * 1000)), {
-      message: "Date cannot be more than 1 day in the future"
+   }).max(new Date(), {
+      message: "Date cannot be in the future"
    }),
-   account_id: z.string().trim().uuid({
-      message: "Account ID must be a valid UUID"
-   }).optional(),
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }).optional(),
+   account_id: z.string().trim().uuid({
+      message: "Account ID must be a valid UUID"
+   }).optional()
 });
 
 /**
  * Represents a transaction
  */
-export type Transaction = Omit<z.infer<typeof transactionSchema>, "user_id">;
+export type Transaction = z.infer<typeof transactionSchema>;
+
+/**
+ * Represents a collection of organized transactions based on their year
+ */
+export type OrganizedTransactions = Record<string, Transaction[]>;
