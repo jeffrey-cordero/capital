@@ -15,8 +15,10 @@ import {
    type GridRowsProp,
    type GridTreeNodeWithRender
 } from "@mui/x-data-grid";
+import { useSelector } from "react-redux";
 
 import { displayCurrency, displayDate } from "@/lib/display";
+import { type RootState } from "@/redux/store";
 
 type Transaction = {
    id: number;
@@ -78,8 +80,8 @@ function RenderTransactionAmount(params: GridCellParams<Transaction, any, any, G
    return (
       <Typography
          color = { color }
-         sx = { { fontWeight: "semibold", pt: 2 } }
-         variant = "body2"
+         sx = { { fontWeight: "bold", pt: 2 } }
+         variant = "subtitle2"
       >
          { displayCurrency(params.value) }
       </Typography>
@@ -88,11 +90,6 @@ function RenderTransactionAmount(params: GridCellParams<Transaction, any, any, G
 
 const columns: GridColDef<Transaction>[] = [
    { field: "title", headerName: "Title", flex: 1, minWidth: 100 },
-   {
-      field: "amount", headerName: "Amount", flex: 0.5, minWidth: 80, align: "right", headerAlign: "right", renderCell: (params) => (
-         <RenderTransactionAmount { ...params } />
-      )
-   },
    {
       field: "date", headerName: "Date", flex: 0.5, minWidth: 90, valueFormatter: (value: string | null | undefined) => {
          if (value == null) return "";
@@ -103,12 +100,17 @@ const columns: GridColDef<Transaction>[] = [
    { field: "description", headerName: "Description", flex: 1.5, minWidth: 150 },
    { field: "account", headerName: "Account", flex: 1, minWidth: 100 },
    {
-      field: "category", headerName: "Category", flex: 1, minWidth: 100, renderCell: (params) => (
+      field: "category", headerName: "Category", flex: 1, maxWidth: 130, renderCell: (params) => (
          <RenderTransactionCategory { ...params } />
       )
    },
    {
-      field: "actions", headerName: "Actions", sortable: false, filterable: false, disableColumnMenu: true, width: 90, renderCell: (params) => (
+      field: "amount", headerName: "Amount", flex: 0.5, minWidth: 80, align: "right", headerAlign: "right", renderCell: (params) => (
+         <RenderTransactionAmount { ...params } />
+      )
+   },
+   {
+      field: "actions", headerName: "", sortable: false, filterable: false, disableColumnMenu: true, width: 90, renderCell: (params) => (
          <RenderTransactionActions { ...params } />
       )
    }
@@ -154,9 +156,19 @@ const rows: GridRowsProp<Transaction> = [
    }
 ];
 
-export default function TransactionsTable(): React.ReactNode {
+interface TransactionsTableProps {
+   filter?: string;
+   identifier?: string;
+   openModal: (index?: number) => void;
+   closeModal: () => void;
+}
+
+export default function TransactionsTable({ filter, identifier, openModal, closeModal }: TransactionsTableProps): React.ReactNode {
    const theme = useTheme();
-   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+   const transactions = useSelector((state: RootState) => state.transactions.value);
+   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+   // TODO: filter based on account_id or budget type (income or expense)
 
    return (
       <DataGrid
