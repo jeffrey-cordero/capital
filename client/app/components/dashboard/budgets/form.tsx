@@ -204,7 +204,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             <ModalSection title = "Transactions">
                <Transactions
                   filter = "budget"
-                  identifier = { budget.budget_category_id }
+                  identifier = { type }
                />
             </ModalSection>
          </Stack>

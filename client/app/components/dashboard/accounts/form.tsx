@@ -304,7 +304,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   <ModalSection title = "Transactions">
                      <Transactions
                         filter = "account"
-                        identifier = { account.account_id }
+                        identifier = { account.name }
                      />
                   </ModalSection>
                )

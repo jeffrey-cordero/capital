@@ -1,11 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { type Transaction as CapitalTransaction } from "capital/transactions";
+import { type Transaction } from "capital/transactions";
 import { type WritableDraft } from "immer";
-
-/**
- * The transaction type for the Redux store.
- */
-export type Transaction = Omit<CapitalTransaction, "date"> & { date: string, index: number };
 
 /**
  * The state of the transactions slice.
@@ -22,17 +17,13 @@ const transactionsSlice = createSlice({
    } as TransactionState,
    reducers: {
       /**
-       * Sets the transactions state in the Redux store with normalization.
+       * Sets the transactions state in the Redux store.
        *
        * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<CapitalTransaction[]>} action - The dispatched action containing the payload
+       * @param {PayloadAction<Transaction[]>} action - The dispatched action containing the payload
        */
-      setTransactions(state: WritableDraft<TransactionState>, action: PayloadAction<CapitalTransaction[]>) {
-         state.value = action.payload.map((transaction, index) => ({
-            ...transaction,
-            index, // Store index for constant time lookups
-            date: transaction.date instanceof Date ? transaction.date.toISOString() : transaction.date
-         }));
+      setTransactions(state: WritableDraft<TransactionState>, action: PayloadAction<Transaction[]>) {
+         state.value = action.payload;
       },
       /**
        * Adds a transaction to the transactions state in the correct order.
@@ -41,43 +32,44 @@ const transactionsSlice = createSlice({
        * @param {PayloadAction<Transaction>} action - The dispatched action containing the payload
        */
       addTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<Transaction>) {
-         const transaction = action.payload;
-         let found = false;
+         const transaction: Transaction = action.payload;
 
-         state.value = state.value.reduce((acc, record, index) => {
-            // Attempt to insert the transaction in the correct order or append to the end
-            if (!found && record.date >= transaction.date) {
-               acc.push({ ...transaction, index });
-               acc.push({ ...record, index: index + 1 });
-               found = true;
-            } else {
-               acc.push({ ...record });
+         // Insert the transaction in the correct order
+         for (let i = 0; i < state.value.length; i++) {
+            if (transaction.date >= state.value[i].date) {
+               state.value.splice(i, 0, transaction);
+               return;
             }
-
-            return acc;
-         }, [] as Transaction[]);
-
-         if (!found) {
-            state.value.push({ ...transaction, index: state.value.length });
          }
+
+         state.value.push(transaction);
       },
       /**
        * Updates a transaction in the transactions state.
        *
        * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<Transaction>} action - The dispatched action containing the updated transaction
+       * @param {PayloadAction<{ index: number, transaction: Transaction }>} action - The dispatched action containing the updated transaction
        */
-      updateTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<Transaction>) {
+      updateTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<{ index: number, transaction: Partial<Transaction> }>) {
          const { index } = action.payload;
-         const updatedTransaction = { ...state.value[index], ...action.payload };
+         const updates: Transaction = { ...state.value[index], ...action.payload.transaction };
 
-         if (state.value[index].date !== updatedTransaction.date) {
-            // Date changed, remove and add as a new transaction
+         if (state.value[index].date !== updates.date) {
+            // Date changed - remove and add as a new transaction
             state.value.splice(index, 1);
-            addTransaction(updatedTransaction);
+
+            // Insert the updated transaction in the correct order
+            for (let i = 0; i < state.value.length; i++) {
+               if (updates.date >= state.value[i].date) {
+                  state.value.splice(i, 0, updates);
+                  return;
+               }
+            }
+
+            state.value.push(updates);
          } else {
-            // Date unchanged, update existing transaction
-            state.value[index] = updatedTransaction;
+            // Date unchanged - update existing transaction
+            state.value[index] = updates;
          }
       },
       /**
@@ -89,7 +81,7 @@ const transactionsSlice = createSlice({
       deleteTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<{ index: number }>) {
          const { index } = action.payload;
 
-         state.value = state.value.splice(index, 1);
+         state.value = state.value.filter((_, i) => i !== index);
       }
    }
 });

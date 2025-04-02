@@ -29,9 +29,9 @@ export const transactionSchema = z.object({
       message: "Date must be a valid date"
    }).min(new Date("1800-01-01"), {
       message: "Date must be at least 1800-01-01"
-   }).max(new Date(), {
-      message: "Date cannot be in the future"
-   }),
+   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
+      message: "Date cannot be in the future" // "most future" timezone in the world
+   }).transform((date) => date.toISOString()),
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }).or(z.literal("")).optional(),

@@ -21,6 +21,7 @@ export const tables = {
             "--DataGrid-overlayHeight": "300px",
             overflow: "clip",
             borderColor: (theme.vars || theme).palette.divider,
+            borderWidth: "1.5px",
             backgroundColor: (theme.vars || theme).palette.background.default,
             [`& .${gridClasses.columnHeader}`]: {
                backgroundColor: (theme.vars || theme).palette.background.paper

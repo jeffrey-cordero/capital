@@ -1,7 +1,8 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button, Typography } from "@mui/material";
-import { useCallback, useState } from "react";
+import { Box, Button } from "@mui/material";
+import type { Account } from "capital/accounts";
+import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import TransactionForm from "@/components/dashboard/transactions/form";
@@ -44,38 +45,32 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
    }, []);
 
    const closeModal = useCallback(() => {
-      setEditState({ state: "view" });
+      setEditState({ state: "view", index: undefined });
    }, []);
 
    // Fetch the transaction based on the index
    const transaction = useSelector((state: RootState) => {
-      return editState.index ? state.transactions.value[editState.index] : undefined;
+      return editState.index !== undefined ? state.transactions.value[editState.index] : undefined;
    });
 
-   console.log(transaction);
+   // Memoize the account mappings
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
+   const accountsMap = useMemo(() => {
+      return accounts.reduce((acc: Record<string, Account>, record) => {
+         acc[record.account_id] = record;
+
+         return acc;
+      }, {});
+   }, [accounts]);
 
    return (
       <Box sx = { { textAlign: "center" } }>
          <Box sx = { { mt: 2 } }>
-            <Typography
-               fontWeight = "bold"
-               variant = "body1"
-            >
-               Coming Soon
-            </Typography>
-            <Typography
-               fontWeight = "bold"
-               variant = "body1"
-            >
-               { filter } { identifier }
-            </Typography>
-         </Box>
-         <Box sx = { { mt: 2 } }>
             <TransactionsTable
-               closeModal = { closeModal }
+               accountsMap = { accountsMap }
                filter = { filter }
                identifier = { identifier }
-               openModal = { openModal }
+               onEdit = { openModal }
             />
             <Box sx = { { mt: 6 } }>
                <Button
@@ -88,6 +83,8 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                   Add Transaction
                </Button>
                <TransactionForm
+                  accountsMap = { accountsMap }
+                  index = { editState.index ?? 0 }
                   onClose = { closeModal }
                   open = { editState.state !== "view" }
                   transaction = { transaction }

@@ -1,221 +1,291 @@
-import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+   Box,
    Chip,
-   IconButton,
-   Stack,
-   Typography,
-   useMediaQuery,
-   useTheme
+   Tooltip,
+   Typography
 } from "@mui/material";
 import {
    DataGrid,
-   type GridCellParams,
+   GridActionsCellItem,
    type GridColDef,
-   type GridRowsProp,
-   type GridTreeNodeWithRender
+   type GridFilterModel,
+   type GridRenderCellParams,
+   type GridRowParams,
+   type GridValidRowModel
 } from "@mui/x-data-grid";
+import { type Account } from "capital/accounts";
+import { type BudgetCategory, type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
+import type { Transaction } from "capital/transactions";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
+import TransactionDeletion from "@/components/dashboard/transactions/delete";
 import { displayCurrency, displayDate } from "@/lib/display";
-import { type RootState } from "@/redux/store";
+import type { RootState } from "@/redux/store";
 
-type Transaction = {
-   id: number;
-   title: string;
-   amount: number;
-   date: string;
-   description: string;
-   account?: string;
-   category?: string;
+/**
+ * The row model type for the DataGrid component.
+ *
+ * @type {TransactionRowModel}
+ * @extends {GridValidRowModel & Transaction} - Inherits from GridValidRowModel and Transaction attributes
+ * @property {string} id - The ID of the transaction.
+ * @property {string} account - The name of the account.
+ * @property {string} category - The name of the category.
+ * @property {BudgetType} type - The type of the category (Income or Expenses)
+ * @property {number} index - The index of the transaction.
+ */
+type TransactionRowModel = GridValidRowModel & Transaction & {
+   id: string;
+   account: string;
+   category: string;
+   type: BudgetType;
+   index: number;
+};
+
+/**
+ * Props for the TransactionsTable component.
+ *
+ * @interface TransactionsTableProps
+ * @property {string} filter - The filter to apply to the table.
+ * @property {string} identifier - The identifier to filter the table by.
+ * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
+ * @property {(index: number) => void} onEdit - The callback to edit a transaction based on index.
+ */
+interface TransactionsTableProps {
+   filter: "account" | "budget" | undefined;
+   identifier: string | undefined;
+   accountsMap: Record<string, Account>;
+   onEdit: (_index: number) => void;
 }
 
-function RenderTransactionActions(params: GridCellParams<Transaction, any, any, GridTreeNodeWithRender>): React.ReactNode {
-   return (
-      <Stack
-         direction = "row"
-         spacing = { 1 }
-         sx = { { pt: 0.5 } }
-      >
-         <IconButton
-            data-transaction-id = { params.id }
-            size = "medium"
-         >
-            <FontAwesomeIcon
-               className = "primary"
-               icon = { faPenToSquare }
-               size = "xs"
-            />
-         </IconButton>
-         <IconButton
-            data-transaction-id = { params.id }
-            size = "medium"
-         >
-            <FontAwesomeIcon
-               className = "error"
-               icon = { faTrash }
-               size = "xs"
-            />
-         </IconButton>
-      </Stack>
-   );
-}
+/**
+ * Gets the category information for a given category ID.
+ *
+ * @param {OrganizedBudgets} budgets - The organized budgets.
+ * @param {string | null | undefined} categoryId - The ID of the category.
+ * @param {BudgetType} type - The type of the category (Income or Expenses)
+ * @returns {Object | null} The category information.
+ */
+const getCategoryInfo = (budgets: OrganizedBudgets, categoryId: string | null | undefined, type: BudgetType): { name: string; type: BudgetType } | null => {
+   if (!categoryId) return null;
 
-function RenderTransactionCategory(params: GridCellParams<Transaction, any, any, GridTreeNodeWithRender>): React.ReactNode {
-   const type: "Income" | "Expenses" = params.row.amount > 0 ? "Income" : "Expenses";
-   const color: "success" | "error" = params.row.amount > 0 ? "success" : "error";
+   const category: BudgetCategory | null = budgets[type].categories.find(c => c.budget_category_id === categoryId) || null;
+
+   // Missing based on invalid category ID or deleted category
+   return category ? { name: category.name || "", type: type } : null;
+};
+
+/**
+ * Renders the category chip for a given transaction.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, string>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered category chip.
+ */
+function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
+   const categoryType: string = params.row.type;
+   const categoryName: string = params.row.category;
+   const color: "success" | "error" = categoryType === "Income" ? "success" : "error";
 
    return (
       <Chip
          color = { color }
-         label = { params.value || type }
+         label = { categoryName || categoryType }
          size = "small"
+         variant = "filled"
       />
    );
 }
 
-function RenderTransactionAmount(params: GridCellParams<Transaction, any, any, GridTreeNodeWithRender>): React.ReactNode {
-   const color: "primary" | "error" = params.row.amount > 0 ? "primary" : "error";
+/**
+ * Renders the amount for a given transaction.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, number>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered amount.
+ */
+function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>): React.ReactNode {
+   const color: string = params.row.amount > 0 ? "primary.main" : "error.main";
 
    return (
       <Typography
          color = { color }
-         sx = { { fontWeight: "bold", pt: 2 } }
-         variant = "subtitle2"
+         sx = { { fontWeight: "bold" } }
+         variant = "caption"
       >
-         { displayCurrency(params.value) }
+         { displayCurrency(params.row.amount) }
       </Typography>
    );
 }
 
-const columns: GridColDef<Transaction>[] = [
-   { field: "title", headerName: "Title", flex: 1, minWidth: 100 },
-   {
-      field: "date", headerName: "Date", flex: 0.5, minWidth: 90, valueFormatter: (value: string | null | undefined) => {
-         if (value == null) return "";
-
-         return displayDate(value);
-      }
-   },
-   { field: "description", headerName: "Description", flex: 1.5, minWidth: 150 },
-   { field: "account", headerName: "Account", flex: 1, minWidth: 100 },
-   {
-      field: "category", headerName: "Category", flex: 1, maxWidth: 130, renderCell: (params) => (
-         <RenderTransactionCategory { ...params } />
-      )
-   },
-   {
-      field: "amount", headerName: "Amount", flex: 0.5, minWidth: 80, align: "right", headerAlign: "right", renderCell: (params) => (
-         <RenderTransactionAmount { ...params } />
-      )
-   },
-   {
-      field: "actions", headerName: "", sortable: false, filterable: false, disableColumnMenu: true, width: 90, renderCell: (params) => (
-         <RenderTransactionActions { ...params } />
-      )
-   }
-];
-
-const rows: GridRowsProp<Transaction> = [
-   {
-      id: 1,
-      title: "Salary Deposit",
-      amount: 3500.00,
-      date: "2025-03-01",
-      description: "Monthly salary payment"
-   }, {
-      id: 2,
-      title: "Grocery Shopping",
-      amount: -125.67,
-      date: "2025-02-28",
-      description: "Weekly grocery run",
-      account: "Checking Account",
-      category: "Groceries"
-   }, {
-      id: 3,
-      title: "Dinner Out",
-      amount: -50.00,
-      date: "2025-02-27",
-      description: "Dinner with friends",
-      account: "Credit Card"
-   }, {
-      id: 4,
-      title: "Amazon Purchase",
-      amount: -100.00,
-      date: "2025-02-26",
-      description: "Online shopping",
-      account: "Credit Card",
-      category: "Shopping"
-   }, {
-      id: 5,
-      title: "Gasoline",
-      amount: -30.00,
-      date: "2025-02-25",
-      description: "Fuel for commute",
-      account: "Credit Card"
-   }
-];
-
-interface TransactionsTableProps {
-   filter?: string;
-   identifier?: string;
-   openModal: (index?: number) => void;
-   closeModal: () => void;
+/**
+ * Renders the account name for a given transaction.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, string>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered account name.
+ */
+function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
+   return (
+      <Typography
+         noWrap = { true }
+         variant = "caption"
+      >
+         { params.row.account }
+      </Typography>
+   );
 }
 
-export default function TransactionsTable({ filter, identifier, openModal, closeModal }: TransactionsTableProps): React.ReactNode {
-   const theme = useTheme();
-   const transactions = useSelector((state: RootState) => state.transactions.value);
-   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+/**
+ * Renders the date for a given transaction.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, string>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered date.
+ */
+function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
+   return (
+      <Typography
+         variant = "caption"
+      >
+         { displayDate(params.row.date) }
+      </Typography>
+   );
+}
 
-   // TODO: filter based on account_id or budget type (income or expense)
+/**
+ * Renders the description for a given transaction with a tooltip for user accessibility.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, string | undefined | null>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered description.
+ */
+function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
+   return (
+      <Tooltip
+         placement = "bottom-start"
+         title = { params.row.description || "" }
+      >
+         <Typography
+            noWrap = { true }
+            variant = "caption"
+         >
+            { params.row.description }
+         </Typography>
+      </Tooltip>
+   );
+}
+
+/**
+ * The TransactionsTable component.
+ *
+ * @param {TransactionsTableProps} props - The props for the TransactionsTable component.
+ * @returns {React.ReactNode} The rendered TransactionsTable component.
+ */
+export default function TransactionsTable({ accountsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
+   const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
+   const period: BudgetPeriod = budgets.period;
+   const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
+
+   // Filters
+   const filterModel: GridFilterModel | undefined = useMemo(() => {
+      const isAccountFilter: boolean = filter === "account";
+
+      return filter ? {
+         items: [
+            {
+               field: isAccountFilter ? "accountName" : "amount",
+               operator: isAccountFilter ? "contains" : identifier === "Income" ? ">=" : "<",
+               value: isAccountFilter ? identifier : 0
+            }
+         ]
+      } : undefined;
+   }, [filter, identifier]);
+
+   // Data grid rows
+   const rows: TransactionRowModel[] = useMemo(() => {
+      return transactions.map((transaction, index) => {
+         const categoryInfo = getCategoryInfo(budgets, transaction.budget_category_id, transaction.amount >= 0 ? "Income" : "Expenses");
+
+         return {
+            ...transaction,
+            index,
+            id: transaction.transaction_id || "",
+            account: accountsMap[transaction.account_id ?? ""]?.name || "",
+            category: categoryInfo?.name || "",
+            type: categoryInfo?.type || (transaction.amount >= 0 ? "Income" : "Expenses")
+         };
+      });
+   }, [transactions, accountsMap, budgets]);
+
+   // Data grid columns
+   const columns: GridColDef<TransactionRowModel>[] = useMemo(() => [
+      { field: "title", headerName: "Title", flex: 1.2, minWidth: 120, filterable: !filter },
+      { field: "date", headerName: "Date", flex: 0.6, minWidth: 95, filterable: !filter, renderCell: RenderDate },
+      { field: "description", headerName: "Description", flex: 1.5, minWidth: 150, filterable: !filter, renderCell: RenderDescription },
+      { field: "accountName", headerName: "Account", flex: 1, minWidth: 100, filterable: !filter, renderCell: RenderAccountName },
+      { field: "categoryName", headerName: "Category", flex: 1, minWidth: 110, maxWidth: 140, filterable: !filter, renderCell: RenderCategoryChip },
+      { field: "amount", headerName: "Amount", type: "number", flex: 0.7, minWidth: 90, align: "right", headerAlign: "right", filterable: !filter, renderCell: RenderAmount },
+      {
+         field: "actions", type: "actions", headerName: "", width: 80, align: "center", getActions: (params: GridRowParams<TransactionRowModel>) => [
+            (
+               <GridActionsCellItem
+                  className = "primary"
+                  disableRipple = { true }
+                  icon = {
+                     <FontAwesomeIcon
+                        icon = { faPenToSquare }
+                        size = "sm"
+                     />
+                  }
+                  key = { `edit-${params.row.index}` }
+                  label = "Edit"
+                  onClick = { () => onEdit(params.row.index) }
+                  sx = { { color: "primary.main" } }
+               />
+            ),
+            (
+               <GridActionsCellItem
+                  className = "error"
+                  disableRipple = { true }
+                  icon = {
+                     <TransactionDeletion
+                        index = { params.row.index }
+                        onClose = { () => {} }
+                        transaction = { params.row }
+                     />
+                  }
+                  key = { `delete-${params.row.index}` }
+                  label = "Delete"
+                  sx = { { color: "error.main" } }
+               />
+            )
+         ]
+      }
+   ], [onEdit, filter]);
+
+   const noResultsContainer: React.ReactNode = useMemo(() => {
+      return (
+         <Box
+            sx = {{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" }}
+         >
+            No transactions found
+         </Box>
+      )
+   }, []);
 
    return (
       <DataGrid
-         checkboxSelection = { true }
          columns = { columns }
          density = "standard"
-         disableColumnResize = { true }
          disableRowSelectionOnClick = { true }
-         getRowClassName = {
-            (params) =>
-               params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
-         }
-         initialState = {
-            {
-               pagination: { paginationModel: { pageSize: 20 } }
-            }
-         }
-         pageSizeOptions = { [10, 20, 50] }
+         filterModel = { filterModel }
+         getRowClassName = { (params) => params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd" }
+         getRowId = { (row) => row.id }
+         initialState = { { pagination: { paginationModel: { pageSize: 15 } }, sorting: { sortModel: [{ field: "date", sort: "desc" }] } } }
+         pageSizeOptions = { [10, 15, 25, 50, 100] }
          rows = { rows }
-         slotProps = {
-            {
-               filterPanel: {
-                  filterFormProps: {
-                     logicOperatorInputProps: {
-                        variant: "outlined",
-                        size: "small"
-                     },
-                     columnInputProps: {
-                        variant: "outlined",
-                        size: "small",
-                        sx: { mt: "auto" }
-                     },
-                     operatorInputProps: {
-                        variant: "outlined",
-                        size: "small",
-                        sx: { mt: "auto" }
-                     },
-                     valueInputProps: {
-                        InputComponentProps: {
-                           variant: "outlined",
-                           size: "small"
-                        }
-                     }
-                  }
-               }
-            }
-         }
+         slots = {{
+            noRowsOverlay: () => noResultsContainer,
+            noResultsOverlay: () => noResultsContainer
+         }}
       />
    );
 }

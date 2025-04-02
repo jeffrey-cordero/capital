@@ -108,7 +108,7 @@ CREATE TABLE transactions (
    title VARCHAR(30) NOT NULL,
    amount DECIMAL(18, 2) NOT NULL CHECK (amount <> 0),
    description TEXT NOT NULL DEFAULT '',
-   date DATE NOT NULL CHECK (date >= '1800-01-01' AND date <= CURRENT_DATE),
+   date DATE NOT NULL CHECK (date >= '1800-01-01' AND date <= (CURRENT_TIMESTAMP AT TIME ZONE 'Pacific/Kiritimati')::date),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL
