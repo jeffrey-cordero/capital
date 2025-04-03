@@ -6,7 +6,6 @@ import { FIRST_PARAM, query } from "@/lib/database";
  * The fields that can be updated for a transaction
  */
 const TRANSACTION_UPDATES = [
-   "title",
    "amount",
    "description",
    "date",
@@ -45,13 +44,12 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
  */
 export async function create(user_id: string, transaction: Transaction): Promise<string> {
    const creation = `
-      INSERT INTO transactions (user_id, title, amount, description, date, budget_category_id, account_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO transactions (user_id, amount, description, date, budget_category_id, account_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING transaction_id;
    `;
    const result = await query(creation, [
       user_id,
-      transaction.title,
       transaction.amount,
       transaction.description,
       transaction.date,
@@ -82,7 +80,7 @@ export async function update(user_id: string, transaction_id: string, updates: P
       if (key in updates && updates[key] !== undefined) {
          fields.push(`${field} = $${params}`);
 
-         if (typeof updates[key] === "string" && (key === "title" || key === "description")) {
+         if (typeof updates[key] === "string" && (key === "description")) {
             // Normalize strings
             values.push(String(updates[key]));
          } else if ((key === "budget_category_id" || key === "account_id") && updates[key] === "") {

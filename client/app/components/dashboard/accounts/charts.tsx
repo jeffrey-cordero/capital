@@ -24,7 +24,7 @@ export default function AccountTrends({ isCard }: { isCard: boolean }): React.Re
    const { historicalAccounts, netWorth, percentageChange } = useMemo(() => {
       const today = getCurrentDate();
 
-      // Generate data points for the last 12 months with accounts.history until transactions are implemented
+      // Generate data points for the last 12 months
       const historicalAccounts = accounts.map((account) => {
          // Convert history entries to normalized format with proper date objects
          const history = account.history.map(entry => ({

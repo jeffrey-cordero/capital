@@ -167,7 +167,7 @@ function RenderDescription(params: GridRenderCellParams<TransactionRowModel, str
             noWrap = { true }
             variant = "caption"
          >
-            { params.row.description }
+
          </Typography>
       </Tooltip>
    );
@@ -217,12 +217,11 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
 
    // Data grid columns
    const columns: GridColDef<TransactionRowModel>[] = useMemo(() => [
-      { field: "title", headerName: "Title", flex: 1.2, minWidth: 120, filterable: !filter },
-      { field: "date", headerName: "Date", flex: 0.6, minWidth: 95, filterable: !filter, renderCell: RenderDate },
-      { field: "description", headerName: "Description", flex: 1.5, minWidth: 150, filterable: !filter, renderCell: RenderDescription },
-      { field: "accountName", headerName: "Account", flex: 1, minWidth: 100, filterable: !filter, renderCell: RenderAccountName },
+      { field: "date", headerName: "Date", flex: 0.4, filterable: !filter, renderCell: RenderDate },
+      { field: "description", headerName: "Description", flex: 0.6, filterable: !filter, renderCell: RenderDescription },
+      { field: "accountName", headerName: "Account", flex: 1.1, filterable: !filter, renderCell: RenderAccountName },
       { field: "categoryName", headerName: "Category", flex: 1, minWidth: 110, maxWidth: 140, filterable: !filter, renderCell: RenderCategoryChip },
-      { field: "amount", headerName: "Amount", type: "number", flex: 0.7, minWidth: 90, align: "right", headerAlign: "right", filterable: !filter, renderCell: RenderAmount },
+      { field: "amount", headerName: "Amount", type: "number", flex: 0.7, align: "right", headerAlign: "right", filterable: !filter, renderCell: RenderAmount },
       {
          field: "actions", type: "actions", headerName: "", width: 80, align: "center", getActions: (params: GridRowParams<TransactionRowModel>) => [
             (
@@ -266,7 +265,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          <Box
             sx = {{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" }}
          >
-            No transactions found
+            No available transactions
          </Box>
       )
    }, []);
@@ -279,7 +278,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          filterModel = { filterModel }
          getRowClassName = { (params) => params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd" }
          getRowId = { (row) => row.id }
-         initialState = { { pagination: { paginationModel: { pageSize: 15 } }, sorting: { sortModel: [{ field: "date", sort: "desc" }] } } }
+         initialState = { { pagination: { paginationModel: { pageSize: 15 } }} }
          pageSizeOptions = { [10, 15, 25, 50, 100] }
          rows = { rows }
          slots = {{

@@ -299,8 +299,7 @@ export function BudgetPieChart({ type }: { type: "Income" | "Expenses" }) {
  */
 export function BudgetTrends({ isCard }: { isCard: boolean }): React.ReactNode {
    const theme = useTheme();
-
-   // Mock data until transactions are implemented
+   
    const yearsData = useMemo(() => [
       {
          id: "income",

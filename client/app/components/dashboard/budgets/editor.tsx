@@ -5,8 +5,9 @@ import {
    FormControl,
    FormHelperText,
    InputLabel,
-   NativeSelect,
+   MenuItem,
    OutlinedInput,
+   Select,
    Stack
 } from "@mui/material";
 import { type Budget, type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
@@ -185,7 +186,9 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "editor-name">Name</InputLabel>
+                        <InputLabel htmlFor = "editor-name">
+                           Name
+                        </InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
@@ -208,7 +211,9 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "editor-goal">Goal</InputLabel>
+                        <InputLabel htmlFor = "editor-goal">
+                           Goal
+                        </InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"
@@ -233,22 +238,31 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
                   ({ field }) => (
                      <FormControl
                         error = { Boolean(errors.type) }
-                        sx = { { px: 0.75 } }
                      >
                         <InputLabel
                            htmlFor = "editor-type"
-                           sx = { { px: 0.75 } }
-                           variant = "standard"
+                           variant = "outlined"
                         >
                            Type
                         </InputLabel>
-                        <NativeSelect
+                        <Select
                            { ...field }
-                           id = "editor-type"
+                           label = "Type"
+                           slotProps = {
+                              {
+                                 input: {
+                                    id: "editor-type"
+                                 }
+                              }
+                           }
                         >
-                           <option value = "Income">Income</option>
-                           <option value = "Expenses">Expenses</option>
-                        </NativeSelect>
+                           <MenuItem value = "Income">
+                              Income
+                           </MenuItem>
+                           <MenuItem value = "Expenses">
+                              Expenses
+                           </MenuItem>
+                        </Select>
                      </FormControl>
                   )
                }

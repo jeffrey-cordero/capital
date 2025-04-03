@@ -136,7 +136,9 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "constructor-name">Name</InputLabel>
+                        <InputLabel htmlFor = "constructor-name">
+                           Name
+                        </InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Name"
@@ -159,7 +161,9 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                render = {
                   ({ field }) => (
                      <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "constructor-goal">Goal</InputLabel>
+                        <InputLabel htmlFor = "constructor-goal">
+                           Goal
+                        </InputLabel>
                         <OutlinedInput
                            { ...field }
                            aria-label = "Goal"

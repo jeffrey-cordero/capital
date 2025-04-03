@@ -6,8 +6,9 @@ import {
    FormControl,
    FormHelperText,
    InputLabel,
-   NativeSelect,
+   MenuItem,
    OutlinedInput,
+   Select,
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
@@ -165,7 +166,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
                         direction = "column"
-                        spacing = { 2 }
+                        spacing = { 1.5 }
                         sx = { { mt: 3 } }
                      >
                         <Controller
@@ -221,36 +222,44 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                         />
                         <Controller
                            control = { control }
-                           defaultValue = "Checking"
                            name = "type"
+                           defaultValue = "Checking"
                            render = {
                               ({ field }) => (
                                  <FormControl
                                     error = { Boolean(errors.type) }
-                                    sx = { { px: 0.75 } }
+                                    fullWidth = { true }
                                  >
                                     <InputLabel
                                        htmlFor = "type"
-                                       sx = { { px: 0.75 } }
-                                       variant = "standard"
+                                       variant = "outlined"
                                     >
                                        Type
                                     </InputLabel>
-                                    <NativeSelect
+                                    <Select
                                        { ...field }
-                                       id = "type"
+                                       label = "Type"
+                                       variant = "outlined"
+                                       value = { field.value || "" }
+                                       slotProps = {
+                                          {
+                                             input: {
+                                                id: "type"
+                                             }
+                                          }
+                                       }
                                     >
                                        {
                                           accountTypes.map((key) => (
-                                             <option
+                                             <MenuItem
                                                 key = { key }
                                                 value = { key }
                                              >
                                                 { key }
-                                             </option>
+                                             </MenuItem>
                                           ))
                                        }
-                                    </NativeSelect>
+                                    </Select>
                                  </FormControl>
                               )
                            }

@@ -41,7 +41,7 @@ interface CategoryItemProps {
 const CategoryItem = memo(function CategoryItem({ name, goals, goalIndex, type, onEditClick, isMainCategory = false }: CategoryItemProps) {
    const theme = useTheme();
    const goal = goals[goalIndex].goal;
-   const current = 0; // Placeholder until transactions are implemented
+   const current = 0;
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
 

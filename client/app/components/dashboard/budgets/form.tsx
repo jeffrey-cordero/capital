@@ -158,7 +158,9 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                            render = {
                               ({ field }) => (
                                  <FormControl error = { Boolean(errors.goal) }>
-                                    <InputLabel htmlFor = "goal">Goal</InputLabel>
+                                    <InputLabel htmlFor = "goal">
+                                       Goal
+                                    </InputLabel>
                                     <OutlinedInput
                                        { ...field }
                                        aria-label = "Goal"

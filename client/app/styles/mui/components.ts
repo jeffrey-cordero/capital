@@ -25,7 +25,7 @@ export const components: Components = {
             borderRadius: "12px",
             fontSize: "0.95rem",
             borderColor: "primary.main",
-            overflow: "hidden"
+            overflow: "hidden",
          },
          input: {
             fontSize: "0.95rem",

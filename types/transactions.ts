@@ -8,11 +8,6 @@ export const transactionSchema = z.object({
    transaction_id: z.string().trim().uuid({
       message: "Transaction ID must be a valid UUID"
    }).optional(),
-   title: z.string().trim().min(1, {
-      message: "Title must be at least 1 character"
-   }).max(30, {
-      message: "Title must at most 30 characters"
-   }),
    amount: zodPreprocessNumber(z.coerce.number({
       message: "Amount must be a valid number"
    }).min(-999_999_999_999.99, {
