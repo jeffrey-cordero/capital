@@ -11,7 +11,6 @@ import {
    DataGrid,
    GridActionsCellItem,
    type GridColDef,
-   type GridFilterModel,
    type GridRenderCellParams,
    type GridRowSelectionModel,
    type GridTreeNodeWithRender,
@@ -20,10 +19,10 @@ import {
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
 import type { Transaction } from "capital/transactions";
-import { useCallback, useMemo, useRef, type Ref } from "react";
+import { type Ref, useCallback, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import { TransactionDeletion, BulkTransactionDeletion } from "@/components/dashboard/transactions/delete";
+import { BulkTransactionDeletion, TransactionDeletion } from "@/components/dashboard/transactions/delete";
 import { displayCurrency, displayDate } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -92,10 +91,10 @@ function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, st
 
    return (
       <Chip
-         color={color}
-         label={categoryName || categoryType}
-         size="small"
-         variant="filled"
+         color = { color }
+         label = { categoryName || categoryType }
+         size = "small"
+         variant = "filled"
       />
    );
 }
@@ -111,11 +110,11 @@ function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>)
 
    return (
       <Typography
-         color={color}
-         sx={{ fontWeight: "500" }}
-         variant="caption"
+         color = { color }
+         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {displayCurrency(params.row.amount)}
+         { displayCurrency(params.row.amount) }
       </Typography>
    );
 }
@@ -133,13 +132,13 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 
    return (
       <Typography
-         noWrap={true}
-         sx={{ fontWeight: "500", cursor: "pointer" }}
-         onClick={openAccountModal}
-         color="primary"
-         variant="caption"
+         color = "primary"
+         noWrap = { true }
+         onClick = { openAccountModal }
+         sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {params.row.account}
+         { params.row.account }
       </Typography>
    );
 }
@@ -153,10 +152,10 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
    return (
       <Typography
-         sx={{ fontWeight: "500" }}
-         variant="caption"
+         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {displayDate(params.row.date)}
+         { displayDate(params.row.date) }
       </Typography>
    );
 }
@@ -170,15 +169,15 @@ function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): 
 function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
    return (
       <Tooltip
-         placement="top-start"
-         title={params.row.description || ""}
+         placement = "top-start"
+         title = { params.row.description || "" }
       >
          <Typography
-            noWrap={true}
-            sx={{ fontWeight: "500" }}
-            variant="caption"
+            noWrap = { true }
+            sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+            variant = "caption"
          >
-            {params.row.description}
+            { params.row.description }
          </Typography>
       </Tooltip>
    );
@@ -194,38 +193,49 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
    const period: BudgetPeriod = budgets.period;
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
-   const selectedRows: Ref<GridRowSelectionModel> = useRef([]);
-   
-   // Filters
-   const filterModel: GridFilterModel | undefined = useMemo(() => {
-      const isAccountFilter: boolean = filter === "account";
-
-      return filter ? {
-         items: [
-            {
-               field: isAccountFilter ? "account" : "amount",
-               operator: isAccountFilter ? "equals" : identifier === "Income" ? ">=" : "<=",
-               value: isAccountFilter ? identifier : 0
-            }
-         ]
-      } : undefined;
-   }, [filter, identifier]);
+   const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
 
    // Data grid rows
    const rows: TransactionRowModel[] = useMemo(() => {
-      return transactions.map((transaction, index) => {
-         const categoryInfo = getCategoryInfo(budgets, transaction.budget_category_id, transaction.amount >= 0 ? "Income" : "Expenses");
+      return transactions.reduce((acc, record, index) => {
+         const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.amount >= 0 ? "Income" : "Expenses");
 
-         return {
-            ...transaction,
+         const transaction: TransactionRowModel = {
+            ...record,
             index,
-            id: transaction.transaction_id || "",
-            account: accountsMap[transaction.account_id ?? ""]?.name || "",
+            id: record.transaction_id || "",
+            account: accountsMap[record.account_id ?? ""]?.name || "",
             category: categoryInfo?.name || "",
-            type: categoryInfo?.type || (transaction.amount >= 0 ? "Income" : "Expenses")
+            type: categoryInfo?.type || (record.amount >= 0 ? "Income" : "Expenses")
          };
-      });
-   }, [transactions, accountsMap, budgets]);
+
+         switch (filter) {
+            case "account": {
+               // Match transactions by account ID
+               if (record.account_id === identifier) {
+                  acc.push(transaction);
+               }
+
+               break;
+            }
+            case "budget": {
+               // Match transactions within the budget period
+               const [year, month] = transaction.date.split("T")[0].split("-");
+
+               if (parseInt(year) === period.year && parseInt(month) === period.month) {
+                  acc.push(transaction);
+               }
+
+               break;
+            }
+            default: {
+               acc.push(transaction);
+            }
+         }
+
+         return acc;
+      }, [] as TransactionRowModel[]);
+   }, [transactions, accountsMap, budgets, filter, identifier, period]);
 
    const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => [
       {
@@ -233,8 +243,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          headerName: "Date",
          minWidth: 140,
          renderCell: RenderDate,
-         filterable: true,
-         getOptionValue: (params: GridRenderCellParams<TransactionRowModel, string>) => displayDate(params.row.date)
+         filterable: true
       },
       {
          field: "description",
@@ -246,25 +255,22 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       {
          field: "account",
          headerName: "Account",
-         headerAlign: "right",
-         align: "right",
          minWidth: 220,
          renderCell: RenderAccountName
       },
       {
          field: "category",
          headerName: "Category",
-         headerAlign: "right",
-         align: "right",
          minWidth: 255,
-         renderCell: RenderCategoryChip
+         renderCell: RenderCategoryChip,
+         columnMenuProps: {
+            flexDirection: "row"
+         }
       },
       {
          field: "amount",
          type: "number",
          headerName: "Amount",
-         headerAlign: "right",
-         align: "right",
          minWidth: 200,
          renderCell: RenderAmount
       },
@@ -274,36 +280,37 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          align: "center",
          minWidth: 120,
          sortable: false,
+         disableColumnMenu: true,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => [
             (
                <GridActionsCellItem
-                  className="primary"
-                  disableRipple={true}
-                  icon={
+                  className = "primary"
+                  disableRipple = { true }
+                  icon = {
                      <FontAwesomeIcon
-                        icon={faPenToSquare}
-                        size="sm"
+                        icon = { faPenToSquare }
+                        size = "sm"
                      />
                   }
-                  key={`edit-${params.row.index}`}
-                  label="Edit"
-                  onClick={() => onEdit(params.row.index)}
-                  sx={{ color: "primary.main", pb: 1.5 }}
+                  key = { `edit-${params.row.index}` }
+                  label = "Edit"
+                  onClick = { () => onEdit(params.row.index) }
+                  sx = { { color: "primary.main", pb: 0.8 } }
                />
             ),
             (
                <GridActionsCellItem
-                  className="error"
-                  disableRipple={true}
-                  icon={
+                  className = "error"
+                  disableRipple = { true }
+                  icon = {
                      <TransactionDeletion
-                        index={params.row.index}
-                        transaction={params.row}
+                        index = { params.row.index }
+                        transaction = { params.row }
                      />
                   }
-                  key={`delete-${params.row.index}`}
-                  label="Delete"
-                  sx={{ color: "error.main", pb: 1.5 }}
+                  key = { `delete-${params.row.index}` }
+                  label = "Delete"
+                  sx = { { color: "error.main" } }
                />
             )
          ]
@@ -317,7 +324,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    const noResultsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
-            sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" }}
+            sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
          >
             No available transactions
          </Box>
@@ -325,76 +332,93 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    }, []);
 
    return (
-      <>
-         <DataGrid
-            checkboxSelection={true}
-            columns={columns}
-            density="compact"
-            disableAutosize={true}
-            disableColumnResize={true}
-            disableRowSelectionOnClick={true}
-            filterModel={filterModel}
-            getRowId={(row) => row.transaction_id || ""}
-            getRowClassName={
-               (params) =>
-                  params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
+      <DataGrid
+         checkboxSelection = { true }
+         columns = { columns }
+         density = "standard"
+         disableColumnResize = { true }
+         disableRowSelectionOnClick = { true }
+         getRowClassName = {
+            (params) =>
+               params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
+         }
+         getRowId = { (row) => row.transaction_id || "" }
+         initialState = {
+            {
+               pagination: { paginationModel: { pageSize: 20 } }
             }
-            initialState={
-               {
-                  pagination: { paginationModel: { pageSize: 20 } }
-               }
+         }
+         localeText = {
+            {
+               footerRowSelected: () => (
+                  <Stack
+                     alignItems = "center"
+                     direction = "row"
+                     justifyContent = "center"
+                     spacing = { 2 }
+                     sx = { { pl: 0.2, visibility: "visible" } }
+                  >
+                     <BulkTransactionDeletion
+                        selectedRows = { selectedRows as any }
+                     />
+                  </Stack>
+               )
             }
-            pageSizeOptions={[10, 20, 50, 100]}
-            rows={rows}
-            slotProps={
-               {
-                  filterPanel: {
-                     filterFormProps: {
-                        logicOperatorInputProps: {
+         }
+         onRowSelectionModelChange = { updateSelectedRows }
+         pageSizeOptions = { [10, 20, 50, 100] }
+         rows = { rows }
+         slotProps = {
+            {
+               columnMenu: {
+                  slotProps: {
+                     baseIconButton: {
+                        disableRipple: true
+                     }
+                  }
+               },
+               baseCheckbox: {
+                  disableRipple: true
+               },
+               filterPanel: {
+                  filterFormProps: {
+                     logicOperatorInputProps: {
+                        variant: "outlined",
+                        size: "small"
+                     },
+                     columnInputProps: {
+                        variant: "outlined",
+                        size: "small",
+                        sx: { mt: "auto" }
+                     },
+                     operatorInputProps: {
+                        variant: "outlined",
+                        size: "small",
+                        sx: { mt: "auto" }
+                     },
+                     valueInputProps: {
+                        InputComponentProps: {
                            variant: "outlined",
                            size: "small"
-                        },
-                        columnInputProps: {
-                           variant: "outlined",
-                           size: "small",
-                           sx: { mt: "auto" }
-                        },
-                        operatorInputProps: {
-                           variant: "outlined",
-                           size: "small",
-                           sx: { mt: "auto" }
-                        },
-                        valueInputProps: {
-                           InputComponentProps: {
-                              variant: "outlined",
-                              size: "small"
-                           }
                         }
                      }
                   }
                }
             }
-            onRowSelectionModelChange={updateSelectedRows}
-            localeText={{
-               footerRowSelected: () => (
-                  <Stack
-                     direction="row"
-                     justifyContent="center"
-                     alignItems="center"
-                     spacing={2}
-                     sx = {{ pl: 0.5 }}
-                  >
-                     <BulkTransactionDeletion
-                        selectedRows={selectedRows}
-                     />
-                  </Stack>
-               ),
-            }}
-            slots={{
+         }
+         slots = {
+            {
                noRowsOverlay: () => noResultsContainer,
-               noResultsOverlay: () => noResultsContainer,
-            }}
-         />
-      </>
+               noResultsOverlay: () => noResultsContainer
+            }
+         }
+         sx = {
+            {
+               "&::-webkit-scrollbar": {
+                  height: "12.4em !important"
+               }
+            }
+         }
+      />
    );
 }

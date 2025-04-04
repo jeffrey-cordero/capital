@@ -51,7 +51,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
-   
+
    // Format the transaction IDs as an array based on the request body or the request params
    const transactionIds: string[] = req.body.transactionIds || [req.params.id];
    return submitServiceRequest(res, async() => transactionsService.deleteTransactions(user_id, transactionIds));

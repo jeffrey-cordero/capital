@@ -1,12 +1,12 @@
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { type Transaction } from "capital/transactions";
-import { useCallback, type Ref } from "react";
+import { type RefObject, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
 import { deleteTransaction, deleteTransactions } from "@/redux/slices/transactions";
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
 
 /**
  * Props for the TransactionDeletion component.
@@ -57,24 +57,23 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
 
    return (
       <Confirmation
+         fontSize = "1rem"
          message = { message }
          onConfirmation = { onSubmit }
-         size = "sm"
          type = "icon"
       />
    );
 }
-
 
 /**
  * Props for the BulkTransactionDeletion component.
  *
  * @interface BulkTransactionDeletionProps
  * @extends {TransactionDeletionProps} - Inherits the props from the TransactionDeletion component
- * @property {Ref<GridRowSelectionModel>} selectedRows - The selected rows reference.
+ * @property {RefObject<GridRowSelectionModel>} selectedRows - The selected rows reference.
  */
 interface BulkTransactionDeletionProps {
-   selectedRows: Ref<GridRowSelectionModel>;
+   selectedRows: RefObject<GridRowSelectionModel>;
 }
 
 /**
@@ -86,13 +85,11 @@ interface BulkTransactionDeletionProps {
 export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletionProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
 
-   const onSubmit = useCallback(async () => {
-      // @ts-ignore
-      const transactionIds = selectedRows?.current as string[];
-      
+   const onSubmit = useCallback(async() => {
+      const transactionIds: string[] = selectedRows.current as string[];
+
       try {
-         const result = await sendApiRequest<number>(`dashboard/transactions`, "DELETE", { transactionIds }, dispatch, navigate);
-         console.log(result);
+         const result = await sendApiRequest<number>("dashboard/transactions/bulk", "DELETE", { transactionIds }, dispatch, navigate);
 
          if (result === 204) {
             dispatch(deleteTransactions({ transactionIds }));
@@ -100,14 +97,13 @@ export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletio
       } catch (error) {
          console.error("Failed to delete transactions:", error);
       }
-   }, [selectedRows]);
-
+   }, [selectedRows, dispatch, navigate]);
 
    return (
       <Confirmation
+         fontSize = "1rem"
          message = { bulkMessage }
          onConfirmation = { onSubmit }
-         size = "sm"
          type = "icon"
       />
    );

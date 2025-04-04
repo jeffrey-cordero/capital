@@ -21,29 +21,40 @@ export const tables = {
             "--DataGrid-overlayHeight": "300px",
             overflow: "clip",
             borderColor: theme.palette.mode === "dark" ? "#333B4D" : "#E0E0E0",
-            borderWidth: "1.5px",
+            borderWidth: "1.9px",
             [`& .${gridClasses.columnHeader}`]: {
                [`& .${gridClasses.columnHeaderTitle}`]: {
-                  fontWeight: "600",
+                  fontWeight: "600"
                },
                [`& .${gridClasses.columnHeaderCheckbox}`]: {
                   border: 0
                },
-               backgroundColor: theme.palette.mode === "dark" ? "#333B4D" : "#F5F6FA",
+               backgroundColor: theme.palette.mode === "dark" ? "#282A36" : "#F5F6FA",
                outline: "none !important",
-               border: 0
+               border: "0 !important"
+            },
+            [`& .${gridClasses.iconSeparator}`]: {
+               display: "none"
             },
             [`& .${gridClasses.cell}`]: {
                outline: "none !important"
             },
             [`& .${checkboxClasses.root}`]: {
-               padding: theme.spacing(0.5),
                "& > svg": {
-                  fontSize: "1rem"
+                  fontSize: "1.2rem"
                }
             },
             [`& .${tablePaginationClasses.root}`]: {
                marginRight: theme.spacing(1),
+               display: "flex",
+               flexWrap: "wrap",
+               justifyContent: "flex-end",
+               [`& .${tablePaginationClasses.selectLabel}`]: {
+                  display: "block !important",
+               },
+               [`& .${tablePaginationClasses.select}`]: {
+                  display: "inline-flex !important",
+               },
                "& .MuiIconButton-root": {
                   maxHeight: 32,
                   maxWidth: 32,

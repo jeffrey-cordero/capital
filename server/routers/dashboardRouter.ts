@@ -101,14 +101,8 @@ dashboardRouter.put("/transactions/:id", transactionsController.PUT);
 
 /**
  * DELETE /dashboard/transactions/:id
- *    req.params.id: Transaction ID
+ *    req.params.id: Transaction ID || req.body: { transactionIds: string[] }
  */
 dashboardRouter.delete("/transactions/:id", transactionsController.DELETE);
-
-/**
- * DELETE /dashboard/transactions/
- *    req.body: { transactionIds: string[] }
- */
-dashboardRouter.delete("/transactions", transactionsController.DELETE);
 
 export default dashboardRouter;
