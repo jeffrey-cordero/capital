@@ -222,8 +222,8 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                         />
                         <Controller
                            control = { control }
-                           name = "type"
                            defaultValue = "Checking"
+                           name = "type"
                            render = {
                               ({ field }) => (
                                  <FormControl
@@ -239,8 +239,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                     <Select
                                        { ...field }
                                        label = "Type"
-                                       variant = "outlined"
-                                       value = { field.value || "" }
                                        slotProps = {
                                           {
                                              input: {
@@ -248,6 +246,8 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                              }
                                           }
                                        }
+                                       value = { field.value || "" }
+                                       variant = "outlined"
                                     >
                                        {
                                           accountTypes.map((key) => (

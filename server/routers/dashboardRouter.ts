@@ -105,4 +105,10 @@ dashboardRouter.put("/transactions/:id", transactionsController.PUT);
  */
 dashboardRouter.delete("/transactions/:id", transactionsController.DELETE);
 
+/**
+ * DELETE /dashboard/transactions/
+ *    req.body: { transactionIds: string[] }
+ */
+dashboardRouter.delete("/transactions", transactionsController.DELETE);
+
 export default dashboardRouter;

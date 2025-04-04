@@ -117,20 +117,20 @@ export async function update(user_id: string, transaction_id: string, updates: P
 }
 
 /**
- * Deletes a transaction for a specific user.
+ * Deletes a list of transactions for a specific user.
  *
  * @param {string} user_id - The user ID (for authorization)
- * @param {string} transaction_id - The transaction ID to delete
- * @returns {Promise<boolean>} True if the transaction was deleted, false otherwise
+ * @param {string[]} transactionIds - The transaction IDs to delete
+ * @returns {Promise<boolean>} True if the transactions were deleted, false otherwise
  */
-export async function deleteTransaction(user_id: string, transaction_id: string): Promise<boolean> {
+export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<boolean> {
    const removal = `
       DELETE FROM transactions
       WHERE user_id = $1
-      AND transaction_id = $2
+      AND transaction_id = ANY($2)
       RETURNING transaction_id;
    `;
-   const result = await query(removal, [user_id, transaction_id]) as { transaction_id: string }[];
+   const result = await query(removal, [user_id, transactionIds]) as { transaction_id: string }[];
 
    return result.length > 0;
 }

@@ -20,14 +20,21 @@ export const tables = {
          root: ({ theme }: { theme: any }) => ({
             "--DataGrid-overlayHeight": "300px",
             overflow: "clip",
-            borderColor: (theme.vars || theme).palette.divider,
+            borderColor: theme.palette.mode === "dark" ? "#333B4D" : "#E0E0E0",
             borderWidth: "1.5px",
-            backgroundColor: (theme.vars || theme).palette.background.default,
             [`& .${gridClasses.columnHeader}`]: {
-               backgroundColor: (theme.vars || theme).palette.background.paper
+               [`& .${gridClasses.columnHeaderTitle}`]: {
+                  fontWeight: "600",
+               },
+               [`& .${gridClasses.columnHeaderCheckbox}`]: {
+                  border: 0
+               },
+               backgroundColor: theme.palette.mode === "dark" ? "#333B4D" : "#F5F6FA",
+               outline: "none !important",
+               border: 0
             },
-            [`& .${gridClasses.footerContainer}`]: {
-               backgroundColor: (theme.vars || theme).palette.background.paper
+            [`& .${gridClasses.cell}`]: {
+               outline: "none !important"
             },
             [`& .${checkboxClasses.root}`]: {
                padding: theme.spacing(0.5),
@@ -65,7 +72,6 @@ export const tables = {
                paddingRight: 0
             }
          }),
-
          row: ({ theme }: { theme: any }) => ({
             "&:last-of-type": { borderBottom: `1px solid ${(theme.vars || theme).palette.divider}` },
             "&:hover": {
@@ -121,7 +127,7 @@ export const tables = {
          filterForm: ({ theme }: { theme: any }) => ({
             gap: theme.spacing(2),
             alignItems: "flex-end",
-            padding: 20
+            padding: "16px 12px"
          }),
          columnsManagementHeader: ({ theme }: { theme: any }) => ({
             paddingRight: theme.spacing(3),

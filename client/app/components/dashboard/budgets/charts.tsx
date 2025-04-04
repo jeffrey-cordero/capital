@@ -299,7 +299,7 @@ export function BudgetPieChart({ type }: { type: "Income" | "Expenses" }) {
  */
 export function BudgetTrends({ isCard }: { isCard: boolean }): React.ReactNode {
    const theme = useTheme();
-   
+
    const yearsData = useMemo(() => [
       {
          id: "income",

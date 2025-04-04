@@ -43,7 +43,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
 });
 
 /**
- * Handles DELETE requests for deleting an existing transaction.
+ * Handles DELETE requests for deleting an existing transaction(s).
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
@@ -51,7 +51,8 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
-   const transaction_id: string = req.params.id;
-
-   return submitServiceRequest(res, async() => transactionsService.deleteTransaction(user_id, transaction_id));
+   
+   // Format the transaction IDs as an array based on the request body or the request params
+   const transactionIds: string[] = req.body.transactionIds || [req.params.id];
+   return submitServiceRequest(res, async() => transactionsService.deleteTransactions(user_id, transactionIds));
 });

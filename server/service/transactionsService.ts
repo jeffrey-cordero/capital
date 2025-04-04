@@ -122,24 +122,25 @@ export async function updateTransaction(user_id: string, transaction_id: string,
 }
 
 /**
- * Deletes a transaction.
+ * Deletes a list of transactions.
  *
  * @param {string} user_id - User ID
- * @param {string} transaction_id - Transaction ID
+ * @param {string[]} transactionIds - Transaction IDs
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
-export async function deleteTransaction(user_id: string, transaction_id: string): Promise<ServerResponse> {
-   if (!transaction_id) {
-      return sendValidationErrors(null, "Invalid transaction fields",
-         { transaction_id: "Missing transaction ID" });
+export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
+   if (!transactionIds) {
+      return sendValidationErrors(null, "Invalid transaction fields", {
+         transactionIds: "Missing transaction IDs"
+      });
    }
 
-   // Delete the transaction
-   const result: boolean = await transactionsRepository.deleteTransaction(user_id, transaction_id);
+   // Delete the transaction(s)
+   const result: boolean = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {
-      return sendServiceResponse(404, "Transaction not found", undefined, {
-         transaction: "Transaction does not exist or does not belong to the user based on the provided ID"
+      return sendServiceResponse(404, "Transaction(s) not found", undefined, {
+         transaction: "Transaction(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }
 

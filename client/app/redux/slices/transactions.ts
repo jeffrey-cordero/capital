@@ -82,9 +82,20 @@ const transactionsSlice = createSlice({
          const { index } = action.payload;
 
          state.value = state.value.filter((_, i) => i !== index);
+      },
+      /**
+       * Removes a list of transactions from the transactions state based on their IDs for bulk deletion.
+       *
+       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+       * @param {PayloadAction<{ transactionIds: string[] }>} action - The dispatched action containing the IDs payload
+       */
+      deleteTransactions(state: WritableDraft<TransactionState>, action: PayloadAction<{ transactionIds: string[] }>) {
+         const set: Set<string> = new Set(action.payload.transactionIds);
+
+         state.value = state.value.filter((transaction) => !set.has(transaction.transaction_id || ""));
       }
    }
 });
 
-export const { setTransactions, addTransaction, updateTransaction, deleteTransaction } = transactionsSlice.actions;
+export const { setTransactions, addTransaction, updateTransaction, deleteTransaction, deleteTransactions } = transactionsSlice.actions;
 export default transactionsSlice.reducer;

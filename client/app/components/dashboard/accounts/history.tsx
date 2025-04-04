@@ -406,7 +406,7 @@ export default function AccountHistoryView({ account }: { account: Account }): R
       <Box>
          <Stack
             direction = "column"
-            sx = { { mt: 1, pt: 1, px: 1 } }
+            sx = { { pt: 1, px: 1 } }
          >
             <Graph
                average = { false }

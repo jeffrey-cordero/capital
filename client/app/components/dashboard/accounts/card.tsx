@@ -127,6 +127,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
          >
             <Card
                elevation = { 9 }
+
                sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
                variant = { undefined }
             >
@@ -136,6 +137,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   onClick = { openAccountModal }
                >
                   <Avatar
+                     id = { account.account_id }
                      onError = { handleImageError }
                      src = { getImageSource() }
                      sx = {
