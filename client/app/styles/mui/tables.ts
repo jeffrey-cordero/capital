@@ -48,16 +48,18 @@ export const tables = {
                marginRight: theme.spacing(1),
                display: "flex",
                flexWrap: "wrap",
+               alignItems: "center",
                justifyContent: "flex-end",
                [`& .${tablePaginationClasses.selectLabel}`]: {
-                  display: "block !important",
+                  display: "block !important"
                },
                [`& .${tablePaginationClasses.select}`]: {
-                  display: "inline-flex !important",
+                  display: "inline-flex !important"
                },
                "& .MuiIconButton-root": {
                   maxHeight: 32,
                   maxWidth: 32,
+                  backgroundColor: "none !important",
                   "& > svg": {
                      fontSize: "1rem"
                   }

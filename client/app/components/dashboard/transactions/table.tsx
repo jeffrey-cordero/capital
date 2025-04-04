@@ -1,8 +1,9 @@
-import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsisVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Chip,
+   IconButton,
    Stack,
    Tooltip,
    Typography
@@ -221,8 +222,9 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             case "budget": {
                // Match transactions within the budget period
                const [year, month] = transaction.date.split("T")[0].split("-");
+               const isValidType = transaction.amount >= 0 && identifier === "Income" || transaction.amount < 0 && identifier === "Expenses";
 
-               if (parseInt(year) === period.year && parseInt(month) === period.month) {
+               if (isValidType && parseInt(year) === period.year && parseInt(month) === period.month) {
                   acc.push(transaction);
                }
 
@@ -370,13 +372,6 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          rows = { rows }
          slotProps = {
             {
-               columnMenu: {
-                  slotProps: {
-                     baseIconButton: {
-                        disableRipple: true
-                     }
-                  }
-               },
                baseCheckbox: {
                   disableRipple: true
                },
@@ -410,13 +405,6 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             {
                noRowsOverlay: () => noResultsContainer,
                noResultsOverlay: () => noResultsContainer
-            }
-         }
-         sx = {
-            {
-               "&::-webkit-scrollbar": {
-                  height: "12.4em !important"
-               }
             }
          }
       />

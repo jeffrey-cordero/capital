@@ -10,7 +10,8 @@ import {
    OutlinedInput,
    Select,
    Stack,
-   TextField
+   TextField,
+   useTheme
 } from "@mui/material";
 import { type Account } from "capital/accounts";
 import { type BudgetType, type OrganizedBudgets } from "capital/budgets";
@@ -51,7 +52,7 @@ interface TransactionFormProps {
  * @returns {React.ReactNode} The TransactionForm component
  */
 export default function TransactionForm({ transaction, accountsMap, open, index, onClose }: TransactionFormProps): React.ReactNode {
-   const dispatch = useDispatch(), navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const updating = transaction !== undefined;
    const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
 
@@ -255,7 +256,12 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                              }
                                           }
                                        }
-                                       sx = { { "& .MuiOutlinedInput-input": { color: errors.date ? "red" : "inherit" } } }
+                                       sx = {
+                                          {
+                                             "& .MuiOutlinedInput-input": { color: errors.date ? "red" : "inherit" },
+                                             colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                          }
+                                       }
                                        type = "date"
                                        value = { field.value || "" }
                                     />
@@ -282,7 +288,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                     label = "Description"
                                     minRows = { 3 }
                                     multiline = { true }
-                                    placeholder = "Add details"
                                     variant = "outlined"
                                  />
                                  <FormHelperText>

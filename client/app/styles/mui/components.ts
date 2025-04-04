@@ -19,6 +19,13 @@ export const components: Components = {
          textSizeLarge: { padding: "12px 16px" }
       }
    },
+   MuiIconButton: {
+      defaultProps: {
+         disableRipple: true,
+         disableFocusRipple: true,
+         disableTouchRipple: true
+      }
+   },
    MuiOutlinedInput: {
       styleOverrides: {
          root: {

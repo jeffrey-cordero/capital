@@ -81,6 +81,29 @@ export default function Budgets(): React.ReactNode {
       }
    }, [editState.displayWarning]);
 
+   // Calculate the total budget for the current month
+   const transactions = useSelector((state: RootState) => state.transactions.value);
+
+   const allocations = useMemo(() => {
+      return transactions.reduce((acc, transaction) => {
+         const [year, month] = transaction.date.split("T")[0].split("-");
+         const periodKey: string = `${month}-${year}`;
+
+         if (!acc[periodKey]) {
+            acc[periodKey] = { Income: 0, Expenses: 0 };
+         }
+
+         if (!acc[periodKey][transaction.budget_category_id || ""]) {
+            acc[periodKey][transaction.budget_category_id || ""] = 0;
+         }
+
+         const amount = Math.abs(transaction.amount);
+         acc[periodKey][transaction.budget_category_id || ""] += amount;
+         acc[periodKey][transaction.amount >= 0 ? "Income" : "Expenses"] += amount;
+         return acc;
+      }, {} as Record<string, Record<string, number>>);
+   }, [transactions, period]);
+
    return (
       <Box>
          <Stack
@@ -116,10 +139,12 @@ export default function Budgets(): React.ReactNode {
             sx = { { mt: 2 } }
          >
             <Budget
+               allocations = { allocations }
                onEditClick = { () => openModal("Income") }
                type = "Income"
             />
             <Budget
+               allocations = { allocations }
                onEditClick = { () => openModal("Expenses") }
                type = "Expenses"
             />
