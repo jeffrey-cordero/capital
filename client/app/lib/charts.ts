@@ -1,5 +1,4 @@
 import type { Theme } from "@mui/material";
-import type { OrganizedBudget } from "capital/budgets";
 
 /**
  * Calculate the percentage change between current and initial values
@@ -12,25 +11,6 @@ export function calculatePercentageChange(current: number, initial: number): num
    if (initial === 0) return 0;
 
    return ((current - initial) / Math.abs(initial)) * 100;
-}
-
-/**
- * Calculate the totals for the budget
- *
- * @param {OrganizedBudget} budget - The budget to calculate the totals for
- * @returns {Object} The totals for the budget
- */
-export function calculateBudgetTotals(budget: OrganizedBudget): { mainGoal: number, categoryGoals: number } {
-   // Safely calculate the main goal amount with fallback to zero
-   const mainGoal = Number(budget.goals[budget.goalIndex]?.goal || 0);
-
-   // Sum up all category goals for the most recent month/year
-   const categoryGoals = budget.categories.reduce((acc, category) => {
-      const goalValue = Number(category.goals[category.goalIndex]?.goal || 0);
-      return acc + goalValue;
-   }, 0);
-
-   return { mainGoal, categoryGoals };
 }
 
 /**

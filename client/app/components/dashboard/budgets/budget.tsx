@@ -8,7 +8,7 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import { type BudgetGoal, type BudgetPeriod, type OrganizedBudget, type OrganizedBudgets } from "capital/budgets";
+import { type BudgetGoal, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo } from "react";
 import { useSelector } from "react-redux";
@@ -23,8 +23,8 @@ import type { RootState } from "@/redux/store";
  * @property {string} budget_category_id - The id of the category
  * @property {string} name - The name of the category
  * @property {BudgetGoal[]} goals - The goals for the category
- * @property {string} periodKey - The period key
- * @property {Record<string, Record<string, number>>} allocations - The allocations for each type (Income or Expenses) and individual categories based on period
+ * @property {string} period - The period
+ * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
  */
 interface CategoryItemProps {
    budget_category_id: string;
@@ -34,7 +34,7 @@ interface CategoryItemProps {
    type: "Income" | "Expenses";
    onEditClick?: () => void;
    isMainCategory?: boolean;
-   periodKey: string;
+   period: string;
    allocations: Record<string, Record<string, number>>;
 }
 
@@ -44,10 +44,10 @@ interface CategoryItemProps {
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
  */
-const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, periodKey }: CategoryItemProps) {
+const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, period }: CategoryItemProps) {
    const theme = useTheme();
    const goal = goals[goalIndex].goal;
-   const current = allocations[periodKey][isMainCategory ? type : budget_category_id] || 0;
+   const current = allocations[period]?.[isMainCategory ? type : budget_category_id] || 0;
    const progress = Math.min((current / goal) * 100, 100);
    const color = type === "Income" ? "success" : "error";
 
@@ -107,8 +107,8 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
  */
 const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations }: BudgetProps): React.ReactNode {
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
-   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
-   const periodKey: string = `${period.month.toString().padStart(2, "0")}-${period.year}`;
+   const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
+   const period: string = `${year}-${month.toString().padStart(2, "0")}`;
 
    return (
       <Stack
@@ -118,7 +118,6 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
             sx = { { position: "relative", width: "100%", mx: "auto", mb: 2.5 } }
          >
             <CategoryItem
-               periodKey = { periodKey }
                allocations = { allocations }
                budget_category_id = { budget.budget_category_id }
                goalIndex = { budget.goalIndex }
@@ -126,6 +125,7 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
                isMainCategory = { true }
                name = { type }
                onEditClick = { onEditClick }
+               period = { period }
                type = { type }
             />
          </Box>
@@ -153,12 +153,12 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
                         }
                      >
                         <CategoryItem
-                           periodKey = { periodKey }
                            allocations = { allocations }
                            budget_category_id = { category.budget_category_id }
                            goalIndex = { category.goalIndex }
                            goals = { category.goals }
                            name = { String(category.name) }
+                           period = { period }
                            type = { type }
                         />
                      </motion.div>
@@ -176,7 +176,7 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
  * @interface BudgetProps
  * @property {string} type - The type of budget
  * @property {() => void} onEditClick - The function to call when the edit button is clicked on main categories
- * @property {Record<string, Record<string, number>>} allocations - The allocations for each type (Income or Expenses) and individual categories based on period
+ * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
  */
 interface BudgetProps {
    type: "Income" | "Expenses";

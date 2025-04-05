@@ -29,11 +29,22 @@ type EditState = {
 };
 
 /**
+ * Define the props for the Budgets component
+ *
+ * @interface BudgetsProps
+ * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ */
+interface BudgetsProps {
+   allocations: Record<string, Record<string, number>>;
+}
+
+/**
  * The Budgets component to display the budgets
  *
+ * @param {BudgetsProps} props - The props for the Budgets component
  * @returns {React.ReactNode} The Budgets component
  */
-export default function Budgets(): React.ReactNode {
+export default function Budgets({ allocations }: BudgetsProps): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
@@ -80,29 +91,6 @@ export default function Budgets(): React.ReactNode {
          setEditState((prev) => ({ ...prev, displayWarning: false }));
       }
    }, [editState.displayWarning]);
-
-   // Calculate the total budget for the current month
-   const transactions = useSelector((state: RootState) => state.transactions.value);
-
-   const allocations = useMemo(() => {
-      return transactions.reduce((acc, transaction) => {
-         const [year, month] = transaction.date.split("T")[0].split("-");
-         const periodKey: string = `${month}-${year}`;
-
-         if (!acc[periodKey]) {
-            acc[periodKey] = { Income: 0, Expenses: 0 };
-         }
-
-         if (!acc[periodKey][transaction.budget_category_id || ""]) {
-            acc[periodKey][transaction.budget_category_id || ""] = 0;
-         }
-
-         const amount = Math.abs(transaction.amount);
-         acc[periodKey][transaction.budget_category_id || ""] += amount;
-         acc[periodKey][transaction.amount >= 0 ? "Income" : "Expenses"] += amount;
-         return acc;
-      }, {} as Record<string, Record<string, number>>);
-   }, [transactions, period]);
 
    return (
       <Box>

@@ -1,9 +1,8 @@
-import { faEllipsisVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Chip,
-   IconButton,
    Stack,
    Tooltip,
    Typography
