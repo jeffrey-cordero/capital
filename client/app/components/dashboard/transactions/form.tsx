@@ -125,7 +125,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       return Object.values(budgets.Expenses.categories || []);
    }, [budgets.Expenses]);
 
-   const onSubmit = async(data: FieldValues) => {
+   const onSubmit = async (data: FieldValues) => {
+      console.log(data);
       try {
          // Validate the form data against the transaction schema
          const fields = transactionSchema.safeParse(data);
@@ -187,86 +188,86 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
 
    return (
       <Modal
-         displayWarning = { Object.keys(dirtyFields).length > 0 }
-         onClose = { onClose }
-         open = { open }
-         sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, p: { xs: 2, sm: 3 } } }
+         displayWarning={Object.keys(dirtyFields).length > 0}
+         onClose={onClose}
+         open={open}
+         sx={{ width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, p: { xs: 2, sm: 3 } }}
       >
-         <ModalSection title = "Transaction">
-            <Box sx = { { mt: 2 } }>
-               <form onSubmit = { handleSubmit(onSubmit) }>
+         <ModalSection title="Transaction">
+            <Box sx={{ mt: 2 }}>
+               <form onSubmit={handleSubmit(onSubmit)}>
                   <Stack
-                     direction = "column"
-                     spacing = { 1 }
+                     direction="column"
+                     spacing={1}
                   >
                      <Stack
-                        direction = { { xs: "column", sm: "row" } }
-                        spacing = { 1.5 }
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1.5}
                      >
                         <Controller
-                           control = { control }
-                           name = "amount"
-                           render = {
+                           control={control}
+                           name="date"
+                           render={
                               ({ field }) => (
                                  <FormControl
-                                    error = { Boolean(errors.amount) }
-                                    fullWidth = { true }
-                                 >
-                                    <InputLabel
-                                       htmlFor = "amount"
-                                       variant = "outlined"
-                                    >
-                                       Amount
-                                    </InputLabel>
-                                    <OutlinedInput
-                                       { ...field }
-                                       autoComplete = "off"
-                                       id = "amount"
-                                       inputProps = { { step: 0.01 } }
-                                       label = "Amount"
-                                       type = "number"
-                                       value = { field.value || "" }
-                                    />
-                                    <FormHelperText>
-                                       { errors.amount?.message }
-                                    </FormHelperText>
-                                 </FormControl>
-                              )
-                           }
-                        />
-                        <Controller
-                           control = { control }
-                           name = "date"
-                           render = {
-                              ({ field }) => (
-                                 <FormControl
-                                    error = { Boolean(errors.date) }
-                                    fullWidth = { true }
+                                    error={Boolean(errors.date)}
+                                    fullWidth={true}
                                  >
                                     <TextField
-                                       { ...field }
-                                       error = { Boolean(errors.date) }
-                                       id = "date"
-                                       label = "Date"
-                                       size = "medium"
-                                       slotProps = {
+                                       {...field}
+                                       error={Boolean(errors.date)}
+                                       id="date"
+                                       label="Date"
+                                       size="medium"
+                                       slotProps={
                                           {
                                              inputLabel: {
                                                 shrink: true
                                              }
                                           }
                                        }
-                                       sx = {
+                                       sx={
                                           {
                                              "& .MuiOutlinedInput-input": { color: errors.date ? "red" : "inherit" },
                                              colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
                                           }
                                        }
-                                       type = "date"
-                                       value = { field.value || "" }
+                                       type="date"
+                                       value={field.value || ""}
                                     />
                                     <FormHelperText>
-                                       { errors.date?.message }
+                                       {errors.date?.message}
+                                    </FormHelperText>
+                                 </FormControl>
+                              )
+                           }
+                        />
+                        <Controller
+                           control={control}
+                           name="amount"
+                           render={
+                              ({ field }) => (
+                                 <FormControl
+                                    error={Boolean(errors.amount)}
+                                    fullWidth={true}
+                                 >
+                                    <InputLabel
+                                       htmlFor="amount"
+                                       variant="outlined"
+                                    >
+                                       Amount
+                                    </InputLabel>
+                                    <OutlinedInput
+                                       {...field}
+                                       autoComplete="off"
+                                       id="amount"
+                                       inputProps={{ step: 0.01 }}
+                                       label="Amount"
+                                       type="number"
+                                       value={field.value || ""}
+                                    />
+                                    <FormHelperText>
+                                       {errors.amount?.message}
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -274,154 +275,154 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                         />
                      </Stack>
                      <Controller
-                        control = { control }
-                        name = "description"
-                        render = {
+                        control={control}
+                        name="description"
+                        render={
                            ({ field }) => (
                               <FormControl
-                                 error = { Boolean(errors.description) }
-                                 fullWidth = { true }
+                                 error={Boolean(errors.description)}
+                                 fullWidth={true}
                               >
                                  <TextField
-                                    { ...field }
-                                    id = "description"
-                                    label = "Description"
-                                    minRows = { 3 }
-                                    multiline = { true }
-                                    variant = "outlined"
+                                    {...field}
+                                    id="description"
+                                    label="Description"
+                                    minRows={3}
+                                    multiline={true}
+                                    variant="outlined"
                                  />
                                  <FormHelperText>
-                                    { errors.description?.message }
+                                    {errors.description?.message}
                                  </FormHelperText>
                               </FormControl>
                            )
                         }
                      />
                      <Stack
-                        direction = { { xs: "column", sm: "row" } }
-                        spacing = { 2 }
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
                      >
                         <Controller
-                           control = { control }
-                           name = "account_id"
-                           render = {
+                           control={control}
+                           name="account_id"
+                           render={
                               ({ field }) => (
                                  <FormControl
-                                    error = { Boolean(errors.account_id) }
-                                    fullWidth = { true }
+                                    error={Boolean(errors.account_id)}
+                                    fullWidth={true}
                                  >
                                     <InputLabel
-                                       htmlFor = "account_id"
-                                       variant = "outlined"
+                                       htmlFor="account_id"
+                                       variant="outlined"
                                     >
                                        Account
                                     </InputLabel>
                                     <Select
-                                       { ...field }
-                                       defaultValue = { budgets.Income.budget_category_id }
-                                       label = "Account"
-                                       slotProps = {
+                                       {...field}
+                                       defaultValue={budgets.Income.budget_category_id}
+                                       label="Account"
+                                       slotProps={
                                           {
                                              input: {
                                                 id: "account_id"
                                              }
                                           }
                                        }
-                                       value = { field.value || "" }
-                                       variant = "outlined"
+                                       value={field.value || ""}
+                                       variant="outlined"
                                     >
                                        <MenuItem
-                                          value = ""
+                                          value=""
                                        >
                                           -- Select Account --
                                        </MenuItem>
                                        {
                                           accountOptions.map((account) => (
                                              <MenuItem
-                                                key = { `account-option-${account.account_id}` }
-                                                value = { account.account_id }
+                                                key={`account-option-${account.account_id}`}
+                                                value={account.account_id}
                                              >
-                                                { account.name }
+                                                {account.name}
                                              </MenuItem>
                                           ))
                                        }
                                     </Select>
                                     <FormHelperText>
-                                       { errors.account_id?.message }
+                                       {errors.account_id?.message}
                                     </FormHelperText>
                                  </FormControl>
                               )
                            }
                         />
                         <Controller
-                           control = { control }
-                           defaultValue = { budgets.Income.budget_category_id }
-                           name = "budget_category_id"
-                           render = {
+                           control={control}
+                           defaultValue={budgets.Income.budget_category_id}
+                           name="budget_category_id"
+                           render={
                               ({ field }) => (
                                  <FormControl
-                                    error = { Boolean(errors.budget_category_id) }
-                                    fullWidth = { true }
+                                    error={Boolean(errors.budget_category_id)}
+                                    fullWidth={true}
                                  >
                                     <InputLabel
-                                       htmlFor = "budget_category_id"
-                                       variant = "outlined"
+                                       htmlFor="budget_category_id"
+                                       variant="outlined"
                                     >
                                        Category
                                     </InputLabel>
                                     <Select
-                                       { ...field }
-                                       label = "Category"
-                                       slotProps = {
+                                       {...field}
+                                       label="Category"
+                                       slotProps={
                                           {
                                              input: {
                                                 id: "budget_category_id"
                                              }
                                           }
                                        }
-                                       value = { field.value || "" }
+                                       value={field.value || ""}
                                     >
                                        <MenuItem
-                                          disabled = { disableIncome }
-                                          sx = { { fontWeight: "bold" } }
-                                          value = { budgets.Income.budget_category_id }
+                                          disabled={disableIncome}
+                                          sx={{ fontWeight: "bold" }}
+                                          value={budgets.Income.budget_category_id}
                                        >
                                           Income
                                        </MenuItem>
                                        {
                                           incomeCategoryOptions.map((category) => (
                                              <MenuItem
-                                                disabled = { disableIncome }
-                                                key = { `income-category-${category.budget_category_id}` }
-                                                sx = { { pl: 3.5 } }
-                                                value = { category.budget_category_id }
+                                                disabled={disableIncome}
+                                                key={`income-category-${category.budget_category_id}`}
+                                                sx={{ pl: 3.5 }}
+                                                value={category.budget_category_id}
                                              >
-                                                { category.name }
+                                                {category.name}
                                              </MenuItem>
                                           ))
                                        }
                                        <MenuItem
-                                          disabled = { disableExpenses }
-                                          sx = { { fontWeight: "bold" } }
-                                          value = { budgets.Expenses.budget_category_id }
+                                          disabled={disableExpenses}
+                                          sx={{ fontWeight: "bold" }}
+                                          value={budgets.Expenses.budget_category_id}
                                        >
                                           Expenses
                                        </MenuItem>
                                        {
                                           expenseCategoryOptions.map((category) => (
                                              <MenuItem
-                                                disabled = { disableExpenses }
-                                                key = { `expense-category-${category.budget_category_id}` }
-                                                sx = { { pl: 3.5 } }
-                                                value = { category.budget_category_id }
+                                                disabled={disableExpenses}
+                                                key={`expense-category-${category.budget_category_id}`}
+                                                sx={{ pl: 3.5 }}
+                                                value={category.budget_category_id}
                                              >
-                                                { category.name }
+                                                {category.name}
                                              </MenuItem>
                                           ))
                                        }
                                     </Select>
                                     <FormHelperText>
-                                       { errors.budget_category_id?.message }
+                                       {errors.budget_category_id?.message}
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -429,16 +430,16 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                         />
                      </Stack>
                      <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        disabled = { isSubmitting }
-                        fullWidth = { true }
-                        startIcon = { <FontAwesomeIcon icon = { updating ? faFloppyDisk : faPlus } /> }
-                        sx = { { mt: 2, py: 1.2 } }
-                        type = "submit"
-                        variant = "contained"
+                        className="btn-primary"
+                        color="primary"
+                        disabled={isSubmitting}
+                        fullWidth={true}
+                        startIcon={<FontAwesomeIcon icon={updating ? faFloppyDisk : faPlus} />}
+                        sx={{ mt: 2, py: 1.2 }}
+                        type="submit"
+                        variant="contained"
                      >
-                        { updating ? "Update" : "Create" }
+                        {updating ? "Update" : "Create"}
                      </Button>
                   </Stack>
                </form>

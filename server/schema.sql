@@ -16,33 +16,11 @@ CREATE TABLE accounts (
    name VARCHAR(30) NOT NULL,
    type account_type NOT NULL,
    image CHARACTER VARYING,
+   balance DECIMAL(18, 2) NOT NULL,
+   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
-
-CREATE TABLE accounts_history (
-   balance DECIMAL(18, 2) NOT NULL,
-   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),
-   account_id UUID NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
-   PRIMARY KEY(account_id, last_updated)
-);
-
-CREATE OR REPLACE FUNCTION prevent_last_history_record_delete()
-RETURNS TRIGGER AS $$
-BEGIN
-   -- Prevent deletion of the last history record
-   IF (SELECT COUNT(*) FROM accounts_history WHERE account_id = OLD.account_id) <= 1 THEN
-      RAISE EXCEPTION 'At least one history record must remain for account %', OLD.account_id;
-   END IF;
-
-   RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER prevent_last_history_record_delete_trigger
-BEFORE DELETE ON accounts_history
-FOR EACH ROW
-   EXECUTE FUNCTION prevent_last_history_record_delete();
 
 CREATE TYPE budget_type AS ENUM ('Income', 'Expenses');
 
@@ -60,13 +38,13 @@ CREATE TABLE budgets (
    year SMALLINT NOT NULL CHECK (year >= 1800),
    budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
    CHECK (
-         year <= CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT) 
-         AND 
-         (
-            month <= CAST(EXTRACT(MONTH FROM CURRENT_DATE) AS SMALLINT)
-            OR
-            year < CAST(EXTRACT(YEAR FROM CURRENT_DATE) AS SMALLINT) 
-         )
+      year <= CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT) 
+      AND 
+      (
+         month <= CAST(EXTRACT(MONTH FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
+         OR
+         year < CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT) 
+      )
    ),
    PRIMARY KEY(budget_category_id, year, month)
 );

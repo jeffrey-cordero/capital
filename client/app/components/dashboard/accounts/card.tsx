@@ -181,7 +181,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                         { account.type }
                      </Typography>
                      <Typography variant = "caption">
-                        { displayDate(account.history[0]?.last_updated) }
+                        { displayDate(account.last_updated) }
                      </Typography>
                      <AccountForm
                         account = { account }

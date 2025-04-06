@@ -32,10 +32,14 @@ export const budgetSchema = z.object({
       message: "Year must be a valid number"
    }).min(1800, {
       message: "Year must be at least 1800"
-   }).max(new Date().getUTCFullYear(), {
+   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })).getUTCFullYear(), {
       message: "Year must be not be in a future year"
    }))
-}).refine(data => data.month <= (new Date().getUTCMonth() + 1) || data.year < new Date().getUTCFullYear(), {
+}).refine(data => {
+   const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+
+   return data.month <= (today.getUTCMonth() + 1) || data.year < today.getUTCFullYear();
+}, {
    message: "Month must not be in a future month for the current year",
    path: ["month"]
 });

@@ -64,6 +64,11 @@ export const tables = {
                      fontSize: "1rem"
                   }
                }
+            },
+            [`& .${gridClasses.menuIconButton}, & .${gridClasses.iconButtonContainer} > button`]: {
+               transition: "none !important",
+               animation: "none !important",
+               backgroundColor: "transparent !important"
             }
          }),
          cell: ({ theme }: { theme: any }) => ({ borderTopColor: (theme.vars || theme).palette.divider }),

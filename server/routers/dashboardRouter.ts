@@ -32,14 +32,13 @@ dashboardRouter.post("/accounts", accountsController.POST);
 /**
  * PUT /dashboard/accounts/:id
  *    req.params.id: Account ID || "ordering"
- *    req.body: Partial<Account & AccountHistory> || { accountsIds: string[] }
+ *    req.body: Partial<Account> || { accountsIds: string[] }
  */
 dashboardRouter.put("/accounts/:id", accountsController.PUT);
 
 /**
  * DELETE /dashboard/accounts/:id
  *    req.params.id: Account ID
- *    req.body: { last_updated?: string }
  */
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 

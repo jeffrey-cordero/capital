@@ -32,7 +32,7 @@ import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display"
  * @property {string} defaultOption - The default option for the graph
  * @property {Record<string, { date: string, value: string }[]>} data - The data for the graph
  */
-interface GraphProps {
+export interface GraphProps {
    title: string;
    card: boolean;
    average: boolean;
@@ -173,8 +173,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    const fromValue = from === "" ? range[0]?.date : from; // default to oldest date
    const toValue = to === "" ? range[range.length - 1]?.date : to; // default to newest date
 
-   const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0]; // oldest date
-   const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0]; // newest date
+   const minDate = sorted.length > 0 ? normalizeDate(sorted[0].date).toISOString().split("T")[0] : ""; // oldest date
+   const maxDate = sorted.length > 0 ? normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0] : ""; // newest date
 
    return (
       <Card

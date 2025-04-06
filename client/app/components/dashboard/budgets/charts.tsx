@@ -198,13 +198,15 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                               { displayPercentage(category.percentage) }
                            </Typography>
                         </Stack>
-                        <LinearProgress
-                           aria-label = { `${category.label} progress` }
-                           color = { type === "Income" ? "success" : "error" }
-                           sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
-                           value = { category.percentage }
-                           variant = "determinate"
-                        />
+                        <Box sx =  { { px: index === 0 ? 0 : 1 } }>
+                           <LinearProgress
+                              aria-label = { `${category.label} progress` }
+                              color = { type === "Income" ? "success" : "error" }
+                              sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
+                              value = { category.percentage }
+                              variant = "determinate"
+                           />
+                        </Box>
                      </Stack>
                   </Stack>
                ))
@@ -265,11 +267,11 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
       // Additional data point for the main type if the sum of the category allocations is less than the total budget allocation
       const sum: number = data.reduce((acc, record) => acc + record.value, 0);
 
-      if (sum < total) {
+      if (sum === 0 || sum < total) {
          data.unshift({
             label: type,
             percentage: 100 * (Math.abs(sum - total) / base),
-            value: Math.abs(sum - total),
+            value: Math.max(Math.abs(sum - total), 0.000000000001), // Ensure non-zero value for empty budget periods
             color: `hsl(${hue}, ${saturation}%, ${60 - (budget.categories.length * 5)}%)`
          });
       }

@@ -6,22 +6,17 @@ import {
    CardContent,
    IconButton,
    Stack,
+   Tooltip,
    Typography,
    useTheme
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
-import { liabilities } from "capital/accounts";
-import {
-   useCallback,
-   useEffect,
-   useMemo,
-   useRef,
-   useState
-} from "react";
+import { type Account, liabilities } from "capital/accounts";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
-import { displayVolume, horizontalScroll } from "@/lib/display";
+import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
@@ -63,8 +58,10 @@ interface TrendProps {
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
+
+   // Hold references to the last valid year and the backup account balances for missing years
    const lastValidYear = useRef<number>(year);
-   const validYears = useRef<Record<number, number>>({ [year]: year });
+   const backupAccounts = useRef<Record<string, number>>({});
 
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
@@ -73,29 +70,47 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       setYear(prev => prev + (direction === "previous" ? -1 : 1));
    }, []);
 
+   const today = useMemo(() => getCurrentDate(), []);
+
+   const formatAccountStacks = useCallback((account: Account, balance: number, year: number) => {
+      const points: number[] = [].concat(...new Array(12).fill([balance]));
+
+      if (year === today.getUTCFullYear()) {
+         for (let i = today.getMonth() + 1; i < 12; i++) {
+            // Handle setting null for future months
+            points[i] = null as unknown as number;
+         }
+      }
+
+      return {
+         id: account.account_id || "",
+         label: account.name,
+         data: points,
+         stack: account.account_id || "",
+         color: liabilities.has(account.type) ? theme.palette.error.main : theme.palette.primary.main
+      };
+   }, [today, theme]);
+
    const trends = useMemo(() => {
       const empty = [].concat(...new Array(12).fill([0]));
-      const currentMonth = getCurrentDate().getUTCMonth() + 1;
+
+      // Store the propagating account balances and indices
+      const balances = accounts.reduce((acc, record, index) => {
+         acc[record.account_id || ""] = {
+            balance: Number(record.balance),
+            index: index
+         };
+
+         return acc;
+      }, {} as Record<string, { balance: number; index: number; }>);
+
       return transactions.reduce((acc, record) => {
-         const period: string = record.date.substring(0, 7);
          const year: number = Number(record.date.substring(0, 4));
          const month: number = Number(record.date.substring(5, 7));
 
-         // Store the balances, indices, and visited periods for the accounts
-         const balances = accounts.reduce((acc, record, index) => {
-            acc[record.account_id] = {
-               balance: Number(record.balance),
-               index: index,
-               periods: {}
-            };
-
-            return acc;
-         }, {} as Record<string, { balance: number; index: number; periods: Record<string, boolean> }>);
-
          if (!acc[year]) {
-            // Initialize the chart settings for the year
             acc[year] = {};
-            acc[year].budgets = [{
+            acc[year].budgets = type !== "budgets" ? [] : [{
                id: "Income",
                label: "Income",
                data: [...empty],
@@ -110,47 +125,71 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             }];
 
             // Format the default account data, where array is based on most recent balance
-            acc[year].accounts = accounts.map(account => ({
-               id: account.account_id,
-               label: account.name,
-               data: [].concat(...new Array(12).fill([balances[account.account_id].balance])),
-               stack: account.account_id,
-               color: liabilities.has(account.type) ? theme.palette.error.main : theme.palette.primary.main
-            }));
+            acc[year].accounts = type !== "accounts" ? [] : accounts.map(account => {
+               return formatAccountStacks(account, balances[account.account_id || ""].balance, year);
+            });
          }
 
-         // Increment the budget-based data
          const amount: number = Math.abs(record.amount);
-         acc[year].budgets[record.amount >= 0 ? 0 : 1].data[month - 1] += amount;
 
-         // Update the account-based data, if applicable
-         if (record.account_id) balances[record.account_id].balance += record.amount;
-         
-         if (record.account_id && month !== currentMonth) {
-            // Extend the most recent balance to the start of the year
-            for (let i = 0; i < month - 1; i++) {
-               console.log(i, balances[record.account_id].balance);
-               acc[year].accounts[balances[record.account_id].index].data[i] = balances[record.account_id].balance;
+         if (type === "budgets") {
+            acc[year].budgets[record.amount >= 0 ? 0 : 1].data[month - 1] += amount;
+         }
+
+         if (type === "accounts") {
+            if (record.account_id && balances[record.account_id] !== undefined) {
+               // Decrement as we are going back in time
+               balances[record.account_id].balance -= record.amount;
+
+               for (let i = 0; i < month - 1; i++) {
+                  // Propagate the new balance to the previous months
+                  acc[year].accounts[balances[record.account_id].index].data[i] = balances[record.account_id].balance;
+               }
             }
-
-            balances[record.account_id].periods[period] = true;
          }
 
          return acc;
       }, {} as Record<string, Record<string, ChartData[]>>);
-   }, [transactions, accounts, theme]);
+   }, [transactions, accounts, theme, type, today, formatAccountStacks]);
 
-   useEffect(() => {
-      if (year in trends) {
-         // Update the last valid year for account balances
-         lastValidYear.current = year;
-      }
+   const series = useMemo(() => {
+      if (type === "budgets") {
+         // Series will always be based on existing year
+         return trends[year]?.budgets || [];
+      } else {
+         if (year in trends) {
+            // Update the last valid year for account balances
+            lastValidYear.current = year;
+         } else if (!(year in backupAccounts.current)) {
+            // If the year is not in the trends, add it to the backupAccounts
+            backupAccounts.current[year] = lastValidYear.current;
+         }
 
-      if (!(year in validYears.current)) {
-         // Store the index to the next valid set of account balances
-         validYears.current[year] = lastValidYear.current;
+         // Series will be based on existing year or default data for last valid year
+         const backup = backupAccounts.current[year] || lastValidYear.current;
+
+         if (Object.keys(trends).length > 0) {
+            return trends[year]?.accounts || trends[backup]?.accounts.map((account) => ({
+               ...account,
+               data: [].concat(...new Array(12).fill([account.data[0]]))
+            })) || [];
+         } else {
+            // Handle missing accounts / transactions
+            return accounts.map((account) => {
+               return formatAccountStacks(account, account.balance, year);
+            });
+         }
       }
-   }, [year, trends]);
+   }, [trends, year, type, accounts, formatAccountStacks]);
+
+   const netWorth = useMemo(() => {
+      return (type === "accounts" ? series : []).reduce((acc, record) => {
+         // Account for assets and liabilities
+         const multiplier = record.color === theme.palette.error.main ? -1 : 1;
+
+         return acc + (multiplier * (year === today.getFullYear() ? record.data[today.getMonth()] : record.data[11]));
+      }, 0);
+   }, [series, year, type, today, theme.palette.error.main]);
 
    // Memoize the essential chart-related values
    const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
@@ -168,17 +207,12 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          height = { isCard ? 300 : 500 }
          margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
          resolveSizeBeforeRender = { true }
-         series = { 
-            // Account values should be the same as the next year for missing years
-            type === "accounts" ? (trends[year] || trends[validYears.current[year] || lastValidYear.current]).accounts || []
-            // Missing budget years should be empty
-            : trends[year]?.budgets || []
-         }
+         series = { series }
          slotProps = { { legend: { hidden: true } } }
          xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
          yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
       />
-   ), [colorPalette, isCard, yearAbbreviations, trends, year, type]);
+   ), [colorPalette, isCard, yearAbbreviations, series]);
 
    return (
       <Box sx = { { position: "relative" } }>
@@ -211,12 +245,32 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         }
                      }
                   >
-                     <Typography
-                        component = "p"
-                        variant = "h6"
-                     >
-                        { "$0.00" }
-                     </Typography>
+                     {
+                        type === "accounts" && (
+                           <Tooltip
+                              placement = { "top" }
+                              title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.)." }
+                           >
+                              <Typography
+                                 component = "p"
+                                 variant = "h6"
+                              >
+                                 { displayCurrency(netWorth) }
+                              </Typography>
+                           </Tooltip>
+                        )
+                     }
+                     {
+                        type === "budgets" && (
+                           <Typography
+                              component = "p"
+                              sx = { { fontWeight: "600", pb: { xs: 0, lg: 0.7 } } }
+                              variant = "subtitle2"
+                           >
+                              Income vs. Expenses
+                           </Typography>
+                        )
+                     }
                   </Stack>
                </Stack>
                { chart }

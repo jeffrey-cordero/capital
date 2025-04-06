@@ -18,12 +18,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import AccountDeletion from "@/components/dashboard/accounts/delete";
-import AccountHistory from "@/components/dashboard/accounts/history";
 import AccountImage from "@/components/dashboard/accounts/image";
 import Transactions from "@/components/dashboard/transactions/transactions";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
-import { getCurrentDate } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
@@ -75,12 +73,10 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
    // Handles form submission for both create and update operations
    const onSubmit = async(data: FieldValues) => {
-      if (updating && !account) return; // Invalid state, return without submitting
-
       const account_order: number = account?.account_order ?? accounts.length;
 
       try {
-         const fields = accountSchema.safeParse({ ...data, account_order });
+         const fields = accountSchema.safeParse({ ...data, account_order, last_updated: new Date().toISOString() });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -97,7 +93,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
             // Only proceed if there are actual changes
             if (Object.keys(updatedFields).length > 0) {
-               updatedFields.account_id = account.account_id;
+               updatedFields.last_updated = fields.data.last_updated;
 
                const result = await sendApiRequest<number>(
                   `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
@@ -106,40 +102,23 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                if (result === 204) {
                   // Update account for a valid response
                   dispatch(updateAccount({
-                     account: {
-                        ...account,
-                        ...updatedFields
-                     },
-                     history: updatedFields.balance ? {
-                        balance: updatedFields.balance,
-                        last_updated: getCurrentDate().toISOString().split("T")[0]
-                     } : undefined
+                     ...updatedFields,
+                     account_id: account.account_id
                   }));
+                  reset(updatedFields);
                }
             }
          } else {
-            // For new accounts, prepare creation data
-            const creation = {
-               name: fields.data.name,
-               balance: fields.data.balance,
-               type: fields.data.type,
-               image: fields.data.image || undefined,
-               account_order: accounts.length
-            };
-
             const result = await sendApiRequest<{ account_id: string }>(
-               "dashboard/accounts", "POST", creation, dispatch, navigate, setError
+               "dashboard/accounts", "POST", fields.data, dispatch, navigate, setError
             );
 
             if (typeof result === "object" && result?.account_id) {
                // Add new account for a valid response
                dispatch(addAccount({
-                  ...creation,
+                  ...fields.data,
                   account_id: result.account_id,
-                  history: [{
-                     balance: creation.balance,
-                     last_updated: new Date().toISOString()
-                  }]
+                  last_updated: new Date().toISOString()
                } as Account));
 
                onClose();
@@ -300,20 +279,11 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                </Box>
             </ModalSection>
             {
-               updating && (
-                  <ModalSection title = "Analytics">
-                     <AccountHistory
-                        account = { account }
-                     />
-                  </ModalSection>
-               )
-            }
-            {
                updating && account && (
                   <ModalSection title = "Transactions">
                      <Transactions
                         filter = "account"
-                        identifier = { account.name }
+                        identifier = { account.account_id }
                      />
                   </ModalSection>
                )

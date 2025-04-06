@@ -43,6 +43,7 @@ type TransactionRowModel = GridValidRowModel & Transaction & {
    category: string;
    type: BudgetType;
    index: number;
+   balance?: number;
 };
 
 /**
@@ -91,10 +92,10 @@ function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, st
 
    return (
       <Chip
-         color = { color }
-         label = { categoryName || categoryType }
-         size = "small"
-         variant = "filled"
+         color={color}
+         label={categoryName || categoryType}
+         size="small"
+         variant="filled"
       />
    );
 }
@@ -110,11 +111,36 @@ function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>)
 
    return (
       <Typography
-         color = { color }
-         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
-         variant = "caption"
+         color={color}
+         sx={{ fontWeight: "600", fontSize: "0.85rem" }}
+         variant="caption"
       >
          { displayCurrency(params.row.amount) }
+      </Typography>
+   );
+}
+
+/**
+ * Renders the balance for a given account following a transaction.
+ *
+ * @param {GridRenderCellParams<TransactionRowModel, number>} params - The parameters for the grid render cell.
+ * @returns {React.ReactNode} The rendered balance.
+ */
+function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>): React.ReactNode {
+   return (
+      <Typography
+         color="primary.default"
+         sx={{ fontWeight: "600", fontSize: "0.85rem" }}
+         variant="caption"
+      >
+         <Tooltip
+            placement="top-start"
+            title={`Previous: ${displayCurrency((params.row.balance || 0) - params.row.amount)}`}
+         >
+            <span>
+               {displayCurrency((params.row.balance || 0))}
+            </span>
+         </Tooltip>
       </Typography>
    );
 }
@@ -132,13 +158,13 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 
    return (
       <Typography
-         color = "primary"
-         noWrap = { true }
-         onClick = { openAccountModal }
-         sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" } }
-         variant = "caption"
+         color="primary"
+         noWrap={true}
+         onClick={openAccountModal}
+         sx={{ fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" }}
+         variant="caption"
       >
-         { params.row.account }
+         {params.row.account}
       </Typography>
    );
 }
@@ -152,10 +178,10 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
    return (
       <Typography
-         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
-         variant = "caption"
+         sx={{ fontWeight: "500", fontSize: "0.85rem" }}
+         variant="caption"
       >
-         { displayDate(params.row.date) }
+         {displayDate(params.row.date)}
       </Typography>
    );
 }
@@ -169,15 +195,15 @@ function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): 
 function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
    return (
       <Tooltip
-         placement = "top-start"
-         title = { params.row.description || "" }
+         placement="top-start"
+         title={params.row.description || ""}
       >
          <Typography
-            noWrap = { true }
-            sx = { { fontWeight: "500", fontSize: "0.85rem" } }
-            variant = "caption"
+            noWrap={true}
+            sx={{ fontWeight: "500", fontSize: "0.85rem" }}
+            variant="caption"
          >
-            { params.row.description }
+            {params.row.description}
          </Typography>
       </Tooltip>
    );
@@ -197,6 +223,12 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
 
    // Data grid rows
    const rows: TransactionRowModel[] = useMemo(() => {
+      const balances: Record<string, number> = Object.values(accountsMap).reduce((acc, account) => {
+         acc[account.account_id || ""] = Number(account.balance);
+
+         return acc;
+      }, {} as Record<string, number>);
+
       return transactions.reduce((acc, record, index) => {
          const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.amount >= 0 ? "Income" : "Expenses");
 
@@ -206,8 +238,13 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             id: record.transaction_id || "",
             account: accountsMap[record.account_id ?? ""]?.name || "",
             category: categoryInfo?.name || "",
+            balance: balances[record.account_id || ""] || undefined,
             type: categoryInfo?.type || (record.amount >= 0 ? "Income" : "Expenses")
          };
+
+         if (record.account_id && balances[record.account_id]) {
+            balances[record.account_id] -= record.amount;
+         }
 
          switch (filter) {
             case "account": {
@@ -250,7 +287,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          field: "description",
          headerName: "Description",
          flex: 1,
-         minWidth: 300,
+         minWidth: 250,
          renderCell: RenderDescription
       },
       {
@@ -276,42 +313,50 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          renderCell: RenderAmount
       },
       {
-         field: "actions",
+         field: "balance",
+         type: "number",
+         headerName: "Balance",
+         minWidth: 200,
+         filterable: false,
+         sortable: false,
+         renderCell: RenderBalance
+      },
+      {
+         field: "Actions",
          headerName: "",
          align: "center",
          minWidth: 120,
          sortable: false,
-         disableColumnMenu: true,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => [
             (
                <GridActionsCellItem
-                  className = "primary"
-                  disableRipple = { true }
-                  icon = {
+                  className="primary"
+                  disableRipple={true}
+                  icon={
                      <FontAwesomeIcon
-                        icon = { faPenToSquare }
-                        size = "sm"
+                        icon={faPenToSquare}
+                        size="sm"
                      />
                   }
-                  key = { `edit-${params.row.index}` }
-                  label = "Edit"
-                  onClick = { () => onEdit(params.row.index) }
-                  sx = { { color: "primary.main", pb: 0.8 } }
+                  key={`edit-${params.row.index}`}
+                  label="Edit"
+                  onClick={() => onEdit(params.row.index)}
+                  sx={{ color: "primary.main", pb: 0.8 }}
                />
             ),
             (
                <GridActionsCellItem
-                  className = "error"
-                  disableRipple = { true }
-                  icon = {
+                  className="error"
+                  disableRipple={true}
+                  icon={
                      <TransactionDeletion
-                        index = { params.row.index }
-                        transaction = { params.row }
+                        index={params.row.index}
+                        transaction={params.row}
                      />
                   }
-                  key = { `delete-${params.row.index}` }
-                  label = "Delete"
-                  sx = { { color: "error.main" } }
+                  key={`delete-${params.row.index}`}
+                  label="Delete"
+                  sx={{ color: "error.main" }}
                />
             )
          ]
@@ -325,7 +370,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    const noResultsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
-            sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
+            sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" }}
          >
             No available transactions
          </Box>
@@ -334,42 +379,43 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
 
    return (
       <DataGrid
-         checkboxSelection = { true }
-         columns = { columns }
-         density = "standard"
-         disableColumnResize = { true }
-         disableRowSelectionOnClick = { true }
-         getRowClassName = {
+         checkboxSelection={true}
+         columns={columns}
+         columnVisibilityModel={{ balance: filter === "account" }}
+         density="standard"
+         disableColumnResize={true}
+         disableRowSelectionOnClick={true}
+         getRowClassName={
             (params) =>
                params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
          }
-         getRowId = { (row) => row.transaction_id || "" }
-         initialState = {
+         getRowId={(row) => row.transaction_id || ""}
+         initialState={
             {
-               pagination: { paginationModel: { pageSize: 20 } }
+               pagination: { paginationModel: { pageSize: 25 } }
             }
          }
-         localeText = {
+         localeText={
             {
                footerRowSelected: () => (
                   <Stack
-                     alignItems = "center"
-                     direction = "row"
-                     justifyContent = "center"
-                     spacing = { 2 }
-                     sx = { { pl: 0.2, visibility: "visible" } }
+                     alignItems="center"
+                     direction="row"
+                     justifyContent="center"
+                     spacing={2}
+                     sx={{ pl: 0.2, visibility: "visible" }}
                   >
                      <BulkTransactionDeletion
-                        selectedRows = { selectedRows as any }
+                        selectedRows={selectedRows as any}
                      />
                   </Stack>
                )
             }
          }
-         onRowSelectionModelChange = { updateSelectedRows }
-         pageSizeOptions = { [10, 20, 50, 100] }
-         rows = { rows }
-         slotProps = {
+         onRowSelectionModelChange={updateSelectedRows}
+         pageSizeOptions={[10, 25, 50, 100]}
+         rows={rows}
+         slotProps={
             {
                baseCheckbox: {
                   disableRipple: true
@@ -400,7 +446,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                }
             }
          }
-         slots = {
+         slots={
             {
                noRowsOverlay: () => noResultsContainer,
                noResultsOverlay: () => noResultsContainer
