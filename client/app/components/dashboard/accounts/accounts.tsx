@@ -120,7 +120,10 @@ export default function Accounts(): React.ReactNode {
                               timeout = { 200 + index * 200 }
                               unmountOnExit = { true }
                            >
-                              <Grid size = { { xs: 12, sm: 6, md: 4, lg: 3 } } sx = { { minWidth: "min(343.5px, 100%)" } }>
+                              <Grid
+                                 size = { { xs: 12, sm: 6, md: 4, lg: 3 } }
+                                 sx = { { minWidth: "min(343.5px, 100%)" } }
+                              >
                                  <AccountCard account = { account } />
                               </Grid>
                            </Grow>

@@ -77,7 +77,6 @@ export async function updateDetails(
       }
    });
 
-
    // Skip query if no fields to update
    if (fields.length === 0) return true;
 

@@ -150,7 +150,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          return acc;
       }, {} as Record<string, Record<string, ChartData[]>>);
-   }, [transactions, accounts, theme, type, today, formatAccountStacks]);
+   }, [transactions, accounts, theme, type, formatAccountStacks]);
 
    const series = useMemo(() => {
       if (type === "budgets") {
