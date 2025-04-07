@@ -57,7 +57,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const accountsMap = useMemo(() => {
       return accounts.reduce((acc: Record<string, Account>, record) => {
-         acc[record.account_id] = record;
+         acc[record.account_id || ""] = record;
 
          return acc;
       }, {});

@@ -10,6 +10,9 @@ import { gray, green, red } from "@/styles/mui/colors";
 export const components: Components = {
    MuiButton: {
       styleOverrides: {
+         loadingIndicator: {
+            color: "white"
+         },
          root: { borderRadius: "10px", textTransform: "none" },
          sizeSmall: { padding: "6px 16px" },
          sizeMedium: { padding: "8px 20px" },

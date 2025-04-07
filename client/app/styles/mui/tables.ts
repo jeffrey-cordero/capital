@@ -20,8 +20,9 @@ export const tables = {
          root: ({ theme }: { theme: any }) => ({
             "--DataGrid-overlayHeight": "300px",
             overflow: "clip",
+            overflowY: "none",
             borderColor: theme.palette.mode === "dark" ? "#333B4D" : "#E0E0E0",
-            borderWidth: "1.9px",
+            borderWidth: "1px",
             [`& .${gridClasses.columnHeader}`]: {
                [`& .${gridClasses.columnHeaderTitle}`]: {
                   fontWeight: "600"
@@ -32,6 +33,10 @@ export const tables = {
                backgroundColor: theme.palette.mode === "dark" ? "#282A36" : "#F5F6FA",
                outline: "none !important",
                border: "0 !important"
+            },
+            [`& .${gridClasses.footerContainer}`]: {
+               border: "none",
+               backgroundColor: theme.palette.mode === "dark" ? "#282A36" : "#F5F6FA"
             },
             [`& .${gridClasses.iconSeparator}`]: {
                display: "none"
@@ -54,7 +59,8 @@ export const tables = {
                   display: "block !important"
                },
                [`& .${tablePaginationClasses.select}`]: {
-                  display: "inline-flex !important"
+                  display: "inline-flex !important",
+                  paddingTop: "3px"
                },
                "& .MuiIconButton-root": {
                   maxHeight: 32,

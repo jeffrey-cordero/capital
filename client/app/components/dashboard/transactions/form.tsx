@@ -72,6 +72,12 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       }
    });
 
+   // Setup minimum and maximum dates relative to user timezone
+   const [minDate, maxDate] = useMemo(() => [
+      new Date("1800-01-01").toISOString().split("T")[0],
+      new Date().toISOString().split("T")[0]
+   ], []);
+
    // Handle swapping between income and expenses based on current amount input
    const amount = watch("amount");
 
@@ -220,6 +226,10 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        size = "medium"
                                        slotProps = {
                                           {
+                                             htmlInput: {
+                                                min: minDate,
+                                                max: maxDate
+                                             },
                                              inputLabel: {
                                                 shrink: true
                                              }
@@ -227,7 +237,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        }
                                        sx = {
                                           {
-                                             "& .MuiOutlinedInput-input": { color: errors.date ? "red" : "inherit" },
                                              colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
                                           }
                                        }
@@ -235,7 +244,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        value = { field.value || "" }
                                     />
                                     <FormHelperText>
-                                       { errors.date?.message }
+                                       { errors.date?.message?.toString() }
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -266,7 +275,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        value = { field.value || "" }
                                     />
                                     <FormHelperText>
-                                       { errors.amount?.message }
+                                       { errors.amount?.message?.toString() }
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -284,6 +293,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                               >
                                  <TextField
                                     { ...field }
+                                    error = { Boolean(errors.description) }
                                     id = "description"
                                     label = "Description"
                                     minRows = { 3 }
@@ -291,7 +301,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                     variant = "outlined"
                                  />
                                  <FormHelperText>
-                                    { errors.description?.message }
+                                    { errors.description?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )
@@ -347,7 +357,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        }
                                     </Select>
                                     <FormHelperText>
-                                       { errors.account_id?.message }
+                                       { errors.account_id?.message?.toString() }
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -421,7 +431,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        }
                                     </Select>
                                     <FormHelperText>
-                                       { errors.budget_category_id?.message }
+                                       { errors.budget_category_id?.message?.toString() }
                                     </FormHelperText>
                                  </FormControl>
                               )
@@ -431,8 +441,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                      <Button
                         className = "btn-primary"
                         color = "primary"
-                        disabled = { isSubmitting }
                         fullWidth = { true }
+                        loading = { isSubmitting }
                         startIcon = { <FontAwesomeIcon icon = { updating ? faFloppyDisk : faPlus } /> }
                         sx = { { mt: 2, py: 1.2 } }
                         type = "submit"

@@ -1,7 +1,6 @@
 import { Account } from "capital/accounts";
-import { PoolClient } from "pg";
 
-import { FIRST_PARAM, query, transaction } from "@/lib/database";
+import { FIRST_PARAM, query } from "@/lib/database";
 
 /**
  * The fields that can be updated for an account

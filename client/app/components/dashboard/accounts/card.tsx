@@ -10,6 +10,7 @@ import {
    CardContent,
    Fab,
    Stack,
+   Tooltip,
    Typography,
    useTheme
 } from "@mui/material";
@@ -161,16 +162,16 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   <FontAwesomeIcon icon = { faGripVertical } />
                </Fab>
                <CardContent sx = { { p: 3, pt: 2 } }>
-                  <Typography
-                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
-                     variant = "h6"
-                  >
-                     { account.name }
-                  </Typography>
                   <Stack
                      direction = "column"
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
+                     <Typography
+                        sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
+                        variant = "h6"
+                     >
+                        { account.name }
+                     </Typography>
                      <Typography
                         sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "subtitle2"
@@ -180,9 +181,14 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      <Typography variant = "caption">
                         { account.type }
                      </Typography>
-                     <Typography variant = "caption">
-                        { displayDate(account.last_updated) }
-                     </Typography>
+                     <Tooltip
+                        placement = "top"
+                        title = "Last updated"
+                     >
+                        <Typography variant = "caption">
+                           { displayDate(account.last_updated) }
+                        </Typography>
+                     </Tooltip>
                      <AccountForm
                         account = { account }
                         onClose = { closeAccountModal }

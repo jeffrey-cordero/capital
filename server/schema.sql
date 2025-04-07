@@ -17,7 +17,7 @@ CREATE TABLE accounts (
    type account_type NOT NULL,
    image CHARACTER VARYING,
    balance DECIMAL(18, 2) NOT NULL,
-   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= CURRENT_DATE),
+   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date)),
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
