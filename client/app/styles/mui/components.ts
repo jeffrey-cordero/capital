@@ -11,7 +11,7 @@ export const components: Components = {
    MuiButton: {
       styleOverrides: {
          loadingIndicator: {
-            color: "white"
+            color: "hsl(210deg 98% 48%)"
          },
          root: { borderRadius: "10px", textTransform: "none" },
          sizeSmall: { padding: "6px 16px" },

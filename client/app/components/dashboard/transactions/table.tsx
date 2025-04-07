@@ -21,7 +21,8 @@ import {
    type GridRenderCellParams,
    type GridRowSelectionModel,
    type GridTreeNodeWithRender,
-   type GridValidRowModel
+   type GridValidRowModel,
+   type ValueOptions
 } from "@mui/x-data-grid";
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
@@ -37,6 +38,7 @@ import {
 import { useSelector } from "react-redux";
 
 import { BulkTransactionDeletion, TransactionDeletion } from "@/components/dashboard/transactions/delete";
+import { normalizeDate } from "@/lib/dates";
 import { displayCurrency, displayDate } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -106,10 +108,10 @@ function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, st
 
    return (
       <Chip
-         color={color}
-         label={categoryName || categoryType}
-         size="small"
-         variant="filled"
+         color = { color }
+         label = { categoryName || categoryType }
+         size = "small"
+         variant = "filled"
       />
    );
 }
@@ -121,15 +123,15 @@ function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, st
  * @returns {React.ReactNode} The rendered amount.
  */
 function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>): React.ReactNode {
-   const color: string = params.row.amount > 0 ? "primary.main" : "error.main";
+   const color: string = params.row.amount > 0 ? "primary.main" : "";
 
    return (
       <Typography
-         color={color}
-         sx={{ fontWeight: "600", fontSize: "0.85rem" }}
-         variant="caption"
+         color = { color }
+         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {displayCurrency(params.row.amount)}
+         { displayCurrency(params.row.amount) }
       </Typography>
    );
 }
@@ -143,16 +145,16 @@ function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>)
 function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>): React.ReactNode {
    return (
       <Typography
-         color="primary.default"
-         sx={{ fontWeight: "600", fontSize: "0.85rem" }}
-         variant="caption"
+         color = "primary.default"
+         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         variant = "caption"
       >
          <Tooltip
-            placement="top-start"
-            title={`Previous: ${displayCurrency((params.row.balance || 0) - params.row.amount)}`}
+            placement = "top-start"
+            title = { `Previous: ${displayCurrency((params.row.balance || 0) - params.row.amount)}` }
          >
             <span>
-               {displayCurrency((params.row.balance || 0))}
+               { displayCurrency((params.row.balance || 0)) }
             </span>
          </Tooltip>
       </Typography>
@@ -172,13 +174,13 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 
    return (
       <Typography
-         color="primary"
-         noWrap={true}
-         onClick={openAccountModal}
-         sx={{ fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" }}
-         variant="caption"
+         color = "primary"
+         noWrap = { true }
+         onClick = { openAccountModal }
+         sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {params.row.account}
+         { params.row.account }
       </Typography>
    );
 }
@@ -192,10 +194,10 @@ function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, str
 function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
    return (
       <Typography
-         sx={{ fontWeight: "500", fontSize: "0.85rem" }}
-         variant="caption"
+         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {displayDate(params.row.date)}
+         { displayDate(params.row.date) }
       </Typography>
    );
 }
@@ -209,11 +211,17 @@ function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): 
 function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
    return (
       <Typography
-         noWrap={true}
-         sx={{ fontWeight: "500", fontSize: "0.85rem" }}
-         variant="caption"
+         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         variant = "caption"
       >
-         {params.row.description || "No Description"}
+         <Tooltip
+            placement = "top-start"
+            title = { params.row.description || "No Description" }
+         >
+            <span>
+               { params.row.description || "No Description" }
+            </span>
+         </Tooltip>
       </Typography>
    );
 }
@@ -243,7 +251,7 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
    const categoryType: string = transaction.type;
    const categoryName: string = transaction.category;
    const categoryColor: "success" | "error" = categoryType === "Income" ? "success" : "error";
-   const amountColor: string = transaction.amount > 0 ? "primary.main" : "error.main";
+   const amountColor: string = transaction.amount > 0 ? "primary.main" : "";
 
    const openAccountModal = useCallback(() => {
       document.getElementById(transaction.account_id || "")?.click();
@@ -251,73 +259,83 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
 
    return (
       <Card
-         sx={{ width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#1E1E1E" : "#FFFFFF" }}
-         variant="outlined"
+         sx = { { width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#1E1E1E" : "#FFFFFF" } }
+         variant = "outlined"
       >
-         <CardContent sx={{ py: 2, px: 3 }}>
+         <CardContent sx = { { py: 2, px: 2.5 } }>
             <Stack
-               direction="column"
-               spacing={1}
-               sx={{ alignItems: "flex-start", direction: "row", textAlign: "left", justifyContent: "flex-start", alignContent: "center" }}
+               direction = "column"
+               spacing = { 0.5 }
+               sx = { { alignItems: "flex-start", direction: "row", textAlign: "left", justifyContent: "flex-start", alignContent: "center" } }
             >
-               <Typography
-                  color="text.secondary"
-                  sx={{ fontSize: "0.8rem" }}
-                  variant="body2"
-               >
-                  {displayDate(transaction.date)}
-               </Typography>
-               <Typography
-                  sx={{ fontWeight: 500, wordBreak: "break-word" }}
-                  variant="body1"
-               >
-                  {transaction.description || "No Description"}
-               </Typography>
-               <Typography
-                  color={amountColor}
-                  sx={{ fontWeight: "600", fontSize: "1rem", whiteSpace: "nowrap" }}
-                  variant="body1"
-               >
-                  {displayCurrency(transaction.amount)}
-               </Typography>
-               <Typography
-                  color="primary"
-                  noWrap={true}
-                  onClick={openAccountModal}
-                  sx={{ fontWeight: "500", cursor: "pointer", fontSize: "0.85rem", textAlign: "right" }}
-                  variant="caption"
-               >
-                  {transaction.account}
-               </Typography>
-               <Chip
-                  color={categoryColor}
-                  label={categoryName || categoryType}
-                  size="small"
-                  sx={{ mt: "0px !important" }}
-                  variant="filled"
-               />
                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ justifyContent: "flex-start", alignItems: "flex-start", pl: 0.5, pt: 0.5 }}
+                  direction = "row"
+                  gap = { 1 }
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", width: "100%" } }
+               >
+                  <Typography
+                     color = "text.secondary"
+                     sx = { { fontSize: "0.8rem" } }
+                     variant = "body1"
+                  >
+                     { displayDate(transaction.date) }
+                  </Typography>
+                  <Chip
+                     color = { categoryColor }
+                     label = { categoryName || categoryType }
+                     size = "small"
+                     variant = "filled"
+                  />
+               </Stack>
+               <Stack
+                  direction = "row"
+                  spacing = { 0.5 }
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", width: "100%" } }
+               >
+                  <Typography
+                     color = { amountColor }
+                     sx = { { fontWeight: "500", fontSize: "0.9rem" } }
+                     variant = "subtitle1"
+                  >
+                     { displayCurrency(transaction.amount) }
+                  </Typography>
+                  <Typography
+                     color = "primary"
+                     onClick = { openAccountModal }
+                     sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem", m: "0px !important" } }
+                     variant = "caption"
+                  >
+                     { transaction.account }
+                  </Typography>
+               </Stack>
+               <Typography
+                  sx = { { fontWeight: 500, wordBreak: "break-word", m: "0px !important" } }
+                  variant = "body1"
+               >
+                  { transaction.description || "No Description" }
+               </Typography>
+               <Stack
+                  direction = "row"
+                  spacing = { 1 }
+                  sx = { { justifyContent: "flex-start", alignItems: "flex-start", pl: 0.2 } }
                >
                   <FontAwesomeIcon
-                     className="primary"
-                     icon={faPenToSquare}
-                     onClick={() => onEdit(transaction.index)}
-                     size="sm"
-                     style={{ fontSize: "1rem", paddingTop: "1px", cursor: "pointer" }}
+                     className = "primary"
+                     icon = { faPenToSquare }
+                     onClick = { () => onEdit(transaction.index) }
+                     size = "sm"
+                     style = { { fontSize: "1rem", paddingTop: "1px", cursor: "pointer" } }
                   />
                   <TransactionDeletion
-                     index={transaction.index}
-                     transaction={transaction}
+                     index = { transaction.index }
+                     transaction = { transaction }
                   />
                </Stack>
             </Stack>
          </CardContent>
          {
             pageSize !== null && transaction.index !== pageSize - 1 && (
-               <Divider sx={{ borderBottomWidth: "1.5px" }} />
+               <Divider sx = { { borderBottomWidth: "1.5px" } } />
             )
          }
       </Card>
@@ -335,6 +353,9 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    const period: BudgetPeriod = budgets.period;
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
    const [view, setView] = useState<"table" | "stack">("table");
+
+   // Table-related references
+   const dataGridRef: Ref<any> = useRef<any>(null);
    const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
    const pageSize: Ref<number> = useRef<number>(25);
 
@@ -402,13 +423,16 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       {
          field: "date",
          headerName: "Date",
+         type: "date",
          minWidth: 140,
          renderCell: RenderDate,
+         valueGetter: (value: string) => normalizeDate(value.split("T")[0]),
          filterable: true
       },
       {
          field: "description",
          headerName: "Description",
+         type: "string",
          flex: 1,
          minWidth: 250,
          renderCell: RenderDescription
@@ -416,16 +440,43 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       {
          field: "account",
          headerName: "Account",
+         type: "string",
          minWidth: 220,
-         renderCell: RenderAccountName
+         renderCell: RenderAccountName,
+         valueGetter: (value: string) => value
       },
       {
          field: "category",
          headerName: "Category",
+         type: "singleSelect",
          minWidth: 255,
          renderCell: RenderCategoryChip,
          columnMenuProps: {
-            flexDirection: "row"
+            flexDirection: "row",
+         },
+         valueFormatter: (_value, row: TransactionRowModel) => row.budget_category_id,
+         valueOptions: () => {
+            // Income
+            const values: ValueOptions[] = [{
+               value: budgets.Income.budget_category_id,
+               label: "Income"
+            }];
+            values.push(...(budgets.Income.categories.map((category) => ({
+               value: category.budget_category_id,
+               label: category.name || ""
+            })) || []));
+
+            // Expenses
+            values.push({
+               value: budgets.Expenses.budget_category_id,
+               label: "Expenses"
+            });
+            values.push(...(budgets.Expenses.categories.map((category) => ({
+               value: category.budget_category_id,
+               label: category.name || ""
+            })) || []));
+
+            return values;
          }
       },
       {
@@ -452,33 +503,36 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          maxWidth: 100,
          sortable: false,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
-            <Stack direction="row" sx = {{ height: "100%", justifyContent: "center", alignItems: "center" }}>
+            <Stack
+               direction = "row"
+               sx = { { height: "100%", justifyContent: "center", alignItems: "center" } }
+            >
                <GridActionsCellItem
-                  className="primary"
-                  disableRipple={true}
-                  icon={
+                  className = "primary"
+                  disableRipple = { true }
+                  icon = {
                      <FontAwesomeIcon
-                        icon={faPenToSquare}
-                        size="sm"
+                        icon = { faPenToSquare }
+                        size = "sm"
                      />
                   }
-                  key={`edit-${params.row.index}`}
-                  label="Edit"
-                  onClick={() => onEdit(params.row.index)}
-                  sx={{ color: "primary.main", pb: 0.8 }}
+                  key = { `edit-${params.row.index}` }
+                  label = "Edit"
+                  onClick = { () => onEdit(params.row.index) }
+                  sx = { { color: "primary.main", pb: 0.8 } }
                />
                <GridActionsCellItem
-                  className="error"
-                  disableRipple={true}
-                  icon={
+                  className = "error"
+                  disableRipple = { true }
+                  icon = {
                      <TransactionDeletion
-                        index={params.row.index}
-                        transaction={params.row}
+                        index = { params.row.index }
+                        transaction = { params.row }
                      />
                   }
-                  key={`delete-${params.row.index}`}
-                  label="Delete"
-                  sx={{ color: "error.main" }}
+                  key = { `delete-${params.row.index}` }
+                  label = "Delete"
+                  sx = { { color: "error.main" } }
                />
             </Stack>
          )
@@ -494,11 +548,11 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       filterable: false,
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<TransactionRowModel>) => (
-         <Box sx={{ width: "100%", height: "100%" }}>
+         <Box sx = { { width: "100%", height: "100%" } }>
             <TransactionCard
-               onEdit={onEdit}
-               pageSize={Math.min(pageSize.current || Number(window.localStorage.getItem("pageSize")) || 25, transactions.length)}
-               transaction={params.row}
+               onEdit = { onEdit }
+               pageSize = { Math.min(pageSize.current || Number(window.localStorage.getItem("pageSize")) || 25, transactions.length) }
+               transaction = { params.row }
             />
          </Box>
       )
@@ -511,9 +565,10 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
 
    const updatePageSize = useCallback((details: GridPaginationModel) => {
       if (details.pageSize !== pageSize.current) {
-         // Scroll to the top of the table
          pageSize.current = details.pageSize;
          window.localStorage.setItem("pageSize", details.pageSize.toString());
+
+         // Scroll to the top of the table
          document.getElementById(`transactions-table-${filter}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
    }, [filter]);
@@ -521,7 +576,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    const noResultsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
-            sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" }}
+            sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
          >
             No available transactions
          </Box>
@@ -534,87 +589,91 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          const update: "table" | "stack" = value || prev;
          window.localStorage.setItem("view", update);
 
+         // Reset the horizontal virtual scrollbar position as list view get's cut off
+         dataGridRef.current?.scroll({ top: 0, left: 0 });
+
          return update;
       });
    }, []);
 
    return (
       <Box
-         id={`transactions-table-${filter}`}
-         sx={{ width: "100%" }}
+         id = { `transactions-table-${filter}` }
+         sx = { { width: "100%" } }
       >
-         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.25 }}>
+         <Box sx = { { display: "flex", justifyContent: "flex-end", mb: 1 } }>
             <ToggleButtonGroup
-               aria-label="View mode"
-               exclusive={true}
-               onChange={changeView}
-               size="small"
-               value={view}
+               exclusive = { true }
+               onChange = { changeView }
+               size = "medium"
+               value = { view }
             >
                <ToggleButton
-                  aria-label="Table view"
-                  disableRipple={true}
-                  value="table"
+                  aria-label = "Table view"
+                  disableRipple = { true }
+                  value = "table"
                >
                   <FontAwesomeIcon
-                     fixedWidth={true}
-                     icon={faTable}
-                     style={{ color: view === "table" ? "hsl(210deg 98% 48%)" : "inherit" }}
+                     fixedWidth = { true }
+                     icon = { faTable }
+                     style = { { color: view === "table" ? "hsl(210deg 98% 48%)" : "inherit" } }
                   />
                </ToggleButton>
                <ToggleButton
-                  aria-label="Stack view"
-                  disableRipple={true}
-                  value="stack"
+                  aria-label = "Stack view"
+                  disableRipple = { true }
+                  value = "stack"
                >
                   <FontAwesomeIcon
-                     fixedWidth={true}
-                     icon={faList}
-                     style={{ color: view === "stack" ? "hsl(210deg 98% 48%)" : "inherit" }}
+                     fixedWidth = { true }
+                     icon = { faList }
+                     style = { { color: view === "stack" ? "hsl(210deg 98% 48%)" : "inherit" } }
                   />
                </ToggleButton>
             </ToggleButtonGroup>
          </Box>
          <DataGrid
-            checkboxSelection={view === "table"}
-            columnVisibilityModel={{ balance: filter === "account" }}
-            columns={view === "table" ? columns : cardColumn}
-            density="standard"
-            disableColumnResize={true}
-            disableRowSelectionOnClick={view === "table"}
-            getRowClassName={
+            apiRef = { dataGridRef }
+            checkboxSelection = { view === "table" }
+            columnVisibilityModel = { { balance: filter === "account" } }
+            columns = { view === "table" ? columns : cardColumn }
+            density = "standard"
+            disableColumnResize = { true }
+            disableRowSelectionOnClick = { true }
+            getRowClassName = {
                (params) =>
                   params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
             }
-            getRowHeight={() => view === "table" ? undefined : "auto"}
-            getRowId={(row) => row.transaction_id || ""}
-            initialState={
+            getRowHeight = { () => view === "table" ? undefined : "auto" }
+            getRowId = { (row) => row.transaction_id || "" }
+            initialState = {
                {
                   pagination: { paginationModel: { pageSize: Number(window.localStorage.getItem("pageSize")) || 25 } }
                }
             }
-            localeText={
+            localeText = {
                {
                   footerRowSelected: () => (
                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        justifyContent="center"
-                        spacing={2}
-                        sx={{ pl: 0.2, visibility: view === "table" ? "visible" : "hidden" }}
+                        alignItems = "center"
+                        direction = "row"
+                        justifyContent = "center"
+                        spacing = { 2 }
+                        sx = { { pl: 0.2, visibility: view === "table" ? "visible" : "hidden" } }
                      >
                         <BulkTransactionDeletion
-                           selectedRows={selectedRows as any}
+                           selectedRows = { selectedRows as any }
                         />
                      </Stack>
                   )
                }
             }
-            onPaginationModelChange={updatePageSize}
-            onRowSelectionModelChange={updateSelectedRows}
-            pageSizeOptions={[10, 25, 50, 100]}
-            rows={rows}
-            slotProps={
+            onPaginationModelChange = { updatePageSize }
+            onRowDoubleClick = { (params) => view === "table" ? onEdit(params.row.index) : null }
+            onRowSelectionModelChange = { updateSelectedRows }
+            pageSizeOptions = { [10, 25, 50, 100] }
+            rows = { rows }
+            slotProps = {
                {
                   baseCheckbox: {
                      disableRipple: true
@@ -645,16 +704,15 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                   }
                }
             }
-            slots={
+            slots = {
                {
                   columnHeaders: view === "stack" ? () => null : undefined,
                   noRowsOverlay: () => noResultsContainer,
                   noResultsOverlay: () => noResultsContainer
                }
             }
-            sx={
+            sx = {
                view === "stack" ? {
-                  overflowX: "none",
                   "& .MuiDataGrid-row": {
                      minWidth: "100% !important"
                   },
