@@ -14,19 +14,19 @@ import {
    useTheme
 } from "@mui/material";
 import { type Account } from "capital/accounts";
-import { type BudgetCategory, type BudgetType, type OrganizedBudgets } from "capital/budgets";
+import { type BudgetType, type OrganizedBudgets } from "capital/budgets";
 import { type Transaction, transactionSchema } from "capital/transactions";
 import { useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/table";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
-import { RenderCategoryChip } from "@/components/dashboard/transactions/table";
 
 /**
  * Props for the TransactionForm component.
@@ -106,8 +106,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
             reset({
                ...transaction,
                date: transaction.date.split("T")[0],
-               account_id: transaction.account_id ?? "",
-               budget_category_id: transaction.budget_category_id ?? ""
+               account_id: transaction.account_id ?? ""
             });
          } else {
             reset({
@@ -331,6 +330,13 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        { ...field }
                                        defaultValue = { budgets.Income.budget_category_id }
                                        label = "Account"
+                                       renderValue = {
+                                          (value) => (
+                                             <RenderAccountChip
+                                                account_id = { value }
+                                             />
+                                          )
+                                       }
                                        slotProps = {
                                           {
                                              input: {
@@ -342,6 +348,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        variant = "outlined"
                                     >
                                        <MenuItem
+                                          sx = { { color: "transparent" } }
                                           value = ""
                                        >
                                           -- Select Account --
@@ -397,7 +404,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                              }
                                           }
                                        }
-                                       value = { field.value || "" }
+                                       value = { !amount ? field.value : field.value || budgets.Income.budget_category_id }
                                     >
                                        <MenuItem
                                           disabled = { disableIncome }

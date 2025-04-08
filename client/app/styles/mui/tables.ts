@@ -22,7 +22,7 @@ export const tables = {
             overflow: "clip",
             overflowY: "none",
             borderColor: theme.palette.mode === "dark" ? "#333B4D" : "#E0E0E0",
-            borderWidth: "1px",
+            borderWidth: "1.5px",
             [`& .${gridClasses.columnHeader}`]: {
                [`& .${gridClasses.columnHeaderTitle}`]: {
                   fontWeight: "600"
@@ -78,7 +78,7 @@ export const tables = {
             }
          }),
          cell: ({ theme }: { theme: any }) => ({ borderTopColor: (theme.vars || theme).palette.divider }),
-         menu: ({ theme }: { theme: any }) => ({
+         menu: () => ({
             [`& .${menuItemClasses.root}`]: {
                margin: "0 4px"
             },

@@ -10,8 +10,8 @@ import {
    InputLabel,
    MenuItem,
    Select,
+   type SelectChangeEvent,
    Stack,
-   TextField,
    ToggleButton,
    ToggleButtonGroup,
    Tooltip,
@@ -21,22 +21,20 @@ import {
 import {
    DataGrid,
    GridActionsCellItem,
+   GridLogicOperator,
    type GridColDef,
    type GridFilterItem,
    type GridPaginationModel,
    type GridRenderCellParams,
    type GridRowSelectionModel,
    type GridTreeNodeWithRender,
-   type GridValidRowModel,
-   type ValueOptions
+   type GridValidRowModel
 } from "@mui/x-data-grid";
-import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
 import type { Transaction } from "capital/transactions";
 import {
    type Ref,
-   type RefObject,
    useCallback,
    useEffect,
    useMemo,
@@ -110,7 +108,7 @@ const getCategoryInfo = (budgets: OrganizedBudgets, categoryId: string | null | 
  * @returns {React.ReactNode} The rendered category chip.
  */
 export function RenderCategoryChip({ budget_category_id }: { budget_category_id: string }): React.ReactNode {
-   const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
+   const budgets = useSelector((state: RootState) => state.budgets.value);
    const type: BudgetType = budget_category_id === budgets.Income.budget_category_id || budgets.Income.categories.some((c) => {
       return c.budget_category_id === budget_category_id;
    }) ? "Income" : "Expenses";
@@ -119,11 +117,13 @@ export function RenderCategoryChip({ budget_category_id }: { budget_category_id:
    });
    const color: "success" | "error" = type === "Income" ? "success" : "error";
    const label: string = category?.name || type;
+
    return (
       <Chip
          color = { color }
          label = { label }
          size = "small"
+         sx = { { m: "0 !important" } }
          variant = "filled"
       />
    );
@@ -141,7 +141,7 @@ function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>)
    return (
       <Typography
          color = { color }
-         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
          variant = "caption"
       >
          { displayCurrency(params.row.amount) }
@@ -159,7 +159,7 @@ function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>
    return (
       <Typography
          color = "primary.default"
-         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
          variant = "caption"
       >
          <Tooltip
@@ -180,17 +180,18 @@ function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>
  * @param {{account_id: string}} params - The account ID for the grid render cell.
  * @returns {React.ReactNode} The rendered account chip.
  */
-function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
+export function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const account: Account | undefined = accounts.find((account) => account.account_id === account_id);
-  
+
    return (
       account ? (
          <Chip
             color = "primary"
             label = { account?.name || "" }
+            sx = { { m: "0 !important" } }
             size = "small"
-            variant = "outlined"
+            variant = "filled"
          />
       ) : null
    );
@@ -205,7 +206,7 @@ function RenderAccountChip({ account_id }: { account_id: string }): React.ReactN
 function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
    return (
       <Typography
-         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
          variant = "caption"
       >
          { displayDate(params.row.date) }
@@ -222,7 +223,7 @@ function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): 
 function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
    return (
       <Typography
-         sx = { { fontWeight: "500", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
          variant = "caption"
       >
          <Tooltip
@@ -279,13 +280,13 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                >
                   <Typography
                      color = "text.secondary"
-                     sx = { { fontSize: "0.8rem" } }
+                     sx = { { fontSize: "0.8rem", fontWeight: "600" } }
                      variant = "body1"
                   >
                      { displayDate(transaction.date) }
                   </Typography>
-                  <RenderAccountChip
-                     account_id = { transaction.account_id || "" }
+                  <RenderCategoryChip
+                     budget_category_id = { transaction.budget_category_id || "" }
                   />
                </Stack>
                <Stack
@@ -295,17 +296,17 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                >
                   <Typography
                      color = { amountColor }
-                     sx = { { fontWeight: "500", fontSize: "0.9rem" } }
+                     sx = { { fontWeight: "600", fontSize: "0.9rem" } }
                      variant = "subtitle1"
                   >
                      { displayCurrency(transaction.amount) }
                   </Typography>
-                  <RenderCategoryChip
-                     budget_category_id = { transaction.budget_category_id || "" }
+                  <RenderAccountChip
+                     account_id = { transaction.account_id || "" }
                   />
                </Stack>
                <Typography
-                  sx = { { fontWeight: 500, wordBreak: "break-word", m: "0px !important" } }
+                  sx = { { fontWeight: "600", wordBreak: "break-word", m: "0px !important" } }
                   variant = "body1"
                >
                   { transaction.description || "No Description" }
@@ -345,6 +346,7 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
  * @returns {React.ReactNode} The rendered TransactionsTable component.
  */
 export default function TransactionsTable({ accountsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
+   const theme = useTheme();
    const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
    const period: BudgetPeriod = budgets.period;
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
@@ -421,6 +423,8 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          headerName: "Date",
          type: "date",
          minWidth: 140,
+         flex: 1,
+         headerAlign: "left",
          renderCell: RenderDate,
          valueGetter: (value: string) => normalizeDate(value.split("T")[0]),
          filterable: true
@@ -431,28 +435,128 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          type: "string",
          flex: 1,
          minWidth: 250,
+         headerAlign: "left",
          renderCell: RenderDescription
       },
       {
          field: "account",
          headerName: "Account",
-         type: "singleSelect",
+         flex: 1,
          minWidth: 270,
+         headerAlign: "left",
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderAccountChip
                account_id = { params.row.account_id || "" }
             />
          ),
+         valueFormatter: (_value: never, row: TransactionRowModel) => row.account_id,
          valueGetter: (_value: never, row: TransactionRowModel) => row.account_id,
-         valueOptions: () => Object.values(accountsMap).map((account) => ({
-            value: account.account_id,
-            label: account.name
-         }))
+         getApplyQuickFilterFn: () => {
+            return ({ value, row }) => {
+               return value === "all" || value === row?.account_id;
+            };
+         },
+         filterOperators: [{
+            label: "includes",
+            value: "includes",
+            getApplyFilterFn: (filterItem: GridFilterItem) => {
+               const selected = filterItem.value;
+
+               return (item: string) => {
+                  if (Array.isArray(selected)) {
+                     return selected.length === 0 || (selected.length === 1 && selected[0] === "all") || selected.includes(item);
+                  }
+
+                  return true;
+               };
+            },
+            InputComponent: (props: any) => {
+               const { item, applyValue } = props;
+               const selectedReference = useRef<string[]>(["all"]);
+
+               const updateSelectedAccounts = (event: SelectChangeEvent<string[]>) => {
+                  const { value } = event.target;
+                  const selected: string[] = Array.isArray(value) ? value : [value];
+
+                  if (selected.length === 1 && selected[0] === "all") {
+                     // Pivot to default state
+                     selectedReference.current = ["all"];
+                  } else {
+                     // Remove the "all" from selected options
+                     selectedReference.current = selected.filter((v: string) => v !== "all");
+                  }
+
+                  applyValue({ ...item, value: selectedReference.current });
+               };
+
+               return (
+                  <FormControl>
+                     <InputLabel
+                        htmlFor = "filter-account"
+                        shrink = { true }
+                        variant = "outlined"
+                     >
+                        Account
+                     </InputLabel>
+                     <Select
+                        label = "Account"
+                        multiple = { true }
+                        onChange = { updateSelectedAccounts }
+                        renderValue = {
+                           (selected: string[]) => {
+                              return (
+                                 <Stack
+                                    columnGap = { 1 }
+                                    direction = "row"
+                                    rowGap = { 1 }
+                                    sx = { { maxWidth: "226px", flexWrap: "wrap", justifyContent: "flex-start", alignItems: "center" } }
+                                 >
+                                    {
+                                       selected.length === 0 ? null : selected.map((value) => {
+                                          return value === "all" ? null : (
+                                             <RenderAccountChip
+                                                account_id = { value }
+                                                key = { `selected-${value}` }
+                                             />
+                                          );
+                                       })
+                                    }
+                                 </Stack>
+                              );
+                           }
+                        }
+                        value = { selectedReference.current }
+                        variant = "outlined"
+                     >
+                        <MenuItem
+                           key = "filter-all-accounts"
+                           sx = { { color: "transparent" } }
+                           value = { "all" }
+                        >
+                           -- Select Account --
+                        </MenuItem>
+                        {
+                           Object.values(accountsMap).map((account) => (
+                              <MenuItem
+                                 key = { `filter-${account.account_id}` }
+                                 value = { account.account_id }
+                              >
+                                 { account.name }
+                              </MenuItem>
+                           ))
+                        }
+                     </Select>
+                  </FormControl>
+               );
+            }
+         }]
       },
       {
          field: "category",
          headerName: "Category",
+         headerAlign: "left",
          minWidth: 255,
+         flex: 1,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderCategoryChip
                budget_category_id = { params.row.budget_category_id || "" }
@@ -466,21 +570,37 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             };
          },
          filterOperators: [{
-            label: "equals",
-            value: "equals",
-            getApplyFilterFn: (props) => {
-               const { value } = props;
+            label: "includes",
+            value: "includes",
+            getApplyFilterFn: (filterItem: GridFilterItem) => {
+               const selected = filterItem.value;
 
-               return (item) => {
-                  return value === "all" || item === value;
+               return (item: string) => {
+                  if (Array.isArray(selected)) {
+                     return selected.length === 0 || (selected.length === 1 && selected[0] === "all") || selected.includes(item);
+                  }
+
+                  return true;
                };
             },
             InputComponent: (props: any) => {
                const { item, applyValue } = props;
+               const selectedReference = useRef<string[]>(["all"]);
 
-               const handleChange = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
-                  applyValue({ ...item, value: event.target.value });
-               }, [applyValue, item]);
+               const updateSelectedCategories = (event: SelectChangeEvent<string[]>) => {
+                  const { value } = event.target;
+                  const selected: string[] = Array.isArray(value) ? value : [value];
+
+                  if (selected.length === 1 && selected[0] === "all") {
+                     // Pivot to default state
+                     selectedReference.current = ["all"];
+                  } else {
+                     // Remove the "all" category from the selected categories
+                     selectedReference.current = selected.filter((v: string) => v !== "all");
+                  }
+
+                  applyValue({ ...item, value: selectedReference.current });
+               };
 
                return (
                   <FormControl>
@@ -492,16 +612,31 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                         Category
                      </InputLabel>
                      <Select
-                        { ...props }
-                        defaultValue = { "all" }
                         label = "Category"
-                        onChange = { handleChange }
+                        multiple = { true }
+                        onChange = { updateSelectedCategories }
                         renderValue = {
-                           (value: any) => value === "all" ? null : (
-                              <RenderCategoryChip
-                                 budget_category_id = { value }
-                              />
-                           )
+                           (selected: string[]) => {
+                              return (
+                                 <Stack
+                                    columnGap = { 1 }
+                                    direction = "row"
+                                    rowGap = { 1 }
+                                    sx = { { maxWidth: "226px", flexWrap: "wrap", justifyContent: "flex-start", alignItems: "center" } }
+                                 >
+                                    {
+                                       selected.length === 0 ? null : selected.map((value) => {
+                                          return value === "all" ? null : (
+                                             <RenderCategoryChip
+                                                budget_category_id = { value }
+                                                key = { `selected-${value}` }
+                                             />
+                                          );
+                                       })
+                                    }
+                                 </Stack>
+                              );
+                           }
                         }
                         slotProps = {
                            {
@@ -510,16 +645,19 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                               }
                            }
                         }
+                        value = { selectedReference.current }
                         variant = "outlined"
                      >
                         <MenuItem
-                           key = "filter-all"
+                           key = "filter-all-categories"
+                           sx = { { color: "transparent" } }
                            value = { "all" }
                         >
                            -- Select Category --
                         </MenuItem>
                         <MenuItem
                            key = { `filter-${budgets.Income.budget_category_id}` }
+                           sx = { { fontWeight: "bold" } }
                            value = { budgets.Income.budget_category_id }
                         >
                            Income
@@ -528,6 +666,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                            budgets.Income.categories.map((category) => (
                               <MenuItem
                                  key = { `filter-${category.budget_category_id}` }
+                                 sx = { { pl: 3.5 } }
                                  value = { category.budget_category_id }
                               >
                                  { category.name }
@@ -536,6 +675,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                         }
                         <MenuItem
                            key = { `filter-${budgets.Expenses.budget_category_id}` }
+                           sx = { { fontWeight: "bold" } }
                            value = { budgets.Expenses.budget_category_id }
                         >
                            Expenses
@@ -544,6 +684,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                            budgets.Expenses.categories.map((category) => (
                               <MenuItem
                                  key = { `filter-${category.budget_category_id}` }
+                                 sx = { { pl: 3.5 } }
                                  value = { category.budget_category_id }
                               >
                                  { category.name }
@@ -559,8 +700,11 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       {
          field: "amount",
          type: "number",
+         headerAlign: "left",
+         align: "left",
          headerName: "Amount",
          minWidth: 200,
+         flex: 1,
          renderCell: RenderAmount
       }];
 
@@ -569,8 +713,10 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          visible.push({
             field: "balance",
             type: "number",
+            align: "left",
             headerName: "Balance",
             minWidth: 200,
+            flex: 1,
             filterable: false,
             sortable: false,
             renderCell: RenderBalance
@@ -582,9 +728,10 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          field: "Actions",
          headerName: "",
          align: "center",
+         width: 100,
          minWidth: 100,
-         maxWidth: 100,
          sortable: false,
+         flex: 0.2,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <Stack
                direction = "row"
@@ -762,6 +909,15 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                   baseCheckbox: {
                      disableRipple: true
                   },
+                  
+                  columnsManagement: {
+                     searchInputProps: {
+                        variant: "outlined",
+                        size: "small",
+                        placeholder: ""
+                     },
+                     disableShowHideToggle: true
+                  },
                   filterPanel: {
                      filterFormProps: {
                         logicOperatorInputProps: {
@@ -781,7 +937,12 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                         valueInputProps: {
                            InputComponentProps: {
                               variant: "outlined",
+                              placeholder: "",
+                              autoFocus: true,
                               size: "small"
+                           },
+                           sx: {
+                              colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
                            }
                         }
                      }

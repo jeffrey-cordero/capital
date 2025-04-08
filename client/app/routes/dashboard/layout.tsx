@@ -28,7 +28,15 @@ export async function fetchDashboard(
    if (typeof dashboard === "object" && dashboard !== null) {
       dispatch(setAccounts(dashboard.accounts));
       dispatch(setBudgets(dashboard.budgets));
-      dispatch(setTransactions(dashboard.transactions));
+      dispatch(setTransactions(dashboard.transactions.map((t) => {
+         return {
+            ...t,
+            budget_category_id: t.budget_category_id || (
+               // Pivot to default budget category IDs based on transaction amount (data minimization)
+               t.amount >= 0 ? dashboard.budgets.Income.budget_category_id : dashboard.budgets.Expenses.budget_category_id
+            )
+         };
+      })));
       dispatch(setMarkets({
          news: dashboard.news,
          trends: dashboard.trends
