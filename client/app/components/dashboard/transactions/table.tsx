@@ -6,7 +6,12 @@ import {
    CardContent,
    Chip,
    Divider,
+   FormControl,
+   InputLabel,
+   MenuItem,
+   Select,
    Stack,
+   TextField,
    ToggleButton,
    ToggleButtonGroup,
    Tooltip,
@@ -17,6 +22,7 @@ import {
    DataGrid,
    GridActionsCellItem,
    type GridColDef,
+   type GridFilterItem,
    type GridPaginationModel,
    type GridRenderCellParams,
    type GridRowSelectionModel,
@@ -24,11 +30,13 @@ import {
    type GridValidRowModel,
    type ValueOptions
 } from "@mui/x-data-grid";
+import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
 import type { Transaction } from "capital/transactions";
 import {
    type Ref,
+   type RefObject,
    useCallback,
    useEffect,
    useMemo,
@@ -98,18 +106,23 @@ const getCategoryInfo = (budgets: OrganizedBudgets, categoryId: string | null | 
 /**
  * Renders the category chip for a given transaction.
  *
- * @param {GridRenderCellParams<TransactionRowModel, string>} params - The parameters for the grid render cell.
+ * @param { {budget_category_id: string} } params - The budget category ID for the grid render cell.
  * @returns {React.ReactNode} The rendered category chip.
  */
-function RenderCategoryChip(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
-   const categoryType: string = params.row.type;
-   const categoryName: string = params.row.category;
-   const color: "success" | "error" = categoryType === "Income" ? "success" : "error";
-
+export function RenderCategoryChip({ budget_category_id }: { budget_category_id: string }): React.ReactNode {
+   const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
+   const type: BudgetType = budget_category_id === budgets.Income.budget_category_id || budgets.Income.categories.some((c) => {
+      return c.budget_category_id === budget_category_id;
+   }) ? "Income" : "Expenses";
+   const category: BudgetCategory | undefined = budgets[type].categories.find((c) => {
+      return c.budget_category_id === budget_category_id;
+   });
+   const color: "success" | "error" = type === "Income" ? "success" : "error";
+   const label: string = category?.name || type;
    return (
       <Chip
          color = { color }
-         label = { categoryName || categoryType }
+         label = { label }
          size = "small"
          variant = "filled"
       />
@@ -162,26 +175,24 @@ function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>
 }
 
 /**
- * Renders the account name for a given transaction.
+ * Renders the account chip for a given transaction.
  *
- * @param {GridRenderCellParams<TransactionRowModel, string>} params - The parameters for the grid render cell.
- * @returns {React.ReactNode} The rendered account name.
+ * @param {{account_id: string}} params - The account ID for the grid render cell.
+ * @returns {React.ReactNode} The rendered account chip.
  */
-function RenderAccountName(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
-   const openAccountModal = useCallback(() => {
-      document.getElementById(params.row.account_id || "")?.click();
-   }, [params.row.account_id]);
-
+function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
+   const account: Account | undefined = accounts.find((account) => account.account_id === account_id);
+  
    return (
-      <Typography
-         color = "primary"
-         noWrap = { true }
-         onClick = { openAccountModal }
-         sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem" } }
-         variant = "caption"
-      >
-         { params.row.account }
-      </Typography>
+      account ? (
+         <Chip
+            color = "primary"
+            label = { account?.name || "" }
+            size = "small"
+            variant = "outlined"
+         />
+      ) : null
    );
 }
 
@@ -248,14 +259,7 @@ interface TransactionCardProps {
  */
 function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps): React.ReactNode {
    const theme = useTheme();
-   const categoryType: string = transaction.type;
-   const categoryName: string = transaction.category;
-   const categoryColor: "success" | "error" = categoryType === "Income" ? "success" : "error";
    const amountColor: string = transaction.amount > 0 ? "primary.main" : "";
-
-   const openAccountModal = useCallback(() => {
-      document.getElementById(transaction.account_id || "")?.click();
-   }, [transaction.account_id]);
 
    return (
       <Card
@@ -280,11 +284,8 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                   >
                      { displayDate(transaction.date) }
                   </Typography>
-                  <Chip
-                     color = { categoryColor }
-                     label = { categoryName || categoryType }
-                     size = "small"
-                     variant = "filled"
+                  <RenderAccountChip
+                     account_id = { transaction.account_id || "" }
                   />
                </Stack>
                <Stack
@@ -299,14 +300,9 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                   >
                      { displayCurrency(transaction.amount) }
                   </Typography>
-                  <Typography
-                     color = "primary"
-                     onClick = { openAccountModal }
-                     sx = { { fontWeight: "500", cursor: "pointer", fontSize: "0.85rem", m: "0px !important" } }
-                     variant = "caption"
-                  >
-                     { transaction.account }
-                  </Typography>
+                  <RenderCategoryChip
+                     budget_category_id = { transaction.budget_category_id || "" }
+                  />
                </Stack>
                <Typography
                   sx = { { fontWeight: 500, wordBreak: "break-word", m: "0px !important" } }
@@ -419,8 +415,8 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    }, [transactions, accountsMap, budgets, filter, identifier, period]);
 
    // Components for the table view
-   const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => [
-      {
+   const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => {
+      const visible: GridColDef<TransactionRowModel>[] = [{
          field: "date",
          headerName: "Date",
          type: "date",
@@ -440,44 +436,125 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       {
          field: "account",
          headerName: "Account",
-         type: "string",
-         minWidth: 220,
-         renderCell: RenderAccountName,
-         valueGetter: (value: string) => value
+         type: "singleSelect",
+         minWidth: 270,
+         renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
+            <RenderAccountChip
+               account_id = { params.row.account_id || "" }
+            />
+         ),
+         valueGetter: (_value: never, row: TransactionRowModel) => row.account_id,
+         valueOptions: () => Object.values(accountsMap).map((account) => ({
+            value: account.account_id,
+            label: account.name
+         }))
       },
       {
          field: "category",
          headerName: "Category",
-         type: "singleSelect",
          minWidth: 255,
-         renderCell: RenderCategoryChip,
-         columnMenuProps: {
-            flexDirection: "row",
+         renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
+            <RenderCategoryChip
+               budget_category_id = { params.row.budget_category_id || "" }
+            />
+         ),
+         valueFormatter: (_value: never, row: TransactionRowModel) => row.budget_category_id,
+         valueGetter: (_value: never, row: TransactionRowModel) => row.budget_category_id,
+         getApplyQuickFilterFn: () => {
+            return ({ value, row }) => {
+               return value === "all" || value === row?.budget_category_id;
+            };
          },
-         valueFormatter: (_value, row: TransactionRowModel) => row.budget_category_id,
-         valueOptions: () => {
-            // Income
-            const values: ValueOptions[] = [{
-               value: budgets.Income.budget_category_id,
-               label: "Income"
-            }];
-            values.push(...(budgets.Income.categories.map((category) => ({
-               value: category.budget_category_id,
-               label: category.name || ""
-            })) || []));
+         filterOperators: [{
+            label: "equals",
+            value: "equals",
+            getApplyFilterFn: (props) => {
+               const { value } = props;
 
-            // Expenses
-            values.push({
-               value: budgets.Expenses.budget_category_id,
-               label: "Expenses"
-            });
-            values.push(...(budgets.Expenses.categories.map((category) => ({
-               value: category.budget_category_id,
-               label: category.name || ""
-            })) || []));
+               return (item) => {
+                  return value === "all" || item === value;
+               };
+            },
+            InputComponent: (props: any) => {
+               const { item, applyValue } = props;
 
-            return values;
-         }
+               const handleChange = useCallback((event: React.ChangeEvent<{ value: unknown }>) => {
+                  applyValue({ ...item, value: event.target.value });
+               }, [applyValue, item]);
+
+               return (
+                  <FormControl>
+                     <InputLabel
+                        htmlFor = "filter-category"
+                        shrink = { true }
+                        variant = "outlined"
+                     >
+                        Category
+                     </InputLabel>
+                     <Select
+                        { ...props }
+                        defaultValue = { "all" }
+                        label = "Category"
+                        onChange = { handleChange }
+                        renderValue = {
+                           (value: any) => value === "all" ? null : (
+                              <RenderCategoryChip
+                                 budget_category_id = { value }
+                              />
+                           )
+                        }
+                        slotProps = {
+                           {
+                              input: {
+                                 id: "filter-category"
+                              }
+                           }
+                        }
+                        variant = "outlined"
+                     >
+                        <MenuItem
+                           key = "filter-all"
+                           value = { "all" }
+                        >
+                           -- Select Category --
+                        </MenuItem>
+                        <MenuItem
+                           key = { `filter-${budgets.Income.budget_category_id}` }
+                           value = { budgets.Income.budget_category_id }
+                        >
+                           Income
+                        </MenuItem>
+                        {
+                           budgets.Income.categories.map((category) => (
+                              <MenuItem
+                                 key = { `filter-${category.budget_category_id}` }
+                                 value = { category.budget_category_id }
+                              >
+                                 { category.name }
+                              </MenuItem>
+                           ))
+                        }
+                        <MenuItem
+                           key = { `filter-${budgets.Expenses.budget_category_id}` }
+                           value = { budgets.Expenses.budget_category_id }
+                        >
+                           Expenses
+                        </MenuItem>
+                        {
+                           budgets.Expenses.categories.map((category) => (
+                              <MenuItem
+                                 key = { `filter-${category.budget_category_id}` }
+                                 value = { category.budget_category_id }
+                              >
+                                 { category.name }
+                              </MenuItem>
+                           ))
+                        }
+                     </Select>
+                  </FormControl>
+               );
+            }
+         }]
       },
       {
          field: "amount",
@@ -485,17 +562,23 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          headerName: "Amount",
          minWidth: 200,
          renderCell: RenderAmount
-      },
-      {
-         field: "balance",
-         type: "number",
-         headerName: "Balance",
-         minWidth: 200,
-         filterable: false,
-         sortable: false,
-         renderCell: RenderBalance
-      },
-      {
+      }];
+
+      // Potential balance column for the specific account view
+      if (filter === "account") {
+         visible.push({
+            field: "balance",
+            type: "number",
+            headerName: "Balance",
+            minWidth: 200,
+            filterable: false,
+            sortable: false,
+            renderCell: RenderBalance
+         });
+      }
+
+      // Actions column
+      visible.push({
          field: "Actions",
          headerName: "",
          align: "center",
@@ -536,8 +619,10 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                />
             </Stack>
          )
-      }
-   ], [onEdit]);
+      });
+
+      return visible;
+   }, [onEdit, budgets, filter, accountsMap]);
 
    // Component for the stack view
    const cardColumn: GridColDef<TransactionRowModel>[] = useMemo(() => [{
@@ -635,7 +720,6 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          <DataGrid
             apiRef = { dataGridRef }
             checkboxSelection = { view === "table" }
-            columnVisibilityModel = { { balance: filter === "account" } }
             columns = { view === "table" ? columns : cardColumn }
             density = "standard"
             disableColumnResize = { true }
@@ -701,7 +785,8 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                            }
                         }
                      }
-                  }
+                  },
+                  panel: { placement: "top-start" }
                }
             }
             slots = {

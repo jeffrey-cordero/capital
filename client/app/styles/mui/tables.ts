@@ -1,9 +1,9 @@
 import { checkboxClasses } from "@mui/material/Checkbox";
+import { formControlClasses } from "@mui/material/FormControl";
 import { iconButtonClasses } from "@mui/material/IconButton";
 import { listClasses } from "@mui/material/List";
 import { listItemIconClasses } from "@mui/material/ListItemIcon";
 import { menuItemClasses } from "@mui/material/MenuItem";
-import { paperClasses } from "@mui/material/Paper";
 import { alpha } from "@mui/material/styles";
 import { tablePaginationClasses } from "@mui/material/TablePagination";
 import { gridClasses } from "@mui/x-data-grid";
@@ -79,12 +79,6 @@ export const tables = {
          }),
          cell: ({ theme }: { theme: any }) => ({ borderTopColor: (theme.vars || theme).palette.divider }),
          menu: ({ theme }: { theme: any }) => ({
-            borderRadius: theme.shape.borderRadius,
-            backgroundImage: "none",
-            [`& .${paperClasses.root}`]: {
-               border: `1px solid ${(theme.vars || theme).palette.divider}`
-            },
-
             [`& .${menuItemClasses.root}`]: {
                margin: "0 4px"
             },
@@ -150,12 +144,19 @@ export const tables = {
          }),
          filterForm: ({ theme }: { theme: any }) => ({
             gap: theme.spacing(2),
-            alignItems: "flex-end",
-            padding: "16px 12px"
+            alignItems: "flex-start",
+            flexDirection: "column",
+            padding: "24px 10px",
+            [`& .${gridClasses.filterFormDeleteIcon}`]: {
+               display: "none"
+            },
+            [`& .${formControlClasses.root}`]: {
+               width: "100%",
+               padding: "0px 2px"
+            }
          }),
-         columnsManagementHeader: ({ theme }: { theme: any }) => ({
-            paddingRight: theme.spacing(3),
-            paddingLeft: theme.spacing(3)
+         columnsManagementHeader: () => ({
+            padding: "18px 14px 8px 14px"
          }),
          columnHeaderTitleContainer: {
             flexGrow: 1,
