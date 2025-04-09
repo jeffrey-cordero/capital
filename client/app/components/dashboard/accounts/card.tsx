@@ -10,7 +10,6 @@ import {
    CardContent,
    Fab,
    Stack,
-   Tooltip,
    Typography,
    useTheme
 } from "@mui/material";
@@ -127,8 +126,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
             style = { style }
          >
             <Card
-               elevation = { 9 }
-
+               elevation = { 3 }
                sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
                variant = { undefined }
             >
@@ -181,14 +179,12 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      <Typography variant = "caption">
                         { account.type }
                      </Typography>
-                     <Tooltip
-                        placement = "top"
-                        title = "Last updated"
+                     <Typography
+                        sx = { { ...horizontalScroll(theme), maxWidth: "100%" } }
+                        variant = "caption"
                      >
-                        <Typography variant = "caption">
-                           { displayDate(account.last_updated) }
-                        </Typography>
-                     </Tooltip>
+                        Updated { displayDate(account.last_updated) }
+                     </Typography>
                      <AccountForm
                         account = { account }
                         onClose = { closeAccountModal }

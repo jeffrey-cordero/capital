@@ -21,7 +21,7 @@ export const constructTheme = (mode: "light" | "dark") => (
          ...palette
       },
       typography,
-      shadows,
+      shadows: shadows(mode),
       components: { ...components, ...charts, ...tables }
    })
 );

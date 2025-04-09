@@ -248,6 +248,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                      {
                         type === "accounts" && (
                            <Tooltip
+                              enterDelay = { 0 }
                               placement = { "top" }
                               title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.)." }
                            >

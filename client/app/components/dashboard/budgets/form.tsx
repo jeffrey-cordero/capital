@@ -141,7 +141,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             direction = "column"
             spacing = { 3 }
          >
-            <ModalSection title = "Goal">
+            <ModalSection title = { type }>
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }

@@ -57,7 +57,7 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
 
    return (
       <Confirmation
-         fontSize = "1rem"
+         fontSize = "1.1rem"
          message = { message }
          onConfirmation = { onSubmit }
          type = "icon"

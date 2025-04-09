@@ -78,15 +78,20 @@ export function displayPercentage(percentage: number): string {
  * @returns {string} The formatted volume value
  */
 export function displayVolume(volume: number): string {
-   if (volume >= 1_000_000_000) {
-      return (volume / 1_000_000_000).toFixed(1) + "B";
-   } else if (volume >= 1_000_000) {
-      return (volume / 1_000_000).toFixed(1) + "M";
-   } else if (volume >= 1_000) {
-      return (volume / 1_000).toFixed(1) + "K";
+   let result: string = "";
+   const normalized: number = Math.abs(volume);
+
+   if (normalized >= 1_000_000_000) {
+      result = (normalized / 1_000_000_000).toFixed(0) + "B";
+   } else if (normalized >= 1_000_000) {
+      result = (normalized / 1_000_000).toFixed(0) + "M";
+   } else if (normalized >= 1_000) {
+      result = (normalized / 1_000).toFixed(0) + "K";
    } else {
-      return volume.toString();
+      result = normalized.toString();
    }
+
+   return volume < 0 ? `-${result}` : result;
 }
 
 /**

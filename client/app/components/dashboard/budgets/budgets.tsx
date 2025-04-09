@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { getCurrentDate, monthAbbreviations } from "@/lib/dates";
+import { getCurrentDate, months } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
@@ -96,7 +96,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       <Box>
          <Stack
             direction = "row"
-            sx = { { justifyContent: "space-between", alignItems: "center" } }
+            sx = { { justifyContent: "space-between", alignItems: "center", textAlign: "center" } }
          >
             <IconButton
                disabled = { period.year === 1800 }
@@ -110,7 +110,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
                fontWeight = "bold"
                variant = "h6"
             >
-               { `${monthAbbreviations[period.month - 1]} ${period.year}` }
+               { `${months[period.month - 1]} ${period.year}` }
             </Typography>
             <IconButton
                disabled = { selectNextMonthDisabled }

@@ -21,6 +21,7 @@ export const tables = {
             "--DataGrid-overlayHeight": "300px",
             overflow: "clip",
             overflowY: "none",
+            backgroundColor: theme.palette.mode === "dark" ? "#2B2B2B" : "#FFFFFF",
             borderColor: theme.palette.mode === "dark" ? "#333B4D" : "#E0E0E0",
             borderWidth: "1.5px",
             [`& .${gridClasses.columnHeader}`]: {
@@ -30,13 +31,14 @@ export const tables = {
                [`& .${gridClasses.columnHeaderCheckbox}`]: {
                   border: 0
                },
-               backgroundColor: theme.palette.mode === "dark" ? "#282A36" : "#F5F6FA",
+               
+               backgroundColor: theme.palette.mode === "dark" ? "#252731" : "#F5F6FA",
                outline: "none !important",
                border: "0 !important"
             },
             [`& .${gridClasses.footerContainer}`]: {
                border: "none",
-               backgroundColor: theme.palette.mode === "dark" ? "#282A36" : "#F5F6FA"
+               backgroundColor: theme.palette.mode === "dark" ? "#252731" : "#F5F6FA"
             },
             [`& .${gridClasses.iconSeparator}`]: {
                display: "none"

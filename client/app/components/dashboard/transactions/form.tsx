@@ -163,6 +163,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                      ...updatedFields,
                      date: updatedFields.date ? updatedFields.date.split("T")[0] : undefined
                   });
+
+                  onClose();
                }
             }
          } else {

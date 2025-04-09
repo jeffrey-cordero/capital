@@ -21,7 +21,6 @@ import {
 import {
    DataGrid,
    GridActionsCellItem,
-   GridLogicOperator,
    type GridColDef,
    type GridFilterItem,
    type GridPaginationModel,
@@ -141,7 +140,7 @@ function RenderAmount(params: GridRenderCellParams<TransactionRowModel, number>)
    return (
       <Typography
          color = { color }
-         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "625", fontSize: "0.85rem" } }
          variant = "caption"
       >
          { displayCurrency(params.row.amount) }
@@ -159,10 +158,11 @@ function RenderBalance(params: GridRenderCellParams<TransactionRowModel, number>
    return (
       <Typography
          color = "primary.default"
-         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "625", fontSize: "0.85rem" } }
          variant = "caption"
       >
          <Tooltip
+            enterDelay = { 0 }
             placement = "top-start"
             title = { `Previous: ${displayCurrency((params.row.balance || 0) - params.row.amount)}` }
          >
@@ -189,8 +189,8 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
          <Chip
             color = "primary"
             label = { account?.name || "" }
-            sx = { { m: "0 !important" } }
             size = "small"
+            sx = { { m: "0 !important" } }
             variant = "filled"
          />
       ) : null
@@ -206,7 +206,7 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
 function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): React.ReactNode {
    return (
       <Typography
-         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "625", fontSize: "0.85rem" } }
          variant = "caption"
       >
          { displayDate(params.row.date) }
@@ -223,10 +223,11 @@ function RenderDate(params: GridRenderCellParams<TransactionRowModel, string>): 
 function RenderDescription(params: GridRenderCellParams<TransactionRowModel, string | undefined | null>): React.ReactNode {
    return (
       <Typography
-         sx = { { fontWeight: "600", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "625", fontSize: "0.85rem" } }
          variant = "caption"
       >
          <Tooltip
+            enterDelay = { 0 }
             placement = "top-start"
             title = { params.row.description || "No Description" }
          >
@@ -264,23 +265,22 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
 
    return (
       <Card
-         sx = { { width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#1E1E1E" : "#FFFFFF" } }
+         sx = { { width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#2B2B2B" : "#FFFFFF" } }
          variant = "outlined"
       >
          <CardContent sx = { { py: 2, px: 2.5 } }>
             <Stack
                direction = "column"
-               spacing = { 0.5 }
+               rowGap = { 1 }
                sx = { { alignItems: "flex-start", direction: "row", textAlign: "left", justifyContent: "flex-start", alignContent: "center" } }
             >
                <Stack
                   direction = "row"
-                  gap = { 1 }
-                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", width: "100%" } }
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%" } }
                >
                   <Typography
                      color = "text.secondary"
-                     sx = { { fontSize: "0.8rem", fontWeight: "600" } }
+                     sx = { { fontSize: "0.8rem", fontWeight: "625" } }
                      variant = "body1"
                   >
                      { displayDate(transaction.date) }
@@ -292,11 +292,11 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                <Stack
                   direction = "row"
                   spacing = { 0.5 }
-                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", width: "100%" } }
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
                   <Typography
                      color = { amountColor }
-                     sx = { { fontWeight: "600", fontSize: "0.9rem" } }
+                     sx = { { fontWeight: "625", fontSize: "0.9rem" } }
                      variant = "subtitle1"
                   >
                      { displayCurrency(transaction.amount) }
@@ -305,29 +305,38 @@ function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps
                      account_id = { transaction.account_id || "" }
                   />
                </Stack>
-               <Typography
-                  sx = { { fontWeight: "600", wordBreak: "break-word", m: "0px !important" } }
-                  variant = "body1"
-               >
-                  { transaction.description || "No Description" }
-               </Typography>
                <Stack
                   direction = "row"
-                  spacing = { 1 }
-                  sx = { { justifyContent: "flex-start", alignItems: "flex-start", pl: 0.2 } }
+                  spacing = { 0.5 }
+                  sx = { { flexWrap: "nowrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
-                  <FontAwesomeIcon
-                     className = "primary"
-                     icon = { faPenToSquare }
-                     onClick = { () => onEdit(transaction.index) }
-                     size = "sm"
-                     style = { { fontSize: "1rem", paddingTop: "1px", cursor: "pointer" } }
-                  />
-                  <TransactionDeletion
-                     index = { transaction.index }
-                     transaction = { transaction }
-                  />
+                  <Typography
+                     sx = { { fontWeight: "625", wordBreak: "break-word", m: "0px !important", maxWidth: "calc(100% - 5rem)" } }
+                     variant = "body1"
+                  >
+                     { transaction.description || "No Description" }
+                  </Typography>
+                  <Stack
+                     direction = "row"
+                     spacing = { 1 }
+                     sx = { { justifyContent: "flex-start", alignItems: "flex-start", pr: 0.5 } }
+                  >
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faPenToSquare }
+                        onClick = { () => onEdit(transaction.index) }
+                        style = { { fontSize: "1.1rem", paddingTop: "1px", cursor: "pointer" } }
+                     />
+                     <Box sx = { { pt: 0.2 } }>
+                        <TransactionDeletion
+                           index = { transaction.index }
+                           transaction = { transaction }
+                        />
+                     </Box>
+                  </Stack>
+
                </Stack>
+
             </Stack>
          </CardContent>
          {
@@ -714,6 +723,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             field: "balance",
             type: "number",
             align: "left",
+            headerAlign: "left",
             headerName: "Balance",
             minWidth: 200,
             flex: 1,
@@ -744,6 +754,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                      <FontAwesomeIcon
                         icon = { faPenToSquare }
                         size = "sm"
+                        style = { { fontSize: "1.1rem", cursor: "pointer" } }
                      />
                   }
                   key = { `edit-${params.row.index}` }
@@ -909,7 +920,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                   baseCheckbox: {
                      disableRipple: true
                   },
-                  
+
                   columnsManagement: {
                      searchInputProps: {
                         variant: "outlined",
@@ -959,6 +970,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             }
             sx = {
                view === "stack" ? {
+                  boxShadow: 2,
                   "& .MuiDataGrid-row": {
                      minWidth: "100% !important"
                   },
@@ -977,7 +989,9 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                      width: "0px",
                      height: "0px"
                   }
-               } : undefined
+               } : {
+                  boxShadow: 2
+               }
             }
          />
       </Box>
