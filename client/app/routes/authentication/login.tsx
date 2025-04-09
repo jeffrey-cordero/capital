@@ -102,7 +102,7 @@ export default function Login(): React.ReactNode {
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
-                     spacing = { 2 }
+                     spacing = { 1.5 }
                   >
                      <Controller
                         control = { control }

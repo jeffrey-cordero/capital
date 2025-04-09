@@ -31,7 +31,7 @@ export const tables = {
                [`& .${gridClasses.columnHeaderCheckbox}`]: {
                   border: 0
                },
-               
+
                backgroundColor: theme.palette.mode === "dark" ? "#2e303d" : "#F5F6FA",
                outline: "none !important",
                border: "0 !important"

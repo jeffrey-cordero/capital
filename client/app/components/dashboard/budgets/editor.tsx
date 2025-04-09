@@ -177,7 +177,7 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
       >
          <Stack
             direction = "column"
-            spacing = { 2 }
+            spacing = { 1.5 }
             sx = { { mt: 1 } }
          >
             <Controller

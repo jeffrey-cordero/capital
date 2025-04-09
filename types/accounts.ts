@@ -27,7 +27,7 @@ export const accountSchema = z.object({
       message: "Name must be at most 30 characters"
    }),
    balance: zodPreprocessNumber(z.coerce.number({
-      message: "Balance must be a valid number"
+      message: "Balance must be a valid currency amount"
    }).min(-999_999_999_999.99, {
       message: "Balance must be at least -$999,999,999,999.99"
    }).max(999_999_999_999.99, {

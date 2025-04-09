@@ -9,7 +9,7 @@ export const transactionSchema = z.object({
       message: "Transaction ID must be a valid UUID"
    }).optional(),
    amount: zodPreprocessNumber(z.coerce.number({
-      message: "Amount must be a valid number"
+      message: "Amount must be a valid currency amount"
    }).min(-999_999_999_999.99, {
       message: "Amount must be at least -$999,999,999,999.99"
    }).max(999_999_999_999.99, {

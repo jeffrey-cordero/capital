@@ -73,21 +73,19 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                onEdit = { openModal }
             />
             <Box sx = { { mt: 5 } }>
-               {
-                  !filter && (
-                     <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        onClick = { () => openModal() }
-                        startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-                        variant = "contained"
-                     >
-                        Add Transaction
-                     </Button>
-                  )
-               }
+               <Button
+                  className = "btn-primary"
+                  color = "primary"
+                  onClick = { () => openModal() }
+                  startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+                  variant = "contained"
+               >
+                  Add Transaction
+               </Button>
                <TransactionForm
                   accountsMap = { accountsMap }
+                  filter = { filter }
+                  identifier = { identifier }
                   index = { editState.index ?? 0 }
                   onClose = { closeModal }
                   open = { editState.state !== "view" }

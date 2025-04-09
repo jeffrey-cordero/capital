@@ -21,7 +21,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/table";
+import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
@@ -37,6 +37,8 @@ import type { RootState } from "@/redux/store";
  * @property {boolean} open - Whether the modal is open.
  * @property {number} index - The index of the transaction in the transactions array.
  * @property {() => void} onClose - The function to call when the modal is closed.
+ * @property {"account" | "budget"} filter - The filter to base the default values on.
+ * @property {string | undefined} identifier - The identifier used to apply the default values.
  */
 interface TransactionFormProps {
    transaction: Transaction | undefined;
@@ -44,6 +46,8 @@ interface TransactionFormProps {
    open: boolean;
    index: number;
    onClose: () => void;
+   filter: "account" | "budget" | undefined;
+   identifier: string | undefined;
 }
 
 /**
@@ -52,9 +56,10 @@ interface TransactionFormProps {
  * @param {TransactionFormProps} props - The props for the TransactionForm component
  * @returns {React.ReactNode} The TransactionForm component
  */
-export default function TransactionForm({ transaction, accountsMap, open, index, onClose }: TransactionFormProps): React.ReactNode {
+export default function TransactionForm({ transaction, accountsMap, open, index, onClose, filter, identifier }: TransactionFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const updating = transaction !== undefined;
+   const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
 
    // Setup form with default values
@@ -72,6 +77,23 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
          amount: 0, date: "", description: "", account_id: "", budget_category_id: ""
       }
    });
+
+   // Setup default values based on the filter and identifier
+   const defaultAccountID: string = useMemo(() => {
+      if (filter === "account") {
+         return accounts.find((acc) => acc.account_id === identifier)?.account_id ?? "";
+      }
+
+      return "";
+   }, [filter, identifier, accounts]);
+
+   const defaultCategoryID: string = useMemo(() => {
+      if (filter === "budget") {
+         return budgets[identifier === "Income" ? "Income" : "Expenses"].budget_category_id;
+      }
+
+      return "";
+   }, [filter, identifier, budgets]);
 
    // Setup minimum and maximum dates relative to user timezone
    const [minDate, maxDate] = useMemo(() => [
@@ -110,13 +132,13 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
             });
          } else {
             reset({
-               amount: 0, date: "", description: "", account_id: "", budget_category_id: ""
+               amount: 0, date: maxDate, description: "", account_id: defaultAccountID, budget_category_id: defaultCategoryID
             });
          }
       } else {
          clearErrors();
       }
-   }, [transaction, open, reset, clearErrors]);
+   }, [transaction, open, reset, clearErrors, defaultAccountID, defaultCategoryID, maxDate]);
 
    // Account and budget category selections
    const accountOptions = useMemo(() => {
@@ -205,7 +227,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
-                     spacing = { 1 }
+                     spacing = { 1.5 }
                   >
                      <Stack
                         direction = { { xs: "column", sm: "row" } }

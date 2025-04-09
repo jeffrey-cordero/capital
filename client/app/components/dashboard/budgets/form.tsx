@@ -149,7 +149,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   >
                      <Stack
                         direction = "column"
-                        spacing = { 2 }
+                        spacing = { 1.5 }
                         sx = { { mt: 3 } }
                      >
                         <Controller

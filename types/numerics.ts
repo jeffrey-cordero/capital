@@ -14,8 +14,9 @@ export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
             return NaN; // Force validation failure for null/undefined
          } else if (typeof value === "string") {
             const trimmed = value.trim();
+            const decimals = (value.toString().split('.')[1] || '').length;
 
-            if (trimmed === "" || isNaN(Number(trimmed))) {
+            if (trimmed === "" || isNaN(Number(trimmed)) || decimals > 2) {
                return NaN; // Force validation failure for non-numeric strings
             }
 
