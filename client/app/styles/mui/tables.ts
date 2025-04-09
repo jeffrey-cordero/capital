@@ -32,13 +32,13 @@ export const tables = {
                   border: 0
                },
                
-               backgroundColor: theme.palette.mode === "dark" ? "#252731" : "#F5F6FA",
+               backgroundColor: theme.palette.mode === "dark" ? "#2e303d" : "#F5F6FA",
                outline: "none !important",
                border: "0 !important"
             },
             [`& .${gridClasses.footerContainer}`]: {
                border: "none",
-               backgroundColor: theme.palette.mode === "dark" ? "#252731" : "#F5F6FA"
+               backgroundColor: theme.palette.mode === "dark" ? "#2e303d" : "#F5F6FA"
             },
             [`& .${gridClasses.iconSeparator}`]: {
                display: "none"

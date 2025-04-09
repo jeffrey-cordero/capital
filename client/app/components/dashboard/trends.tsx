@@ -250,7 +250,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                            <Tooltip
                               enterDelay = { 0 }
                               placement = { "top" }
-                              title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.)." }
+                              title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.) for the current month or the last month of the specified year." }
                            >
                               <Typography
                                  component = "p"

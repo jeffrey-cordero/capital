@@ -72,7 +72,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                identifier = { identifier }
                onEdit = { openModal }
             />
-            <Box sx = { { mt: 6 } }>
+            <Box sx = { { mt: 5 } }>
                {
                   !filter && (
                      <Button
