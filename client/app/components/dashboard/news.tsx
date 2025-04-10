@@ -7,26 +7,21 @@ import {
    CardActions,
    CardContent,
    CardHeader,
-   CardMedia,
    Collapse,
    IconButton,
    Stack,
    Typography,
+   useMediaQuery,
    useTheme
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type News, type NewsArticle } from "capital/news";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { Expand } from "@/components/global/expand";
-import { displayDate, horizontalScroll } from "@/lib/display";
+import { horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-
-/**
- * Regex to validate external image URLs
- */
-const MARKET_WATCH_IMAGE_REGEX = /^https:\/\/images\.mktw\.net\/.*/;
 
 /**
  * Default values for missing article content
@@ -34,26 +29,8 @@ const MARKET_WATCH_IMAGE_REGEX = /^https:\/\/images\.mktw\.net\/.*/;
 const DEFAULT_VALUES = {
    AUTHOR: "No Author",
    TITLE: "No Title",
-   DESCRIPTION: "No Description",
-   IMAGE: "/svg/backup.svg"
+   DESCRIPTION: "No Description"
 } as const;
-
-/**
- * Props for the NewsItem component
- *
- * @interface NewsItemProps
- * @extends NewsArticle - Inherits all properties from the NewsArticle interface
- * @property {string[]} description - The description of the article
- * @property {string[]} link - The link of the article
- * @property {string[]} pubDate - The publish date of the article
- * @property {string[]} title - The title of the article
- */
-interface NewsItemProps extends NewsArticle {
-   description: string[];
-   link: string[];
-   pubDate: string[];
-   title: string[];
-}
 
 /**
  * NewsItem component to display a single news article
@@ -61,26 +38,41 @@ interface NewsItemProps extends NewsArticle {
  * @param {NewsItemProps} props - The props for the NewsItem component
  * @returns {React.ReactNode} The NewsItem component
  */
-function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps): React.ReactNode {
+function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
    const theme = useTheme();
-   const [isResourceError, setIsResourceError] = useState(false);
    const [expanded, setExpanded] = useState(false);
+   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("lg"));
 
-   // Extract or use default values
-   const author = rest["dc:creator"]?.[0] || DEFAULT_VALUES.AUTHOR;
+   const author = article.author || article.domain || DEFAULT_VALUES.AUTHOR;
    const authorInitial = author.charAt(0).toUpperCase();
-   const image = rest["media:content"]?.[0]?.$.url || DEFAULT_VALUES.IMAGE;
-   const storyTitle = title?.[0] || DEFAULT_VALUES.TITLE;
-   const storyDescription = description?.[0] || DEFAULT_VALUES.DESCRIPTION;
-   const storyLink = link?.[0] || "";
-   const publishDate = pubDate?.[0] || new Date().toISOString();
+   const publishDate = new Date(article.published).toLocaleString() || new Date().toLocaleString();
+   const title = article.title || DEFAULT_VALUES.TITLE;
+   const description = article.text.replace(/\n/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
+   const link = article.url || "";
 
-   // Validate image URL and use backup if invalid
-   const isValidImage = MARKET_WATCH_IMAGE_REGEX.test(image) && !isResourceError;
-   const displayImage = isValidImage ? image : DEFAULT_VALUES.IMAGE;
+   const updateExpandedState = useCallback(() => {
+      const financesContainer = document.getElementById("finances-container") as HTMLElement;
+
+      setExpanded((prev) => {
+         if (!isDesktop) return !prev;
+
+         const isExpanding = prev === false;
+         const expanded = document.querySelectorAll("[data-expanded=\"true\"]").length + (isExpanding ? 1 : -1);
+
+         // Align dashboard height based on the number of expanded cards
+         if (expanded > 0) {
+            financesContainer.setAttribute("style", "justify-content: flex-start !important;"); // not-flush
+         } else {
+            financesContainer.setAttribute("style", "justify-content: space-between !important;"); // flush
+         }
+
+         return !prev;
+      });
+   }, [isDesktop]);
 
    return (
       <Card
+         data-expanded = { expanded }
          elevation = { 3 }
          sx = { { margin: "auto", borderRadius: 2 } }
       >
@@ -105,30 +97,13 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                         { author }
                      </Typography>
                      <Typography variant = "caption">
-                        { displayDate(publishDate) }
+                        { publishDate }
                      </Typography>
                   </Stack>
                </Stack>
             }
          />
-         <Stack sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }>
-            <CardMedia
-               alt = "Article Image"
-               component = "img"
-               image = { displayImage }
-               onError = { () => setIsResourceError(true) }
-               sx = {
-                  {
-                     objectFit: { xs: "contain", md: "cover" },
-                     objectPosition: "center center",
-                     height: { xs: "auto", md: "207px" },
-                     backgroundColor: "white"
-                  }
-               }
-               title = "News"
-            />
-         </Stack>
-         <CardContent sx = { { pb: 1 } }>
+         <CardContent sx = { { py: 0, px: "auto" } }>
             <Typography
                sx = {
                   {
@@ -138,20 +113,20 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
                      WebkitLineClamp: { sm: "none", md: 2 },
                      minHeight: { sm: "none", md: "40.031px" },
                      textOverflow: "ellipsis",
-                     fontWeight: "medium",
+                     fontWeight: "600",
                      mr: 2
                   }
                }
                variant = "body2"
             >
-               { storyTitle }
+               { title }
             </Typography>
          </CardContent>
-         <CardActions sx = { { justifyContent: "flex-end", px: 1, pb: 1, pt: 0 } }>
+         <CardActions sx = { { justifyContent: "flex-end", px: 1, py: 1, mt: -2 } }>
             <Expand
                disableRipple = { true }
                expand = { expanded }
-               onClick = { () => setExpanded(!expanded) }
+               onClick = { updateExpandedState }
             >
                <FontAwesomeIcon
                   icon = { faCaretDown }
@@ -167,13 +142,14 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
             <CardContent sx = { { p: "0 15px" } }>
                <Typography
                   color = "textSecondary"
+                  sx = { { whiteSpace: "pre-wrap" } }
                   variant = "body2"
                >
-                  { storyDescription }
+                  { description }
                   <IconButton
                      aria-label = "Read More"
                      disableRipple = { true }
-                     href = { storyLink }
+                     href = { link }
                      size = "small"
                      sx = { { pl: 1 } }
                      target = "_blank"
@@ -198,7 +174,7 @@ function NewsItem({ description, link, pubDate, title, ...rest }: NewsItemProps)
  */
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.markets.value.news);
-   const items = (news?.channel?.[0]?.item || []).slice(0, 10);
+   const items: NewsArticle[] = news.response.data.slice(0, 23);
 
    return (
       <Box
@@ -218,15 +194,15 @@ export default function Articles(): React.ReactNode {
             <Grid
                columnSpacing = { 3.1 }
                container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", gap: 3.1, mt: 2, textAlign: "left" } }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 3.1, mt: 2, textAlign: "left" } }
             >
                {
-                  items.map((item, index) => (
+                  items.map((item: NewsArticle, index) => (
                      <Grid
                         key = { `news-${index}` }
                         size = { { xs: 12, md: 6, lg: 12 } }
                      >
-                        <NewsItem { ...item } />
+                        <NewsItem article = { item } />
                      </Grid>
                   ))
                }

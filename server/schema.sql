@@ -17,7 +17,7 @@ CREATE TABLE accounts (
    type account_type NOT NULL,
    image CHARACTER VARYING,
    balance DECIMAL(18, 2) NOT NULL,
-   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date)),
+   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date),
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
@@ -93,7 +93,7 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_transactions_dates ON transactions (user_id, date);
 
-CREATE TABLE market_trends_api_data (
+CREATE TABLE external_api_cache (
    time TIMESTAMP PRIMARY KEY,
    data JSONB NOT NULL
 );

@@ -1,38 +1,36 @@
 /**
  * Represents news data for the dashboard page
  */
-export type News = {
-   "$": Object;
-   "channel": {
-      "copyright": string[];
-      "description": string[];
-      "image": { 
-         url: string; 
-         title: string; 
-         link: string 
-      }[];
-      "item": NewsArticle[];
-      "language": string[];
-      "lastBuildDate": string[];
-      "link": string[];
-      "title": string[];
-   }[];
-}
 
-/**
- * Represents a news article
- */
-export type NewsArticle = {
-   "dc:creator": string[];
-   "description": string[];
-   "link": string[];
-   "pubDate": string[];
-   "title": string[];
-   "media:content"?: { 
-      $: { 
-         image: string; 
-         type: string; 
-         url: string 
-      } 
-   }[];
-};
+import { z } from "zod";
+
+export const newsSchema = z.object({
+   response: z.object({
+      next_initial: z.string(),
+      restResults: z.coerce.number(),
+      next_country: z.string(),
+      totalResults: z.coerce.number(),
+      next_final: z.string(),
+      next_category: z.string(),
+      data: z.array(z.object({
+         id: z.string(),
+         site_region: z.string(),
+         site_language: z.string(),
+         author: z.string(),
+         domain: z.string(),
+         crawled: z.coerce.number(),
+         language: z.string(),
+         title: z.string(),
+         site_type: z.string(),
+         text: z.string(),
+         url: z.string(),
+         site: z.string(),
+         site_country: z.string(),
+         published: z.string(),
+      })),
+      next_query: z.string()
+   })
+});
+
+export type News = z.infer<typeof newsSchema>;
+export type NewsArticle = News["response"]["data"][0];

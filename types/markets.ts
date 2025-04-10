@@ -1,7 +1,9 @@
+import { z } from "zod";
+
 /**
  * Represents economic indicator data for financial analysis, such as GDP, unemployment rate, etc.
  */
-export type IndicatorTrend = {
+export type IndicatorTrends = {
    date: string;
    value: string;
 };
@@ -31,4 +33,4 @@ export type StockTrends ={
 /**
  * Represents market trend data essential for the dashboard page
  */
-export type MarketTrends = Record<string, IndicatorTrend[] | StockTrends>;
+export type MarketTrends = Record<string, IndicatorTrends[] | StockTrends>;

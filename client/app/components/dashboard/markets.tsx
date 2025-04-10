@@ -8,7 +8,7 @@ import {
    Typography
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { IndicatorTrend, MarketTrends, StockIndicator, StockTrends } from "capital/markets";
+import type { IndicatorTrends, MarketTrends, StockIndicator, StockTrends } from "capital/markets";
 import { useSelector } from "react-redux";
 
 import Graph from "@/components/global/graph";
@@ -50,7 +50,7 @@ function StockTrendCard({ title, data, image }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, p: 1 } }
+         sx = { { textAlign: "left", borderRadius: 2, px: 1, py: 0 } }
          variant = "elevation"
       >
          <CardContent>
@@ -184,8 +184,8 @@ export default function Markets(): React.ReactNode {
    // Extract and format indicators data
    const indicators = Object.keys(trends)
       .filter(key => key !== "Stocks")
-      .reduce((acc: { [key: string]: IndicatorTrend[] }, record) => {
-         acc[record] = trends[record] as IndicatorTrend[];
+      .reduce((acc: { [key: string]: IndicatorTrends[] }, record) => {
+         acc[record] = trends[record] as IndicatorTrends[];
          return acc;
       }, {});
 

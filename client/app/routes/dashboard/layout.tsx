@@ -30,8 +30,8 @@ export async function fetchDashboard(
       const budgets = dashboard.budgets;
 
       dispatch(setMarkets({
-         news: dashboard.news,
-         trends: dashboard.trends
+         news: dashboard.externalAPIs.news,
+         trends: dashboard.externalAPIs.trends
       }));
       dispatch(setAccounts(dashboard.accounts));
       dispatch(setBudgets(budgets));

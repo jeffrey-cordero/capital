@@ -245,7 +245,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      colors = { [color] }
                      experimentalMarkRendering = { true }
                      grid = { { horizontal: true } }
-                     height = { 415 }
+                     height = { 375 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
                      resolveSizeBeforeRender = { true }
                      series = {
@@ -299,7 +299,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   <BarChart
                      borderRadius = { 8 }
                      grid = { { horizontal: true } }
-                     height = { 415 }
+                     height = { 375 }
                      margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
                      resolveSizeBeforeRender = { true }
                      series = {
