@@ -58,26 +58,24 @@ interface TrendProps {
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
-
-   // Hold references to the last valid year and the backup account balances for missing years
-   const lastValidYear = useRef<number>(year);
-   const backupAccounts = useRef<Record<string, number>>({});
-
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
 
+   // Hold references to the last valid year and the backup account indices for missing years
+   const lastValidYear = useRef<number>(year);
+   const backupAccountIndices = useRef<Record<string, number>>({});
+
+   const today = useMemo(() => getCurrentDate(), []);
    const updateYear = useCallback((direction: "previous" | "next") => {
       setYear(prev => prev + (direction === "previous" ? -1 : 1));
    }, []);
 
-   const today = useMemo(() => getCurrentDate(), []);
-
-   const formatAccountStacks = useCallback((account: Account, balance: number, year: number) => {
+   const formatAccounts = useCallback((account: Account, balance: number, year: number) => {
       const points: number[] = [].concat(...new Array(12).fill([balance]));
 
-      if (year === today.getUTCFullYear()) {
+      if (year === today.getFullYear()) {
          for (let i = today.getMonth() + 1; i < 12; i++) {
-            // Handle setting null for future months
+            // Future months are not known yet
             points[i] = null as unknown as number;
          }
       }
@@ -110,6 +108,8 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          if (!acc[year]) {
             acc[year] = {};
+
+            // Format the budget trends
             acc[year].budgets = type !== "budgets" ? [] : [{
                id: "Income",
                label: "Income",
@@ -124,21 +124,22 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                color: theme.palette.error.main
             }];
 
-            // Format the default account data, where array is based on most recent balance
-            acc[year].accounts = type !== "accounts" ? [] : accounts.map(account => {
-               return formatAccountStacks(account, balances[account.account_id || ""].balance, year);
+            // Format the account trends
+            acc[year].accounts = type !== "accounts" ? [] : accounts.map((account) => {
+               return formatAccounts(account, balances[account.account_id || ""].balance, year);
             });
          }
 
          const amount: number = Math.abs(record.amount);
 
+         // Increment Income or Expense stack based on the transaction amount
          if (type === "budgets") {
             acc[year].budgets[record.amount >= 0 ? 0 : 1].data[month - 1] += amount;
          }
 
+         // Decrement account balance based on the transaction amount as we are going back in time
          if (type === "accounts") {
             if (record.account_id && balances[record.account_id] !== undefined) {
-               // Decrement as we are going back in time
                balances[record.account_id].balance -= record.amount;
 
                for (let i = 0; i < month - 1; i++) {
@@ -150,41 +151,40 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          return acc;
       }, {} as Record<string, Record<string, ChartData[]>>);
-   }, [transactions, accounts, theme, type, formatAccountStacks]);
+   }, [transactions, accounts, theme, type, formatAccounts]);
 
    const series = useMemo(() => {
       if (type === "budgets") {
-         // Series will always be based on existing year
+         // Budgets will always be based on existing year
          return trends[year]?.budgets || [];
       } else {
+         // Handle years with no transactions
          if (year in trends) {
-            // Update the last valid year for account balances
             lastValidYear.current = year;
-         } else if (!(year in backupAccounts.current)) {
-            // If the year is not in the trends, add it to the backupAccounts
-            backupAccounts.current[year] = lastValidYear.current;
+         } else if (!(year in backupAccountIndices.current)) {
+            backupAccountIndices.current[year] = lastValidYear.current;
          }
 
-         // Series will be based on existing year or default data for last valid year
-         const backup = backupAccounts.current[year] || lastValidYear.current;
+         // Accounts will be based on the existing year or backup data for last valid year
+         const backupIndex = backupAccountIndices.current[year] || lastValidYear.current;
 
          if (Object.keys(trends).length > 0) {
-            return trends[year]?.accounts || trends[backup]?.accounts.map((account) => ({
+            return trends[year]?.accounts || trends[backupIndex]?.accounts.map((account) => ({
                ...account,
                data: [].concat(...new Array(12).fill([account.data[0]]))
             })) || [];
          } else {
             // Handle missing accounts / transactions
             return accounts.map((account) => {
-               return formatAccountStacks(account, account.balance, year);
+               return formatAccounts(account, account.balance, year);
             });
          }
       }
-   }, [trends, year, type, accounts, formatAccountStacks]);
+   }, [trends, year, type, accounts, formatAccounts]);
 
    const netWorth = useMemo(() => {
       return (type === "accounts" ? series : []).reduce((acc, record) => {
-         // Account for assets and liabilities
+         // Account for assets vs. liabilities
          const multiplier = record.color === theme.palette.error.main ? -1 : 1;
 
          return acc + (multiplier * (year === today.getFullYear() ? record.data[today.getMonth()] : record.data[11]));
@@ -192,7 +192,6 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    }, [series, year, type, today, theme.palette.error.main]);
 
    // Memoize the essential chart-related values
-   const currentYear = useMemo(() => getCurrentDate().getUTCFullYear(), []);
    const yearAbbreviations = useMemo(() => getYearAbbreviations(year), [year]);
    const colorPalette = useMemo(() => [
       theme.palette.primary.dark,
@@ -296,7 +295,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                      />
                   </IconButton>
                   <IconButton
-                     disabled = { year === currentYear }
+                     disabled = { year === today.getFullYear() }
                      onClick = { () => updateYear("next") }
                      size = "medium"
                      sx = { { color: theme.palette.primary.main } }

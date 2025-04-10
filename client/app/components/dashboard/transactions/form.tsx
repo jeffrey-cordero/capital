@@ -37,8 +37,8 @@ import type { RootState } from "@/redux/store";
  * @property {boolean} open - Whether the modal is open.
  * @property {number} index - The index of the transaction in the transactions array.
  * @property {() => void} onClose - The function to call when the modal is closed.
- * @property {"account" | "budget"} filter - The filter to base the default values on.
- * @property {string | undefined} identifier - The identifier used to apply the default values.
+ * @property {"account" | "budget"} filter - The filter to base the potential default values on.
+ * @property {string | undefined} identifier - The identifier used to apply the potential default values.
  */
 interface TransactionFormProps {
    transaction: Transaction | undefined;
@@ -62,7 +62,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
 
-   // Setup form with default values
+   // Setup the react-hook-form instance
    const {
       control,
       handleSubmit,
@@ -78,18 +78,18 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       }
    });
 
-   // Setup default values based on the filter and identifier
+   // Memoize the default values based on the filter and identifier
    const defaultAccountID: string = useMemo(() => {
       if (filter === "account") {
-         return accounts.find((acc) => acc.account_id === identifier)?.account_id ?? "";
+         return accounts.find((acc) => acc.account_id === identifier)?.account_id || "";
       }
 
       return "";
    }, [filter, identifier, accounts]);
 
-   const defaultCategoryID: string = useMemo(() => {
+   const defaultBudgetCategoryID: string = useMemo(() => {
       if (filter === "budget") {
-         return budgets[identifier === "Income" ? "Income" : "Expenses"].budget_category_id;
+         return budgets[identifier as BudgetType].budget_category_id;
       }
 
       return "";
@@ -105,7 +105,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
    const amount = watch("amount");
 
    const transactionType: BudgetType | null = useMemo(() => {
-      if (amount >= 0 || !amount) return "Income";
+      if (!amount || amount >= 0) return "Income";
       if (amount < 0) return "Expenses";
 
       return null;
@@ -121,26 +121,31 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       );
    }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, setValue]);
 
-   // Handle resetting the form when the modal visibility changes
+   // Reset the default form values when the modal visibility changes
    useEffect(() => {
       if (open) {
          if (transaction) {
             reset({
                ...transaction,
                date: transaction.date.split("T")[0],
-               account_id: transaction.account_id ?? ""
+               account_id: transaction.account_id || "",
+               budget_category_id: transaction.budget_category_id || ""
             });
          } else {
             reset({
-               amount: 0, date: maxDate, description: "", account_id: defaultAccountID, budget_category_id: defaultCategoryID
+               amount: 0,
+               date: maxDate,
+               description: "",
+               account_id: defaultAccountID,
+               budget_category_id: defaultBudgetCategoryID
             });
          }
       } else {
          clearErrors();
       }
-   }, [transaction, open, reset, clearErrors, defaultAccountID, defaultCategoryID, maxDate]);
+   }, [open, transaction, reset, clearErrors, defaultAccountID, defaultBudgetCategoryID, maxDate]);
 
-   // Account and budget category selections
+   // Memoize the account and budget category options
    const accountOptions = useMemo(() => {
       return Object.values(accountsMap);
    }, [accountsMap]);
@@ -177,26 +182,17 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                );
 
                if (result === 204) {
-                  // Update the transaction in the Redux store
+                  // Update the transaction in the Redux store and close the modal
                   dispatch(updateTransaction({ index, transaction: updatedFields }));
-
-                  // Reset the form to the updated fields
-                  reset({
-                     ...updatedFields,
-                     date: updatedFields.date ? updatedFields.date.split("T")[0] : undefined
-                  });
-
                   onClose();
                }
             }
          } else {
-            // Format the construction payload
             const payload = {
                ...fields.data,
-               amount: parseFloat(data.amount),
-               date: new Date(data.date).toISOString(),
-               budget_category_id: data.budget_category_id || (
-                  data.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
+               // Normalize the budget category ID based on the transaction amount
+               budget_category_id: fields.data.budget_category_id || (
+                  fields.data.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
                )
             } as Transaction;
 

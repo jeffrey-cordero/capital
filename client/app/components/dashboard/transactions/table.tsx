@@ -11,7 +11,6 @@ import {
    DataGrid,
    type GridColDef,
    type GridFilterInputMultipleValueProps,
-   type GridFilterItem,
    type GridPaginationModel,
    type GridRenderCellParams,
    type GridRowSelectionModel,
@@ -19,7 +18,7 @@ import {
    type GridValidRowModel
 } from "@mui/x-data-grid";
 import { type Account } from "capital/accounts";
-import { type BudgetPeriod, type BudgetType, type OrganizedBudgets } from "capital/budgets";
+import { type BudgetType } from "capital/budgets";
 import type { Transaction } from "capital/transactions";
 import {
    type Ref,
@@ -33,9 +32,10 @@ import { useSelector } from "react-redux";
 
 import { TransactionCard } from "@/components/dashboard/transactions/card";
 import { BulkTransactionDeletion } from "@/components/dashboard/transactions/delete";
-import { filterTransactions, TransactionFilter } from "@/components/dashboard/transactions/filter";
+import { filterTransactions, getApplyFilterFn, TransactionFilter } from "@/components/dashboard/transactions/filter";
 import { RenderAccountChip, RenderActionsColumn, RenderCategoryChip, RenderTextColumn } from "@/components/dashboard/transactions/render";
 import { normalizeDate } from "@/lib/dates";
+import { type BudgetsState } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
@@ -48,6 +48,7 @@ import type { RootState } from "@/redux/store";
  * @property {string} category - The name of the category.
  * @property {BudgetType} type - The type of the category (Income or Expenses)
  * @property {number} index - The index of the transaction.
+ * @property {number} [balance] - The potential account balance of the transaction for the account view.
  */
 export type TransactionRowModel = GridValidRowModel & Transaction & {
    id: string;
@@ -82,26 +83,53 @@ interface TransactionsTableProps {
  */
 export default function TransactionsTable({ accountsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
    const theme = useTheme();
-   const budgets: OrganizedBudgets & { period: BudgetPeriod } = useSelector((state: RootState) => state.budgets.value);
+   const budgets: BudgetsState["value"] = useSelector((state: RootState) => state.budgets.value);
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
-   const [view, setView] = useState<"table" | "stack">("table");
+   const [view, setView] = useState<"table" | "list">("table");
 
-   // Data grid container references
+   // MUI DataGrid container references
    const dataGridRef: Ref<any> = useRef<any>(null);
    const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
    const pageSize: Ref<number> = useRef<number>(25);
 
+   // Set the initial view and page size based on local storage
    useEffect(() => {
-      setView(window.localStorage.getItem("view") === "table" ? "table" : "stack");
+      setView(window.localStorage.getItem("view") === "table" ? "table" : "list");
       pageSize.current = Number(window.localStorage.getItem("pageSize")) || 25;
    }, []);
 
-   // Data grid rows
+   const updateSelectedRows = useCallback((rows: GridRowSelectionModel) => {
+      selectedRows.current = rows;
+   }, []);
+
+   // Update the page size and scroll to the top of the table
+   const updatePageSize = useCallback((details: GridPaginationModel) => {
+      if (details.pageSize !== pageSize.current) {
+         pageSize.current = details.pageSize;
+         window.localStorage.setItem("pageSize", details.pageSize.toString());
+         document.getElementById(`transactions-table-${filter}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+   }, [filter]);
+
+   // Update the local state and storage for preferred transaction view
+   const changeView = useCallback((_event: React.MouseEvent<HTMLElement>, value: "table" | "list") => {
+      setView((prev) => {
+         const update: "table" | "list" = value || prev;
+         window.localStorage.setItem("view", update);
+
+         // Reset the DataGrid horizontal virtual scrollbar position as the list view get's cut off unintentionally
+         dataGridRef.current?.scroll({ top: 0, left: 0 });
+
+         return update;
+      });
+   }, []);
+
+   // DataGrid rows
    const rows: TransactionRowModel[] = useMemo(() => {
       return filterTransactions(transactions, accountsMap, budgets, filter, identifier);
    }, [transactions, accountsMap, budgets, filter, identifier]);
 
-   // Components for the table view
+   // DataGrid columns (table view)
    const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => {
       const visible: GridColDef<TransactionRowModel>[] = [{
          field: "date",
@@ -154,23 +182,13 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          filterOperators: [{
             label: "includes",
             value: "includes",
-            getApplyFilterFn: (filterItem: GridFilterItem) => {
-               const selected = filterItem.value;
-
-               return (item: string) => {
-                  if (Array.isArray(selected)) {
-                     return selected.length === 0 || (selected.length === 1 && selected[0] === "all") || selected.includes(item);
-                  }
-
-                  return true;
-               };
-            },
-            InputComponent: (props: GridFilterInputMultipleValueProps) => {
-               return <TransactionFilter
+            getApplyFilterFn: getApplyFilterFn,
+            InputComponent: (props: GridFilterInputMultipleValueProps) => (
+               <TransactionFilter
                   props = { props }
                   type = "Account"
-               />;
-            }
+               />
+            )
          }]
       },
       {
@@ -194,23 +212,13 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          filterOperators: [{
             label: "includes",
             value: "includes",
-            getApplyFilterFn: (filterItem: GridFilterItem) => {
-               const selected = filterItem.value;
-
-               return (item: string) => {
-                  if (Array.isArray(selected)) {
-                     return selected.length === 0 || (selected.length === 1 && selected[0] === "all") || selected.includes(item);
-                  }
-
-                  return true;
-               };
-            },
-            InputComponent: (props: GridFilterInputMultipleValueProps) => {
-               return <TransactionFilter
+            getApplyFilterFn: getApplyFilterFn,
+            InputComponent: (props: GridFilterInputMultipleValueProps) => (
+               <TransactionFilter
                   props = { props }
                   type = "Category"
-               />;
-            }
+               />
+            )
          }]
       },
       {
@@ -229,7 +237,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          )
       }];
 
-      // Potential balance column for the specific account view
+      // Potential balance column for the account view
       if (filter === "account") {
          visible.push({
             field: "balance",
@@ -270,7 +278,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       return visible;
    }, [onEdit, filter]);
 
-   // Component for the stack view
+   // DataGrid columns (list view)
    const cards: GridColDef<TransactionRowModel>[] = useMemo(() => [{
       field: "card",
       headerName: "",
@@ -287,24 +295,9 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             />
          </Box>
       )
-   }
-   ], [onEdit, transactions.length]);
+   }], [onEdit, transactions.length]);
 
-   const updateSelectedRows = useCallback((rows: GridRowSelectionModel) => {
-      selectedRows.current = rows;
-   }, []);
-
-   const updatePageSize = useCallback((details: GridPaginationModel) => {
-      if (details.pageSize !== pageSize.current) {
-         pageSize.current = details.pageSize;
-         window.localStorage.setItem("pageSize", details.pageSize.toString());
-
-         // Scroll to the top of the table
-         document.getElementById(`transactions-table-${filter}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-   }, [filter]);
-
-   const noResultsContainer: React.ReactNode = useMemo(() => {
+   const noTransactionsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
             sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
@@ -312,19 +305,6 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             No available transactions
          </Box>
       );
-   }, []);
-
-   const changeView = useCallback((_event: React.MouseEvent<HTMLElement>, value: "table" | "stack") => {
-      // Update the local state and storage for preferred transaction view
-      setView((prev) => {
-         const update: "table" | "stack" = value || prev;
-         window.localStorage.setItem("view", update);
-
-         // Reset the horizontal virtual scrollbar position as list view get's cut off
-         dataGridRef.current?.scroll({ top: 0, left: 0 });
-
-         return update;
-      });
    }, []);
 
    return (
@@ -351,14 +331,14 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                   />
                </ToggleButton>
                <ToggleButton
-                  aria-label = "Stack view"
+                  aria-label = "List view"
                   disableRipple = { true }
-                  value = "stack"
+                  value = "list"
                >
                   <FontAwesomeIcon
                      fixedWidth = { true }
                      icon = { faList }
-                     style = { { color: view === "stack" ? "hsl(210deg 98% 48%)" : "inherit" } }
+                     style = { { color: view === "list" ? "hsl(210deg 98% 48%)" : "inherit" } }
                   />
                </ToggleButton>
             </ToggleButtonGroup>
@@ -408,7 +388,6 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
                   baseCheckbox: {
                      disableRipple: true
                   },
-
                   columnsManagement: {
                      searchInputProps: {
                         variant: "outlined",
@@ -451,13 +430,13 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             }
             slots = {
                {
-                  columnHeaders: view === "stack" ? () => null : undefined,
-                  noRowsOverlay: () => noResultsContainer,
-                  noResultsOverlay: () => noResultsContainer
+                  columnHeaders: view === "list" ? () => null : undefined,
+                  noRowsOverlay: () => noTransactionsContainer,
+                  noResultsOverlay: () => noTransactionsContainer
                }
             }
             sx = {
-               view === "stack" ? {
+               view === "list" ? {
                   boxShadow: 2,
                   "& .MuiDataGrid-row": {
                      minWidth: "100% !important"

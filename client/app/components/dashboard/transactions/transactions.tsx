@@ -8,8 +8,9 @@ import { useSelector } from "react-redux";
 import TransactionForm from "@/components/dashboard/transactions/form";
 import TransactionsTable from "@/components/dashboard/transactions/table";
 import { type RootState } from "@/redux/store";
+
 /**
- * Define the props for the Transactions component
+ * Defines the props for the Transactions component
  *
  * @interface TransactionProps
  * @property {string} filter - The filter to apply to the transactions
@@ -53,9 +54,10 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
       return editState.index !== undefined ? state.transactions.value[editState.index] : undefined;
    });
 
-   // Memoize the account mappings
+   // Memoize the account mappings leveraged by various child components
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
-   const accountsMap = useMemo(() => {
+
+   const accountsMap: Record<string, Account> = useMemo(() => {
       return accounts.reduce((acc: Record<string, Account>, record) => {
          acc[record.account_id || ""] = record;
 
@@ -72,7 +74,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                identifier = { identifier }
                onEdit = { openModal }
             />
-            <Box sx = { { mt: 5 } }>
+            <Box sx = { { mt: 6 } }>
                <Button
                   className = "btn-primary"
                   color = "primary"

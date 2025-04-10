@@ -16,7 +16,7 @@ export const transactionSchema = z.object({
       message: "Amount cannot exceed $999,999,999,999.99"
    })).refine((amount) => amount !== 0, {
       message: "Amount cannot be $0"
-   }),
+   }).transform((amount) => Number(amount)),
    description: z.string().trim().max(255, {
       message: "Description must at most 255 characters"
    }).default(""),
@@ -25,7 +25,7 @@ export const transactionSchema = z.object({
    }).min(new Date("1800-01-01"), {
       message: "Date must be at least 1800-01-01"
    }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-      message: "Date cannot be in the future" // "most future" timezone in the world
+      message: "Date cannot be in the future"
    }).transform((date) => date.toISOString()),
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
@@ -39,8 +39,3 @@ export const transactionSchema = z.object({
  * Represents a transaction
  */
 export type Transaction = z.infer<typeof transactionSchema>;
-
-/**
- * Represents a collection of organized transactions based on their year
- */
-export type OrganizedTransactions = Record<string, Transaction[]>;

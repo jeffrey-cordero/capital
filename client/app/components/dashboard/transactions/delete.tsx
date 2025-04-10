@@ -69,7 +69,7 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
  * Props for the BulkTransactionDeletion component.
  *
  * @interface BulkTransactionDeletionProps
- * @extends {TransactionDeletionProps} - Inherits the props from the TransactionDeletion component
+ * @extends {TransactionDeletionProps} - Inherits the props from the TransactionDeletion component.
  * @property {RefObject<GridRowSelectionModel>} selectedRows - The selected rows reference.
  */
 interface BulkTransactionDeletionProps {
@@ -89,8 +89,10 @@ export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletio
       const transactionIds: string[] = selectedRows.current as string[];
 
       try {
+         // Submit the delete request to the API
          const result = await sendApiRequest<number>("dashboard/transactions/bulk", "DELETE", { transactionIds }, dispatch, navigate);
 
+         // Delete the transactions from the Redux store
          if (result === 204) {
             dispatch(deleteTransactions({ transactionIds }));
          }

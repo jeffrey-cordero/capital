@@ -48,14 +48,14 @@ const transactionsSlice = createSlice({
        * Updates a transaction in the transactions state.
        *
        * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<{ index: number, transaction: Transaction }>} action - The dispatched action containing the updated transaction
+       * @param {PayloadAction<{ index: number, transaction: Partial<Transaction> }>} action - The dispatched action containing the updated transaction
        */
       updateTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<{ index: number, transaction: Partial<Transaction> }>) {
-         const { index } = action.payload;
-         const updates: Transaction = { ...state.value[index], ...action.payload.transaction };
+         const { index, transaction } = action.payload;
+         const updates: Transaction = { ...state.value[index], ...transaction };
 
          if (state.value[index].date !== updates.date) {
-            // Date changed - remove and add as a new transaction
+            // Date changed, thus remove and add as a new transaction
             state.value.splice(index, 1);
 
             // Insert the updated transaction in the correct order
@@ -68,7 +68,7 @@ const transactionsSlice = createSlice({
 
             state.value.push(updates);
          } else {
-            // Date unchanged - update existing transaction
+            // Date unchanged, thus update the existing transaction
             state.value[index] = updates;
          }
       },

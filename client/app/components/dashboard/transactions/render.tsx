@@ -4,6 +4,7 @@ import { Chip, Stack, Typography } from "@mui/material";
 import { GridActionsCellItem, type GridRenderCellParams, type GridTreeNodeWithRender } from "@mui/x-data-grid";
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetType } from "capital/budgets";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { TransactionDeletion } from "@/components/dashboard/transactions/delete";
@@ -24,7 +25,7 @@ interface RenderTextColumnProps {
 }
 
 /**
- * Renders a column for a given transaction.
+ * Renders a general text column for a given transaction.
  *
  * @param {RenderTextColumnProps} props - The props for the grid render cell.
  * @returns {React.ReactNode} The rendered column.
@@ -76,7 +77,9 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
  */
 export function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
-   const account: Account | undefined = accounts.find((account) => account.account_id === account_id);
+   const account: Account | undefined = useMemo(() => {
+      return accounts.find((account) => account.account_id === account_id);
+   }, [accounts, account_id]);
 
    return (
       account ? (
@@ -99,12 +102,17 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
  */
 export function RenderCategoryChip({ budget_category_id }: { budget_category_id: string }): React.ReactNode {
    const budgets = useSelector((state: RootState) => state.budgets.value);
-   const type: BudgetType = budget_category_id === budgets.Income.budget_category_id || budgets.Income.categories.some((c) => {
-      return c.budget_category_id === budget_category_id;
-   }) ? "Income" : "Expenses";
-   const category: BudgetCategory | undefined = budgets[type].categories.find((c) => {
-      return c.budget_category_id === budget_category_id;
-   });
+   const [type, category] = useMemo(() => {
+      const type: BudgetType = budget_category_id === budgets.Income.budget_category_id || budgets.Income.categories.some((c) => {
+         return c.budget_category_id === budget_category_id;
+      }) ? "Income" : "Expenses";
+      const category: BudgetCategory | undefined = budgets[type].categories.find((c) => {
+         return c.budget_category_id === budget_category_id;
+      });
+
+      return [type, category];
+   }, [budgets, budget_category_id]);
+
    const color: "success" | "error" = type === "Income" ? "success" : "error";
    const label: string = category?.name || type;
 

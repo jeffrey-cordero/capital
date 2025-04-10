@@ -29,10 +29,7 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
 
    const result = await query(search, [user_id]) as Transaction[];
 
-   return result.map(transaction => ({
-      ...transaction,
-      amount: Number(transaction.amount)
-   }));
+   return result.map((transaction) => ({ ...transaction, amount: Number(transaction.amount) }));
 }
 
 /**
@@ -63,7 +60,7 @@ export async function create(user_id: string, transaction: Transaction): Promise
 /**
  * Updates an existing transaction for a specific user.
  *
- * @param {string} user_id - The user ID (for authorization)
+ * @param {string} user_id - The user ID
  * @param {string} transaction_id - The transaction ID to update
  * @param {Partial<Transaction>} updates - The fields to update
  * @returns {Promise<boolean>} True if the transaction was updated, false otherwise
@@ -84,10 +81,9 @@ export async function update(user_id: string, transaction_id: string, updates: P
             // Normalize strings
             values.push(String(updates[key]));
          } else if ((key === "budget_category_id" || key === "account_id") && updates[key] === "") {
-            // Handle optional foreign keys
+            // Normalize optional foreign keys
             values.push(null);
          } else {
-            // Handle other types
             values.push(updates[key]);
          }
 
@@ -98,7 +94,7 @@ export async function update(user_id: string, transaction_id: string, updates: P
    // Skip query if no valid fields to update were provided
    if (fields.length === 0) return true;
 
-   // Append transaction_id and user_id to values and increment the params index
+   // Append transaction ID and user ID to values array and increment the params index
    values.push(transaction_id);
    params++;
    values.push(user_id);
@@ -119,9 +115,9 @@ export async function update(user_id: string, transaction_id: string, updates: P
 /**
  * Deletes a list of transactions for a specific user.
  *
- * @param {string} user_id - The user ID (for authorization)
+ * @param {string} user_id - The user ID
  * @param {string[]} transactionIds - The transaction IDs to delete
- * @returns {Promise<boolean>} True if the transactions were deleted, false otherwise
+ * @returns {Promise<boolean>} True if any transactions were deleted, false otherwise
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<boolean> {
    const removal = `

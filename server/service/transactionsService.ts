@@ -34,13 +34,12 @@ const clearTransactionCache = (user_id: string): void => {
  * @returns {Promise<ServerResponse>} A server response of `204` (no content)
  */
 const clearCacheOnSuccess = (user_id: string): ServerResponse => {
-   // Invalidate cache to ensure fresh data on next fetch
    clearTransactionCache(user_id);
    return sendServiceResponse(204);
 };
 
 /**
- * Fetches user transactions from cache or database ordered by date descending.
+ * Fetches user transactions from the cache or database ordered by date descending.
  *
  * @param {string} user_id - User ID
  * @returns {Promise<ServerResponse>} A server response of `200` (`Transaction[]`)
@@ -53,7 +52,7 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
       return sendServiceResponse(200, "Transactions", JSON.parse(cache) as Transaction[]);
    }
 
-   // Cache miss - fetch from database and store in cache
+   // Cache miss - fetch from database and store in the cache
    const result: Transaction[] = await transactionsRepository.findByUserId(user_id);
    setCacheValue(key, TRANSACTION_CACHE_DURATION, JSON.stringify(result));
 
@@ -68,14 +67,14 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
  * @returns {Promise<ServerResponse>} A server response of `201` (`{ transaction_id: string }`) or `400` with respective errors
  */
 export async function createTransaction(user_id: string, transaction: Transaction): Promise<ServerResponse> {
-   // Validate input against transaction schema
+   // Validate input against the transaction schema
    const fields = transactionSchema.strict().safeParse(transaction);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid transaction fields");
    }
 
-   // Create transaction in the database
+   // Create the transaction in the database
    const result: string = await transactionsRepository.create(user_id, fields.data as Transaction);
    clearTransactionCache(user_id);
 
@@ -102,7 +101,7 @@ export async function updateTransaction(user_id: string, transaction_id: string,
       return sendValidationErrors(null, "No transaction fields to update");
    }
 
-   // Validate input against partial transaction schema
+   // Validate input against the partial transaction schema
    const fields = transactionSchema.partial().safeParse(updates);
 
    if (!fields.success) {
@@ -126,7 +125,7 @@ export async function updateTransaction(user_id: string, transaction_id: string,
  *
  * @param {string} user_id - User ID
  * @param {string[]} transactionIds - Transaction IDs
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` (not found)
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
    if (!transactionIds) {
@@ -135,7 +134,7 @@ export async function deleteTransactions(user_id: string, transactionIds: string
       });
    }
 
-   // Delete the transaction(s)
+   // Delete the list of transactions
    const result: boolean = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {

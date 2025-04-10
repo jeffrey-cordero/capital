@@ -25,22 +25,25 @@ export async function fetchDashboard(
    const dashboard = await sendApiRequest<Dashboard>(
       "dashboard", "GET", null, dispatch, navigate
    );
+
    if (typeof dashboard === "object" && dashboard !== null) {
-      dispatch(setAccounts(dashboard.accounts));
-      dispatch(setBudgets(dashboard.budgets));
-      dispatch(setTransactions(dashboard.transactions.map((t) => {
-         return {
-            ...t,
-            budget_category_id: t.budget_category_id || (
-               // Pivot to default budget category IDs based on transaction amount (data minimization)
-               t.amount >= 0 ? dashboard.budgets.Income.budget_category_id : dashboard.budgets.Expenses.budget_category_id
-            )
-         };
-      })));
+      const budgets = dashboard.budgets;
+
       dispatch(setMarkets({
          news: dashboard.news,
          trends: dashboard.trends
       }));
+      dispatch(setAccounts(dashboard.accounts));
+      dispatch(setBudgets(budgets));
+      dispatch(setTransactions(dashboard.transactions.map((t) => {
+         return {
+            ...t,
+            // Pivot to default budget category IDs based on the transaction amount
+            budget_category_id: t.budget_category_id || (
+               t.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
+            )
+         };
+      })));
 
       return dashboard;
    } else {

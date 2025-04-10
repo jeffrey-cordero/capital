@@ -6,7 +6,7 @@ import { submitServiceRequest } from "@/lib/services";
 import * as transactionsService from "@/service/transactionsService";
 
 /**
- * Handles GET requests for fetching all transactions for a user.
+ * Handles GET requests for fetching all transactions for a user ordered by date descending.
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
@@ -28,7 +28,7 @@ export const POST = asyncHandler(async(req: Request, res: Response) =>
 );
 
 /**
- * Handles PUT requests for updating an existing transaction.
+ * Handles PUT requests for updating an existing transactions.
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
@@ -37,13 +37,13 @@ export const POST = asyncHandler(async(req: Request, res: Response) =>
 export const PUT = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
    const transaction_id: string = req.params.id;
-   const updates: Partial<Transaction> = { ...req.body, transaction_id };
+   const updates: Partial<Transaction> = { ...req.body };
 
    return submitServiceRequest(res, async() => transactionsService.updateTransaction(user_id, transaction_id, updates));
 });
 
 /**
- * Handles DELETE requests for deleting an existing transaction(s).
+ * Handles DELETE requests for deleting existing transactions.
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
@@ -52,7 +52,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
 
-   // Format the transaction IDs as an array based on the request body or the request params
+   // Format transaction IDs based on the request body (bulk deletion) or the request params (single deletion)
    const transactionIds: string[] = req.body.transactionIds || [req.params.id];
    return submitServiceRequest(res, async() => transactionsService.deleteTransactions(user_id, transactionIds));
 });
