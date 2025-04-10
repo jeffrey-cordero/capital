@@ -4,6 +4,9 @@
 
 import { z } from "zod";
 
+/**
+ * Represents the schema for the news data
+ */
 export const newsSchema = z.object({
    response: z.object({
       next_initial: z.string(),
@@ -32,5 +35,12 @@ export const newsSchema = z.object({
    })
 });
 
+/**
+ * Represents the type for the news data
+ */
 export type News = z.infer<typeof newsSchema>;
+
+/**
+ * Represents the type for the news article data
+ */
 export type NewsArticle = News["response"]["data"][0];

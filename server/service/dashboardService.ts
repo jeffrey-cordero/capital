@@ -1,6 +1,6 @@
 import { Mutex } from "async-mutex";
 import type { Dashboard, ExternalAPIs } from "capital/dashboard";
-import { IndicatorTrends, MarketTrends, StockTrends } from "capital/markets";
+import { IndicatorTrends, indicatorTrendsSchema, MarketTrends, StockTrends, stockTrendsSchema } from "capital/markets";
 import { News, newsSchema } from "capital/news";
 import { ServerResponse } from "capital/server";
 
@@ -69,15 +69,16 @@ async function fetchStocks(): Promise<StockTrends> {
    const response = await fetch(getAlphaVantageUrl("TOP_GAINERS_LOSERS"), {
       method: "GET"
    }).then(response => response.json());
+   const fields = stockTrendsSchema.safeParse(response);
 
-   if (!response["top_gainers"] || !response["top_losers"] || !response["most_actively_traded"] || !response["last_updated"] || !response["metadata"]) {
+   if (!fields.success) {
       // Potential rate limit error or unexpected API response structure
       logger.error("Error fetching stock trends", response);
 
-      return external.Stocks as StockTrends;
+      return stockTrendsSchema.safeParse(external.Stocks).data as StockTrends;
    }
 
-   return response as StockTrends;
+   return fields.data as StockTrends;
 }
 
 /**
@@ -92,15 +93,18 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
    const response = await fetch(getAlphaVantageUrl(indicator, "&interval=quarterly"), {
       method: "GET"
    }).then(response => response.json());
+   const fields = indicatorTrendsSchema.safeParse(response["data"]);
 
-   if (!response["data"] || !response["data"].length) {
+   if (!fields.success) {
       // Potential rate limit error or new API response structure
       logger.error("Error fetching economic indicators", response);
 
-      return external[getEconomicIndicatorKey(indicator)] as IndicatorTrends[];
+      return indicatorTrendsSchema.safeParse(
+         external[getEconomicIndicatorKey(indicator)
+      ]).data as unknown as IndicatorTrends[];
    }
 
-   return response["data"] as IndicatorTrends[];
+   return fields.data as unknown as IndicatorTrends[];
 }
 
 /**
@@ -116,14 +120,15 @@ export async function fetchNews(): Promise<News> {
          "x-rapidapi-key": process.env.XRapidAPIKey || ""
       }
    }).then(response => response.json());
+   const fields = newsSchema.safeParse(response);
 
-   if (!newsSchema.safeParse(response).success) {
+   if (!fields.success) {
       logger.error("Error fetching news", response);
 
       return newsSchema.safeParse(external.News).data as News;
    }
 
-   return response as News;
+   return fields.data as News;
 }
 
 /**
