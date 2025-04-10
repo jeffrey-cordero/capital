@@ -9,6 +9,7 @@ import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
+import { setTransactions } from "@/redux/slices/transactions";
 
 /**
  * Fetches the dashboard data.
@@ -26,12 +27,23 @@ export async function fetchDashboard(
    );
 
    if (typeof dashboard === "object" && dashboard !== null) {
-      dispatch(setAccounts(dashboard.accounts));
-      dispatch(setBudgets(dashboard.budgets));
+      const budgets = dashboard.budgets;
+
       dispatch(setMarkets({
          news: dashboard.news,
          trends: dashboard.trends
       }));
+      dispatch(setAccounts(dashboard.accounts));
+      dispatch(setBudgets(budgets));
+      dispatch(setTransactions(dashboard.transactions.map((t) => {
+         return {
+            ...t,
+            // Pivot to default budget category IDs based on the transaction amount
+            budget_category_id: t.budget_category_id || (
+               t.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
+            )
+         };
+      })));
 
       return dashboard;
    } else {

@@ -49,11 +49,11 @@ export default function Register(): React.ReactNode {
       } else {
          // Submit the credentials for registration
          const registration = {
-            username: data.username.trim(),
-            name: data.name.trim(),
-            password: data.password.trim(),
-            verifyPassword: data.verifyPassword?.trim(),
-            email: data.email.trim()
+            username: fields.data.username,
+            name: fields.data.name,
+            password: fields.data.password,
+            verifyPassword: fields.data.verifyPassword,
+            email: fields.data.email
          };
 
          const result = await sendApiRequest<{ success: boolean }>(
@@ -103,7 +103,7 @@ export default function Register(): React.ReactNode {
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
-                     spacing = { 2 }
+                     spacing = { 1.5 }
                   >
                      <Controller
                         control = { control }

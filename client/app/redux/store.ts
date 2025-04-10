@@ -6,6 +6,7 @@ import budgetsReducer from "@/redux/slices/budgets";
 import marketReducer from "@/redux/slices/markets";
 import notificationsReducer from "@/redux/slices/notifications";
 import themeReducer from "@/redux/slices/theme";
+import transactionsReducer from "@/redux/slices/transactions";
 
 /**
  * The Redux store for the application.
@@ -17,7 +18,8 @@ const store = configureStore({
       notifications: notificationsReducer,
       markets: marketReducer,
       accounts: accountsReducer,
-      budgets: budgetsReducer
+      budgets: budgetsReducer,
+      transactions: transactionsReducer
    }
 });
 

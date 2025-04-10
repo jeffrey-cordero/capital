@@ -162,12 +162,12 @@ export default function AccountImage({
                            <IconButton
                               color = "primary"
                               onClick = { viewPreviousImage }
-                              size = "medium"
+                              size = "small"
                               sx = { { pr: 1 } }
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesLeft }
-                                 size = "sm"
+                                 style = { { fontSize: "1.2rem" } }
                               />
                            </IconButton>
                         }
@@ -175,12 +175,12 @@ export default function AccountImage({
                            <IconButton
                               color = "primary"
                               onClick = { viewNextImage }
-                              size = "medium"
+                              size = "small"
                               sx = { { pl: 1 } }
                            >
                               <FontAwesomeIcon
                                  icon = { faAnglesRight }
-                                 size = "sm"
+                                 style = { { fontSize: "1.2rem" } }
                               />
                            </IconButton>
                         }

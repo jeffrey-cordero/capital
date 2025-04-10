@@ -5,20 +5,20 @@ import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
 
 /**
- * Configures the JWT token for the user with a 1 hour expiration
+ * Configures the JWT token for the user with a 24 hour expiration
  *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID to include in the token
  */
 export function configureToken(res: Response, user_id: string): void {
    // Generate the JWT token
-   const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "1h" });
+   const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
    // Store the JWT token in the client cookies
    res.cookie("token", token, {
       httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
       sameSite: "strict", // CORS-friendly
-      maxAge: 1000 * 60 * 60, // 1 hour expiration
+      maxAge: 1000 * 60 * 60 * 24, // 24 hour expiration
       secure: process.env.NODE_ENV === "production" // Only send the cookie over HTTPS in production
    });
 }

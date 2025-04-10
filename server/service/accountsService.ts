@@ -1,4 +1,4 @@
-import { Account, AccountHistory, accountHistorySchema, accountSchema } from "capital/accounts";
+import { Account, accountSchema } from "capital/accounts";
 import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
@@ -63,7 +63,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
 }
 
 /**
- * Creates a new account and initial history record.
+ * Creates a new account.
  *
  * @param {string} user_id - User ID
  * @param {Account} account - Account object to create
@@ -77,8 +77,8 @@ export async function createAccount(user_id: string, account: Account): Promise<
       return sendValidationErrors(fields, "Invalid account fields");
    }
 
-   // Create account and it's initial history record
-   const account_id: string = await accountsRepository.create(user_id, account);
+   // Create account
+   const account_id: string = await accountsRepository.create(user_id, fields.data as Account);
 
    // Invalidate cache to ensure fresh data on next fetch
    clearAccountCache(user_id);
@@ -86,51 +86,32 @@ export async function createAccount(user_id: string, account: Account): Promise<
 }
 
 /**
- * Updates an account or its history record.
+ * Updates an account.
  *
- * @param {string} type - Type of update to perform ("details" | "history")
  * @param {string} user_id - User ID
- * @param {Partial<Account & AccountHistory>} account - Account object to update
+ * @param {Partial<Account>} account - Account object to update
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/404` with respective errors
  */
 export async function updateAccount(
-   type: "details" | "history",
    user_id: string,
-   account: Partial<Account & AccountHistory>
+   account: Partial<Account>
 ): Promise<ServerResponse> {
    // Validate base account fields
    if (!account.account_id) {
       return sendValidationErrors(null, "Invalid account fields",
          { account_id: "Missing account ID" });
    } else if (Object.keys(account).length <= 1) {
-      return sendValidationErrors(null, "No account fields to update");
+      // Last updated is required for timezone purposes
+      return sendValidationErrors(null, "No account fields to update other than `last_updated`");
    }
 
-   let result: boolean;
+   const fields = accountSchema.partial().safeParse(account);
 
-   if (type === "details") {
-      // Validate input against account schema
-      const fields = accountSchema.partial().safeParse(account);
-
-      if (!fields.success) {
-         return sendValidationErrors(fields, "Invalid account fields");
-      }
-
-      result = await accountsRepository.updateDetails(account.account_id, account);
-   } else {
-      // Validate input against account history schema
-      const fields = accountHistorySchema.safeParse(account as AccountHistory);
-
-      if (!fields.success) {
-         return sendValidationErrors(fields, "Invalid account history fields");
-      }
-
-      result = await accountsRepository.updateHistory(
-         account.account_id,
-         Number(account.balance),
-         account.last_updated ? new Date(account.last_updated) : new Date()
-      );
+   if (!fields.success) {
+      return sendValidationErrors(fields, "Invalid account fields");
    }
+
+   const result = await accountsRepository.updateDetails(account.account_id, fields.data as Partial<Account>);
 
    if (!result) {
       return sendServiceResponse(404, "Account not found", undefined,
@@ -159,13 +140,15 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    const updates: Partial<Account>[] = [];
 
    for (let i = 0; i < accounts.length; i++) {
-      if (!uuidSchema.safeParse(accounts[i]).success) {
+      const uuidFields = uuidSchema.safeParse(accounts[i]);
+
+      if (!uuidFields.success) {
          return sendValidationErrors(null, "Invalid account ordering fields",
             { account_id: `Account ID must be a valid UUID: '${accounts[i]}'` }
          );
       }
 
-      updates.push({ account_id: accounts[i], account_order: i });
+      updates.push({ account_id: uuidFields.data, account_order: i });
    }
 
    // Update account ordering in database
@@ -174,45 +157,6 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    if (!result) {
       return sendServiceResponse(404, "Invalid account ordering fields", undefined,
          { accounts: "No possible ordering updates based on provided account IDs" });
-   }
-
-   return clearCacheOnSuccess(user_id);
-}
-
-/**
- * Deletes an account history record.
- *
- * @param {string} user_id - User ID
- * @param {string} account_id - Account ID
- * @param {string} last_updated - Last updated date
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
- */
-export async function deleteAccountHistory(user_id: string, account_id: string, last_updated: string): Promise<ServerResponse> {
-   // Validate account ID and date inputs
-   if (!account_id || !last_updated) {
-      const errors: Record<string, string> = {};
-
-      if (!account_id) {
-         errors.account_id = "Account ID is required";
-      }
-
-      if (!last_updated) {
-         errors.last_updated = "Last updated date is required";
-      }
-
-      return sendValidationErrors(null, "Invalid account history fields", errors);
-   }
-
-   // Delete history record
-   const result = await accountsRepository.removeHistory(account_id, new Date(last_updated));
-
-   // Handle different deletion scenarios
-   if (result === "missing") {
-      return sendServiceResponse(404, "Account history record not found", undefined,
-         { history: "Account history does not exist based on the provided date" });
-   } else if (result === "conflict") {
-      return sendServiceResponse(409, "Account history record conflicts", undefined,
-         { history: "At least one history record must remain for this account" });
    }
 
    return clearCacheOnSuccess(user_id);

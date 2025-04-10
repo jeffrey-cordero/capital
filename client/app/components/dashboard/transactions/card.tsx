@@ -1,0 +1,127 @@
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+   Box,
+   Card,
+   CardContent,
+   Divider,
+   Stack,
+   Typography,
+   useTheme
+} from "@mui/material";
+
+import { TransactionDeletion } from "@/components/dashboard/transactions/delete";
+import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
+import type { TransactionRowModel } from "@/components/dashboard/transactions/table";
+import { displayCurrency, displayDate } from "@/lib/display";
+
+/**
+ * Props for the TransactionCard component.
+ *
+ * @interface TransactionCardProps
+ * @property {TransactionRowModel} transaction - The transaction to render.
+ * @property {(_index: number) => void} onEdit - The callback to edit a transaction based on index.
+ * @property {number | null} pageSize - The page size of the table.
+ */
+interface TransactionCardProps {
+   transaction: TransactionRowModel;
+   onEdit: (_index: number) => void;
+   pageSize: number | null;
+}
+
+/**
+ * Renders a transaction card.
+ *
+ * @param {TransactionCardProps} props - The props for the TransactionCard component.
+ * @returns {React.ReactNode} The rendered TransactionCard component.
+ */
+export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps): React.ReactNode {
+   const theme = useTheme();
+   const amountColor: string = transaction.amount > 0 ? "primary.main" : "";
+
+   return (
+      <Card
+         sx = { { width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#2B2B2B" : "#FFFFFF" } }
+         variant = "outlined"
+      >
+         <CardContent sx = { { p: 2 } }>
+            <Stack
+               direction = "column"
+               rowGap = { 1 }
+               sx = { { alignItems: "flex-start", direction: "row", textAlign: "left", justifyContent: "flex-start", alignContent: "center" } }
+            >
+               <Stack
+                  direction = "row"
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%" } }
+               >
+                  <Typography
+                     color = "text.secondary"
+                     sx = { { fontSize: "0.8rem", fontWeight: "650", pl: 0.5 } }
+                     variant = "body1"
+                  >
+                     { displayDate(transaction.date) }
+                  </Typography>
+                  <RenderCategoryChip
+                     budget_category_id = { transaction.budget_category_id || "" }
+                  />
+               </Stack>
+               <Stack
+                  direction = "row"
+                  spacing = { 0.5 }
+                  sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
+               >
+                  <Box>
+                     <RenderAccountChip
+                        account_id = { transaction.account_id || "" }
+                     />
+                  </Box>
+                  <Typography
+                     color = { amountColor }
+                     sx = { { fontWeight: "650", fontSize: "0.9rem" } }
+                     variant = "subtitle1"
+                  >
+                     { displayCurrency(transaction.amount) }
+                  </Typography>
+               </Stack>
+               <Stack
+                  direction = "row"
+                  spacing = { 0.5 }
+                  sx = { { flexWrap: "nowrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
+               >
+                  <Typography
+                     sx = { { fontWeight: "650", wordBreak: "break-word", m: "0px !important", maxWidth: "calc(100% - 5rem)", pl: 0.5 } }
+                     variant = "body1"
+                  >
+                     { transaction.description || "No Description" }
+                  </Typography>
+                  <Stack
+                     direction = "row"
+                     spacing = { 1 }
+                     sx = { { justifyContent: "flex-start", alignItems: "center", pr: 0.5 } }
+                  >
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faPenToSquare }
+                        onClick = { () => onEdit(transaction.index) }
+                        style = { { fontSize: "1.1rem", cursor: "pointer" } }
+                     />
+                     <Box sx = { { pt: 0.4 } }>
+                        <TransactionDeletion
+                           index = { transaction.index }
+                           transaction = { transaction }
+                        />
+                     </Box>
+                  </Stack>
+
+               </Stack>
+
+            </Stack>
+         </CardContent>
+         {
+            pageSize !== null && transaction.index !== pageSize - 1 && (
+               <Divider sx = { { borderBottomWidth: "1.5px" } } />
+            )
+         }
+      </Card>
+   );
+}

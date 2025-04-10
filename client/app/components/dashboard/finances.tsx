@@ -29,7 +29,10 @@ export default function Finances(): React.ReactNode {
                <AccountTrends isCard = { true } />
             </Grid>
             <Grid size = { 12 }>
-               <BudgetTrends isCard = { true } />
+               <BudgetTrends
+                  allocations = { {} }
+                  isCard = { true }
+               />
             </Grid>
          </Stack>
       </Box>

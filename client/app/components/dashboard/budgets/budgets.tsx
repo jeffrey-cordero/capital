@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Budget from "@/components/dashboard/budgets/budget";
 import BudgetForm from "@/components/dashboard/budgets/form";
-import { getCurrentDate, monthAbbreviations } from "@/lib/dates";
+import { getCurrentDate, months } from "@/lib/dates";
 import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
@@ -29,11 +29,22 @@ type EditState = {
 };
 
 /**
+ * Define the props for the Budgets component
+ *
+ * @interface BudgetsProps
+ * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ */
+interface BudgetsProps {
+   allocations: Record<string, Record<string, number>>;
+}
+
+/**
  * The Budgets component to display the budgets
  *
+ * @param {BudgetsProps} props - The props for the Budgets component
  * @returns {React.ReactNode} The Budgets component
  */
-export default function Budgets(): React.ReactNode {
+export default function Budgets({ allocations }: BudgetsProps): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
@@ -85,7 +96,7 @@ export default function Budgets(): React.ReactNode {
       <Box>
          <Stack
             direction = "row"
-            sx = { { justifyContent: "space-between", alignItems: "center" } }
+            sx = { { justifyContent: "space-between", alignItems: "center", textAlign: "center" } }
          >
             <IconButton
                disabled = { period.year === 1800 }
@@ -99,7 +110,7 @@ export default function Budgets(): React.ReactNode {
                fontWeight = "bold"
                variant = "h6"
             >
-               { `${monthAbbreviations[period.month - 1]} ${period.year}` }
+               { `${months[period.month - 1]} ${period.year}` }
             </Typography>
             <IconButton
                disabled = { selectNextMonthDisabled }
@@ -116,10 +127,12 @@ export default function Budgets(): React.ReactNode {
             sx = { { mt: 2 } }
          >
             <Budget
+               allocations = { allocations }
                onEditClick = { () => openModal("Income") }
                type = "Income"
             />
             <Budget
+               allocations = { allocations }
                onEditClick = { () => openModal("Expenses") }
                type = "Expenses"
             />

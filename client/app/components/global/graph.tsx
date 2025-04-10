@@ -4,7 +4,8 @@ import {
    Chip,
    FormControl,
    InputLabel,
-   NativeSelect,
+   MenuItem,
+   Select,
    Stack,
    TextField,
    Typography
@@ -31,7 +32,7 @@ import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display"
  * @property {string} defaultOption - The default option for the graph
  * @property {Record<string, { date: string, value: string }[]>} data - The data for the graph
  */
-interface GraphProps {
+export interface GraphProps {
    title: string;
    card: boolean;
    average: boolean;
@@ -172,8 +173,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    const fromValue = from === "" ? range[0]?.date : from; // default to oldest date
    const toValue = to === "" ? range[range.length - 1]?.date : to; // default to newest date
 
-   const minDate = normalizeDate(sorted[0].date).toISOString().split("T")[0]; // oldest date
-   const maxDate = normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0]; // newest date
+   const minDate = sorted.length > 0 ? normalizeDate(sorted[0].date).toISOString().split("T")[0] : ""; // oldest date
+   const maxDate = sorted.length > 0 ? normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0] : ""; // newest date
 
    return (
       <Card
@@ -191,124 +192,51 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          variant = "elevation"
       >
          <CardContent sx = { { p: card ? 2.5 : 0 } }>
-            <Stack
-               direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", justifyContent: { xs: "center", lg: "flex-start" }, alignContent: "center", mb: 1, py: card ? 0.5 : 0, px: card ? 0 : 1 } }
-            >
-               {
-                  indicators && (
-                     <Controller
-                        control = { control }
-                        name = "option"
-                        render = {
-                           ({ field }) => (
-                              <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
-                                 <InputLabel
-                                    htmlFor = "option"
-                                    variant = "standard"
-                                 >
-                                    { title }
-                                 </InputLabel>
-                                 <NativeSelect
-                                    { ...field }
-                                    id = "option"
-                                    value = { option }
-                                 >
-                                    {
-                                       Object.keys(data).map((key) => (
-                                          <option
-                                             key = { key }
-                                             value = { key }
-                                          >
-                                             { key }
-                                          </option>
-                                       ))
-                                    }
-                                 </NativeSelect>
-                              </FormControl>
-                           )
-                        }
-                     />
-                  )
-               }
-               <Controller
-                  control = { control }
-                  name = "view"
-                  render = {
-                     ({ field }) => (
-                        <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
-                           <InputLabel
-                              htmlFor = "view"
-                              variant = "standard"
-                           >
-                              View
-                           </InputLabel>
-                           <NativeSelect
-                              { ...field }
-                              id = "view"
-                              value = { view }
-                           >
-                              <option value = "Month">Month</option>
-                              <option value = "Year">Year</option>
-                           </NativeSelect>
-                        </FormControl>
-                     )
-                  }
-               />
-               <Controller
-                  control = { control }
-                  name = "graph"
-                  render = {
-                     ({ field }) => (
-                        <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
-                           <InputLabel
-                              htmlFor = "graph"
-                              variant = "standard"
-                           >
-                              Type
-                           </InputLabel>
-                           <NativeSelect
-                              { ...field }
-                              id = "graph"
-                              value = { graph }
-                           >
-                              <option value = "Line">Line</option>
-                              <option value = "Bar">Bar</option>
-                           </NativeSelect>
-                        </FormControl>
-                     )
-                  }
-               />
-            </Stack>
             <Stack sx = { { justifyContent: "space-between", px: card ? 0 : 1 } }>
                <Stack
-                  direction = { { xs: "column", lg: "row" } }
+                  direction = "column"
                   sx = {
                      {
-                        justifyContent: { xs: "center", lg: "flex-start" },
-                        alignContent: "center",
-                        alignItems: "center",
+                        justifyContent: card ? { xs: "center", lg: "flex-start" } : "center",
                         flexWrap: "wrap",
                         columnGap: 1,
                         rowGap: 0.5,
+                        textAlign: card ? { xs: "center", lg: "left" } : "center",
                         my: { xs: 1.5, sm: 0.5 }
                      }
                   }
                >
-                  <Typography
-                     component = "p"
-                     sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all" } }
-                     variant = "h5"
+                  {
+                     indicators && (
+                        <Typography
+                           gutterBottom = { true }
+                           sx = { { mb: 0, fontWeight: "600" } }
+                           variant = "subtitle2"
+                        >
+                           { title }
+                        </Typography>
+                     )
+                  }
+                  <Stack
+                     direction = { { xs: "column", lg: card ? "row" : "column" } }
+                     spacing = { 1 }
+                     sx = { { alignItems: "center", justifyContent: { xs: "center", lg: card ? "flex-start" : "center" } } }
                   >
-                     { option === "GDP" || !indicators ? "$" : "" }
-                     { displayNumeric(Number(filtered[filtered.length - 1].value)) }
-                     { indicators ? option === "GDP" ? "B" : "%" : "" }
-                  </Typography>
-                  <Chip
-                     color = { chip as any }
-                     label = { displayPercentage(Number(trend.toFixed(2))) }
-                     size = "small"
-                  />
+                     <Typography
+                        component = "p"
+                        sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all" } }
+                        variant = "h6"
+                     >
+                        { option === "GDP" || !indicators ? "$" : "" }
+                        { displayNumeric(Number(filtered[filtered.length - 1].value)) }
+                        { indicators ? option === "GDP" ? "B" : "%" : "" }
+                     </Typography>
+                     <Chip
+                        color = { chip as any }
+                        label = { displayPercentage(Number(trend.toFixed(2))) }
+                        size = "small"
+                     />
+                  </Stack>
                </Stack>
             </Stack>
             {
@@ -414,8 +342,133 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             }
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 1, mt: 3, justifyContent: "space-between", px: card ? 0 : 1 } }
+               sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", px: card ? 0 : 1, mt: 4 } }
             >
+               {
+                  indicators && (
+                     <Controller
+                        control = { control }
+                        name = "option"
+                        render = {
+                           ({ field }) => (
+                              <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
+                                 <InputLabel
+                                    htmlFor = "option"
+                                    variant = "outlined"
+                                 >
+                                    { title }
+                                 </InputLabel>
+                                 <Select
+                                    { ...field }
+                                    label = { title }
+                                    size = "small"
+                                    slotProps = {
+                                       {
+                                          input: {
+                                             id: "option"
+                                          }
+                                       }
+                                    }
+                                    sx = { { height: "2.7rem" } }
+                                    value = { option }
+                                    variant = "outlined"
+                                 >
+                                    {
+                                       Object.keys(data).map((key) => (
+                                          <MenuItem
+                                             key = { key }
+                                             value = { key }
+                                          >
+                                             { key }
+                                          </MenuItem>
+                                       ))
+                                    }
+                                 </Select>
+                              </FormControl>
+                           )
+                        }
+                     />
+                  )
+               }
+               <Controller
+                  control = { control }
+                  name = "view"
+                  render = {
+                     ({ field }) => (
+                        <FormControl sx = { { width: { xs: "100%", sm: "auto" } } }>
+                           <InputLabel
+                              htmlFor = "view"
+                              variant = "outlined"
+                           >
+                              View
+                           </InputLabel>
+                           <Select
+                              { ...field }
+                              label = "View"
+                              size = "small"
+                              slotProps = {
+                                 {
+                                    input: {
+                                       id: "view"
+                                    }
+                                 }
+                              }
+                              sx = { { height: "2.7rem" } }
+                              value = { view }
+                              variant = "outlined"
+                           >
+                              <MenuItem value = "Month">
+                                 Month
+                              </MenuItem>
+                              <MenuItem value = "Year">
+                                 Year
+                              </MenuItem>
+                           </Select>
+                        </FormControl>
+                     )
+                  }
+               />
+               <Controller
+                  control = { control }
+                  defaultValue = "Line"
+                  name = "graph"
+                  render = {
+                     ({ field }) => (
+                        <FormControl
+                           sx = { { width: { xs: "100%", sm: "auto" } } }
+                        >
+                           <InputLabel
+                              htmlFor = "graph"
+                              variant = "outlined"
+                           >
+                              Type
+                           </InputLabel>
+                           <Select
+                              { ...field }
+                              label = "Type"
+                              size = "small"
+                              slotProps = {
+                                 {
+                                    input: {
+                                       id: "graph"
+                                    }
+                                 }
+                              }
+                              sx = { { height: "2.7rem" } }
+                              value = { graph }
+                              variant = "outlined"
+                           >
+                              <MenuItem value = "Line">
+                                 Line
+                              </MenuItem>
+                              <MenuItem value = "Bar">
+                                 Bar
+                              </MenuItem>
+                           </Select>
+                        </FormControl>
+                     )
+                  }
+               />
                <Controller
                   control = { control }
                   name = "from"
@@ -426,7 +479,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               { ...field }
                               id = "from"
                               label = "From"
-                              size = "small"
                               slotProps = {
                                  {
                                     htmlInput: {
@@ -440,8 +492,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               }
                               sx = {
                                  {
-                                    mt: 1,
-                                    colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                    colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit",
+                                    height: "2.7rem"
                                  }
                               }
                               type = "date"
@@ -460,7 +512,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                            { ...field }
                            id = "to"
                            label = "To"
-                           size = "small"
                            slotProps = {
                               {
                                  htmlInput: {
@@ -474,8 +525,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                            }
                            sx = {
                               {
-                                 mt: 1,
-                                 colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                 colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit",
+                                 height: "2.7rem"
                               }
                            }
                            type = "date"

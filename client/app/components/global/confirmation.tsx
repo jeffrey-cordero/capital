@@ -18,11 +18,13 @@ import { useForm } from "react-hook-form";
  * @property {string} type - The type of confirmation to display
  * @property {string} message - The message to display within the confirmation dialog
  * @property {() => void} onConfirmation - The function to call when the user confirms the action
+ * @property {string} [fontSize] - The font size of the icon
  */
 interface ConfirmationProps {
    type: "button" | "icon";
    message: string;
    onConfirmation: () => void;
+   fontSize?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ interface ConfirmationProps {
  * @param {ConfirmationProps} props - The props for the Confirmation component
  * @returns {React.ReactNode} The Confirmation component
  */
-export default function Confirmation({ message, onConfirmation, type }: ConfirmationProps): React.ReactNode {
+export default function Confirmation({ message, onConfirmation, type, fontSize }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -64,8 +66,7 @@ export default function Confirmation({ message, onConfirmation, type }: Confirma
                   className = "primary"
                   icon = { faTrashCan }
                   onClick = { openDialog }
-                  size = "lg"
-                  style = { { cursor: "pointer", color: "red" } }
+                  style = { { cursor: "pointer", color: "red", fontSize: fontSize || "1.1rem" } }
                />
             )
          }

@@ -90,7 +90,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    }
 
    // Create category and initial budget
-   const result = await budgetsRepository.createCategory(user_id, category);
+   const result = await budgetsRepository.createCategory(user_id, { ...categoryFields.data, ...budgetFields.data } as Budget & BudgetCategory);
 
    // Invalidate cache to ensure fresh data on next fetch
    clearBudgetCache(user_id);
@@ -123,7 +123,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    }
 
    // Attempt to update the category
-   const result = await budgetsRepository.updateCategory(category);
+   const result = await budgetsRepository.updateCategory(fields.data as Partial<BudgetCategory>);
 
    // Handle different update scenarios
    switch (result) {
@@ -165,14 +165,15 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 
    for (let i = 0; i < categoryIds.length; i++) {
       const categoryId = categoryIds[i];
+      const uuidFields = uuidSchema.safeParse(categoryId);
 
-      if (!uuidSchema.safeParse(categoryId).success) {
+      if (!uuidFields.success) {
          return sendValidationErrors(null, "Invalid category ordering fields",
             { budget_category_id: `Category ID must be a valid UUID: '${categoryId}'` }
          );
       }
 
-      updates.push({ budget_category_id: categoryId, category_order: i });
+      updates.push({ budget_category_id: uuidFields.data, category_order: i });
    }
 
    // Update category ordering in database
@@ -203,7 +204,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
    }
 
    // Create or update budget
-   const result = await budgetsRepository.createBudget(budget);
+   const result = await budgetsRepository.createBudget(fields.data as Budget);
 
    if (result === "failure") {
       return sendServiceResponse(404, "Budget category not found", undefined,
@@ -232,7 +233,7 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
    }
 
    // Update budget
-   const result = await budgetsRepository.updateBudget(budget);
+   const result = await budgetsRepository.updateBudget(fields.data as Budget);
 
    if (!result) {
       return sendServiceResponse(404, "Budget not found", undefined,

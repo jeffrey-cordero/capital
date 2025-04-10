@@ -57,12 +57,14 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    }
 
    // Validate user uniqueness by checking for existing username/email
-   const existingUsers: User[] = await userRepository.findConflictingUsers(user.username, user.email);
+   const existingUsers: User[] = await userRepository.findConflictingUsers(
+      fields.data.username, fields.data.email
+   );
 
    if (existingUsers.length === 0) {
       // Hash password and create the new user
-      const hashedPassword = await hash(user.password);
-      const user_id: string = await userRepository.create({ ...user, password: hashedPassword });
+      const hashedPassword = await hash(fields.data.password);
+      const user_id: string = await userRepository.create({ ...fields.data, password: hashedPassword });
 
       // Configure JWT token for authentication
       configureToken(res, user_id);
@@ -70,7 +72,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       return sendServiceResponse(201, "Successfully registered", { success: true });
    } else {
       // Handle username/email conflicts
-      const errors = generateConflictErrors(existingUsers, user.username, user.email);
+      const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
       return sendServiceResponse(409, "Invalid user fields", undefined, errors);
    }
 }

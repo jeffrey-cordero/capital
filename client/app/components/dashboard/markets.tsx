@@ -13,7 +13,6 @@ import { useSelector } from "react-redux";
 
 import Graph from "@/components/global/graph";
 import { getChipColor } from "@/lib/charts";
-import { timeSinceLastUpdate } from "@/lib/dates";
 import { displayVolume } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -193,7 +192,7 @@ export default function Markets(): React.ReactNode {
    // Extract stocks data and format last update time
    const stocks = trends["Stocks"] as StockTrends;
    const [date, time] = stocks.last_updated.split(" ");
-   const timeSinceLastUpdated = timeSinceLastUpdate(`${date}:${time}`);
+   const timeSinceLastUpdated = new Date(date + " " + time).toLocaleString();
 
    return (
       <Stack

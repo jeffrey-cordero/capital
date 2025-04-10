@@ -126,7 +126,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
             style = { style }
          >
             <Card
-               elevation = { 9 }
+               elevation = { 3 }
                sx = { { p: 0, position: "relative", textAlign: "left", borderRadius: 2 } }
                variant = { undefined }
             >
@@ -136,6 +136,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   onClick = { openAccountModal }
                >
                   <Avatar
+                     id = { account.account_id }
                      onError = { handleImageError }
                      src = { getImageSource() }
                      sx = {
@@ -159,16 +160,16 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   <FontAwesomeIcon icon = { faGripVertical } />
                </Fab>
                <CardContent sx = { { p: 3, pt: 2 } }>
-                  <Typography
-                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
-                     variant = "h6"
-                  >
-                     { account.name }
-                  </Typography>
                   <Stack
                      direction = "column"
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
+                     <Typography
+                        sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
+                        variant = "h6"
+                     >
+                        { account.name }
+                     </Typography>
                      <Typography
                         sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "subtitle2"
@@ -178,8 +179,11 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      <Typography variant = "caption">
                         { account.type }
                      </Typography>
-                     <Typography variant = "caption">
-                        { displayDate(account.history[0]?.last_updated) }
+                     <Typography
+                        sx = { { ...horizontalScroll(theme), maxWidth: "100%" } }
+                        variant = "caption"
+                     >
+                        Updated { displayDate(account.last_updated) }
                      </Typography>
                      <AccountForm
                         account = { account }

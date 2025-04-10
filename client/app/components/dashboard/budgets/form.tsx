@@ -93,7 +93,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
 
          // Prepare budget payload for API request
          const payload = {
-            goal: budgetFields.data.goal,
+            goal: Number(budgetFields.data.goal),
             year: period.year,
             month: period.month
          };
@@ -116,11 +116,11 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,
-               goal: budgetFields.data.goal
+               goal: payload.goal
             }));
 
             // Reset the form default values
-            reset({ goal: String(budgetFields.data.goal) }, { keepDirty: false });
+            reset({ goal: String(payload.goal) }, { keepDirty: false });
 
             // Clear the dirty fields
             updateDirtyFields({}, "main");
@@ -141,7 +141,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             direction = "column"
             spacing = { 3 }
          >
-            <ModalSection title = "Goal">
+            <ModalSection title = { type }>
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
@@ -149,7 +149,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   >
                      <Stack
                         direction = "column"
-                        spacing = { 2 }
+                        spacing = { 1.5 }
                         sx = { { mt: 3 } }
                      >
                         <Controller
@@ -158,7 +158,9 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                            render = {
                               ({ field }) => (
                                  <FormControl error = { Boolean(errors.goal) }>
-                                    <InputLabel htmlFor = "goal">Goal</InputLabel>
+                                    <InputLabel htmlFor = "goal">
+                                       Goal
+                                    </InputLabel>
                                     <OutlinedInput
                                        { ...field }
                                        aria-label = "Goal"
@@ -204,7 +206,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             <ModalSection title = "Transactions">
                <Transactions
                   filter = "budget"
-                  identifier = { budget.budget_category_id }
+                  identifier = { type }
                />
             </ModalSection>
          </Stack>

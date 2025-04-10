@@ -150,7 +150,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                               icon = { faPenToSquare }
                               onClick = { editCategory }
                               size = "lg"
-                              style = { { cursor: "pointer" } }
+                              style = { { cursor: "pointer", marginTop: "1px" } }
                            />
                            <DeleteBudget
                               budget_category_id = { category.budget_category_id }

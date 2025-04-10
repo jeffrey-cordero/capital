@@ -1,7 +1,7 @@
 import { type Components, svgIconClasses } from "@mui/material";
 import { chipClasses } from "@mui/material/Chip";
 
-import { gray, green, red } from "@/styles/mui/colors";
+import { brand, gray, green, red } from "@/styles/mui/colors";
 
 /**
  * Main MUI component overrides.
@@ -10,6 +10,9 @@ import { gray, green, red } from "@/styles/mui/colors";
 export const components: Components = {
    MuiButton: {
       styleOverrides: {
+         loadingIndicator: {
+            color: "hsl(210deg 98% 48%)"
+         },
          root: { borderRadius: "10px", textTransform: "none" },
          sizeSmall: { padding: "6px 16px" },
          sizeMedium: { padding: "8px 20px" },
@@ -17,6 +20,13 @@ export const components: Components = {
          textSizeSmall: { padding: "7px 12px" },
          textSizeMedium: { padding: "9px 16px" },
          textSizeLarge: { padding: "12px 16px" }
+      }
+   },
+   MuiIconButton: {
+      defaultProps: {
+         disableRipple: true,
+         disableFocusRipple: true,
+         disableTouchRipple: true
       }
    },
    MuiOutlinedInput: {
@@ -97,7 +107,7 @@ export const components: Components = {
                         color: green[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: green[600],
+                        borderColor: green[500],
                         backgroundColor: green[800],
                         [`& .${chipClasses.label}`]: {
                            color: green[300]
@@ -122,13 +132,37 @@ export const components: Components = {
                         color: red[500]
                      },
                      ...theme.applyStyles("dark", {
-                        borderColor: red[600],
+                        borderColor: red[500],
                         backgroundColor: red[800],
                         [`& .${chipClasses.label}`]: {
                            color: red[200]
                         },
                         [`& .${chipClasses.icon}`]: {
                            color: red[300]
+                        }
+                     })
+                  }
+               }, {
+                  props: {
+                     color: "primary"
+                  },
+                  style: {
+                     borderColor: brand[200],
+                     backgroundColor: brand[50],
+                     [`& .${chipClasses.label}`]: {
+                        color: brand[400]
+                     },
+                     [`& .${chipClasses.icon}`]: {
+                        color: brand[400]
+                     },
+                     ...theme.applyStyles("dark", {
+                        borderColor: brand[300],
+                        backgroundColor: brand[800],
+                        [`& .${chipClasses.label}`]: {
+                           color: brand[200]
+                        },
+                        [`& .${chipClasses.icon}`]: {
+                           color: brand[300]
                         }
                      })
                   }
