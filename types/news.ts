@@ -30,7 +30,7 @@ export const newsSchema = z.object({
          site: z.string(),
          site_country: z.string(),
          published: z.string(),
-      })),
+      })).min(50),
       next_query: z.string()
    })
 });

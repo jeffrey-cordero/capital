@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type News, type NewsArticle } from "capital/news";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { Expand } from "@/components/global/expand";
@@ -80,7 +80,7 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
             avatar = {
                <Avatar
                   aria-label = "author"
-                  sx = { { bgcolor: "primary", backgroundColor: "primary.main", fontWeight: "medium" } }
+                  sx = { { color: "white", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
                   { authorInitial }
                </Avatar>
@@ -174,7 +174,10 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
  */
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.markets.value.news);
-   const items: NewsArticle[] = news.response.data.slice(0, 23);
+   const items: NewsArticle[] = useMemo(() => {
+      // API response is in reverse chronological order
+      return [...news.response.data].reverse().slice(0, 23);
+   }, [news]);
 
    return (
       <Box

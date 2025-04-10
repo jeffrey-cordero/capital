@@ -113,7 +113,13 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
  * @returns {Promise<News>} The latest economic news
  */
 export async function fetchNews(): Promise<News> {
-   const response = await fetch("https://global-economy-news.p.rapidapi.com/?category=economy&country=us", {
+   // Fetch news based on yesterday's date
+   const today = new Date();
+   const yesterday = new Date(today);
+   yesterday.setDate(today.getDate() - 1);
+   const midnightYesterday = yesterday.setUTCHours(0, 0, 0, 0);
+
+   const response = await fetch(`https://global-economy-news.p.rapidapi.com/?initial=${midnightYesterday}&category=economy&country=us`, {
       method: "GET",
       headers: {
          "x-rapidapi-host": "global-economy-news.p.rapidapi.com",
