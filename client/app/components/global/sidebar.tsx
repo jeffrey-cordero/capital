@@ -102,7 +102,7 @@ const dashboard: NavigationLink[] = [{
    title: "News",
    icon: faNewspaper
 }, {
-   path: "/settings",
+   path: "/dashboard/settings",
    title: "Settings",
    icon: faGears
 }];
