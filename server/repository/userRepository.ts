@@ -1,27 +1,34 @@
-import { User } from "capital/user";
+import { User, UserDetails, UserDetailUpdates } from "capital/user";
 import { PoolClient } from "pg";
 
-import { query, transaction } from "@/lib/database";
+import { FIRST_PARAM, query, transaction } from "@/lib/database";
 import { createCategory } from "@/repository/budgetsRepository";
+
+/**
+ * The fields that can be updated for a user
+ */
+const USER_UPDATES = ["username", "name", "password", "email"] as const;
 
 /**
  * Finds conflicting users based on username and/or email.
  *
  * @param {string} username - The username
  * @param {string} email - The email
+ * @param {string} [user_id] - The potential user ID to exclude from the conflict check
  * @returns {Promise<User[]>} The potential conflicting users
  */
-export async function findConflictingUsers(username: string, email: string): Promise<User[]> {
+export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
    const conflicts = `
       SELECT * FROM users 
-      WHERE username_normalized = $1 
-      OR email_normalized = $2;
+      WHERE (username_normalized = $1 OR email_normalized = $2)
+      AND (user_id IS DISTINCT FROM $3);
    `;
    const normalizedUsername = username.toLowerCase().trim();
    const normalizedEmail = email.toLowerCase().trim();
+   const params = [normalizedUsername, normalizedEmail, user_id];
 
-   return await query(conflicts, [normalizedUsername, normalizedEmail]) as User[];
+   return await query(conflicts, params) as User[];
 }
 
 /**
@@ -37,6 +44,23 @@ export async function findByUsername(username: string): Promise<User | null> {
       WHERE username = $1;
    `;
    const result: User[] = await query(search, [username]);
+
+   return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Finds a user by their unique user ID.
+ *
+ * @param {string} user_id - The user ID
+ * @returns {Promise<User | null>} The potential user
+ */
+export async function findByUserId(user_id: string): Promise<User | null> {
+   // Find user by their unique user ID
+   const search = `
+      SELECT * FROM users 
+      WHERE user_id = $1;
+   `;
+   const result: User[] = await query(search, [user_id]);
 
    return result.length > 0 ? result[0] : null;
 }
@@ -89,4 +113,43 @@ export async function create(user: User): Promise<string> {
 
       return result.rows[0].user_id;
    }) as string;
+}
+
+/**
+ * Updates a user's information.
+ *
+ * @param {string} user_id - The user ID
+ * @param {Partial<UserDetailUpdates>} updates - The updates
+ * @returns {Promise<boolean>} True if the user was updated, false otherwise
+ */
+export async function update(user_id: string, updates: Partial<UserDetailUpdates>): Promise<boolean> {
+   // Build dynamic update query based on provided fields
+   const fields: string[] = [];
+   const values: any[] = [];
+   let params = FIRST_PARAM;
+
+   // Only include fields that are present in the updates
+   USER_UPDATES.forEach((field: string) => {
+      if (field in updates) {
+         fields.push(`${field} = $${params}`);
+         values.push(updates[field as keyof UserDetails]);
+         params++;
+      }
+   });
+
+   // Skip query if no fields to update
+   if (fields.length === 0) return true;
+
+   // Add user ID for WHERE clause
+   values.push(user_id);
+
+   const updateQuery = `
+      UPDATE users
+      SET ${fields.join(", ")}
+      WHERE user_id = $${params}
+      RETURNING user_id;
+   `;
+   const result = await query(updateQuery, values) as User[];
+
+   return result.length > 0;
 }

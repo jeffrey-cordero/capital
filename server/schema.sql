@@ -5,8 +5,7 @@ CREATE TABLE users (
    name VARCHAR(30) NOT NULL,
    password VARCHAR(255) NOT NULL,
    email VARCHAR(255) NOT NULL UNIQUE,
-   email_normalized VARCHAR(255) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED,
-   verified BOOLEAN NOT NULL DEFAULT FALSE
+   email_normalized VARCHAR(255) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED
 );
 
 CREATE TYPE account_type AS ENUM ('Checking', 'Savings', 'Credit Card', 'Debt', 'Retirement', 'Investment', 'Loan', 'Property', 'Other');

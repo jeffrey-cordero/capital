@@ -40,8 +40,7 @@ export const userSchema = z.object({
   email: z
     .string()
     .max(MAX_EMAIL_LENGTH, `Email must be at most ${MAX_EMAIL_LENGTH} characters long`)
-    .email("Invalid email address"),
-  verified: z.boolean().default(false)
+    .email("Invalid email address")
 }).strict().refine(data => data.password === data.verifyPassword, {
   message: "Passwords do not match",
   path: ["verifyPassword"]
@@ -50,4 +49,30 @@ export const userSchema = z.object({
 /**
  * Represents core user information
  */
-export type User = z.infer<typeof userSchema>;
+export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
+
+/**
+ * Represents a user update schema to account for password updates
+ */
+export const userUpdateSchema = userSchema.innerType().extend({
+  newPassword: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`)
+    .max(MAX_PASSWORD_LENGTH, `Password must be at most ${MAX_PASSWORD_LENGTH} characters long`)
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .optional(),
+});
+
+/**
+ * Represents core user information for displaying details
+ */
+export type UserDetails = Omit<User, "user_id" | "password">;
+
+/**
+ * Represents core user information for updating details
+ */
+export type UserDetailUpdates = Omit<z.infer<typeof userUpdateSchema>, "user_id">;
+
+

@@ -1,4 +1,4 @@
-import { User } from "capital/user";
+import { User, UserDetailUpdates } from "capital/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
@@ -14,4 +14,26 @@ import * as userService from "@/service/userService";
  */
 export const POST = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(res, async() => userService.createUser(req, res, req.body as User))
+);
+
+/**
+ * Handles GET requests for fetching user account settings.
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<Response>} The service response for the user details request
+ */
+export const GET = asyncHandler(async(req: Request, res: Response) =>
+   submitServiceRequest(res, async() => userService.fetchUserDetails(res.locals.user_id))
+);
+
+/**
+ * Handles PUT requests for updating user account settings.
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<Response>} The service response for the user update request
+ */
+export const PUT = asyncHandler(async(req: Request, res: Response) =>
+   submitServiceRequest(res, async() => userService.updateAccountDetails(req, res, req.body as Partial<UserDetailUpdates>))
 );
