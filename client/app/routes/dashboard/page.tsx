@@ -35,8 +35,15 @@ export default function Page(): React.ReactNode {
                >
                   <Stack
                      direction = "column"
+                     id = "finances-container"
                      spacing = { 2 }
-                     sx = { { minHeight:"100%", textAlign: "center", justifyContent: "space-between" } }
+                     style = { { justifyContent: "space-between" } }
+                     sx = {
+                        {
+                           minHeight: "100%",
+                           textAlign: "center"
+                        }
+                     }
                   >
                      <Grid size = { { xs: 12 } }>
                         <Finances />

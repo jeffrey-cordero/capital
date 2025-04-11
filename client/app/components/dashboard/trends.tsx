@@ -8,6 +8,7 @@ import {
    Stack,
    Tooltip,
    Typography,
+   useMediaQuery,
    useTheme
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
@@ -15,6 +16,7 @@ import { type Account, liabilities } from "capital/accounts";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
+import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
@@ -57,6 +59,8 @@ interface TrendProps {
  */
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
+   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+   const graphHeight = isCard ? 300 : (isMobile ? 400 : 500);
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
@@ -199,19 +203,21 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       theme.palette.primary.light
    ], [theme.palette.primary]);
    const chart = useMemo(() => (
-      <BarChart
-         borderRadius = { 8 }
-         colors = { colorPalette }
-         grid = { { horizontal: true } }
-         height = { isCard ? 300 : 500 }
-         margin = { { left: 50, right: 0, top: 20, bottom: 30 } }
-         resolveSizeBeforeRender = { true }
-         series = { series }
-         slotProps = { { legend: { hidden: true } } }
-         xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
-         yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
-      />
-   ), [colorPalette, isCard, yearAbbreviations, series]);
+      <ResponsiveChartContainer height = { graphHeight }>
+         <BarChart
+            borderRadius = { 8 }
+            colors = { colorPalette }
+            grid = { { horizontal: true } }
+            height = { graphHeight }
+            margin = { { left: isCard ? 50 : 40, right: 20, top: 20, bottom: 20 } }
+            resolveSizeBeforeRender = { true }
+            series = { series }
+            slotProps = { { legend: { hidden: true } } }
+            xAxis = { [{ scaleType: "band", categoryGapRatio: 0.5, data: yearAbbreviations }] as any }
+            yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
+         />
+      </ResponsiveChartContainer>
+   ), [colorPalette, isCard, yearAbbreviations, series, graphHeight]);
 
    return (
       <Box sx = { { position: "relative" } }>
@@ -220,59 +226,60 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             sx = { { borderRadius: 2, backgroundColor: isCard ? undefined : "transparent" } }
             variant = "elevation"
          >
-            <CardContent sx = { { p: isCard ? 2.5 : 0, textAlign: isCard ? { xs: "center", lg: "left" } : "center" } }>
-               <Typography
-                  gutterBottom = { true }
-                  sx = { { mb: 0, fontWeight: "600" } }
-                  variant = "subtitle2"
-               >
-                  { type === "accounts" ? "Net Worth" : "Budgets" }
-               </Typography>
-               <Stack sx = { { justifyContent: "space-between" } }>
-                  <Stack
-                     direction = { isCard ? { xs: "column", lg: "row" } : "column" }
-                     sx = {
-                        {
-                           ...horizontalScroll(theme),
-                           maxWidth: "100%",
-                           alignItems: "center",
-                           textAlign: isCard ? "left" : "center",
-                           columnGap: 1,
-                           rowGap: 0.5,
-                           mx: "auto",
-                           ml: isCard ? { xs: "auto", lg: 0 } : "auto"
-                        }
-                     }
+            <CardContent sx = { { py: isCard ? 2.5 : 0, px: isCard ? 0.25 : 0, textAlign: isCard ? { xs: "center", lg: "left" } : "center" } }>
+               <Box sx = { { px: isCard ? 2.25 : 0, mb: -0.25 } }>
+                  <Typography
+                     gutterBottom = { true }
+                     sx = { { mb: 0, fontWeight: "600" } }
+                     variant = "subtitle2"
                   >
-                     {
-                        type === "accounts" && (
-                           <Tooltip
-                              enterDelay = { 0 }
-                              placement = { "top" }
-                              title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.) for the current month or the last month of the specified year." }
-                           >
-                              <Typography
-                                 component = "p"
-                                 variant = "h6"
+                     { type === "accounts" ? "Accounts" : "Budgets" }
+                  </Typography>
+                  <Stack sx = { { justifyContent: "space-between" } }>
+                     <Stack
+                        direction = { isCard ? { xs: "column", lg: "row" } : "column" }
+                        sx = {
+                           {
+                              ...horizontalScroll(theme),
+                              maxWidth: "100%",
+                              alignItems: "center",
+                              textAlign: isCard ? "left" : "center",
+                              columnGap: 1,
+                              rowGap: 0.5,
+                              mx: "auto",
+                              ml: isCard ? { xs: "auto", lg: 0 } : "auto"
+                           }
+                        }
+                     >
+                        {
+                           type === "accounts" && (
+                              <Tooltip
+                                 enterDelay = { 0 }
+                                 placement = { "top" }
+                                 title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.) for the current month or the last month of the specified year." }
                               >
-                                 { displayCurrency(netWorth) }
+                                 <Typography
+                                    sx = { { fontWeight: "600" } }
+                                    variant = "subtitle1"
+                                 >
+                                    { displayCurrency(netWorth) }
+                                 </Typography>
+                              </Tooltip>
+                           )
+                        }
+                        {
+                           type === "budgets" && (
+                              <Typography
+                                 sx = { { fontWeight: "600", pb: { xs: 0, lg: 0.7 } } }
+                                 variant = "subtitle2"
+                              >
+                                 Income vs. Expenses
                               </Typography>
-                           </Tooltip>
-                        )
-                     }
-                     {
-                        type === "budgets" && (
-                           <Typography
-                              component = "p"
-                              sx = { { fontWeight: "600", pb: { xs: 0, lg: 0.7 } } }
-                              variant = "subtitle2"
-                           >
-                              Income vs. Expenses
-                           </Typography>
-                        )
-                     }
+                           )
+                        }
+                     </Stack>
                   </Stack>
-               </Stack>
+               </Box>
                { chart }
             </CardContent>
          </Card>

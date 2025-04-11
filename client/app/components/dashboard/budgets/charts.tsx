@@ -12,6 +12,7 @@ import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
+import ResponsiveChartContainer from "@/components/global/responsive";
 import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -124,6 +125,7 @@ interface BudgetProgressChartProps {
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
+   const pieChartDimensions = 275;
 
    return (
       <Stack
@@ -135,83 +137,86 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
          >
             { title }
          </Typography>
-         <Stack
-            direction = "column"
-            sx = { { alignItems: "center", gap: 2, pb: 2 } }
-         >
-            <PieChart
-               height = { 250 }
-               margin = {
-                  {
-                     left: 80,
-                     right: 80,
-                     top: 80,
-                     bottom: 80
-                  }
-               }
-               series = {
-                  [
-                     {
-                        data: data,
-                        innerRadius: 75,
-                        outerRadius: 100,
-                        paddingAngle: 0,
-                        highlightScope: { faded: "global", highlighted: "item" }
-                     }
-                  ]
-               }
-               slotProps = {
-                  {
-                     legend: {
-                        hidden: true
-                     }
-                  }
-               }
+         <ResponsiveChartContainer height = { pieChartDimensions }>
+            <Stack
+               direction = "column"
+               sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
             >
-               <PieCenterLabel
-                  primaryText = { `$${displayVolume(current)}` }
-               />
-            </PieChart>
-            {
-               data.map((category, index) => (
-                  <Stack
-                     direction = "row"
-                     key = { index }
-                     sx = { { width: "100%", alignItems: "center", gap: 2, pb: 2, px: { xs: 0, sm: 2, md: 5 } } }
-                  >
-                     <Stack sx = { { gap: 1, flexGrow: 1, maxWidth: "100%" } }>
-                        <Stack
-                           direction = "column"
-                           spacing = { 0.5 }
-                           sx = { { width: "100%", mx: "auto", justifyContent: "space-between", alignItems: "center" } }
+               <PieChart
+                  height = { pieChartDimensions }
+                  margin = {
+                     {
+                        left: 80,
+                        right: 80,
+                        top: 80,
+                        bottom: 80
+                     }
+                  }
+                  series = {
+                     [
+                        {
+                           data: data,
+                           innerRadius: 75,
+                           outerRadius: 100,
+                           paddingAngle: 0,
+                           highlightScope: { faded: "global", highlighted: "item" }
+                        }
+                     ]
+                  }
+                  slotProps = {
+                     {
+                        legend: {
+                           hidden: true
+                        }
+                     }
+                  }
+                  width = { pieChartDimensions }
+               >
+                  <PieCenterLabel
+                     primaryText = { `$${displayVolume(current)}` }
+                  />
+               </PieChart>
+            </Stack>
+         </ResponsiveChartContainer>
+         {
+            data.map((category, index) => (
+               <Stack
+                  direction = "row"
+                  key = { index }
+                  sx = { { width: "100%", alignItems: "center", gap: 2, pb: 2, px: { xs: 0, sm: 2, md: 5 } } }
+               >
+                  <Stack sx = { { gap: 1, flexGrow: 1, maxWidth: "100%" } }>
+                     <Stack
+                        direction = "column"
+                        spacing = { 0.5 }
+                        sx = { { width: "100%", mx: "auto", justifyContent: "space-between", alignItems: "center" } }
+                     >
+                        <Typography
+                           sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 1rem)", fontWeight: "600" } }
+                           variant = "subtitle1"
                         >
-                           <Typography
-                              sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 1rem)", fontWeight: "600" } }
-                              variant = "subtitle1"
-                           >
-                              { category.label }
-                           </Typography>
-                           <Typography
-                              sx = { { ...horizontalScroll(theme), maxWidth: "90%", color: "text.secondary" } }
-                              variant = "subtitle1"
-                           >
-                              { displayPercentage(category.percentage) }
-                           </Typography>
-                        </Stack>
-                        <Box sx =  { { px: index === 0 ? 0 : 1 } }>
-                           <LinearProgress
-                              aria-label = { `${category.label} progress` }
-                              color = { type === "Income" ? "success" : "error" }
-                              sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
-                              value = { category.percentage }
-                              variant = "determinate"
-                           />
-                        </Box>
+                           { category.label }
+                        </Typography>
+                        <Typography
+                           sx = { { ...horizontalScroll(theme), maxWidth: "90%", color: "text.secondary" } }
+                           variant = "subtitle1"
+                        >
+                           { displayPercentage(category.percentage) }
+                        </Typography>
                      </Stack>
+                     <Box sx = { { px: index === 0 ? 0 : 1 } }>
+                        <LinearProgress
+                           aria-label = { `${category.label} progress` }
+                           color = { type === "Income" ? "success" : "error" }
+                           sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
+                           value = { category.percentage }
+                           variant = "determinate"
+                        />
+                     </Box>
                   </Stack>
-               ))
-            }
-         </Stack>
+               </Stack>
+            ))
+         }
       </Stack>
    );
 }
