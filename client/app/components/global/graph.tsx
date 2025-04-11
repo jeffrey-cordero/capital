@@ -8,7 +8,8 @@ import {
    Select,
    Stack,
    TextField,
-   Typography
+   Typography,
+   useMediaQuery
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { BarChart } from "@mui/x-charts";
@@ -17,6 +18,7 @@ import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { AreaGradient } from "@/components/global/gradient";
+import ResponsiveChartContainer from "@/components/global/responsive";
 import { calculatePercentageChange, getChipColor, getGraphColor } from "@/lib/charts";
 import { normalizeDate } from "@/lib/dates";
 import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
@@ -38,7 +40,7 @@ export interface GraphProps {
    average: boolean;
    indicators: boolean;
    defaultOption: string;
-   data: Record<string, { date: string, value: string }[]>;
+   data: Record<string, { date: string, value: number }[]>;
 }
 
 /**
@@ -49,6 +51,8 @@ export interface GraphProps {
  */
 export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps): React.ReactNode {
    const theme = useTheme();
+   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+   const graphHeight = isMobile ? 300 : 400;
    const { watch, control } = useForm();
 
    // Form control values with defaults
@@ -191,8 +195,8 @@ export default function Graph({ title, card, defaultOption, indicators, average,
          }
          variant = "elevation"
       >
-         <CardContent sx = { { p: card ? 2.5 : 0 } }>
-            <Stack sx = { { justifyContent: "space-between", px: card ? 0 : 1 } }>
+         <CardContent sx = { { position: "relative", px: card ? 0.25 : 0, py: card ? 2.5 : 0 } }>
+            <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
                   direction = "column"
                   sx = {
@@ -200,9 +204,11 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         justifyContent: card ? { xs: "center", lg: "flex-start" } : "center",
                         flexWrap: "wrap",
                         columnGap: 1,
-                        rowGap: 0.5,
+                        rowGap: 0,
                         textAlign: card ? { xs: "center", lg: "left" } : "center",
-                        my: { xs: 1.5, sm: 0.5 }
+                        mt: { xs: 1.5, sm: 0.5 },
+                        mb: -0.25,
+                        px: card ? 2.25 : 0
                      }
                   }
                >
@@ -219,13 +225,12 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                   }
                   <Stack
                      direction = { { xs: "column", lg: card ? "row" : "column" } }
-                     spacing = { 1 }
+                     spacing = { 0.75 }
                      sx = { { alignItems: "center", justifyContent: { xs: "center", lg: card ? "flex-start" : "center" } } }
                   >
                      <Typography
-                        component = "p"
-                        sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all" } }
-                        variant = "h6"
+                        sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
+                        variant = "subtitle1"
                      >
                         { option === "GDP" || !indicators ? "$" : "" }
                         { displayNumeric(Number(filtered[filtered.length - 1].value)) }
@@ -235,114 +240,118 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         color = { chip as any }
                         label = { displayPercentage(Number(trend.toFixed(2))) }
                         size = "small"
+                        sx = { { mt: "2px !important" } }
                      />
                   </Stack>
                </Stack>
             </Stack>
-            {
-               graph === "Line" ? (
-                  <LineChart
-                     colors = { [color] }
-                     experimentalMarkRendering = { true }
-                     grid = { { horizontal: true } }
-                     height = { 375 }
-                     margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
-                     resolveSizeBeforeRender = { true }
-                     series = {
-                        [
+            <ResponsiveChartContainer height = { graphHeight }>
+               {
+                  graph === "Line" ? (
+                     <LineChart
+                        colors = { [color] }
+                        experimentalMarkRendering = { true }
+                        grid = { { horizontal: true } }
+                        height = { graphHeight }
+                        margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
+                        resolveSizeBeforeRender = { true }
+                        series = {
+                           [
+                              {
+                                 id: "value",
+                                 label: "Value",
+                                 showMark: false,
+                                 curve: "linear",
+                                 area: true,
+                                 data: filtered.map(d => Number(d.value)),
+                                 valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
+                              }
+                           ]
+                        }
+                        slotProps = {
                            {
-                              id: "value",
-                              label: "Value",
-                              showMark: false,
-                              curve: "linear",
-                              area: true,
-                              data: filtered.map(d => Number(d.value)),
-                              valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
-                           }
-                        ]
-                     }
-                     slotProps = {
-                        {
-                           legend: {
-                              hidden: true
+                              legend: {
+                                 hidden: true
+                              }
                            }
                         }
-                     }
-                     sx = {
-                        {
-                           "& .MuiAreaElement-series-value": {
-                              fill: "url('#value')"
+                        sx = {
+                           {
+                              "& .MuiAreaElement-series-value": {
+                                 fill: "url('#value')"
+                              }
                            }
                         }
-                     }
-                     xAxis = {
-                        [
+                        xAxis = {
+                           [
+                              {
+                                 scaleType: "point",
+                                 data: filtered.map(d => d.date)
+                              }
+                           ]
+                        }
+                        yAxis = {
+                           [{
+                              domainLimit: "nice",
+                              valueFormatter: (value) => displayVolume(value)
+                           }]
+                        }
+                     >
+                        <AreaGradient
+                           color = { color }
+                           id = "value"
+                        />
+                     </LineChart>
+                  ) : (
+                     <BarChart
+                        borderRadius = { 8 }
+                        grid = { { horizontal: true } }
+                        height = { graphHeight }
+                        margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
+                        resolveSizeBeforeRender = { true }
+                        series = {
+                           [
+                              {
+                                 id: "value",
+                                 label: "Value",
+                                 data: filtered.map(d => Number(d.value))
+                              }
+                           ]
+                        }
+                        slotProps = {
                            {
-                              scaleType: "point",
-                              data: filtered.map(d => d.date)
+                              legend: {
+                                 hidden: true
+                              }
                            }
-                        ]
-                     }
-                     yAxis = {
-                        [{
-                           domainLimit: "nice",
-                           valueFormatter: (value) => displayVolume(value)
-                        }]
-                     }
-                  >
-                     <AreaGradient
-                        color = { color }
-                        id = "value"
+                        }
+                        xAxis = {
+                           [
+                              {
+                                 scaleType: "band",
+                                 data: filtered.map(d => d.date)
+                              }
+                           ]
+                        }
+                        yAxis = {
+                           [{
+                              domainLimit: "nice",
+                              valueFormatter: (value) => displayVolume(value),
+                              colorMap: {
+                                 type: "piecewise",
+                                 thresholds: [0],
+                                 colors: ["hsl(0, 90%, 50%)", "hsl(210, 98%, 50%)"]
+                              }
+                           }]
+                        }
                      />
-                  </LineChart>
-               ) : (
-                  <BarChart
-                     borderRadius = { 8 }
-                     grid = { { horizontal: true } }
-                     height = { 375 }
-                     margin = { { left: 50, right: 20, top: 20, bottom: 20 } }
-                     resolveSizeBeforeRender = { true }
-                     series = {
-                        [
-                           {
-                              id: "value",
-                              label: "Value",
-                              data: filtered.map(d => Number(d.value))
-                           }
-                        ]
-                     }
-                     slotProps = {
-                        {
-                           legend: {
-                              hidden: true
-                           }
-                        }
-                     }
-                     xAxis = {
-                        [
-                           {
-                              scaleType: "band",
-                              data: filtered.map(d => d.date)
-                           }
-                        ]
-                     }
-                     yAxis = {
-                        [{
-                           domainLimit: "nice",
-                           valueFormatter: (value) => displayVolume(value),
-                           colorMap: {
-                              type: "piecewise",
-                              thresholds: [0],
-                              colors: ["hsl(0, 90%, 50%)", "hsl(210, 98%, 50%)"]
-                           }
-                        }]
-                     }
-                  />
-               )
-            }
+
+                  )
+               }
+            </ResponsiveChartContainer>
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", px: card ? 0 : 1, mt: 4 } }
+               sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", mt: 3.5, px: card ? 2.25 : 0 } }
             >
                {
                   indicators && (

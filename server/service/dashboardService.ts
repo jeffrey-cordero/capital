@@ -1,6 +1,12 @@
 import { Mutex } from "async-mutex";
 import type { Dashboard, ExternalAPIs } from "capital/dashboard";
-import { IndicatorTrends, indicatorTrendsSchema, MarketTrends, StockTrends, stockTrendsSchema } from "capital/markets";
+import {
+   IndicatorTrends,
+   indicatorTrendsSchema,
+   MarketTrends,
+   StockTrends,
+   stockTrendsSchema
+} from "capital/markets";
 import { News, newsSchema } from "capital/news";
 import { ServerResponse } from "capital/server";
 
@@ -17,6 +23,21 @@ import { fetchTransactions } from "@/service/transactionsService";
  * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
  */
 const mutex = new Mutex();
+
+/**
+ * Backup external API data to use in case of failure during data fetching
+ */
+const backupExternalAPIs = {
+   news: external.News,
+   trends: {
+      Stocks: external.Stocks,
+      GDP: external.GDP,
+      Inflation: external.Inflation,
+      Unemployment: external.Unemployment,
+      "Treasury Yield": external["Treasury Yield"],
+      "Federal Interest Rate": external["Federal Interest Rate"]
+   }
+};
 
 /**
  * Cache durations in seconds the external API's (24 hours)
@@ -101,7 +122,7 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 
       return indicatorTrendsSchema.safeParse(
          external[getEconomicIndicatorKey(indicator)
-      ]).data as unknown as IndicatorTrends[];
+         ]).data as unknown as IndicatorTrends[];
    }
 
    return fields.data as unknown as IndicatorTrends[];
@@ -148,7 +169,7 @@ export async function fetchExternalAPIs(): Promise<ServerResponse> {
       const cache = await getCacheValue("externalAPIs");
 
       if (cache) {
-         return sendServiceResponse(200, "External APIs", JSON.parse(cache) as ExternalAPIs);
+         return sendServiceResponse(200, "External APIs", JSON.parse(cache || "") as ExternalAPIs);
       }
 
       // Check if we have fresh data in the database
@@ -157,6 +178,7 @@ export async function fetchExternalAPIs(): Promise<ServerResponse> {
 
       if (!isStale) {
          // Return the existing non-stale database content
+         setCacheValue("externalAPIs", EXTERNAL_API_CACHE_DURATION, JSON.stringify(stored.data));
          return sendServiceResponse(200, "External APIs", stored.data as ExternalAPIs);
       }
 
@@ -211,10 +233,10 @@ export async function fetchExternalAPIs(): Promise<ServerResponse> {
       // Log error and use backup data
       logger.error(error.stack);
 
-      // Use the external API data and cache for a shorter duration
-      setCacheValue("externalAPIs", EXTERNAL_API_BACKUP_CACHE_DURATION, JSON.stringify(external));
+      // Use the backup external API data and cache for a shorter duration
+      setCacheValue("externalAPIs", EXTERNAL_API_BACKUP_CACHE_DURATION, JSON.stringify(backupExternalAPIs));
 
-      return sendServiceResponse(200, "External APIs", external);
+      return sendServiceResponse(200, "External APIs", backupExternalAPIs);
    }
 }
 

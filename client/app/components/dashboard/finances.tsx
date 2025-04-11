@@ -30,7 +30,6 @@ export default function Finances(): React.ReactNode {
             </Grid>
             <Grid size = { 12 }>
                <BudgetTrends
-                  allocations = { {} }
                   isCard = { true }
                />
             </Grid>

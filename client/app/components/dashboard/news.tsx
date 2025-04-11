@@ -92,6 +92,7 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
                >
                   <Stack spacing = { 0 }>
                      <Typography
+                        sx = { { fontWeight: "500" } }
                         variant = "subtitle2"
                      >
                         { author }
@@ -113,7 +114,7 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
                      WebkitLineClamp: { sm: "none", md: 2 },
                      minHeight: { sm: "none", md: "40.031px" },
                      textOverflow: "ellipsis",
-                     fontWeight: "600",
+                     fontWeight: "550",
                      mr: 2
                   }
                }
@@ -122,7 +123,7 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
                { title }
             </Typography>
          </CardContent>
-         <CardActions sx = { { justifyContent: "flex-end", px: 1, py: 1, mt: -2 } }>
+         <CardActions sx = { { justifyContent: "flex-end", px: 1, pt: 1, pb: 1, mt: -2 } }>
             <Expand
                disableRipple = { true }
                expand = { expanded }
@@ -175,8 +176,8 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.markets.value.news);
    const items: NewsArticle[] = useMemo(() => {
-      // API response is in reverse chronological order
-      return [...news.response.data].reverse().slice(0, 23);
+      // Articles based on published date descending
+      return [...news.response.data].reverse().slice(0, 24);
    }, [news]);
 
    return (
@@ -195,9 +196,9 @@ export default function Articles(): React.ReactNode {
             sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
          >
             <Grid
-               columnSpacing = { 3.1 }
+               columnSpacing = { 2 }
                container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 3.1, mt: 2, textAlign: "left" } }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2, mt: 2, textAlign: "left" } }
             >
                {
                   items.map((item: NewsArticle, index) => (

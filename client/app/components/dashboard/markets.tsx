@@ -106,16 +106,16 @@ function StockTrendCard({ title, data, image }: TrendProps): React.ReactNode {
                            fontWeight = "600"
                            variant = "body2"
                         >
-                           ${ parseFloat(stock.price).toFixed(2) }
+                           ${ Number(stock.price).toFixed(2) }
                            { " " }
-                           ({ parseFloat(stock.change_amount) < 0 ? "-" : "+" }
-                           { Math.abs(parseFloat(stock.change_amount)).toFixed(2) })
+                           ({ Number(stock.change_amount) < 0 ? "-" : "+" }
+                           { Math.abs(Number(stock.change_amount)).toFixed(2) })
                         </Typography>
                         <Typography
                            fontWeight = "600"
                            variant = "body2"
                         >
-                           { displayVolume(parseInt(stock.volume)) } shares
+                           { displayVolume(Number(stock.volume)) } shares
                         </Typography>
                      </Stack>
                   </Stack>
@@ -182,7 +182,7 @@ export default function Markets(): React.ReactNode {
    const trends: MarketTrends = useSelector((state: RootState) => state.markets.value.trends);
 
    // Extract and format indicators data
-   const indicators = Object.keys(trends)
+   const indicators: Record<string, IndicatorTrends[]> = Object.keys(trends)
       .filter(key => key !== "Stocks")
       .reduce((acc: { [key: string]: IndicatorTrends[] }, record) => {
          acc[record] = trends[record] as IndicatorTrends[];
@@ -234,7 +234,7 @@ export default function Markets(): React.ReactNode {
             <Graph
                average = { true }
                card = { true }
-               data = { indicators }
+               data = { indicators as any }
                defaultOption = "GDP"
                indicators = { true }
                title = "Indicators"
