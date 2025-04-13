@@ -12,6 +12,7 @@ import { compare, hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { logoutUser } from "@/service/authenticationService";
 import * as userRepository from "@/repository/userRepository";
 
 /**
@@ -227,6 +228,31 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
 
    // Clear the user cache to ensure fresh data on next fetch
    clearUserCache(user_id);
+
+   return sendServiceResponse(204);
+}
+
+/**
+ * Deletes a user account and all their associated data.
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {string} user_id - The ID of the user to delete
+ * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` if the user does not exist
+ */
+export async function deleteAccount(req: Request, res: Response, user_id: string): Promise<ServerResponse> {
+   // Attempt to delete the user and their data
+   const result = await userRepository.deleteUser(user_id);
+
+   if (!result) {
+      return sendServiceResponse(404, "User not found", undefined, {
+         user: "User does not exist based on the provided ID"
+      });
+   }
+
+   // Clear the user cache and log the user out
+   clearUserCache(user_id);
+   await logoutUser(req, res);
 
    return sendServiceResponse(204);
 }

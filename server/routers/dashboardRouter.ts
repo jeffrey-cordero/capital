@@ -110,10 +110,4 @@ dashboardRouter.delete("/transactions/:id", transactionsController.DELETE);
  */
 dashboardRouter.get("/settings", userController.GET);
 
-/**
- * PUT /dashboard/settings
- *    req.body: Partial<UserDetails>
- */
-dashboardRouter.put("/settings", userController.PUT);
-
 export default dashboardRouter;

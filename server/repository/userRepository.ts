@@ -72,7 +72,7 @@ export async function findByUserId(user_id: string): Promise<User | null> {
  * @returns {Promise<string>} The inserted user ID
  */
 export async function create(user: User): Promise<string> {
-   return await transaction(async(client: PoolClient) => {
+   return await transaction(async (client: PoolClient) => {
       // Create the new user with provided fields
       const creation = `
          INSERT INTO users (username, name, password, email, birthday)
@@ -152,4 +152,28 @@ export async function update(user_id: string, updates: Partial<UserDetailUpdates
    const result = await query(updateQuery, values) as User[];
 
    return result.length > 0;
+}
+
+/**
+ * Deletes a user and their associated data.
+ *
+ * @param {string} user_id - The user ID
+ * @returns {Promise<boolean>} True if the user was deleted, false otherwise
+ */
+export async function deleteUser(user_id: string): Promise<boolean> {
+   return await transaction(async (client: PoolClient): Promise<boolean> => {
+      // Prevent the main budget category trigger from firing
+      await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_deletion_trigger");
+
+      const deletion = `
+         DELETE FROM users
+         WHERE user_id = $1;
+      `;
+      const result = await client.query(deletion, [user_id]);
+
+      // Re-enable the main budget category trigger for data integrity
+      await client.query("ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_deletion_trigger");
+
+      return result.rowCount === 1;
+   }, "SERIALIZABLE") as boolean; // SERIALIZABLE to ensure non-interference between transactions
 }

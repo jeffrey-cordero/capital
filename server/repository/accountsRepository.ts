@@ -142,3 +142,4 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
 
    return result.length > 0;
 }
+

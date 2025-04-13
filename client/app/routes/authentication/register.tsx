@@ -143,7 +143,10 @@ export default function Register(): React.ReactNode {
                         render = {
                            ({ field }) => (
                               <FormControl error = { Boolean(errors.birthday) }>
-                                 <InputLabel htmlFor = "birthday" shrink = { true }>
+                                 <InputLabel
+                                    htmlFor = "birthday"
+                                    shrink = { true }
+                                 >
                                     Birthday
                                  </InputLabel>
                                  <TextField

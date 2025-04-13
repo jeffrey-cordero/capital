@@ -37,3 +37,14 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
 export const PUT = asyncHandler(async(req: Request, res: Response) =>
    submitServiceRequest(res, async() => userService.updateAccountDetails(req, res, req.body as Partial<UserDetailUpdates>))
 );
+
+/**
+ * Handles DELETE requests for removing a user account.
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<Response>} The service response for the user deletion request
+ */
+export const DELETE = asyncHandler(async(req: Request, res: Response) =>
+   submitServiceRequest(res, async() => userService.deleteAccount(req, res, res.locals.user_id))
+);

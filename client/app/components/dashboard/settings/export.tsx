@@ -1,10 +1,9 @@
-import { faFileExport } from "@fortawesome/free-solid-svg-icons";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Paper, Typography } from "@mui/material";
+import { Button } from "@mui/material";
 import { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-import { addNotification } from "@/redux/slices/notifications";
 import type { RootState } from "@/redux/store";
 
 /**
@@ -13,8 +12,6 @@ import type { RootState } from "@/redux/store";
  * @returns {React.ReactNode} The ExportAccount component
  */
 export default function ExportAccount(): React.ReactNode {
-   const dispatch = useDispatch();
-
    // Get all user data from Redux store
    const settings = useSelector((state: RootState) => state.settings.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
@@ -24,7 +21,29 @@ export default function ExportAccount(): React.ReactNode {
    const exportAccount = useCallback(() => {
       try {
          // Create export data object
-         const exportData = { settings, accounts, budgets, transactions };
+         const exportData = {
+            settings,
+            accounts,
+            budgets: {
+               Income: {
+                  ...budgets.Income,
+                  goalIndex: undefined,
+                  categories: budgets.Income.categories.map((category) => ({
+                     ...category,
+                     goalIndex: undefined
+                  }))
+               },
+               Expenses: {
+                  ...budgets.Expenses,
+                  goalIndex: undefined,
+                  categories: budgets.Expenses.categories.map((category) => ({
+                     ...category,
+                     goalIndex: undefined
+                  }))
+               }
+            },
+            transactions
+         };
 
          // Convert to JSON string
          const jsonString = JSON.stringify(exportData, null, 3);
@@ -36,7 +55,7 @@ export default function ExportAccount(): React.ReactNode {
          // Create temporary download link
          const downloadLink = document.createElement("a");
          downloadLink.href = url;
-         downloadLink.download = `capital_export_${new Date().toISOString().split("T")[0]}.json`;
+         downloadLink.download = `capital_export_${new Date().toISOString()}.json`;
 
          // Trigger download
          document.body.appendChild(downloadLink);
@@ -45,40 +64,20 @@ export default function ExportAccount(): React.ReactNode {
          // Clean up
          document.body.removeChild(downloadLink);
          URL.revokeObjectURL(url);
-
-         dispatch(addNotification({
-            message: "Data exported successfully",
-            type: "success"
-         }));
       } catch (error) {
          console.error("Failed to export data:", error);
       }
-   }, [dispatch, settings, accounts, budgets, transactions]);
+   }, [settings, accounts, budgets, transactions]);
 
    return (
-      <Paper
-         elevation = { 3 }
-         sx = { { p: 4, mt: 4 } }
+      <Button
+         color = "secondary"
+         fullWidth = { true }
+         onClick = { exportAccount }
+         startIcon = { <FontAwesomeIcon icon = { faDownload } /> }
+         variant = "contained"
       >
-         <Typography
-            gutterBottom = { true }
-            variant = "h6"
-         >
-            Export Account Data
-         </Typography>
-         <Typography
-            variant = "body1"
-         >
-            Export all your financial data as a JSON file for backup or migration purposes.
-         </Typography>
-         <Button
-            color = "primary"
-            onClick = { exportAccount }
-            startIcon = { <FontAwesomeIcon icon = { faFileExport } /> }
-            variant = "contained"
-         >
-            Export Data
-         </Button>
-      </Paper>
+         Export Data
+      </Button>
    );
 }

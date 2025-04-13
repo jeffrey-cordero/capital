@@ -1,8 +1,7 @@
-import { Box, Container, Grow } from "@mui/material";
+import { Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
-import ExportAccount from "@/components/dashboard/settings/export";
-import DetailsForm from "@/components/dashboard/settings/form";
+import Settings from "@/components/dashboard/settings/settings";
 
 /**
  * The settings page component.
@@ -28,14 +27,7 @@ export default function Page(): React.ReactNode {
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12 } }>
-                  <Box
-                     alt = "Settings"
-                     component = "img"
-                     src = "/svg/settings.svg"
-                     sx = { { height: 205, mb: 4 } }
-                  />
-                  <DetailsForm />
-                  <ExportAccount />
+                  <Settings />
                </Grid>
             </Grow>
          </Grid>
