@@ -29,6 +29,13 @@ export const userSchema = z.object({
     .trim()
     .min(MIN_NAME_LENGTH, `Name must be at least ${MIN_NAME_LENGTH} characters`)
     .max(MAX_NAME_LENGTH, `Name must be at most ${MAX_NAME_LENGTH} characters`),
+  birthday: z.coerce.date({
+    message: "Birthday must be a valid date"
+  }).min(new Date("1800-01-01"), {
+    message: "Birthday must be at least 1800-01-01"
+  }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
+    message: "Birthday cannot be in the future"
+  }).transform((date) => date.toISOString()),
   password: z
     .string()
     .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`)
@@ -74,5 +81,3 @@ export type UserDetails = Omit<User, "user_id" | "password">;
  * Represents core user information for updating details
  */
 export type UserDetailUpdates = Omit<z.infer<typeof userUpdateSchema>, "user_id">;
-
-

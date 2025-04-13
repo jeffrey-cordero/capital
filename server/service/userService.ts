@@ -101,7 +101,8 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    const userDetails: UserDetails = {
       username: user.username,
       name: user.name,
-      email: user.email
+      email: user.email,
+      birthday: user.birthday
    };
 
    // Cache user details

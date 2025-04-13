@@ -95,7 +95,7 @@ async function fetchStocks(): Promise<StockTrends> {
 
    if (!fields.success) {
       // Potential rate limit error or unexpected API response structure
-      logger.error("Error fetching stock trends", response);
+      logger.error("Error fetching stock trends", JSON.stringify(response));
 
       return stockTrendsSchema.safeParse(external.Stocks).data as StockTrends;
    }
@@ -119,7 +119,7 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 
    if (!fields.success) {
       // Potential rate limit error or new API response structure
-      logger.error("Error fetching economic indicators", response);
+      logger.error("Error fetching economic indicators", JSON.stringify(response));
 
       return indicatorTrendsSchema.safeParse(
          external[getEconomicIndicatorKey(indicator)

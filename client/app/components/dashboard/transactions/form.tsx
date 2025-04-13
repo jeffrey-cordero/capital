@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
 import { Modal, ModalSection } from "@/components/global/modal";
 import { sendApiRequest } from "@/lib/api";
+import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
@@ -95,11 +96,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       return "";
    }, [filter, identifier, budgets]);
 
-   // Setup minimum and maximum dates relative to user timezone
-   const [minDate, maxDate] = useMemo(() => [
-      new Date("1800-01-01").toISOString().split("T")[0],
-      new Date().toISOString().split("T")[0]
-   ], []);
+   // Setup minimum and maximum dates for transactions
+   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
 
    // Handle swapping between income and expenses based on current amount input
    const amount = watch("amount");

@@ -126,7 +126,7 @@ export default function DetailsForm(): React.ReactNode {
                spacing = { 3 }
             >
                <Typography variant = "h6">
-                  Account Details
+                  Details
                </Typography>
                <Controller
                   control = { control }
@@ -162,7 +162,7 @@ export default function DetailsForm(): React.ReactNode {
                            <OutlinedInput
                               { ...field }
                               id = "name"
-                              label = "Full Name"
+                              label = "Name"
                               value = { field.value || "" }
                            />
                            <FormHelperText>

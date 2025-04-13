@@ -16,21 +16,21 @@ const transactionsSlice = createSlice({
       value: []
    } as TransactionState,
    reducers: {
-      /**
-       * Sets the transactions state in the Redux store.
-       *
-       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<Transaction[]>} action - The dispatched action containing the payload
-       */
+   /**
+    * Sets the transactions state in the Redux store.
+    *
+    * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+    * @param {PayloadAction<Transaction[]>} action - The dispatched action containing the payload
+    */
       setTransactions(state: WritableDraft<TransactionState>, action: PayloadAction<Transaction[]>) {
          state.value = action.payload;
       },
       /**
-       * Adds a transaction to the transactions state in the correct order.
-       *
-       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<Transaction>} action - The dispatched action containing the payload
-       */
+    * Adds a transaction to the transactions state in the correct order.
+    *
+    * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+    * @param {PayloadAction<Transaction>} action - The dispatched action containing the payload
+    */
       addTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<Transaction>) {
          const transaction: Transaction = action.payload;
 
@@ -45,17 +45,17 @@ const transactionsSlice = createSlice({
          state.value.push(transaction);
       },
       /**
-       * Updates a transaction in the transactions state.
-       *
-       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<{ index: number, transaction: Partial<Transaction> }>} action - The dispatched action containing the updated transaction
-       */
+    * Updates a transaction in the transactions state.
+    *
+    * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+    * @param {PayloadAction<{ index: number, transaction: Partial<Transaction> }>} action - The dispatched action containing the updated transaction
+    */
       updateTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<{ index: number, transaction: Partial<Transaction> }>) {
          const { index, transaction } = action.payload;
          const updates: Transaction = { ...state.value[index], ...transaction };
 
          if (state.value[index].date !== updates.date) {
-            // Date changed, thus remove and add as a new transaction
+         // Date changed, thus remove and add as a new transaction
             state.value.splice(index, 1);
 
             // Insert the updated transaction in the correct order
@@ -68,27 +68,27 @@ const transactionsSlice = createSlice({
 
             state.value.push(updates);
          } else {
-            // Date unchanged, thus update the existing transaction
+         // Date unchanged, thus update the existing transaction
             state.value[index] = updates;
          }
       },
       /**
-       * Removes a transaction from the transactions state by its index.
-       *
-       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<{ index: number }>} action - The dispatched action containing the index payload
-       */
+    * Removes a transaction from the transactions state by its index.
+    *
+    * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+    * @param {PayloadAction<{ index: number }>} action - The dispatched action containing the index payload
+    */
       deleteTransaction(state: WritableDraft<TransactionState>, action: PayloadAction<{ index: number }>) {
          const { index } = action.payload;
 
          state.value = state.value.filter((_, i) => i !== index);
       },
       /**
-       * Removes a list of transactions from the transactions state based on their IDs for bulk deletion.
-       *
-       * @param {WritableDraft<TransactionState>} state - The current state of the transactions
-       * @param {PayloadAction<{ transactionIds: string[] }>} action - The dispatched action containing the IDs payload
-       */
+    * Removes a list of transactions from the transactions state based on their IDs for bulk deletion.
+    *
+    * @param {WritableDraft<TransactionState>} state - The current state of the transactions
+    * @param {PayloadAction<{ transactionIds: string[] }>} action - The dispatched action containing the IDs payload
+    */
       deleteTransactions(state: WritableDraft<TransactionState>, action: PayloadAction<{ transactionIds: string[] }>) {
          const set: Set<string> = new Set(action.payload.transactionIds);
 

@@ -75,12 +75,12 @@ export async function create(user: User): Promise<string> {
    return await transaction(async(client: PoolClient) => {
       // Create the new user with provided fields
       const creation = `
-         INSERT INTO users (username, name, password, email)
-         VALUES ($1, $2, $3, $4)
+         INSERT INTO users (username, name, password, email, birthday)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING user_id;
       `;
       const result = await client.query<{ user_id: string }>(
-         creation, [user.username, user.name, user.password, user.email]
+         creation, [user.username, user.name, user.password, user.email, user.birthday]
       );
 
       // Create the new user's initial Income and Expenses budgets

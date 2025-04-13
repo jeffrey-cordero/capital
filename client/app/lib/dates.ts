@@ -10,6 +10,20 @@ export const getCurrentDate = (): Date => {
 };
 
 /**
+ * Gets the date range for a valid date input
+ *
+ * @returns {string[]} The date range for a valid date input in ISO format
+ */
+export const getDateRange = (): [string, string] => {
+   return [
+      new Date("1800-01-01").toISOString().split("T")[0],
+      new Date(new Date().toLocaleString(
+         "en-US", { timeZone: "Pacific/Kiritimati" }
+      )).toISOString().split("T")[0]
+   ];
+};
+
+/**
  * Full month names
  */
 export const months = [
