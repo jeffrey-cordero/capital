@@ -71,7 +71,7 @@ export default function ExportAccount(): React.ReactNode {
 
    return (
       <Button
-         color = "secondary"
+         color = "success"
          fullWidth = { true }
          onClick = { exportAccount }
          startIcon = { <FontAwesomeIcon icon = { faDownload } /> }

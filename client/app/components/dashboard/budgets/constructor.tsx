@@ -1,7 +1,6 @@
-import { faClockRotateLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import {
-   Button,
+   Collapse,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -9,10 +8,12 @@ import {
    Stack
 } from "@mui/material";
 import { budgetCategorySchema, budgetSchema } from "capital/budgets";
+import { useCallback } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addBudgetCategory } from "@/redux/slices/budgets";
@@ -31,11 +32,13 @@ const constructSchema = budgetCategorySchema.omit(
  * The ConstructCategory component to create a new budget category
  *
  * @interface ConstructCategoryProps
+ * @property {boolean} visible - Whether the form is visible
  * @property {() => void} onClose - The function to close the form
  * @property {"Income" | "Expenses"} type - The type of the budget category
  * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to update the dirty fields
  */
 interface ConstructCategoryProps {
+   visible: boolean;
    onClose: () => void;
    type: "Income" | "Expenses";
    updateDirtyFields: (_fields: object, _field: string) => void;
@@ -47,7 +50,7 @@ interface ConstructCategoryProps {
  * @param {ConstructCategoryProps} props - The props for the ConstructCategory component
  * @returns {React.ReactNode} The ConstructCategory component
  */
-export default function ConstructCategory({ onClose, type, updateDirtyFields }: ConstructCategoryProps): React.ReactNode {
+export default function ConstructCategory({ visible, onClose, type, updateDirtyFields }: ConstructCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
@@ -62,6 +65,15 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
    } = useForm({
       defaultValues: { name: "", goal: "" }
    });
+
+   const closeForm = useCallback(() => {
+      // Clear the form dirty fields and reset the form values
+      updateDirtyFields({}, "constructor");
+
+      reset({ name: "", goal: "" }, { keepDirty: false });
+
+      onClose();
+   }, [reset, updateDirtyFields, onClose]);
 
    const onSubmit = async(data: FieldValues) => {
       try {
@@ -106,14 +118,7 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
                }
             }));
 
-            // Clear the form
-            reset({ name: "", goal: "" }, { keepDirty: false });
-
-            // Clear the form dirty fields
-            updateDirtyFields({}, "constructor");
-
-            // Close the form after successful creation
-            onClose();
+            closeForm();
          }
       } catch (error) {
          console.error("Failed to create budget category:", error);
@@ -121,93 +126,81 @@ export default function ConstructCategory({ onClose, type, updateDirtyFields }: 
    };
 
    return (
-      <form
-         onChange = { () => updateDirtyFields(dirtyFields, "constructor") }
-         onSubmit = { handleSubmit(onSubmit) }
+      <Collapse
+         in = { visible }
+         mountOnEnter = { true }
+         style = { { transformOrigin: "center top" } }
+         timeout = { 350 }
+         unmountOnExit = { true }
       >
-         <Stack
-            direction = "column"
-            spacing = { 1 }
-            sx = { { mt: 1 } }
+         <form
+            onChange = { () => updateDirtyFields(dirtyFields, "constructor") }
+            onSubmit = { handleSubmit(onSubmit) }
          >
-            <Controller
-               control = { control }
-               name = "name"
-               render = {
-                  ({ field }) => (
-                     <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "constructor-name">
-                           Name
-                        </InputLabel>
-                        <OutlinedInput
-                           { ...field }
-                           aria-label = "Name"
-                           autoComplete = "none"
-                           id = "constructor-name"
-                           label = "Name"
-                           type = "text"
-                           value = { field.value || "" }
-                        />
-                        <FormHelperText>
-                           { errors.name?.message?.toString() }
-                        </FormHelperText>
-                     </FormControl>
-                  )
-               }
-            />
-            <Controller
-               control = { control }
-               name = "goal"
-               render = {
-                  ({ field }) => (
-                     <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "constructor-goal">
-                           Goal
-                        </InputLabel>
-                        <OutlinedInput
-                           { ...field }
-                           aria-label = "Goal"
-                           id = "constructor-goal"
-                           inputProps = { { step: 0.01, min: 0 } }
-                           label = "Goal"
-                           type = "number"
-                           value = { field.value || "" }
-                        />
-                        <FormHelperText>
-                           { errors.goal?.message?.toString() }
-                        </FormHelperText>
-                     </FormControl>
-                  )
-               }
-            />
             <Stack
-               direction = { { xs: "column", sm: "row" } }
+               direction = "column"
                spacing = { 1 }
+               sx = { { mt: 1 } }
             >
-               <Button
-                  className = "btn-primary"
-                  color = "secondary"
-                  disabled = { isSubmitting }
-                  fullWidth = { true }
-                  onClick = { onClose }
-                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
-                  variant = "contained"
-               >
-                  Cancel
-               </Button>
-               <Button
-                  className = "btn-primary"
-                  color = "primary"
-                  fullWidth = { true }
-                  loading = { isSubmitting }
-                  startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-                  type = "submit"
-                  variant = "contained"
-               >
-                  Create
-               </Button>
+               <Controller
+                  control = { control }
+                  name = "name"
+                  render = {
+                     ({ field }) => (
+                        <FormControl error = { Boolean(errors.name) }>
+                           <InputLabel htmlFor = "constructor-name">
+                              Name
+                           </InputLabel>
+                           <OutlinedInput
+                              { ...field }
+                              aria-label = "Name"
+                              autoComplete = "none"
+                              id = "constructor-name"
+                              label = "Name"
+                              type = "text"
+                              value = { field.value || "" }
+                           />
+                           <FormHelperText>
+                              { errors.name?.message?.toString() }
+                           </FormHelperText>
+                        </FormControl>
+                     )
+                  }
+               />
+               <Controller
+                  control = { control }
+                  name = "goal"
+                  render = {
+                     ({ field }) => (
+                        <FormControl error = { Boolean(errors.goal) }>
+                           <InputLabel htmlFor = "constructor-goal">
+                              Goal
+                           </InputLabel>
+                           <OutlinedInput
+                              { ...field }
+                              aria-label = "Goal"
+                              id = "constructor-goal"
+                              inputProps = { { step: 0.01, min: 0 } }
+                              label = "Goal"
+                              type = "number"
+                              value = { field.value || "" }
+                           />
+                           <FormHelperText>
+                              { errors.goal?.message?.toString() }
+                           </FormHelperText>
+                        </FormControl>
+                     )
+                  }
+               />
+               <SubmitButton
+                  icon = { faPlus }
+                  isSubmitting = { isSubmitting }
+                  onCancel = { closeForm }
+                  type = "Create"
+                  visible = { true }
+               />
             </Stack>
-         </Stack>
-      </form>
+         </form>
+      </Collapse>
    );
 }

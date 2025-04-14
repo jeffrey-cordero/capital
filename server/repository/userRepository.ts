@@ -72,7 +72,7 @@ export async function findByUserId(user_id: string): Promise<User | null> {
  * @returns {Promise<string>} The inserted user ID
  */
 export async function create(user: User): Promise<string> {
-   return await transaction(async (client: PoolClient) => {
+   return await transaction(async(client: PoolClient) => {
       // Create the new user with provided fields
       const creation = `
          INSERT INTO users (username, name, password, email, birthday)
@@ -161,7 +161,7 @@ export async function update(user_id: string, updates: Partial<UserDetailUpdates
  * @returns {Promise<boolean>} True if the user was deleted, false otherwise
  */
 export async function deleteUser(user_id: string): Promise<boolean> {
-   return await transaction(async (client: PoolClient): Promise<boolean> => {
+   return await transaction(async(client: PoolClient): Promise<boolean> => {
       // Prevent the main budget category trigger from firing
       await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_deletion_trigger");
 

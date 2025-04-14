@@ -121,7 +121,7 @@ export default function AccountImage({
       <Box>
          <Button
             className = "btn-primary"
-            color = "secondary"
+            color = "success"
             fullWidth = { true }
             onClick = { openModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }

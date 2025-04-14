@@ -21,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
+   Collapse,
    List,
    ListItemButton,
    ListItemIcon,
@@ -105,63 +106,59 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
          ref = { setNodeRef }
          style = { style }
       >
-         {
-            isEditing ? (
-               <EditCategory
-                  category = { category }
-                  onCancel = { cancelEditCategory }
-                  updateDirtyFields = { updateDirtyFields }
-               />
-            ) : (
-               <Stack
-                  direction = "row"
-                  spacing = { 1 }
-                  sx = { { alignItems: "center", px: 1 } }
+         <EditCategory
+            category = { category }
+            onCancel = { cancelEditCategory }
+            updateDirtyFields = { updateDirtyFields }
+            visible = { isEditing }
+         />
+         <Stack
+            direction = "row"
+            spacing = { 1 }
+            sx = { { alignItems: "center", px: 1, display: isEditing ? "none" : "flex" } }
+         >
+            <List
+               component = "div"
+               disablePadding = { true }
+               sx = { { width: "100%" } }
+            >
+               <ListItemButton
+                  disableRipple = { true }
+                  disableTouchRipple = { true }
+                  sx = { { justifyContent: "center", cursor: "default", "&:hover": { backgroundColor: "transparent" }, p: 0 } }
                >
-                  <List
-                     component = "div"
-                     disablePadding = { true }
-                     sx = { { width: "100%" } }
+                  <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
+                     <FontAwesomeIcon
+                        icon = { faGripVertical }
+                        style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
+                        { ...listeners }
+                        { ...attributes }
+                     />
+                  </ListItemIcon>
+                  <ListItemText
+                     primary = { category.name }
+                     secondary = { displayCurrency(goal) }
+                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
+                  />
+                  <Stack
+                     direction = "row"
+                     spacing = { 1 }
                   >
-                     <ListItemButton
-                        disableRipple = { true }
-                        disableTouchRipple = { true }
-                        sx = { { justifyContent: "center", cursor: "default", "&:hover": { backgroundColor: "transparent" }, p: 0 } }
-                     >
-                        <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
-                           <FontAwesomeIcon
-                              icon = { faGripVertical }
-                              style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
-                              { ...listeners }
-                              { ...attributes }
-                           />
-                        </ListItemIcon>
-                        <ListItemText
-                           primary = { category.name }
-                           secondary = { displayCurrency(goal) }
-                           sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
-                        />
-                        <Stack
-                           direction = "row"
-                           spacing = { 1 }
-                        >
-                           <FontAwesomeIcon
-                              className = "primary"
-                              icon = { faPenToSquare }
-                              onClick = { editCategory }
-                              size = "lg"
-                              style = { { cursor: "pointer", marginTop: "1px" } }
-                           />
-                           <DeleteBudget
-                              budget_category_id = { category.budget_category_id }
-                              type = { type }
-                           />
-                        </Stack>
-                     </ListItemButton>
-                  </List>
-               </Stack>
-            )
-         }
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faPenToSquare }
+                        onClick = { editCategory }
+                        size = "lg"
+                        style = { { cursor: "pointer", marginTop: "1px" } }
+                     />
+                     <DeleteBudget
+                        budget_category_id = { category.budget_category_id }
+                        type = { type }
+                     />
+                  </Stack>
+               </ListItemButton>
+            </List>
+         </Stack>
       </Box>
    );
 });
@@ -268,7 +265,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
    return (
       <Stack
          direction = "column"
-         spacing = { 2 }
+         spacing = { 1 }
          sx = { { mt: 1 } }
       >
          <DndContext
@@ -294,28 +291,31 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                }
             </SortableContext>
          </DndContext>
-         <Box>
-            {
-               !showNewCategoryForm ? (
-                  <Button
-                     className = "btn-primary"
-                     color = "primary"
-                     fullWidth = { true }
-                     onClick = { () => createNewCategory(true) }
-                     startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-                     variant = "contained"
-                  >
-                     Add Category
-                  </Button>
-               ) : (
-                  <ConstructCategory
-                     onClose = { cancelCreateNewCategory }
-                     type = { type }
-                     updateDirtyFields = { updateDirtyFields }
-                  />
-               )
-            }
-         </Box>
+         <Collapse
+            in = { !showNewCategoryForm }
+            mountOnEnter = { true }
+            style = { { transformOrigin: "center top" } }
+            timeout = { 350 }
+            unmountOnExit = { true }
+         >
+            <Button
+               className = "btn-primary"
+               color = "primary"
+               fullWidth = { true }
+               onClick = { () => createNewCategory(true) }
+               startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
+               sx = { { display: showNewCategoryForm ? "none" : "" } }
+               variant = "contained"
+            >
+               Add Category
+            </Button>
+         </Collapse>
+         <ConstructCategory
+            onClose = { cancelCreateNewCategory }
+            type = { type }
+            updateDirtyFields = { updateDirtyFields }
+            visible = { showNewCategoryForm }
+         />
       </Stack>
    );
 }

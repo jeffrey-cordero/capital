@@ -25,6 +25,7 @@ import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
+import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
@@ -68,12 +69,14 @@ export default function Register(): React.ReactNode {
          );
 
          if (typeof result === "object" && result?.success) {
-            navigate("/dashboard");
-
+            // Display a success notification
             dispatch(addNotification({
                type: "success",
                message: "Welcome"
             }));
+
+            // Re-sync authentication state for auto-redirection
+            dispatch(authenticate(true));
          }
       }
    };

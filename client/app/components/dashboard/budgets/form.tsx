@@ -1,8 +1,6 @@
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -10,7 +8,7 @@ import {
    Stack
 } from "@mui/material";
 import { type BudgetPeriod, budgetSchema, type OrganizedBudget } from "capital/budgets";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -18,6 +16,7 @@ import { useNavigate } from "react-router";
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import Transactions from "@/components/dashboard/transactions/transactions";
 import { Modal, ModalSection } from "@/components/global/modal";
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
@@ -70,12 +69,16 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
       defaultValues: { goal: String(budget.goals[budget.goalIndex].goal) }
    });
 
-   // Reset form default values when modal visibility changes
    useEffect(() => {
       if (open) {
          reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
       }
-   }, [reset, open, budget.goals, budget.goalIndex]);
+   }, [open, reset, budget.goals, budget.goalIndex]);
+
+   const onCancel = useCallback(() => {
+      updateDirtyFields({}, "main");
+      reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
+   }, [reset, updateDirtyFields, budget.goals, budget.goalIndex]);
 
    const onSubmit = async(data: FieldValues) => {
       try {
@@ -149,7 +152,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   >
                      <Stack
                         direction = "column"
-                        spacing = { 1.5 }
+                        spacing = { 1 }
                         sx = { { mt: 3 } }
                      >
                         <Controller
@@ -177,22 +180,13 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                               )
                            }
                         />
-                        <Stack
-                           direction = "column"
-                           spacing = { 1 }
-                        >
-                           <Button
-                              className = "btn-primary"
-                              color = "primary"
-                              fullWidth = { true }
-                              loading = { isSubmitting }
-                              startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
-                              type = "submit"
-                              variant = "contained"
-                           >
-                              Update
-                           </Button>
-                        </Stack>
+                        <SubmitButton
+                           icon = { faPenToSquare }
+                           isSubmitting = { isSubmitting }
+                           onCancel = { onCancel }
+                           type = "Update"
+                           visible = { Object.keys(dirtyFields).length > 0 }
+                        />
                      </Stack>
                   </form>
                </Box>

@@ -1,9 +1,6 @@
-import { faRotateLeft, faSave } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSave } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
-   Button,
-   Fade,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -21,6 +18,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
@@ -57,9 +55,6 @@ export default function Details(): React.ReactNode {
    // Setup minimum and maximum dates for birthday input
    const [minDate, maxDate] = getDateRange();
 
-   // Check if the form has dirty fields to display the save button
-   const isFormDirty = Object.keys(dirtyFields).length > 0;
-
    // Handles form submission
    const onSubmit = async(data: FieldValues) => {
       try {
@@ -87,9 +82,10 @@ export default function Details(): React.ReactNode {
          if (response === 204) {
             // Update Redux store with the changes
             dispatch(updateDetails(updates as Partial<UserDetails>));
+
             reset({
-               name: updates.name || undefined,
-               birthday: updates.birthday ? updates.birthday.split("T")[0] : undefined
+               name: updates.name || settings.name,
+               birthday: (updates.birthday || settings.birthday).split("T")[0]
             });
          }
       } catch (error) {
@@ -211,43 +207,15 @@ export default function Details(): React.ReactNode {
                      </MenuItem>
                   </Select>
                </FormControl>
-               <Fade
-                  in = { isFormDirty }
-                  mountOnEnter = { true }
-                  style = { { transformOrigin: "center top" } }
-                  timeout = { 250 }
-                  unmountOnExit = { true }
-               >
-                  <Stack
-                     direction = "row"
-                     spacing = { 1.5 }
-                     sx = { { width: "100%" } }
-                  >
-                     <Button
-                        className = "btn-secondary"
-                        color = "secondary"
-                        fullWidth = { true }
-                        loading = { isSubmitting }
-                        onClick = { () => reset() }
-                        startIcon = { <FontAwesomeIcon icon = { faRotateLeft } /> }
-                        type = "button"
-                        variant = "contained"
-                     >
-                        Reset
-                     </Button>
-                     <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        fullWidth = { true }
-                        loading = { isSubmitting }
-                        startIcon = { <FontAwesomeIcon icon = { faSave } /> }
-                        type = "submit"
-                        variant = "contained"
-                     >
-                        Save
-                     </Button>
-                  </Stack>
-               </Fade>
+               <Box sx={{ width: "100%" }}>
+                  <SubmitButton
+                     icon = { faSave }
+                     isSubmitting = { isSubmitting }
+                     onCancel = { reset }
+                     type = "Update"
+                     visible = { Object.keys(dirtyFields).length > 0 }
+                  />
+               </Box>
             </Stack>
          </form>
       </Paper>

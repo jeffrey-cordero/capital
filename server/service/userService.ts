@@ -12,8 +12,8 @@ import { compare, hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
-import { logoutUser } from "@/service/authenticationService";
 import * as userRepository from "@/repository/userRepository";
+import { logoutUser } from "@/service/authenticationService";
 
 /**
  * Cache duration in seconds for user details (30 minutes)

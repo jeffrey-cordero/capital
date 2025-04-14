@@ -1,7 +1,6 @@
-import { faClockRotateLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import {
-   Button,
+   Collapse,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -15,6 +14,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
@@ -26,10 +26,12 @@ import { type RootState } from "@/redux/store";
  *
  * @interface EditCategoryProps
  * @property {BudgetCategory} category - The category to edit
+ * @property {boolean} visible - Whether the form is visible
  * @property {() => void} onCancel - The function to call when the form is cancelled
  * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
  */
 interface EditCategoryProps {
+   visible: boolean;
    category: BudgetCategory;
    onCancel: () => void;
    updateDirtyFields: (_fields: object, _field: string) => void;
@@ -51,7 +53,7 @@ const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
  * @param {EditCategoryProps} props - The props for the EditCategory component
  * @returns {React.ReactNode} The EditCategory component
  */
-export default function EditCategory({ category, onCancel, updateDirtyFields }: EditCategoryProps): React.ReactNode {
+export default function EditCategory({ visible, category, onCancel, updateDirtyFields }: EditCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
@@ -163,6 +165,7 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
 
             // Clear the dirty fields before closing
             updateDirtyFields({}, "editor");
+
             onCancel();
          }
       } catch (error) {
@@ -171,130 +174,118 @@ export default function EditCategory({ category, onCancel, updateDirtyFields }: 
    };
 
    return (
-      <form
-         onChange = { () => updateDirtyFields(dirtyFields, "editor") }
-         onSubmit = { handleSubmit(onSubmit) }
+      <Collapse
+         in = { visible }
+         mountOnEnter = { true }
+         style = { { transformOrigin: "center top" } }
+         timeout = { 350 }
+         unmountOnExit = { true }
       >
-         <Stack
-            direction = "column"
-            spacing = { 1.5 }
-            sx = { { mt: 1 } }
+         <form
+            onChange = { () => updateDirtyFields(dirtyFields, "editor") }
+            onSubmit = { handleSubmit(onSubmit) }
          >
-            <Controller
-               control = { control }
-               name = "name"
-               render = {
-                  ({ field }) => (
-                     <FormControl error = { Boolean(errors.name) }>
-                        <InputLabel htmlFor = "editor-name">
-                           Name
-                        </InputLabel>
-                        <OutlinedInput
-                           { ...field }
-                           aria-label = "Name"
-                           autoComplete = "none"
-                           id = "editor-name"
-                           label = "Name"
-                           type = "text"
-                           value = { field.value || "" }
-                        />
-                        <FormHelperText>
-                           { errors.name?.message?.toString() }
-                        </FormHelperText>
-                     </FormControl>
-                  )
-               }
-            />
-            <Controller
-               control = { control }
-               name = "goal"
-               render = {
-                  ({ field }) => (
-                     <FormControl error = { Boolean(errors.goal) }>
-                        <InputLabel htmlFor = "editor-goal">
-                           Goal
-                        </InputLabel>
-                        <OutlinedInput
-                           { ...field }
-                           aria-label = "Goal"
-                           id = "editor-goal"
-                           inputProps = { { step: 0.01, min: 0 } }
-                           label = "Goal"
-                           type = "number"
-                           value = { field.value || "" }
-                        />
-                        <FormHelperText>
-                           { errors.goal?.message?.toString() }
-                        </FormHelperText>
-                     </FormControl>
-                  )
-               }
-            />
-            <Controller
-               control = { control }
-               defaultValue = { category.type }
-               name = "type"
-               render = {
-                  ({ field }) => (
-                     <FormControl
-                        error = { Boolean(errors.type) }
-                     >
-                        <InputLabel
-                           htmlFor = "editor-type"
-                           variant = "outlined"
+            <Stack
+               direction = "column"
+               spacing = { 1.5 }
+               sx = { { mt: 1 } }
+            >
+               <Controller
+                  control = { control }
+                  name = "name"
+                  render = {
+                     ({ field }) => (
+                        <FormControl error = { Boolean(errors.name) }>
+                           <InputLabel htmlFor = "editor-name">
+                              Name
+                           </InputLabel>
+                           <OutlinedInput
+                              { ...field }
+                              aria-label = "Name"
+                              autoComplete = "none"
+                              id = "editor-name"
+                              label = "Name"
+                              type = "text"
+                              value = { field.value || "" }
+                           />
+                           <FormHelperText>
+                              { errors.name?.message?.toString() }
+                           </FormHelperText>
+                        </FormControl>
+                     )
+                  }
+               />
+               <Controller
+                  control = { control }
+                  name = "goal"
+                  render = {
+                     ({ field }) => (
+                        <FormControl error = { Boolean(errors.goal) }>
+                           <InputLabel htmlFor = "editor-goal">
+                              Goal
+                           </InputLabel>
+                           <OutlinedInput
+                              { ...field }
+                              aria-label = "Goal"
+                              id = "editor-goal"
+                              inputProps = { { step: 0.01, min: 0 } }
+                              label = "Goal"
+                              type = "number"
+                              value = { field.value || "" }
+                           />
+                           <FormHelperText>
+                              { errors.goal?.message?.toString() }
+                           </FormHelperText>
+                        </FormControl>
+                     )
+                  }
+               />
+               <Controller
+                  control = { control }
+                  defaultValue = { category.type }
+                  name = "type"
+                  render = {
+                     ({ field }) => (
+                        <FormControl
+                           error = { Boolean(errors.type) }
                         >
-                           Type
-                        </InputLabel>
-                        <Select
-                           { ...field }
-                           label = "Type"
-                           slotProps = {
-                              {
-                                 input: {
-                                    id: "editor-type"
+                           <InputLabel
+                              htmlFor = "editor-type"
+                              variant = "outlined"
+                           >
+                              Type
+                           </InputLabel>
+                           <Select
+                              { ...field }
+                              label = "Type"
+                              slotProps = {
+                                 {
+                                    input: {
+                                       id: "editor-type"
+                                    }
                                  }
                               }
-                           }
-                        >
-                           <MenuItem value = "Income">
-                              Income
-                           </MenuItem>
-                           <MenuItem value = "Expenses">
-                              Expenses
-                           </MenuItem>
-                        </Select>
-                     </FormControl>
-                  )
-               }
-            />
-            <Stack
-               direction = { { xs: "column", sm: "row" } }
-               spacing = { 1 }
-            >
-               <Button
-                  className = "btn-primary"
-                  color = "secondary"
-                  disabled = { isSubmitting }
-                  fullWidth = { true }
-                  onClick = { onCancel }
-                  startIcon = { <FontAwesomeIcon icon = { faClockRotateLeft } /> }
-                  variant = "contained"
-               >
-                  Cancel
-               </Button>
-               <Button
-                  className = "btn-primary"
-                  color = "primary"
-                  fullWidth = { true }
-                  loading = { isSubmitting }
-                  startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
-                  type = "submit"
-                  variant = "contained"
-               >
-                  Save
-               </Button>
+                           >
+                              <MenuItem value = "Income">
+                                 Income
+                              </MenuItem>
+                              <MenuItem value = "Expenses">
+                                 Expenses
+                              </MenuItem>
+                           </Select>
+                        </FormControl>
+                     )
+                  }
+               />
+               <SubmitButton
+                  icon = { faPenToSquare }
+                  isSubmitting = { isSubmitting }
+                  onCancel = { onCancel }
+                  type = "Update"
+                  visible = { true }
+               />
             </Stack>
-         </Stack>
-      </form>
+         </form>
+      </Collapse>
    );
 }
