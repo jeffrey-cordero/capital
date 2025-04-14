@@ -12,7 +12,7 @@ export default function Settings(): React.ReactNode {
    return (
       <Stack
          direction = "column"
-         spacing = { 4 }
+         spacing = { -2 }
       >
          <Details />
          <Security />

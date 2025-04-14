@@ -1,20 +1,12 @@
-import {
-   faEye,
-   faEyeSlash,
-   faPenToSquare,
-   faPersonWalking,
-   faSave
-} from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faPenToSquare, faSave } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
    Collapse,
    FormControl,
    FormHelperText,
    InputLabel,
    OutlinedInput,
-   Paper,
    Stack
 } from "@mui/material";
 import { type UserDetails, type UserDetailUpdates, userUpdateSchema } from "capital/user";
@@ -25,7 +17,7 @@ import { useNavigate } from "react-router";
 
 import DeleteAccount from "@/components/dashboard/settings/delete";
 import ExportAccount from "@/components/dashboard/settings/export";
-import { clearAuthentication } from "@/components/global/sidebar";
+import Logout from "@/components/dashboard/settings/logout";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
@@ -75,8 +67,6 @@ export default function Security(): React.ReactNode {
             updates[key as keyof typeof disabled] = true;
          });
 
-         updates.passwords = true;
-
          return updates;
       });
    }, [setDisabled]);
@@ -99,15 +89,10 @@ export default function Security(): React.ReactNode {
       });
    }, []);
 
-   // Handle logout requests
-   const handleLogout = useCallback(async() => {
-      await clearAuthentication(dispatch, navigate);
-   }, [dispatch, navigate]);
-
    // Handles form submissions
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = userUpdateSchema.partial().safeParse(data);
+         const fields = userUpdateSchema.safeParse(data);
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -144,8 +129,8 @@ export default function Security(): React.ReactNode {
                email: updates.email || settings.email
             });
 
-            // Reset visibility of fields that were changed
-            toggleFieldEditable(Object.keys(updates) as (keyof typeof disabled)[]);
+            // Reset visibility of all fields
+            resetVisibility();
          }
       } catch (error) {
          console.error("Failed to update security settings:", error);
@@ -153,10 +138,7 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Paper
-         elevation = { 3 }
-         sx = { { p: 6, mt: 4 } }
-      >
+      <Box>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
@@ -167,7 +149,7 @@ export default function Security(): React.ReactNode {
                   alt = "Security"
                   component = "img"
                   src = "/svg/security.svg"
-                  sx = { { height: 250, mb: 4 } }
+                  sx = { { width: 280, mb: "-30px !important", px: 2 } }
                />
                <Controller
                   control = { control }
@@ -184,6 +166,7 @@ export default function Security(): React.ReactNode {
                            </InputLabel>
                            <OutlinedInput
                               { ...field }
+                              autoComplete = "off"
                               endAdornment = {
                                  disabled.username ? (
                                     <FontAwesomeIcon
@@ -220,6 +203,7 @@ export default function Security(): React.ReactNode {
                            </InputLabel>
                            <OutlinedInput
                               { ...field }
+                              autoComplete = "off"
                               endAdornment = {
                                  disabled.email ? (
                                     <FontAwesomeIcon
@@ -385,20 +369,11 @@ export default function Security(): React.ReactNode {
                      visible = { !disabled.username || !disabled.email || !disabled.passwords }
                   />
                   <ExportAccount />
-                  <Button
-                     className = "btn-primary"
-                     color = "warning"
-                     fullWidth = { true }
-                     onClick = { handleLogout }
-                     startIcon = { <FontAwesomeIcon icon = { faPersonWalking } /> }
-                     variant = "contained"
-                  >
-                     Logout
-                  </Button>
+                  <Logout />
                   <DeleteAccount />
                </Stack>
             </Stack>
          </form>
-      </Paper>
+      </Box>
    );
 }

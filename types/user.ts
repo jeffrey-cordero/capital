@@ -59,17 +59,60 @@ export const userSchema = z.object({
 export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
 
 /**
+ * Represents the inner user schema with no refine methods for the following update schema
+ */
+const innerUserSchema = userSchema.innerType();
+
+/**
  * Represents a user update schema to account for password updates
  */
-export const userUpdateSchema = userSchema.innerType().extend({
-  newPassword: z
-    .string()
-    .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`)
-    .max(MAX_PASSWORD_LENGTH, `Password must be at most ${MAX_PASSWORD_LENGTH} characters long`)
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .optional(),
+export const userUpdateSchema = innerUserSchema.partial().extend({
+  newPassword: innerUserSchema.shape.password.optional(),
+}).superRefine((data, ctx) => {
+  const { password, newPassword, verifyPassword } = data;
+
+  // Check if the user is attempting to change the password
+  const isAttemptingPasswordChange = password || newPassword || verifyPassword;
+
+  if (isAttemptingPasswordChange) {
+    // If *any* password field is given, *all* are required
+    if (!password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Current password is required to set a new password",
+        path: ["password"],
+      });
+    } else if (!newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New password is required to set a new password",
+        path: ["newPassword"],
+      });
+    } else if (!verifyPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Password verification is required to set a new password",
+        path: ["verifyPassword"],
+      });
+    }
+
+    if (password === newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New password must not match the old password",
+        path: ["newPassword"],
+      });
+    }
+
+    // New password must match the verification field
+    if (newPassword !== verifyPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match",
+        path: ["verifyPassword"],
+      });
+    }
+  }
 });
 
 /**

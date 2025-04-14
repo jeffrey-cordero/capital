@@ -477,7 +477,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                      <SubmitButton
                         icon = { updating ? faFloppyDisk : faPlus }
                         isSubmitting = { isSubmitting }
-                        onCancel = { updating ? onReset : onClose }
+                        onCancel = { onClose }
                         type = { updating ? "Update" : "Create" }
                         visible = { true }
                      />

@@ -1,4 +1,4 @@
-import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import { faTrashCan, type IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
@@ -6,7 +6,8 @@ import {
    Dialog,
    DialogActions,
    DialogContent,
-   DialogContentText
+   DialogContentText,
+   Stack
 } from "@mui/material";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,11 +21,15 @@ import { useForm } from "react-hook-form";
  * @property {() => void} onConfirmation - The function to call when the user confirms the action
  * @property {string} [fontSize] - The font size of the icon
  * @property {string} [title] - The title of the deletion button
+ * @property {IconDefinition} [startIcon] - The icon to display for the button
+ * @property {string} [color] - The color of the button
  */
 interface ConfirmationProps {
    type: "button" | "icon";
    message: string;
    onConfirmation: () => void;
+   startIcon?: IconDefinition;
+   color?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
    fontSize?: string;
    title?: string;
 }
@@ -35,7 +40,7 @@ interface ConfirmationProps {
  * @param {ConfirmationProps} props - The props for the Confirmation component
  * @returns {React.ReactNode} The Confirmation component
  */
-export default function Confirmation({ message, onConfirmation, type, fontSize, title }: ConfirmationProps): React.ReactNode {
+export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -53,11 +58,11 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
             type === "button" ? (
                <Button
                   className = "btn-primary"
-                  color = "error"
+                  color = { color || "error" }
                   fullWidth = { true }
                   loading = { isSubmitting }
                   onClick = { openDialog }
-                  startIcon = { <FontAwesomeIcon icon = { faTrashCan } /> }
+                  startIcon = { <FontAwesomeIcon icon = { startIcon || faTrashCan } /> }
                   type = "button"
                   variant = "contained"
                >
@@ -77,9 +82,9 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
             open = { open }
             sx = {
                {
-                  width: { xs: "85%", md: "65%", lg: "60%" },
-                  maxWidth: "85%",
-                  mx: "auto"
+                  width: { xs: "95%", md: "65%", lg: "60%" },
+                  mx: "auto",
+                  textAlign: { xs: "center", md: "left" }
                }
             }
          >
@@ -89,20 +94,25 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                      { message }
                   </DialogContentText>
                </DialogContent>
-               <DialogActions>
+               <DialogActions sx = { { justifyContent: { xs: "center", md: "flex-end" }, pt: 0.5 } }>
                   <form onSubmit = { handleSubmit(onConfirmation) }>
-                     <Button
-                        onClick = { closeDialog }
+                     <Stack
+                        direction = "row"
                      >
-                        No
-                     </Button>
-                     <Button
-                        autoFocus = { true }
-                        loading = { isSubmitting }
-                        type = "submit"
-                     >
-                        Yes
-                     </Button>
+                        <Button
+                           onClick = { closeDialog }
+                        >
+                           No
+                        </Button>
+                        <Button
+                           autoFocus = { true }
+                           color = "error"
+                           loading = { isSubmitting }
+                           type = "submit"
+                        >
+                           Yes
+                        </Button>
+                     </Stack>
                   </form>
                </DialogActions>
             </Box>

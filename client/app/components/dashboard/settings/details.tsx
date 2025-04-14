@@ -6,7 +6,6 @@ import {
    InputLabel,
    MenuItem,
    OutlinedInput,
-   Paper,
    Select,
    Stack,
    TextField,
@@ -58,7 +57,7 @@ export default function Details(): React.ReactNode {
    // Handles form submission
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = userUpdateSchema.partial().safeParse(data);
+         const fields = userUpdateSchema.safeParse(data);
 
          if (!fields.success) {
             // Handle validation errors
@@ -99,10 +98,7 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Paper
-         elevation = { 3 }
-         sx = { { p: 6, mt: 2 } }
-      >
+      <Box>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
@@ -113,7 +109,7 @@ export default function Details(): React.ReactNode {
                   alt = "Details"
                   component = "img"
                   src = "/svg/details.svg"
-                  sx = { { height: 250, mb: 4 } }
+                  sx = { { width: 280, mb: "24px !important", px: 2 } }
                />
                <Controller
                   control = { control }
@@ -129,6 +125,7 @@ export default function Details(): React.ReactNode {
                            </InputLabel>
                            <OutlinedInput
                               { ...field }
+                              autoComplete = "name"
                               id = "name"
                               label = "Name"
                               value = { field.value || "" }
@@ -157,6 +154,7 @@ export default function Details(): React.ReactNode {
                            </InputLabel>
                            <TextField
                               { ...field }
+                              autoComplete = "bday"
                               error = { Boolean(errors.birthday) }
                               id = "birthday"
                               label = "Birthday"
@@ -190,12 +188,22 @@ export default function Details(): React.ReactNode {
                   fullWidth = { true }
                   sx = { { textAlign: "left" } }
                >
-                  <InputLabel id = "theme-select-label">
+                  <InputLabel
+                     htmlFor = "theme"
+                     id = "theme-select-label"
+                  >
                      Theme
                   </InputLabel>
                   <Select
                      label = "Theme"
                      onChange = { (e) => changeTheme(e.target.value as "light" | "dark") }
+                     slotProps = {
+                        {
+                           input: {
+                              id: "theme"
+                           }
+                        }
+                     }
                      value = { currentTheme }
                      variant = "outlined"
                   >
@@ -218,6 +226,6 @@ export default function Details(): React.ReactNode {
                </Box>
             </Stack>
          </form>
-      </Paper>
+      </Box>
    );
 }

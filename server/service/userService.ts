@@ -161,7 +161,7 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
    const user_id: string = res.locals.user_id;
 
    // Validate update fields with user update schema
-   const fields = userUpdateSchema.partial().safeParse(updates);
+   const fields = userUpdateSchema.safeParse(updates);
 
    if (!fields.success) {
       return sendValidationErrors(fields, "Invalid user fields");
@@ -188,21 +188,9 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       }
    }
 
-   if (details.password && !details.newPassword) {
-      return sendServiceResponse(400, "Invalid user fields", undefined, {
-         newPassword: "New password is required"
-      });
-   }
-
    // Handle password changes
    if (details.newPassword) {
-      if (details.newPassword !== details.verifyPassword) {
-         return sendServiceResponse(400, "Passwords do not match", undefined, {
-            verifyPassword: "Passwords do not match"
-         });
-      }
-
-      // Verify current password first
+      // Verify the current password first
       const current = await userRepository.findByUserId(user_id);
 
       if (!current) {
@@ -215,10 +203,6 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       if (!details.password || !(await compare(details.password, current.password))) {
          return sendServiceResponse(400, "Invalid user fields", undefined, {
             password: "Invalid password"
-         });
-      } else if (details.newPassword === details.password) {
-         return sendServiceResponse(400, "Invalid user fields", undefined, {
-            newPassword: "New password cannot be the same as the current password"
          });
       }
 
