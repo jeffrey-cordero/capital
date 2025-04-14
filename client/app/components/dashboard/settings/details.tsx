@@ -207,7 +207,7 @@ export default function Details(): React.ReactNode {
                      </MenuItem>
                   </Select>
                </FormControl>
-               <Box sx={{ width: "100%" }}>
+               <Box sx = { { width: "100%" } }>
                   <SubmitButton
                      icon = { faSave }
                      isSubmitting = { isSubmitting }

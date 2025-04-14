@@ -1,4 +1,5 @@
 import {
+   faEye,
    faEyeSlash,
    faPenToSquare,
    faPersonWalking,
@@ -8,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
-   Fade,
+   Collapse,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -28,7 +29,6 @@ import { clearAuthentication } from "@/components/global/sidebar";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
-import { addNotification } from "@/redux/slices/notifications";
 import { updateDetails } from "@/redux/slices/settings";
 import type { RootState } from "@/redux/store";
 
@@ -47,6 +47,9 @@ export default function Security(): React.ReactNode {
    const [disabled, setDisabled] = useState({
       username: true,
       email: true,
+      // Determines if password fields are editable
+      passwords: true,
+      // True/false determines if input fields are password or text
       password: true,
       newPassword: true,
       verifyPassword: true
@@ -72,6 +75,8 @@ export default function Security(): React.ReactNode {
             updates[key as keyof typeof disabled] = true;
          });
 
+         updates.passwords = true;
+
          return updates;
       });
    }, [setDisabled]);
@@ -92,20 +97,15 @@ export default function Security(): React.ReactNode {
 
          return updates;
       });
-   }, [reset]);
-
-   // Toggle password change fields visibility
-   const togglePasswordFields = useCallback(() => {
-      toggleFieldEditable(["password", "newPassword", "verifyPassword"]);
-   }, [toggleFieldEditable]);
+   }, []);
 
    // Handle logout requests
-   const handleLogout = useCallback(async () => {
+   const handleLogout = useCallback(async() => {
       await clearAuthentication(dispatch, navigate);
    }, [dispatch, navigate]);
 
    // Handles form submissions
-   const onSubmit = async (data: FieldValues) => {
+   const onSubmit = async(data: FieldValues) => {
       try {
          const fields = userUpdateSchema.partial().safeParse(data);
 
@@ -146,12 +146,6 @@ export default function Security(): React.ReactNode {
 
             // Reset visibility of fields that were changed
             toggleFieldEditable(Object.keys(updates) as (keyof typeof disabled)[]);
-
-            // Notify user of successful security-related updates
-            dispatch(addNotification({
-               message: `${Object.keys(updates).map((u) => u.charAt(0).toUpperCase() + u.slice(1)).join(", ")} updated successfully`,
-               type: "success"
-            }));
          }
       } catch (error) {
          console.error("Failed to update security settings:", error);
@@ -160,229 +154,244 @@ export default function Security(): React.ReactNode {
 
    return (
       <Paper
-         elevation={3}
-         sx={{ p: 6, mt: 4 }}
+         elevation = { 3 }
+         sx = { { p: 6, mt: 4 } }
       >
-         <form onSubmit={handleSubmit(onSubmit)}>
+         <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
-               direction="column"
-               spacing={1.5}
-               sx={{ width: "100%", textAlign: "center", alignItems: "center" }}
+               direction = "column"
+               spacing = { 1.5 }
+               sx = { { width: "100%", textAlign: "center", alignItems: "center" } }
             >
                <Box
-                  alt="Security"
-                  component="img"
-                  src="/svg/security.svg"
-                  sx={{ height: 250, mb: 4 }}
+                  alt = "Security"
+                  component = "img"
+                  src = "/svg/security.svg"
+                  sx = { { height: 250, mb: 4 } }
                />
                <Controller
-                  control={control}
-                  name="username"
-                  render={
+                  control = { control }
+                  name = "username"
+                  render = {
                      ({ field }) => (
                         <FormControl
-                           disabled={disabled.username}
-                           error={Boolean(errors.username)}
-                           fullWidth={true}
+                           disabled = { disabled.username }
+                           error = { Boolean(errors.username) }
+                           fullWidth = { true }
                         >
-                           <InputLabel htmlFor="username">
+                           <InputLabel htmlFor = "username">
                               Username
                            </InputLabel>
                            <OutlinedInput
-                              {...field}
-                              endAdornment={
+                              { ...field }
+                              endAdornment = {
                                  disabled.username ? (
                                     <FontAwesomeIcon
-                                       className="primary"
-                                       icon={faPenToSquare}
-                                       onClick={() => toggleFieldEditable(["username"])}
-                                       style={{ cursor: "pointer" }}
+                                       className = "primary"
+                                       icon = { faPenToSquare }
+                                       onClick = { () => toggleFieldEditable(["username"]) }
+                                       style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
                               }
-                              id="username"
-                              label="Username"
-                              value={field.value || ""}
+                              id = "username"
+                              label = "Username"
+                              value = { field.value || "" }
                            />
                            <FormHelperText>
-                              {errors.username?.message?.toString()}
+                              { errors.username?.message?.toString() }
                            </FormHelperText>
                         </FormControl>
                      )
                   }
                />
                <Controller
-                  control={control}
-                  name="email"
-                  render={
+                  control = { control }
+                  name = "email"
+                  render = {
                      ({ field }) => (
                         <FormControl
-                           disabled={disabled.email}
-                           error={Boolean(errors.email)}
-                           fullWidth={true}
+                           disabled = { disabled.email }
+                           error = { Boolean(errors.email) }
+                           fullWidth = { true }
                         >
-                           <InputLabel htmlFor="email">
+                           <InputLabel htmlFor = "email">
                               Email
                            </InputLabel>
                            <OutlinedInput
-                              {...field}
-                              endAdornment={
+                              { ...field }
+                              endAdornment = {
                                  disabled.email ? (
                                     <FontAwesomeIcon
-                                       className="primary"
-                                       icon={faPenToSquare}
-                                       onClick={() => toggleFieldEditable(["email"])}
-                                       style={{ cursor: "pointer" }}
+                                       className = "primary"
+                                       icon = { faPenToSquare }
+                                       onClick = { () => toggleFieldEditable(["email"]) }
+                                       style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
                               }
-                              id="email"
-                              label="Email"
-                              type="email"
-                              value={field.value || ""}
+                              id = "email"
+                              label = "Email"
+                              type = "email"
+                              value = { field.value || "" }
                            />
                            <FormHelperText>
-                              {errors.email?.message?.toString()}
+                              { errors.email?.message?.toString() }
                            </FormHelperText>
                         </FormControl>
                      )
                   }
                />
                <Controller
-                  control={control}
-                  name="password"
-                  render={
+                  control = { control }
+                  name = "password"
+                  render = {
                      ({ field }) => (
                         <FormControl
-                           disabled={disabled.password}
-                           error={Boolean(errors.password)}
-                           fullWidth={true}
+                           disabled = { disabled.passwords }
+                           error = { Boolean(errors.password) }
+                           fullWidth = { true }
                         >
-                           <InputLabel htmlFor="password">
+                           <InputLabel htmlFor = "password">
                               Password
                            </InputLabel>
                            <OutlinedInput
-                              {...field}
-                              autoComplete="current-password"
-                              endAdornment={
-                                 disabled.password ? (
+                              { ...field }
+                              autoComplete = "current-password"
+                              endAdornment = {
+                                 disabled.passwords ? (
                                     <FontAwesomeIcon
-                                       className="primary"
-                                       icon={faPenToSquare}
-                                       onClick={togglePasswordFields}
-                                       style={{ cursor: "pointer" }}
+                                       className = "primary"
+                                       icon = { disabled.passwords ? faPenToSquare : disabled.password ? faEye : faEyeSlash }
+                                       onClick = { () => toggleFieldEditable(["passwords"]) }
+                                       style = { { cursor: "pointer" } }
                                     />
                                  ) : (
                                     <FontAwesomeIcon
-                                       className="primary"
-                                       icon={faEyeSlash}
-                                       onClick={togglePasswordFields}
-                                       style={{ cursor: "pointer" }}
+                                       className = { disabled.password ? undefined : "primary" }
+                                       icon = { disabled.password ? faEye : faEyeSlash }
+                                       onClick = { () => toggleFieldEditable(["password"]) }
+                                       style = { { cursor: "pointer" } }
                                     />
                                  )
                               }
-                              id="password"
-                              label="Password"
-                              type="password"
-                              value={disabled.password ? "********" : field.value || ""}
+                              id = "password"
+                              label = "Password"
+                              type = { disabled.password ? "password" : "text" }
+                              value = { disabled.passwords ? "********" : field.value || "" }
                            />
                            <FormHelperText>
-                              {errors.password?.message?.toString()}
+                              { errors.password?.message?.toString() }
                            </FormHelperText>
                         </FormControl>
                      )
                   }
                />
-               <Fade
-                  in={!disabled.password}
-                  mountOnEnter={true}
-                  style={{ transformOrigin: "center top" }}
-                  timeout={250}
-                  unmountOnExit={true}
+               <Collapse
+                  in = { !disabled.passwords }
+                  mountOnEnter = { true }
+                  style = { { transformOrigin: "center top" } }
+                  sx = { { width: "100%" } }
+                  timeout = { 250 }
+                  unmountOnExit = { true }
                >
                   <Stack
-                     direction="column"
-                     spacing={1.5}
-                     sx={{ width: "100%" }}
+                     direction = "column"
+                     spacing = { 1.5 }
+                     sx = { { width: "100%" } }
                   >
                      <Controller
-                        control={control}
-                        name="newPassword"
-                        render={
+                        control = { control }
+                        name = "newPassword"
+                        render = {
                            ({ field }) => (
                               <FormControl
-                                 error={Boolean(errors.newPassword)}
-                                 fullWidth={true}
+                                 error = { Boolean(errors.newPassword) }
+                                 fullWidth = { true }
                               >
-                                 <InputLabel htmlFor="newPassword">
+                                 <InputLabel htmlFor = "newPassword">
                                     New Password
                                  </InputLabel>
                                  <OutlinedInput
-                                    {...field}
-                                    autoComplete="new-password"
-                                    id="newPassword"
-                                    label="New Password"
-                                    type="password"
-                                    value={field.value || ""}
+                                    { ...field }
+                                    autoComplete = "new-password"
+                                    endAdornment = {
+                                       <FontAwesomeIcon
+                                          className = { disabled.newPassword ? undefined : "primary" }
+                                          icon = { disabled.newPassword ? faEye : faEyeSlash }
+                                          onClick = { () => toggleFieldEditable(["newPassword"]) }
+                                          style = { { cursor: "pointer" } }
+                                       />
+                                    }
+                                    id = "newPassword"
+                                    label = "New Password"
+                                    type = { disabled.newPassword ? "password" : "text" }
+                                    value = { field.value || "" }
                                  />
                                  <FormHelperText>
-                                    {errors.newPassword?.message?.toString()}
+                                    { errors.newPassword?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )
                         }
                      />
                      <Controller
-                        control={control}
-                        name="verifyPassword"
-                        render={
+                        control = { control }
+                        name = "verifyPassword"
+                        render = {
                            ({ field }) => (
                               <FormControl
-                                 error={Boolean(errors.verifyPassword)}
-                                 fullWidth={true}
+                                 error = { Boolean(errors.verifyPassword) }
+                                 fullWidth = { true }
                               >
-                                 <InputLabel htmlFor="verifyPassword">
+                                 <InputLabel htmlFor = "verifyPassword">
                                     Verify Password
                                  </InputLabel>
                                  <OutlinedInput
-                                    {...field}
-                                    autoComplete="new-password"
-                                    id="verifyPassword"
-                                    label="Verify Password"
-                                    type="password"
-                                    value={field.value || ""}
+                                    { ...field }
+                                    autoComplete = "new-password"
+                                    endAdornment = {
+                                       <FontAwesomeIcon
+                                          className = { disabled.verifyPassword ? undefined : "primary" }
+                                          icon = { disabled.verifyPassword ? faEye : faEyeSlash }
+                                          onClick = { () => toggleFieldEditable(["verifyPassword"]) }
+                                          style = { { cursor: "pointer" } }
+                                       />
+                                    }
+                                    id = "verifyPassword"
+                                    label = "Verify Password"
+                                    type = { disabled.verifyPassword ? "password" : "text" }
+                                    value = { field.value || "" }
                                  />
                                  <FormHelperText>
-                                    {errors.verifyPassword?.message?.toString()}
+                                    { errors.verifyPassword?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )
                         }
                      />
                   </Stack>
-               </Fade>
-               <Box sx={{ width: "100%" }}>
-                  <SubmitButton
-                     icon={faSave}
-                     isSubmitting={isSubmitting}
-                     onCancel={onCancel}
-                     type="Update"
-                     visible={!disabled.username || !disabled.email || !disabled.password}
-                  />
-               </Box>
+               </Collapse>
                <Stack
-                  direction="column"
-                  spacing={1}
-                  sx={{ width: "100%" }}
+                  direction = "column"
+                  spacing = { 1 }
+                  sx = { { width: "100%" } }
                >
+                  <SubmitButton
+                     icon = { faSave }
+                     isSubmitting = { isSubmitting }
+                     onCancel = { onCancel }
+                     type = "Update"
+                     visible = { !disabled.username || !disabled.email || !disabled.passwords }
+                  />
                   <ExportAccount />
                   <Button
-                     className="btn-primary"
-                     color="warning"
-                     fullWidth={true}
-                     onClick={handleLogout}
-                     startIcon={<FontAwesomeIcon icon={faPersonWalking} />}
-                     variant="contained"
+                     className = "btn-primary"
+                     color = "warning"
+                     fullWidth = { true }
+                     onClick = { handleLogout }
+                     startIcon = { <FontAwesomeIcon icon = { faPersonWalking } /> }
+                     variant = "contained"
                   >
                      Logout
                   </Button>

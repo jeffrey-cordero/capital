@@ -188,6 +188,12 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       }
    }
 
+   if (details.password && !details.newPassword) {
+      return sendServiceResponse(400, "Invalid user fields", undefined, {
+         newPassword: "New password is required"
+      });
+   }
+
    // Handle password changes
    if (details.newPassword) {
       if (details.newPassword !== details.verifyPassword) {
@@ -207,8 +213,12 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
 
       // Check if provided password matches current password
       if (!details.password || !(await compare(details.password, current.password))) {
-         return sendServiceResponse(401, "Invalid user fields", undefined, {
+         return sendServiceResponse(400, "Invalid user fields", undefined, {
             password: "Invalid password"
+         });
+      } else if (details.newPassword === details.password) {
+         return sendServiceResponse(400, "Invalid user fields", undefined, {
+            newPassword: "New password cannot be the same as the current password"
          });
       }
 

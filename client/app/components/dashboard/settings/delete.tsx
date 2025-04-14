@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 
 import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
+import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
@@ -26,8 +27,8 @@ export default function DeleteAccount(): React.ReactNode {
                type: "success"
             }));
 
-            // Redirect to the login page
-            navigate("/login");
+            // Auto-redirect to the login page
+            dispatch(authenticate(false));
          }
       } catch (error) {
          console.error("Failed to delete account:", error);
