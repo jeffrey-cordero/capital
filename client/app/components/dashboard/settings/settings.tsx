@@ -1,9 +1,8 @@
-import { Stack } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 
 import Actions from "@/components/dashboard/settings/actions";
 import Details from "@/components/dashboard/settings/details";
 import Security from "@/components/dashboard/settings/security";
-import Callout from "@/components/global/callout";
 
 /**
  * Settings component for managing user settings
@@ -12,11 +11,7 @@ import Callout from "@/components/global/callout";
  */
 export default function Settings(): React.ReactNode {
    return (
-      <Callout
-         sizes = { { xs: 12, sm: 10, xl: 8 } }
-         sx = { { width: "100%", mt: 2  } }
-         type = "primary"
-      >
+      <Box sx = { { width: "100%" } }>
          <Stack
             direction = "column"
             spacing = { -2 }
@@ -26,6 +21,6 @@ export default function Settings(): React.ReactNode {
             <Security />
             <Actions />
          </Stack>
-      </Callout>
+      </Box>
    );
 }

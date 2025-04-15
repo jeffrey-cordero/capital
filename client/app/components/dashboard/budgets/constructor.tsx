@@ -219,6 +219,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
                      isSubmitting = { isSubmitting }
                      onCancel = { closeForm }
                      type = "Create"
+                     unmountOnExit = { false }
                      visible = { true }
                   />
                </Stack>

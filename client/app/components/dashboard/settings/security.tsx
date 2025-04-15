@@ -162,7 +162,7 @@ export default function Security(): React.ReactNode {
                   alt = "Security"
                   component = "img"
                   src = "/svg/security.svg"
-                  sx = { { width: 280, mb: "-30px !important", px: 2 } }
+                  sx = { { width: 315, mb: "-35px !important", px: 2 } }
                />
                <Controller
                   control = { control }

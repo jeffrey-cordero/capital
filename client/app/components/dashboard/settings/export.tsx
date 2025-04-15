@@ -22,6 +22,7 @@ export default function ExportAccount(): React.ReactNode {
       try {
          // Create export data object
          const exportData = {
+            timestamp: new Date().toLocaleString(),
             settings,
             accounts,
             budgets: {
@@ -30,7 +31,8 @@ export default function ExportAccount(): React.ReactNode {
                   goalIndex: undefined,
                   categories: budgets.Income.categories.map((category) => ({
                      ...category,
-                     goalIndex: undefined
+                     goalIndex: undefined,
+                     category_order: undefined
                   }))
                },
                Expenses: {
@@ -38,12 +40,12 @@ export default function ExportAccount(): React.ReactNode {
                   goalIndex: undefined,
                   categories: budgets.Expenses.categories.map((category) => ({
                      ...category,
-                     goalIndex: undefined
+                     goalIndex: undefined,
+                     category_order: undefined
                   }))
                }
             },
-            transactions,
-            timestamp: new Date().toLocaleString()
+            transactions
          };
 
          // Convert to a valid JSON string

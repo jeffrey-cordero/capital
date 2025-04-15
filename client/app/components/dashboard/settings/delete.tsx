@@ -6,8 +6,6 @@ import { useNavigate } from "react-router";
 
 import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
-import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 
 /**
  * DeleteAccount component for deleting user account
@@ -24,13 +22,8 @@ export default function DeleteAccount(): React.ReactNode {
          );
 
          if (response === 204) {
-            dispatch(addNotification({
-               message: "Account deleted successfully",
-               type: "success"
-            }));
-
-            // Auto-redirect to the login page
-            dispatch(authenticate(false));
+            // Direct user to the landing page
+            window.location.href = "/";
          }
       } catch (error) {
          console.error("Failed to delete account:", error);

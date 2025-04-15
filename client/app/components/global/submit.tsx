@@ -11,6 +11,7 @@ import { Button, Collapse, Stack } from "@mui/material";
  * @property {boolean} isSubmitting - Whether the form is being submitted
  * @property {() => void} onCancel - The function to call when the form action is cancelled
  * @property {() => void} onSubmit - The function to call when the form action is submitted
+ * @property {boolean} unmountOnExit - Whether the button should unmount on exit for rendering purposes
  */
 interface SubmitButtonProps {
    visible: boolean;
@@ -18,6 +19,7 @@ interface SubmitButtonProps {
    isSubmitting: boolean;
    onCancel: () => void;
    onSubmit?: () => void;
+   unmountOnExit?: boolean;
 }
 
 /**
@@ -28,7 +30,7 @@ interface SubmitButtonProps {
  * @returns {React.ReactNode} The SubmitButton component
  */
 export default function SubmitButton(props: SubmitButtonProps): React.ReactNode {
-   const { visible, type, isSubmitting, onCancel, onSubmit } = props;
+   const { visible, type, isSubmitting, onCancel, onSubmit, unmountOnExit = true } = props;
 
    return (
       <Collapse
@@ -37,6 +39,7 @@ export default function SubmitButton(props: SubmitButtonProps): React.ReactNode 
          style = { { transformOrigin: "center top" } }
          sx = { { zIndex: 1000, width: "100%" } }
          timeout = { 350 }
+         unmountOnExit = { unmountOnExit }
       >
          <Stack
             direction = "row"

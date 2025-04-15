@@ -279,6 +279,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                   isSubmitting = { isSubmitting }
                   onCancel = { onCancel }
                   type = "Update"
+                  unmountOnExit = { false }
                   visible = { true }
                />
             </Stack>

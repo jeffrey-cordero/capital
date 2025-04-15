@@ -279,15 +279,12 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                     error = { Boolean(errors.amount) }
                                     fullWidth = { true }
                                  >
-                                    <InputLabel
-                                       htmlFor = "amount"
-                                       variant = "outlined"
-                                    >
+                                    <InputLabel htmlFor = "amount">
                                        Amount
                                     </InputLabel>
                                     <OutlinedInput
                                        { ...field }
-                                       autoComplete = "off"
+                                       aria-label = "Amount"
                                        id = "amount"
                                        inputProps = { { step: 0.01 } }
                                        label = "Amount"

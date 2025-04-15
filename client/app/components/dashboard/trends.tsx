@@ -6,7 +6,6 @@ import {
    CardContent,
    IconButton,
    Stack,
-   Tooltip,
    Typography,
    useMediaQuery,
    useTheme
@@ -204,18 +203,33 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    ], [theme.palette.primary]);
    const chart = useMemo(() => (
       <ResponsiveChartContainer height = { graphHeight }>
-         <BarChart
-            borderRadius = { 8 }
-            colors = { colorPalette }
-            grid = { { horizontal: true } }
-            height = { graphHeight }
-            margin = { { left: isCard ? 50 : 40, right: 20, top: 20, bottom: 20 } }
-            resolveSizeBeforeRender = { true }
-            series = { series }
-            slotProps = { { legend: { hidden: true } } }
-            xAxis = { [{ scaleType: "band", categoryGapRatio: 0.3, data: yearAbbreviations }] as any }
-            yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
-         />
+         {
+            series.length > 0 ? (
+               <BarChart
+                  borderRadius = { 8 }
+                  colors = { colorPalette }
+                  grid = { { horizontal: true } }
+                  height = { graphHeight }
+                  margin = { { left: isCard ? 50 : 40, right: 20, top: 20, bottom: 20 } }
+                  resolveSizeBeforeRender = { true }
+                  series = { series }
+                  slotProps = { { legend: { hidden: true } } }
+                  xAxis = { [{ scaleType: "band", categoryGapRatio: 0.3, data: yearAbbreviations }] as any }
+                  yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
+               />
+            ) : (
+               <Stack
+                  sx = { { height: "100%", width: "100%", alignItems: "center", justifyContent: "center" } }
+               >
+                  <Typography
+                     sx = { { fontWeight: "600" } }
+                     variant = "subtitle2"
+                  >
+                     No available data
+                  </Typography>
+               </Stack>
+            )
+         }
       </ResponsiveChartContainer>
    ), [colorPalette, isCard, yearAbbreviations, series, graphHeight]);
 
@@ -252,23 +266,14 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         }
                      >
                         {
-                           type === "accounts" && (
-                              <Tooltip
-                                 enterDelay = { 0 }
-                                 placement = { "top" }
-                                 title = { "Net worth is calculated as the sum of all assets minus all liabilities (e.g. debt, credit card debt, etc.) for the current month or the last month of the specified year." }
+                           type === "accounts" ? (
+                              <Typography
+                                 sx = { { fontWeight: "600" } }
+                                 variant = "subtitle1"
                               >
-                                 <Typography
-                                    sx = { { fontWeight: "600" } }
-                                    variant = "subtitle1"
-                                 >
-                                    { displayCurrency(netWorth) }
-                                 </Typography>
-                              </Tooltip>
-                           )
-                        }
-                        {
-                           type === "budgets" && (
+                                 { displayCurrency(netWorth) }
+                              </Typography>
+                           ) : (
                               <Typography
                                  sx = { { fontWeight: "600", pb: { xs: 0, lg: 0.7 } } }
                                  variant = "subtitle2"
