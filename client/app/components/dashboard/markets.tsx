@@ -208,7 +208,7 @@ export default function Markets(): React.ReactNode {
                alt = "Stocks"
                component = "img"
                src = "/svg/economy.svg"
-               sx = { { height: 300, mx: "auto" } }
+               sx = { { height: 300, mx: "auto", mb: -3 } }
             />
             <Box>
                <Typography
