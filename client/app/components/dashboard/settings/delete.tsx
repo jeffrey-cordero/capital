@@ -1,3 +1,5 @@
+import { faUserXmark } from "@fortawesome/free-solid-svg-icons";
+import { Box } from "@mui/material";
 import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -36,11 +38,14 @@ export default function DeleteAccount(): React.ReactNode {
    }, [dispatch, navigate]);
 
    return (
-      <Confirmation
-         message = "Are you sure you want to delete your account? This action cannot be undone."
-         onConfirmation = { onSubmit }
-         title = "Delete Account"
-         type = "button"
-      />
+      <Box sx = { { width: "100%" } }>
+         <Confirmation
+            message = "Are you sure you want to delete your account? This action cannot be undone."
+            onConfirmation = { onSubmit }
+            startIcon = { faUserXmark }
+            title = "Delete Account"
+            type = "button"
+         />
+      </Box>
    );
 }

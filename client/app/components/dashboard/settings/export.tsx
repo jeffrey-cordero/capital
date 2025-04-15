@@ -42,26 +42,26 @@ export default function ExportAccount(): React.ReactNode {
                   }))
                }
             },
-            transactions
+            transactions,
+            timestamp: new Date().toLocaleString()
          };
 
-         // Convert to JSON string
+         // Convert to a valid JSON string
          const jsonString = JSON.stringify(exportData, null, 3);
 
          // Create blob and download link
          const blob = new Blob([jsonString], { type: "application/json" });
          const url = URL.createObjectURL(blob);
 
-         // Create temporary download link
+         // Create a temporary download link
          const downloadLink = document.createElement("a");
          downloadLink.href = url;
-         downloadLink.download = `capital_export_${new Date().toISOString()}.json`;
+         downloadLink.download = "capital_export.json";
 
-         // Trigger download
          document.body.appendChild(downloadLink);
          downloadLink.click();
 
-         // Clean up
+         // Clean up the download link and URL
          document.body.removeChild(downloadLink);
          URL.revokeObjectURL(url);
       } catch (error) {
@@ -71,6 +71,7 @@ export default function ExportAccount(): React.ReactNode {
 
    return (
       <Button
+         className = "btn-primary"
          color = "success"
          fullWidth = { true }
          onClick = { exportAccount }

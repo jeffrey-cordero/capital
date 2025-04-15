@@ -1,4 +1,3 @@
-import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -148,7 +147,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                      <Stack
                         direction = "column"
                         spacing = { 1.5 }
-                        sx = { { mt: 3 } }
+                        sx = { { mt: 2 } }
                      >
                         <Controller
                            control = { control }
@@ -257,13 +256,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               setValue = { setValue }
                               value = { watch("image") }
                            />
-                           <SubmitButton
-                              icon = { updating ? faPenToSquare : faPlus }
-                              isSubmitting = { isSubmitting }
-                              onCancel = { onCancel }
-                              type = { updating ? "Update" : "Create" }
-                              visible = { Object.keys(dirtyFields).length > 0 }
-                           />
                            {
                               updating && (
                                  <AccountDeletion
@@ -271,6 +263,12 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                  />
                               )
                            }
+                           <SubmitButton
+                              isSubmitting = { isSubmitting }
+                              onCancel = { onCancel }
+                              type = { updating ? "Update" : "Create" }
+                              visible = { Object.keys(dirtyFields).length > 0 }
+                           />
                         </Stack>
                      </Stack>
                   </form>

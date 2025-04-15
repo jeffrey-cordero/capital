@@ -1,4 +1,3 @@
-import { faFloppyDisk, faPlus } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -116,7 +115,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
          disableIncome ? budgets.Expenses.budget_category_id : budgets.Income.budget_category_id,
          { shouldDirty: true }
       );
-   }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, setValue]);
+   }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, amount, setValue]);
 
    const onReset = useCallback(() => {
       if (transaction) {
@@ -475,7 +474,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                         />
                      </Stack>
                      <SubmitButton
-                        icon = { updating ? faFloppyDisk : faPlus }
                         isSubmitting = { isSubmitting }
                         onCancel = { onClose }
                         type = { updating ? "Update" : "Create" }

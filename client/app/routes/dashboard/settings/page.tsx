@@ -11,7 +11,7 @@ import Settings from "@/components/dashboard/settings/settings";
 export default function Page(): React.ReactNode {
    return (
       <Container
-         maxWidth = "md"
+         maxWidth = "xl"
          sx = { { textAlign: "center", pt: 6, pb: 4, px: 2 } }
       >
          <Grid

@@ -1,4 +1,3 @@
-import { faSave } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -53,6 +52,13 @@ export default function Details(): React.ReactNode {
 
    // Setup minimum and maximum dates for birthday input
    const [minDate, maxDate] = getDateRange();
+
+   const onReset = useCallback(() => {
+      reset({
+         name: settings.name,
+         birthday: settings.birthday.split("T")[0]
+      }, { keepDirty: false });
+   }, [reset, settings.name, settings.birthday]);
 
    // Handles form submission
    const onSubmit = async(data: FieldValues) => {
@@ -109,7 +115,7 @@ export default function Details(): React.ReactNode {
                   alt = "Details"
                   component = "img"
                   src = "/svg/details.svg"
-                  sx = { { width: 280, mb: "24px !important", px: 2 } }
+                  sx = { { width: 280, mb: "20px !important", px: 2 } }
                />
                <Controller
                   control = { control }
@@ -215,15 +221,12 @@ export default function Details(): React.ReactNode {
                      </MenuItem>
                   </Select>
                </FormControl>
-               <Box sx = { { width: "100%" } }>
-                  <SubmitButton
-                     icon = { faSave }
-                     isSubmitting = { isSubmitting }
-                     onCancel = { reset }
-                     type = "Update"
-                     visible = { Object.keys(dirtyFields).length > 0 }
-                  />
-               </Box>
+               <SubmitButton
+                  isSubmitting = { isSubmitting }
+                  onCancel = { onReset }
+                  type = "Update"
+                  visible = { Object.keys(dirtyFields).length > 0 }
+               />
             </Stack>
          </form>
       </Box>

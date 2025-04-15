@@ -1,4 +1,5 @@
-import { faPersonWalkingLuggage } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { Box } from "@mui/material";
 import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -19,13 +20,15 @@ export default function Logout(): React.ReactNode {
    }, [dispatch, navigate]);
 
    return (
-      <Confirmation
-         color = "warning"
-         message = "Are you sure you want to logout?"
-         onConfirmation = { onSubmit }
-         startIcon = { faPersonWalkingLuggage }
-         title = "Logout"
-         type = "button"
-      />
+      <Box sx = { { width: "100%" } }>
+         <Confirmation
+            color = "warning"
+            message = "Are you sure you want to logout?"
+            onConfirmation = { onSubmit }
+            startIcon = { faRightFromBracket }
+            title = "Logout"
+            type = "button"
+         />
+      </Box>
    );
 }

@@ -1,5 +1,4 @@
-import { type IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faClockRotateLeft } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Collapse, Stack } from "@mui/material";
 
@@ -10,7 +9,6 @@ import { Button, Collapse, Stack } from "@mui/material";
  * @property {boolean} visible - Whether the button should be visible
  * @property {"Create" | "Update"} type - The type of the button
  * @property {boolean} isSubmitting - Whether the form is being submitted
- * @property {IconDefinition} icon - The icon to display on the button
  * @property {() => void} onCancel - The function to call when the form action is cancelled
  * @property {() => void} onSubmit - The function to call when the form action is submitted
  */
@@ -18,7 +16,6 @@ interface SubmitButtonProps {
    visible: boolean;
    type: "Create" | "Update";
    isSubmitting: boolean;
-   icon: IconDefinition;
    onCancel: () => void;
    onSubmit?: () => void;
 }
@@ -31,16 +28,15 @@ interface SubmitButtonProps {
  * @returns {React.ReactNode} The SubmitButton component
  */
 export default function SubmitButton(props: SubmitButtonProps): React.ReactNode {
-   const { visible, type, isSubmitting, icon, onCancel, onSubmit } = props;
+   const { visible, type, isSubmitting, onCancel, onSubmit } = props;
 
    return (
       <Collapse
          in = { visible }
          mountOnEnter = { true }
          style = { { transformOrigin: "center top" } }
-         sx = { { zIndex: 1000 } }
+         sx = { { zIndex: 1000, width: "100%" } }
          timeout = { 350 }
-         unmountOnExit = { true }
       >
          <Stack
             direction = "row"
@@ -65,7 +61,7 @@ export default function SubmitButton(props: SubmitButtonProps): React.ReactNode 
                fullWidth = { true }
                loading = { isSubmitting }
                onClick = { onSubmit || undefined }
-               startIcon = { <FontAwesomeIcon icon = { icon } /> }
+               startIcon = { <FontAwesomeIcon icon = { faPenToSquare } /> }
                type = { onSubmit ? "button" : "submit" }
                variant = "contained"
             >

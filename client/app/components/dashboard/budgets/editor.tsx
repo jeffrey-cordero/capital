@@ -1,4 +1,3 @@
-import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import {
    Collapse,
    FormControl,
@@ -179,7 +178,6 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          mountOnEnter = { true }
          style = { { transformOrigin: "center top" } }
          timeout = { 350 }
-         unmountOnExit = { true }
       >
          <form
             onChange = { () => updateDirtyFields(dirtyFields, "editor") }
@@ -278,7 +276,6 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                   }
                />
                <SubmitButton
-                  icon = { faPenToSquare }
                   isSubmitting = { isSubmitting }
                   onCancel = { onCancel }
                   type = "Update"

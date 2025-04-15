@@ -1,4 +1,4 @@
-import { faEye, faEyeSlash, faPenToSquare, faSave } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
@@ -15,9 +15,6 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import DeleteAccount from "@/components/dashboard/settings/delete";
-import ExportAccount from "@/components/dashboard/settings/export";
-import Logout from "@/components/dashboard/settings/logout";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
@@ -72,10 +69,18 @@ export default function Security(): React.ReactNode {
    }, [setDisabled]);
 
    const onCancel = useCallback(() => {
-      // Reset the form and visibility of fields
-      reset();
+      // Reset the form
+      reset({
+         username: settings.username,
+         email: settings.email,
+         password: "",
+         newPassword: "",
+         verifyPassword: ""
+      }, { keepDirty: false });
+
+      // Reset the visibility of all fields
       resetVisibility();
-   }, [reset, resetVisibility]);
+   }, [reset, resetVisibility, settings.username, settings.email]);
 
    const toggleFieldEditable = useCallback((fields: (keyof typeof disabled)[]) => {
       setDisabled(prev => {
@@ -92,7 +97,12 @@ export default function Security(): React.ReactNode {
    // Handles form submissions
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = userUpdateSchema.safeParse(data);
+         const fields = userUpdateSchema.safeParse({
+            ...data,
+            password: data.password || undefined,
+            newPassword: data.newPassword || undefined,
+            verifyPassword: data.verifyPassword || undefined
+         });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -126,8 +136,11 @@ export default function Security(): React.ReactNode {
             // Update default values
             reset({
                username: updates.username || settings.username,
-               email: updates.email || settings.email
-            });
+               email: updates.email || settings.email,
+               password: undefined,
+               newPassword: undefined,
+               verifyPassword: undefined
+            }, { keepDirty: false });
 
             // Reset visibility of all fields
             resetVisibility();
@@ -143,7 +156,7 @@ export default function Security(): React.ReactNode {
             <Stack
                direction = "column"
                spacing = { 1.5 }
-               sx = { { width: "100%", textAlign: "center", alignItems: "center" } }
+               sx = { { mt: 4, width: "100%", textAlign: "center", alignItems: "center" } }
             >
                <Box
                   alt = "Security"
@@ -277,7 +290,6 @@ export default function Security(): React.ReactNode {
                   style = { { transformOrigin: "center top" } }
                   sx = { { width: "100%" } }
                   timeout = { 250 }
-                  unmountOnExit = { true }
                >
                   <Stack
                      direction = "column"
@@ -356,22 +368,12 @@ export default function Security(): React.ReactNode {
                      />
                   </Stack>
                </Collapse>
-               <Stack
-                  direction = "column"
-                  spacing = { 1 }
-                  sx = { { width: "100%" } }
-               >
-                  <SubmitButton
-                     icon = { faSave }
-                     isSubmitting = { isSubmitting }
-                     onCancel = { onCancel }
-                     type = "Update"
-                     visible = { !disabled.username || !disabled.email || !disabled.passwords }
-                  />
-                  <ExportAccount />
-                  <Logout />
-                  <DeleteAccount />
-               </Stack>
+               <SubmitButton
+                  isSubmitting = { isSubmitting }
+                  onCancel = { onCancel }
+                  type = "Update"
+                  visible = { !disabled.username || !disabled.email || !disabled.passwords }
+               />
             </Stack>
          </form>
       </Box>

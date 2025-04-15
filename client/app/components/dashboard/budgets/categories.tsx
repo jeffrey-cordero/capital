@@ -16,12 +16,10 @@ import {
    verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faGripVertical, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faGripVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
-   Collapse,
    List,
    ListItemButton,
    ListItemIcon,
@@ -180,16 +178,16 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
       return budget.categories.map(category => category.budget_category_id ?? "");
    }, [budget.categories]);
 
-   const createNewCategory = useCallback((show: boolean) => {
-      setShowNewCategoryForm(show);
+   const openCreateNewCategoryForm = useCallback(() => {
+      setShowNewCategoryForm(true);
    }, []);
 
    // Handler for when a new category is successfully created
-   const cancelCreateNewCategory = useCallback(() => {
+   const closeCreateNewCategoryForm = useCallback(() => {
       // Close the form and clear the form dirty fields
-      createNewCategory(false);
+      setShowNewCategoryForm(false);
       updateDirtyFields({}, "constructor");
-   }, [createNewCategory, updateDirtyFields]);
+   }, [updateDirtyFields]);
 
    const sensors = useSensors(
       useSensor(TouchSensor),
@@ -291,27 +289,9 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                }
             </SortableContext>
          </DndContext>
-         <Collapse
-            in = { !showNewCategoryForm }
-            mountOnEnter = { true }
-            style = { { transformOrigin: "center top" } }
-            timeout = { 350 }
-            unmountOnExit = { true }
-         >
-            <Button
-               className = "btn-primary"
-               color = "primary"
-               fullWidth = { true }
-               onClick = { () => createNewCategory(true) }
-               startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-               sx = { { display: showNewCategoryForm ? "none" : "" } }
-               variant = "contained"
-            >
-               Add Category
-            </Button>
-         </Collapse>
          <ConstructCategory
-            onClose = { cancelCreateNewCategory }
+            onClose = { closeCreateNewCategoryForm }
+            onOpen = { openCreateNewCategoryForm }
             type = { type }
             updateDirtyFields = { updateDirtyFields }
             visible = { showNewCategoryForm }

@@ -43,7 +43,8 @@ export const userSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  verifyPassword: z.string(),
+  verifyPassword: z
+    .string(),
   email: z
     .string()
     .max(MAX_EMAIL_LENGTH, `Email must be at most ${MAX_EMAIL_LENGTH} characters long`)
@@ -67,7 +68,9 @@ const innerUserSchema = userSchema.innerType();
  * Represents a user update schema to account for password updates
  */
 export const userUpdateSchema = innerUserSchema.partial().extend({
+  password: innerUserSchema.shape.password.optional(),
   newPassword: innerUserSchema.shape.password.optional(),
+  verifyPassword: innerUserSchema.shape.verifyPassword.optional(),
 }).superRefine((data, ctx) => {
   const { password, newPassword, verifyPassword } = data;
 

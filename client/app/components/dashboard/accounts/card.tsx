@@ -141,7 +141,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      src = { getImageSource() }
                      sx = {
                         {
-                           height: { xs: 215, sm: 200 },
+                           height: 200,
                            width: "100%",
                            cursor: "pointer",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main

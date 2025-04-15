@@ -1,4 +1,3 @@
-import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -153,7 +152,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                      <Stack
                         direction = "column"
                         spacing = { 1 }
-                        sx = { { mt: 3 } }
+                        sx = { { mt: 2 } }
                      >
                         <Controller
                            control = { control }
@@ -181,7 +180,6 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                            }
                         />
                         <SubmitButton
-                           icon = { faPenToSquare }
                            isSubmitting = { isSubmitting }
                            onCancel = { onCancel }
                            type = "Update"
