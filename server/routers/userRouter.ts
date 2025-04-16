@@ -6,12 +6,6 @@ import { authenticateToken } from "@/lib/middleware";
 const usersRouter = express.Router();
 
 /**
- * GET /users/:id
- *    req.params.id: User ID
- */
-usersRouter.get("/:id", authenticateToken(true), controller.GET);
-
-/**
  * POST /users
  *    req.body: User
  */

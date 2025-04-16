@@ -38,7 +38,7 @@ export default function Security(): React.ReactNode {
       email: true,
       // Determines if password fields are editable
       passwords: true,
-      // True/false determines if input fields are password or text
+      // Determines if input fields are password or text
       password: true,
       newPassword: true,
       verifyPassword: true

@@ -136,6 +136,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   onClick = { openAccountModal }
                >
                   <Avatar
+                     alt = { account.name }
                      id = { account.account_id }
                      onError = { handleImageError }
                      src = { getImageSource() }
