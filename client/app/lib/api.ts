@@ -10,6 +10,7 @@ import { addNotification } from "@/redux/slices/notifications";
  * Special API paths that require different handling
  */
 const SPECIAL_PATHS = {
+   USERS: "users",
    LOGIN: "authentication/login",
    AUTHENTICATION: "authentication",
    DASHBOARD: "dashboard"
@@ -47,9 +48,10 @@ export async function sendApiRequest<T>(
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
 ): Promise<T | number | null> {
-   // Check if this is a special path that needs different handling
+   // Check if this is a special path that needs different handling measures
    const isLogin = path === SPECIAL_PATHS.LOGIN;
    const isAuthentication = path === SPECIAL_PATHS.AUTHENTICATION;
+   const isUpdatingUser = path === SPECIAL_PATHS.USERS && method !== "POST";
 
    try {
       const response = await fetch(`${SERVER_URL}/${path}`, {
@@ -77,12 +79,12 @@ export async function sendApiRequest<T>(
          throw new Error(responseData.errors?.server || "An unknown error occurred");
       }
 
-      // Update authentication state if not called within the authentication layout
+      // Re-sync authentication state based on the server response
       if (!isAuthentication) {
          const isDashboard = path.startsWith(SPECIAL_PATHS.DASHBOARD);
          const isSuccessfulLogin = isLogin && response.status === HTTP_STATUS.OK;
 
-         dispatch(authenticate(isSuccessfulLogin || isDashboard));
+         dispatch(authenticate(isDashboard || isUpdatingUser || isSuccessfulLogin));
       }
 
       // Handle different response types

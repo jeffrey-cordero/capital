@@ -122,6 +122,12 @@ export default function Accounts(): React.ReactNode {
                            >
                               <Grid
                                  size = { { xs: 12, sm: 6, md: 4, lg: 3 } }
+                                 sx = {
+                                    {
+                                       minWidth: { xs: "none", sm: "330px" },
+                                       maxWidth: "330px"
+                                    }
+                                 }
                               >
                                  <AccountCard account = { account } />
                               </Grid>

@@ -1,15 +1,32 @@
+CREATE OR REPLACE FUNCTION check_date_range (p_date DATE)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN p_date >= '1800-01-01' AND p_date <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
 CREATE TABLE users (
    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    username VARCHAR(30) NOT NULL UNIQUE,
    username_normalized VARCHAR(30) GENERATED ALWAYS AS (LOWER(TRIM(username))) STORED,
    name VARCHAR(30) NOT NULL,
+   birthday DATE NOT NULL CHECK (check_date_range(birthday)),
    password VARCHAR(255) NOT NULL,
    email VARCHAR(255) NOT NULL UNIQUE,
-   email_normalized VARCHAR(255) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED,
-   verified BOOLEAN NOT NULL DEFAULT FALSE
+   email_normalized VARCHAR(255) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED
 );
 
-CREATE TYPE account_type AS ENUM ('Checking', 'Savings', 'Credit Card', 'Debt', 'Retirement', 'Investment', 'Loan', 'Property', 'Other');
+CREATE TYPE account_type AS ENUM (
+   'Checking', 
+   'Savings', 
+   'Credit Card', 
+   'Debt', 
+   'Retirement', 
+   'Investment', 
+   'Loan', 
+   'Property', 
+   'Other'
+);
 
 CREATE TABLE accounts (
    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,7 +34,7 @@ CREATE TABLE accounts (
    type account_type NOT NULL,
    image CHARACTER VARYING,
    balance DECIMAL(18, 2) NOT NULL,
-   last_updated DATE NOT NULL CHECK (last_updated >= '1800-01-01' AND last_updated <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date),
+   last_updated DATE NOT NULL CHECK (check_date_range(last_updated)),
    account_order INT NOT NULL CHECK (account_order >= 0),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
@@ -52,7 +69,6 @@ CREATE TABLE budgets (
 CREATE OR REPLACE FUNCTION prevent_main_budget_category_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
-   -- Prevent deletion of the main budget category
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be deleted';
    END IF;
@@ -68,7 +84,6 @@ FOR EACH ROW
 CREATE OR REPLACE FUNCTION prevent_main_budget_category_updates()
 RETURNS TRIGGER AS $$
 BEGIN
-   -- Prevent updates to the main budget category
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be updated';
    END IF;
@@ -85,7 +100,7 @@ CREATE TABLE transactions (
    transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    amount DECIMAL(18, 2) NOT NULL CHECK (amount <> 0),
    description TEXT NOT NULL DEFAULT '',
-   date DATE NOT NULL CHECK (date >= '1800-01-01' AND date <= (NOW() AT TIME ZONE 'Pacific/Kiritimati')::date),
+   date DATE NOT NULL CHECK (check_date_range(date)),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL

@@ -10,18 +10,22 @@ import {
    Link,
    OutlinedInput,
    Stack,
-   Typography
+   TextField,
+   Typography,
+   useTheme
 } from "@mui/material";
 import { userSchema } from "capital/user";
 import clsx from "clsx";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
+import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
+import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
@@ -30,7 +34,7 @@ import { addNotification } from "@/redux/slices/notifications";
  * @returns {React.ReactNode} The registration page component
  */
 export default function Register(): React.ReactNode {
-   const dispatch = useDispatch(), navigate = useNavigate();
+   const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const {
       control,
       handleSubmit,
@@ -39,6 +43,9 @@ export default function Register(): React.ReactNode {
    } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
+
+   // Setup minimum and maximum dates for birthday input
+   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
 
    const onSubmit = async(data: any) => {
       const fields = userSchema.safeParse(data);
@@ -53,7 +60,8 @@ export default function Register(): React.ReactNode {
             name: fields.data.name,
             password: fields.data.password,
             verifyPassword: fields.data.verifyPassword,
-            email: fields.data.email
+            email: fields.data.email,
+            birthday: fields.data.birthday
          };
 
          const result = await sendApiRequest<{ success: boolean }>(
@@ -61,12 +69,14 @@ export default function Register(): React.ReactNode {
          );
 
          if (typeof result === "object" && result?.success) {
-            navigate("/dashboard");
-
+            // Display a success notification
             dispatch(addNotification({
                type: "success",
                message: "Welcome"
             }));
+
+            // Re-sync authentication state for auto-redirection
+            dispatch(authenticate(true));
          }
       }
    };
@@ -125,6 +135,49 @@ export default function Register(): React.ReactNode {
                                  />
                                  <FormHelperText>
                                     { errors.name?.message?.toString() }
+                                 </FormHelperText>
+                              </FormControl>
+                           )
+                        }
+                     />
+                     <Controller
+                        control = { control }
+                        name = "birthday"
+                        render = {
+                           ({ field }) => (
+                              <FormControl error = { Boolean(errors.birthday) }>
+                                 <InputLabel
+                                    htmlFor = "birthday"
+                                    shrink = { true }
+                                 >
+                                    Birthday
+                                 </InputLabel>
+                                 <TextField
+                                    { ...field }
+                                    error = { Boolean(errors.birthday) }
+                                    id = "birthday"
+                                    label = "Birthday"
+                                    slotProps = {
+                                       {
+                                          htmlInput: {
+                                             min: minDate,
+                                             max: maxDate
+                                          },
+                                          inputLabel: {
+                                             shrink: true
+                                          }
+                                       }
+                                    }
+                                    sx = {
+                                       {
+                                          colorScheme: theme.palette.mode === "dark" ? "dark" : "inherit"
+                                       }
+                                    }
+                                    type = "date"
+                                    value = { field.value || "" }
+                                 />
+                                 <FormHelperText>
+                                    { errors.birthday?.message?.toString() }
                                  </FormHelperText>
                               </FormControl>
                            )

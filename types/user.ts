@@ -29,6 +29,13 @@ export const userSchema = z.object({
     .trim()
     .min(MIN_NAME_LENGTH, `Name must be at least ${MIN_NAME_LENGTH} characters`)
     .max(MAX_NAME_LENGTH, `Name must be at most ${MAX_NAME_LENGTH} characters`),
+  birthday: z.coerce.date({
+    message: "Birthday must be a valid date"
+  }).min(new Date("1800-01-01"), {
+    message: "Birthday must be at least 1800-01-01"
+  }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
+    message: "Birthday cannot be in the future"
+  }).transform((date) => date.toISOString()),
   password: z
     .string()
     .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`)
@@ -36,12 +43,12 @@ export const userSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  verifyPassword: z.string(),
+  verifyPassword: z
+    .string(),
   email: z
     .string()
     .max(MAX_EMAIL_LENGTH, `Email must be at most ${MAX_EMAIL_LENGTH} characters long`)
-    .email("Invalid email address"),
-  verified: z.boolean().default(false)
+    .email("Invalid email address")
 }).strict().refine(data => data.password === data.verifyPassword, {
   message: "Passwords do not match",
   path: ["verifyPassword"]
@@ -50,4 +57,73 @@ export const userSchema = z.object({
 /**
  * Represents core user information
  */
-export type User = z.infer<typeof userSchema>;
+export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
+
+/**
+ * Represents the inner user schema with no refine methods for the following update schema
+ */
+const innerUserSchema = userSchema.innerType();
+
+/**
+ * Represents a user update schema to account for password updates
+ */
+export const userUpdateSchema = innerUserSchema.partial().extend({
+  password: innerUserSchema.shape.password.optional(),
+  newPassword: innerUserSchema.shape.password.optional(),
+  verifyPassword: innerUserSchema.shape.verifyPassword.optional(),
+}).superRefine((data, ctx) => {
+  const { password, newPassword, verifyPassword } = data;
+
+  // Check if the user is attempting to change the password
+  const isAttemptingPasswordChange = password || newPassword || verifyPassword;
+
+  if (isAttemptingPasswordChange) {
+    // If *any* password field is given, *all* are required
+    if (!password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Current password is required to set a new password",
+        path: ["password"],
+      });
+    } else if (!newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New password is required to set a new password",
+        path: ["newPassword"],
+      });
+    } else if (!verifyPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Password verification is required to set a new password",
+        path: ["verifyPassword"],
+      });
+    }
+
+    if (password === newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New password must not match the old password",
+        path: ["newPassword"],
+      });
+    }
+
+    // New password must match the verification field
+    if (newPassword !== verifyPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match",
+        path: ["verifyPassword"],
+      });
+    }
+  }
+});
+
+/**
+ * Represents core user information for displaying details
+ */
+export type UserDetails = Omit<User, "user_id" | "password">;
+
+/**
+ * Represents core user information for updating details
+ */
+export type UserDetailUpdates = Omit<z.infer<typeof userUpdateSchema>, "user_id">;

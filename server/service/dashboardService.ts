@@ -18,6 +18,7 @@ import external from "@/resources/external.json";
 import { fetchAccounts } from "@/service/accountsService";
 import { fetchBudgets } from "@/service/budgetsService";
 import { fetchTransactions } from "@/service/transactionsService";
+import { fetchUserDetails } from "@/service/userService";
 
 /**
  * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
@@ -94,7 +95,7 @@ async function fetchStocks(): Promise<StockTrends> {
 
    if (!fields.success) {
       // Potential rate limit error or unexpected API response structure
-      logger.error("Error fetching stock trends", response);
+      logger.error("Error fetching stock trends", JSON.stringify(response));
 
       return stockTrendsSchema.safeParse(external.Stocks).data as StockTrends;
    }
@@ -118,7 +119,7 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 
    if (!fields.success) {
       // Potential rate limit error or new API response structure
-      logger.error("Error fetching economic indicators", response);
+      logger.error("Error fetching economic indicators", JSON.stringify(response));
 
       return indicatorTrendsSchema.safeParse(
          external[getEconomicIndicatorKey(indicator)
@@ -248,11 +249,12 @@ export async function fetchExternalAPIs(): Promise<ServerResponse> {
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    // Fetch all dashboard components in parallel
-   const [externalAPIs, accounts, budgets, transactions] = await Promise.all([
+   const [externalAPIs, accounts, budgets, transactions, settings] = await Promise.all([
       fetchExternalAPIs(),
       fetchAccounts(user_id),
       fetchBudgets(user_id),
-      fetchTransactions(user_id)
+      fetchTransactions(user_id),
+      fetchUserDetails(user_id)
    ]);
 
    // Combine all data into a single dashboard response
@@ -260,6 +262,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
       accounts: accounts.data,
       budgets: budgets.data,
       externalAPIs: externalAPIs.data,
-      transactions: transactions.data
+      transactions: transactions.data,
+      settings: settings.data
    } as Dashboard);
 }

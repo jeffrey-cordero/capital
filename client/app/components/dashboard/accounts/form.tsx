@@ -1,8 +1,5 @@
-import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -12,7 +9,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -21,6 +18,7 @@ import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountImage from "@/components/dashboard/accounts/image";
 import Transactions from "@/components/dashboard/transactions/transactions";
 import { Modal, ModalSection } from "@/components/global/modal";
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
@@ -63,13 +61,16 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       formState: { isSubmitting, errors, dirtyFields }
    } = useForm();
 
-   // Reset form to match passed account data or clear the form (account is undefined)
    useEffect(() => {
-      reset(account ? account : undefined);
+      reset(account ? account : undefined, { keepDirty: false });
    }, [account, reset, open]);
 
    // Memoize account types for selection input
    const accountTypes = useMemo(() => Array.from(types), []);
+
+   const onCancel = useCallback(() => {
+      reset(account ? account : undefined, { keepDirty: false });
+   }, [account, reset]);
 
    // Handles form submission for both create and update operations
    const onSubmit = async(data: FieldValues) => {
@@ -146,7 +147,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                      <Stack
                         direction = "column"
                         spacing = { 1.5 }
-                        sx = { { mt: 3 } }
+                        sx = { { mt: 2 } }
                      >
                         <Controller
                            control = { control }
@@ -225,7 +226,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                              }
                                           }
                                        }
-                                       value = { field.value || "" }
+                                       value = { types.has(field.value) ? field.value : "Checking" }
                                        variant = "outlined"
                                     >
                                        {
@@ -255,17 +256,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                               setValue = { setValue }
                               value = { watch("image") }
                            />
-                           <Button
-                              className = "btn-primary"
-                              color = "primary"
-                              fullWidth = { true }
-                              loading = { isSubmitting }
-                              startIcon = { <FontAwesomeIcon icon = { updating ? faPenToSquare : faPlus } /> }
-                              type = "submit"
-                              variant = "contained"
-                           >
-                              { updating ? "Update" : "Create" }
-                           </Button>
                            {
                               updating && (
                                  <AccountDeletion
@@ -273,6 +263,12 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                  />
                               )
                            }
+                           <SubmitButton
+                              isSubmitting = { isSubmitting }
+                              onCancel = { onCancel }
+                              type = { updating ? "Update" : "Create" }
+                              visible = { Object.keys(dirtyFields).length > 0 }
+                           />
                         </Stack>
                      </Stack>
                   </form>

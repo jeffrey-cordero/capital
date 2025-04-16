@@ -67,7 +67,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
 
    return (
       <Box sx = { { textAlign: "center" } }>
-         <Box sx = { { mt: 2 } }>
+         <Box sx = { { mt: 0.5 } }>
             <TransactionsTable
                accountsMap = { accountsMap }
                filter = { filter }

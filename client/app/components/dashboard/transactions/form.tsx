@@ -1,8 +1,5 @@
-import { faFloppyDisk, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -16,14 +13,16 @@ import {
 import { type Account } from "capital/accounts";
 import { type BudgetType, type OrganizedBudgets } from "capital/budgets";
 import { type Transaction, transactionSchema } from "capital/transactions";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
 import { Modal, ModalSection } from "@/components/global/modal";
+import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
+import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
@@ -95,11 +94,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       return "";
    }, [filter, identifier, budgets]);
 
-   // Setup minimum and maximum dates relative to user timezone
-   const [minDate, maxDate] = useMemo(() => [
-      new Date("1800-01-01").toISOString().split("T")[0],
-      new Date().toISOString().split("T")[0]
-   ], []);
+   // Setup minimum and maximum dates for transactions
+   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
 
    // Handle swapping between income and expenses based on current amount input
    const amount = watch("amount");
@@ -119,31 +115,35 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
          disableIncome ? budgets.Expenses.budget_category_id : budgets.Income.budget_category_id,
          { shouldDirty: true }
       );
-   }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, setValue]);
+   }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, amount, setValue]);
+
+   const onReset = useCallback(() => {
+      if (transaction) {
+         reset({
+            ...transaction,
+            date: transaction.date.split("T")[0],
+            account_id: transaction.account_id || "",
+            budget_category_id: transaction.budget_category_id || ""
+         });
+      } else {
+         reset({
+            amount: 0,
+            date: maxDate,
+            description: "",
+            account_id: defaultAccountID,
+            budget_category_id: defaultBudgetCategoryID
+         });
+      }
+   }, [transaction, reset, defaultAccountID, defaultBudgetCategoryID, maxDate]);
 
    // Reset the default form values when the modal visibility changes
    useEffect(() => {
       if (open) {
-         if (transaction) {
-            reset({
-               ...transaction,
-               date: transaction.date.split("T")[0],
-               account_id: transaction.account_id || "",
-               budget_category_id: transaction.budget_category_id || ""
-            });
-         } else {
-            reset({
-               amount: 0,
-               date: maxDate,
-               description: "",
-               account_id: defaultAccountID,
-               budget_category_id: defaultBudgetCategoryID
-            });
-         }
+         onReset();
       } else {
          clearErrors();
       }
-   }, [open, transaction, reset, clearErrors, defaultAccountID, defaultBudgetCategoryID, maxDate]);
+   }, [open, onReset, clearErrors]);
 
    // Memoize the account and budget category options
    const accountOptions = useMemo(() => {
@@ -223,11 +223,11 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
                      direction = "column"
-                     spacing = { 1.5 }
+                     spacing = { 1 }
                   >
                      <Stack
                         direction = { { xs: "column", sm: "row" } }
-                        spacing = { 1.5 }
+                        spacing = { 1 }
                      >
                         <Controller
                            control = { control }
@@ -279,15 +279,12 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                     error = { Boolean(errors.amount) }
                                     fullWidth = { true }
                                  >
-                                    <InputLabel
-                                       htmlFor = "amount"
-                                       variant = "outlined"
-                                    >
+                                    <InputLabel htmlFor = "amount">
                                        Amount
                                     </InputLabel>
                                     <OutlinedInput
                                        { ...field }
-                                       autoComplete = "off"
+                                       aria-label = "Amount"
                                        id = "amount"
                                        inputProps = { { step: 0.01 } }
                                        label = "Amount"
@@ -329,7 +326,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                      />
                      <Stack
                         direction = { { xs: "column", sm: "row" } }
-                        spacing = { 2 }
+                        spacing = { 1 }
                      >
                         <Controller
                            control = { control }
@@ -473,18 +470,12 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                            }
                         />
                      </Stack>
-                     <Button
-                        className = "btn-primary"
-                        color = "primary"
-                        fullWidth = { true }
-                        loading = { isSubmitting }
-                        startIcon = { <FontAwesomeIcon icon = { updating ? faFloppyDisk : faPlus } /> }
-                        sx = { { mt: 2, py: 1.2 } }
-                        type = "submit"
-                        variant = "contained"
-                     >
-                        { updating ? "Update" : "Create" }
-                     </Button>
+                     <SubmitButton
+                        isSubmitting = { isSubmitting }
+                        onCancel = { onClose }
+                        type = { updating ? "Update" : "Create" }
+                        visible = { true }
+                     />
                   </Stack>
                </form>
             </Box>

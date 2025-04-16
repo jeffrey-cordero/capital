@@ -16,11 +16,10 @@ import {
    verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { faGripVertical, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faGripVertical, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
    List,
    ListItemButton,
    ListItemIcon,
@@ -105,63 +104,59 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
          ref = { setNodeRef }
          style = { style }
       >
-         {
-            isEditing ? (
-               <EditCategory
-                  category = { category }
-                  onCancel = { cancelEditCategory }
-                  updateDirtyFields = { updateDirtyFields }
-               />
-            ) : (
-               <Stack
-                  direction = "row"
-                  spacing = { 1 }
-                  sx = { { alignItems: "center", px: 1 } }
+         <EditCategory
+            category = { category }
+            onCancel = { cancelEditCategory }
+            updateDirtyFields = { updateDirtyFields }
+            visible = { isEditing }
+         />
+         <Stack
+            direction = "row"
+            spacing = { 1 }
+            sx = { { alignItems: "center", px: 1, display: isEditing ? "none" : "flex" } }
+         >
+            <List
+               component = "div"
+               disablePadding = { true }
+               sx = { { width: "100%" } }
+            >
+               <ListItemButton
+                  disableRipple = { true }
+                  disableTouchRipple = { true }
+                  sx = { { justifyContent: "center", cursor: "default", "&:hover": { backgroundColor: "transparent" }, p: 0 } }
                >
-                  <List
-                     component = "div"
-                     disablePadding = { true }
-                     sx = { { width: "100%" } }
+                  <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
+                     <FontAwesomeIcon
+                        icon = { faGripVertical }
+                        style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
+                        { ...listeners }
+                        { ...attributes }
+                     />
+                  </ListItemIcon>
+                  <ListItemText
+                     primary = { category.name }
+                     secondary = { displayCurrency(goal) }
+                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
+                  />
+                  <Stack
+                     direction = "row"
+                     spacing = { 1 }
                   >
-                     <ListItemButton
-                        disableRipple = { true }
-                        disableTouchRipple = { true }
-                        sx = { { justifyContent: "center", cursor: "default", "&:hover": { backgroundColor: "transparent" }, p: 0 } }
-                     >
-                        <ListItemIcon sx = { { mr: -3.5, color: "inherit" } }>
-                           <FontAwesomeIcon
-                              icon = { faGripVertical }
-                              style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
-                              { ...listeners }
-                              { ...attributes }
-                           />
-                        </ListItemIcon>
-                        <ListItemText
-                           primary = { category.name }
-                           secondary = { displayCurrency(goal) }
-                           sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
-                        />
-                        <Stack
-                           direction = "row"
-                           spacing = { 1 }
-                        >
-                           <FontAwesomeIcon
-                              className = "primary"
-                              icon = { faPenToSquare }
-                              onClick = { editCategory }
-                              size = "lg"
-                              style = { { cursor: "pointer", marginTop: "1px" } }
-                           />
-                           <DeleteBudget
-                              budget_category_id = { category.budget_category_id }
-                              type = { type }
-                           />
-                        </Stack>
-                     </ListItemButton>
-                  </List>
-               </Stack>
-            )
-         }
+                     <FontAwesomeIcon
+                        className = "primary"
+                        icon = { faPenToSquare }
+                        onClick = { editCategory }
+                        size = "lg"
+                        style = { { cursor: "pointer" } }
+                     />
+                     <DeleteBudget
+                        budget_category_id = { category.budget_category_id }
+                        type = { type }
+                     />
+                  </Stack>
+               </ListItemButton>
+            </List>
+         </Stack>
       </Box>
    );
 });
@@ -183,16 +178,16 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
       return budget.categories.map(category => category.budget_category_id ?? "");
    }, [budget.categories]);
 
-   const createNewCategory = useCallback((show: boolean) => {
-      setShowNewCategoryForm(show);
+   const openCreateNewCategoryForm = useCallback(() => {
+      setShowNewCategoryForm(true);
    }, []);
 
    // Handler for when a new category is successfully created
-   const cancelCreateNewCategory = useCallback(() => {
+   const closeCreateNewCategoryForm = useCallback(() => {
       // Close the form and clear the form dirty fields
-      createNewCategory(false);
+      setShowNewCategoryForm(false);
       updateDirtyFields({}, "constructor");
-   }, [createNewCategory, updateDirtyFields]);
+   }, [updateDirtyFields]);
 
    const sensors = useSensors(
       useSensor(TouchSensor),
@@ -268,7 +263,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
    return (
       <Stack
          direction = "column"
-         spacing = { 2 }
+         spacing = { 1 }
          sx = { { mt: 1 } }
       >
          <DndContext
@@ -294,28 +289,13 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                }
             </SortableContext>
          </DndContext>
-         <Box>
-            {
-               !showNewCategoryForm ? (
-                  <Button
-                     className = "btn-primary"
-                     color = "primary"
-                     fullWidth = { true }
-                     onClick = { () => createNewCategory(true) }
-                     startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
-                     variant = "contained"
-                  >
-                     Add Category
-                  </Button>
-               ) : (
-                  <ConstructCategory
-                     onClose = { cancelCreateNewCategory }
-                     type = { type }
-                     updateDirtyFields = { updateDirtyFields }
-                  />
-               )
-            }
-         </Box>
+         <ConstructCategory
+            onClose = { closeCreateNewCategoryForm }
+            onOpen = { openCreateNewCategoryForm }
+            type = { type }
+            updateDirtyFields = { updateDirtyFields }
+            visible = { showNewCategoryForm }
+         />
       </Stack>
    );
 }

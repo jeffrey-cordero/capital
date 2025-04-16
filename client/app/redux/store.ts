@@ -5,6 +5,7 @@ import authenticationReducer from "@/redux/slices/authentication";
 import budgetsReducer from "@/redux/slices/budgets";
 import marketReducer from "@/redux/slices/markets";
 import notificationsReducer from "@/redux/slices/notifications";
+import settingsReducer from "@/redux/slices/settings";
 import themeReducer from "@/redux/slices/theme";
 import transactionsReducer from "@/redux/slices/transactions";
 
@@ -19,7 +20,8 @@ const store = configureStore({
       markets: marketReducer,
       accounts: accountsReducer,
       budgets: budgetsReducer,
-      transactions: transactionsReducer
+      transactions: transactionsReducer,
+      settings: settingsReducer
    }
 });
 

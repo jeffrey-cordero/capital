@@ -3,6 +3,7 @@ import type { OrganizedBudgets } from "./budgets";
 import type { MarketTrends } from "./markets";
 import type { News } from "./news";
 import type { Transaction } from "./transactions";
+import { UserDetails } from "./user";
 
 /**
  * Represents the external API data for the dashboard page
@@ -20,4 +21,5 @@ export interface Dashboard {
    accounts: Account[];
    budgets: OrganizedBudgets;
    transactions: Transaction[];
+   settings: UserDetails;
 }

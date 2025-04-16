@@ -9,12 +9,7 @@ import { z } from "zod";
  */
 export const newsSchema = z.object({
    response: z.object({
-      next_initial: z.string(),
       restResults: z.coerce.number(),
-      next_country: z.string(),
-      totalResults: z.coerce.number(),
-      next_final: z.string(),
-      next_category: z.string(),
       data: z.array(z.object({
          id: z.string(),
          site_region: z.string(),
@@ -30,10 +25,10 @@ export const newsSchema = z.object({
          site: z.string(),
          site_country: z.string(),
          published: z.string(),
-      })).min(50),
-      next_query: z.string()
+      })).min(25),
+      totalResults: z.coerce.number()
    })
-});
+}).passthrough();
 
 /**
  * Represents the type for the news data

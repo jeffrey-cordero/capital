@@ -9,6 +9,7 @@ import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
 import { setMarkets } from "@/redux/slices/markets";
+import { setDetails } from "@/redux/slices/settings";
 import { setTransactions } from "@/redux/slices/transactions";
 
 /**
@@ -29,6 +30,7 @@ export async function fetchDashboard(
    if (typeof dashboard === "object" && dashboard !== null) {
       const budgets = dashboard.budgets;
 
+      dispatch(setDetails(dashboard.settings));
       dispatch(setMarkets({
          news: dashboard.externalAPIs.news,
          trends: dashboard.externalAPIs.trends

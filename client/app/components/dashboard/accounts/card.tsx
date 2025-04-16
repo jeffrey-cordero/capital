@@ -136,12 +136,13 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   onClick = { openAccountModal }
                >
                   <Avatar
+                     alt = { account.name }
                      id = { account.account_id }
                      onError = { handleImageError }
                      src = { getImageSource() }
                      sx = {
                         {
-                           height: { xs: 215, sm: 200 },
+                           height: 200,
                            width: "100%",
                            cursor: "pointer",
                            background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
