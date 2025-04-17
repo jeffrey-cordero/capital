@@ -94,7 +94,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
 
    // Invalidate cache to ensure fresh data on next fetch
    clearBudgetCache(user_id);
-   return sendServiceResponse(201, "Budget category created", { budget_category_id: result });
+   return sendServiceResponse(201, { budget_category_id: result });
 }
 
 /**
@@ -140,7 +140,9 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
       case "success":
          return clearCacheOnSuccess(user_id);
       default:
-         return sendServiceResponse(500, "Unexpected error updating budget category");
+         return sendServiceResponse(500, undefined, {
+            budget_category_id: "Unexpected error updating budget category"
+         });
    }
 }
 

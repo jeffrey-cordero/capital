@@ -86,7 +86,7 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, "User details", JSON.parse(cache) as UserDetails);
+      return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
    }
 
    // Cache miss - fetch from database and store in cache
@@ -109,7 +109,7 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    // Cache user details
    setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(userDetails));
 
-   return sendServiceResponse(200, "User details", userDetails);
+   return sendServiceResponse(200, userDetails);
 }
 
 /**
