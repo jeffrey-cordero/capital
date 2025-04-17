@@ -45,7 +45,7 @@ export const accountSchema = z.object({
       message: "Name must be at most 30 characters"
    }),
 
-   /** Current monetary balance with strict range validation */
+   /** Current monetary balance with strict range validation (-999B to 999B) */
    balance: zodPreprocessNumber(
       z.coerce.number().min(-999_999_999_999.99, {
          message: "Balance is below the minimum allowed value"
@@ -54,7 +54,7 @@ export const accountSchema = z.object({
       })
    ),
 
-   /** Last update timestamp with validation against future dates */
+   /** Last update timestamp with validation against future dates (1800-present) */
    last_updated: z.coerce.date({
       message: "Last updated must be a valid date representation"
    }).min(new Date("1800-01-01"), {
@@ -73,7 +73,7 @@ export const accountSchema = z.object({
       message: "Image must be a valid URL"
    })).or(z.literal("")).nullable().optional(),
 
-   /** Display priority with bounds protection */
+   /** Display priority with bounds protection (0-2B) */
    account_order: zodPreprocessNumber(z.coerce.number().int({
       message: "Account order must be an integer"
    }).min(0, {

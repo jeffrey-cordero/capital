@@ -44,7 +44,7 @@ export const userSchema = z.object({
     message: "Name must be at most 30 characters"
   }),
 
-  /** User birthdate with historical and future bounds protection */
+  /** User birthdate with historical and future bounds protection (1800-present) */
   birthday: z.coerce.date({
     message: "Birthday must be a valid date"
   }).min(new Date("1800-01-01"), {
@@ -53,13 +53,13 @@ export const userSchema = z.object({
     message: "Birthday cannot be in the future"
   }).transform((date) => date.toISOString()),
 
-  /** Primary password with security requirements */
+  /** Primary password with security requirements (8+ characters, mixed case, numbers) */
   password: passwordSchema,
 
   /** Password confirmation for validation */
   verifyPassword: passwordSchema,
 
-  /** Email address with format validation */
+  /** Email address with format validation (max 255 characters) */
   email: z.string().max(255, {
     message: "Email must be at most 255 characters long"
   }).email({
@@ -71,7 +71,7 @@ export const userSchema = z.object({
 });
 
 /**
- * Core user data without verification fields automatically inferred from the validation schema.
+ * Represents core user data without verification fields inferred from the validation schema.
  *
  * @see {@link userSchema} - The Zod schema defining this structure's validation rules.
  */
@@ -134,14 +134,14 @@ export const updateUserSchema = userSchema.innerType().partial().extend({
 });
 
 /**
- * Public user profile information automatically inferred from the validation schema.
+ * Represents public user profile information inferred from the validation schema.
  *
  * @see {@link User} - The base user type that this derives from.
  */
 export type UserDetails = Omit<User, "user_id" | "password">;
 
 /**
- * User data for profile update operations automatically inferred from the validation schema.
+ * Represents user data for profile update operations inferred from the validation schema.
  *
  * @see {@link updateUserSchema} - The Zod schema defining this structure's validation rules.
  */

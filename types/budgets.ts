@@ -8,7 +8,7 @@ import { zodPreprocessNumber } from "./numerics";
 const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
 
 /**
- * Schema for monthly budget goals with comprehensive validation, which
+ * Robust schema for monthly budget goals with comprehensive validation, which
  * ensures data integrity with strict validation for identifiers, numeric values,
  * and temporal constraints preventing impossible budget configurations.
  *
@@ -20,12 +20,12 @@ export const budgetSchema = z.object({
       message: "Budget category ID must be a valid UUID"
    }),
 
-   /** Target monetary amount with range protection */
+   /** Target monetary amount with range protection (0-999B) */
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal must be a valid number"
    }).min(0, {
       message: "Goal must be $0 or greater"
-   }).max(999_999_999_999_999.99, {
+   }).max(999_999_999_999.99, {
       message: "Goal exceeds the maximum allowed value"
    })),
 
@@ -40,7 +40,7 @@ export const budgetSchema = z.object({
       message: "Month must be 12 or less"
    })),
 
-   /** Target year with historical and future bounds */
+   /** Target year with historical and future bounds (1800-present) */
    year: zodPreprocessNumber(z.coerce.number({
       message: "Year must be a valid number"
    }).int({
@@ -63,7 +63,7 @@ export const budgetSchema = z.object({
 });
 
 /**
- * Schema for budget categories with data integrity safeguards, which
+ * Robust schema for budget categories with data integrity safeguards, which
  * enforces consistent naming, type classification, and order sequencing
  * with protection against reserved names and invalid inputs.
  *
@@ -85,7 +85,7 @@ export const budgetCategorySchema = z.object({
       message: "Type must be either 'Income' or 'Expenses'"
    }),
 
-   /** Budget category identifier with reserved word protection */
+   /** Budget category identifier with reserved word protection (1-30 characters) */
    name: z.preprocess((value) => {
       if (typeof value === "string") {
          const trimmed = value.trim();
@@ -107,7 +107,7 @@ export const budgetCategorySchema = z.object({
       .nullable()
    ),
 
-   /** Display sequence with integer validation */
+   /** Display sequence with integer validation (0-2B) */
    category_order: zodPreprocessNumber(z.coerce.number({
       message: "Category order must be a valid number"
    }).int({
@@ -130,19 +130,19 @@ export type BudgetType = "Income" | "Expenses";
 export type BudgetPeriod = { month: number, year: number };
 
 /**
- * Budget goal entry excluding user identifier inferred from the validation schema
+ * Represents budget goal entry excluding user identifier inferred from the validation schema
  *
  * @see {@link budgetSchema} - The Zod schema defining this structure's validation rules.
  */
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 
 /**
- * Budget amount and period without the unique budget category identifier
+ * Represents budget amount and period without the unique budget category identifier
  */
 export type BudgetGoal = Omit<Budget, "budget_category_id">;
 
 /**
- * Complete budget category with associated goals and metadata, which
+ * Represents complete budget category with associated goals and metadata, which
  * combines core category information with temporal goal entries and
  * tracking of current goal relevance with properties inferred from the
  * validation schema.
@@ -157,7 +157,7 @@ export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id
 };
 
 /**
- * Hierarchical budget structure for a single type (Income/Expenses), which
+ * Represents hierarchical budget structure for a single type (Income/Expenses), which
  * organizes parent category with all subcategories and their respective goals.
  */
 export type OrganizedBudget = {
@@ -172,7 +172,7 @@ export type OrganizedBudget = {
 };
 
 /**
- * Complete budget domain model with Income and Expenses hierarchies, which
+ * Represents complete budget domain model with Income and Expenses hierarchies, which
  * represents the entire budget system organization.
  *
  * @see {@link OrganizedBudget} - The type for a single budget type hierarchy.

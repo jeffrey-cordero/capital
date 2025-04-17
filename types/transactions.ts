@@ -24,7 +24,7 @@ export const transactionSchema = z.object({
       message: "Account ID must be a valid UUID"
    }).or(z.literal("")).optional(),
 
-   /** Monetary amount with strict range validation */
+   /** Monetary amount with strict range validation (-999B to 999B) */
    amount: zodPreprocessNumber(z.coerce.number({
       message: "Amount must be a valid currency amount"
    }).min(-999_999_999_999.99, {
@@ -35,12 +35,12 @@ export const transactionSchema = z.object({
       message: "Amount cannot be $0"
    }),
 
-   /** Transaction description with length constraints */
+   /** Transaction description with length constraints (max 255 characters) */
    description: z.string().trim().max(255, {
       message: "Description must be at most 255 characters"
    }).default(""),
 
-   /** Transaction date with historical and future bounds protection */
+   /** Transaction date with historical and future bounds protection (1800-present) */
    date: z.coerce.date({
       message: "Date must be a valid date"
    }).min(new Date("1800-01-01"), {
@@ -51,7 +51,7 @@ export const transactionSchema = z.object({
 });
 
 /**
- * Type definition for a financial transaction record automatically inferred from the validation schema.
+ * Represents a financial transaction record inferred from the validation schema.
  *
  * @see {@link transactionSchema} - The Zod schema defining this structure's validation rules.
  */
