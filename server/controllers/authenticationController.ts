@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/services";
-import * as authenticationService from "@/service/authenticationService";
+import * as authenticationService from "@/services/authenticationService";
 
 /**
  * Handles GET requests for verifying current authentication status.

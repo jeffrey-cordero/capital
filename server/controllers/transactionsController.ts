@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/services";
-import * as transactionsService from "@/service/transactionsService";
+import * as transactionsService from "@/services/transactionsService";
 
 /**
  * Handles GET requests for fetching all transactions for a user ordered by date descending.

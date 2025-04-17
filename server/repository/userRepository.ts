@@ -1,4 +1,4 @@
-import { User, UserDetails, UserDetailUpdates } from "capital/user";
+import { User, UserDetails, UserUpdates } from "capital/user";
 import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
@@ -119,10 +119,10 @@ export async function create(user: User): Promise<string> {
  * Updates a user's information.
  *
  * @param {string} user_id - The user ID
- * @param {Partial<UserDetailUpdates>} updates - The updates
+ * @param {Partial<UserUpdates>} updates - The updates
  * @returns {Promise<boolean>} True if the user was updated, false otherwise
  */
-export async function update(user_id: string, updates: Partial<UserDetailUpdates>): Promise<boolean> {
+export async function update(user_id: string, updates: Partial<UserUpdates>): Promise<boolean> {
    // Build dynamic update query based on provided fields
    const fields: string[] = [];
    const values: any[] = [];

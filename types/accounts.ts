@@ -58,9 +58,9 @@ export const accountSchema = z.object({
    last_updated: z.coerce.date({
       message: "Last updated must be a valid date representation"
    }).min(new Date("1800-01-01"), {
-      message: "Date must be on or after 1800-01-01"
+      message: "Last updated must be on or after 1800-01-01"
    }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-      message: "Date cannot be in the future"
+      message: "Last updated cannot be in the future"
    }).transform((date) => date.toISOString()),
 
    /** Account classification from predefined types */

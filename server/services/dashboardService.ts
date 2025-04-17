@@ -17,10 +17,10 @@ import { getCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
 import economy from "@/resources/economy.json";
-import { fetchAccounts } from "@/service/accountsService";
-import { fetchBudgets } from "@/service/budgetsService";
-import { fetchTransactions } from "@/service/transactionsService";
-import { fetchUserDetails } from "@/service/userService";
+import { fetchAccounts } from "@/services/accountsService";
+import { fetchBudgets } from "@/services/budgetsService";
+import { fetchTransactions } from "@/services/transactionsService";
+import { fetchUserDetails } from "@/services/userService";
 
 /**
  * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors

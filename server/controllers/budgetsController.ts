@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/services";
-import * as budgetsService from "@/service/budgetsService";
+import * as budgetsService from "@/services/budgetsService";
 
 /**
  * Handles GET requests for fetching all budgets for the authenticated user.

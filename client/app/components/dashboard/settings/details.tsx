@@ -10,7 +10,7 @@ import {
    TextField,
    useTheme
 } from "@mui/material";
-import { type UserDetails, type UserDetailUpdates, userUpdateSchema } from "capital/user";
+import { type UserDetails, type UserUpdates, updateUserSchema } from "capital/user";
 import { useCallback } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -43,7 +43,7 @@ export default function Details(): React.ReactNode {
       setError,
       reset,
       formState: { isSubmitting, errors, dirtyFields }
-   } = useForm<UserDetailUpdates>({
+   } = useForm<UserUpdates>({
       defaultValues: {
          name: settings.name,
          birthday: settings.birthday.split("T")[0]
@@ -63,7 +63,7 @@ export default function Details(): React.ReactNode {
    // Handles form submission
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = userUpdateSchema.safeParse(data);
+         const fields = updateUserSchema.safeParse(data);
 
          if (!fields.success) {
             // Handle validation errors
@@ -72,8 +72,8 @@ export default function Details(): React.ReactNode {
          }
 
          // Only send fields that were changed
-         const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserDetailUpdates>, key) => {
-            acc[key as keyof UserDetailUpdates] = fields.data[key as keyof UserDetailUpdates];
+         const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserUpdates>, key) => {
+            acc[key as keyof UserUpdates] = fields.data[key as keyof UserUpdates];
             return acc;
          }, {});
 

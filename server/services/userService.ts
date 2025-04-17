@@ -2,9 +2,9 @@ import { ServerResponse } from "capital/server";
 import {
    User,
    UserDetails,
-   UserDetailUpdates,
+   UserUpdates,
    userSchema,
-   userUpdateSchema
+   updateUserSchema
 } from "capital/user";
 import { Request, Response } from "express";
 
@@ -13,7 +13,7 @@ import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
-import { logoutUser } from "@/service/authenticationService";
+import { logoutUser } from "@/services/authenticationService";
 
 /**
  * Cache duration in seconds for user details (30 minutes)
@@ -154,20 +154,20 @@ export async function createUser(req: Request, res: Response, user: User): Promi
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {Partial<UserDetailUpdates>} updates - User details to update
+ * @param {Partial<UserUpdates>} updates - User details to update
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
  */
-export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserDetailUpdates>): Promise<ServerResponse> {
+export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    const user_id: string = res.locals.user_id;
 
    // Validate update fields with user update schema
-   const fields = userUpdateSchema.safeParse(updates);
+   const fields = updateUserSchema.safeParse(updates);
 
    if (!fields.success) {
       return sendValidationErrors(fields);
    }
 
-   const details: Partial<UserDetailUpdates> = { ...fields.data };
+   const details: Partial<UserUpdates> = { ...fields.data };
 
    if (Object.keys(details).length === 0) {
       return sendServiceResponse(400, { user: "No updates provided" });
