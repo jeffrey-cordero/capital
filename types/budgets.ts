@@ -3,14 +3,14 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 /**
- * Reserved category names for main budget categories.
+ * Reserved names for main budget categories
  */
 const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
 
 /**
- * Robust Zod schema for monthly budget goal validation.
+ * Schema for monthly budget goal validation
  *
- * @see {@link Budget} - The type inferred from this schema.
+ * @see {@link Budget} - Type inferred from this schema
  */
 export const budgetSchema = z.object({
    /* Unique budget category identifier */
@@ -61,9 +61,9 @@ export const budgetSchema = z.object({
 });
 
 /**
- * Robust Zod schema for budget category validation.
+ * Schema for budget category validation
  *
- * @see {@link BudgetCategory} - The type inferred from this schema.
+ * @see {@link BudgetCategory} - Type inferred from this schema
  */
 export const budgetCategorySchema = z.object({
    /* Unique user identifier */
@@ -114,35 +114,35 @@ export const budgetCategorySchema = z.object({
 });
 
 /**
- * Represents budget category classification types.
+ * Budget category classification types
  *
- * @see {@link OrganizedBudgets} - The budget structure using these type classifications.
+ * @see {@link OrganizedBudgets} - Budget structure using these classifications
  */
 export type BudgetType = "Income" | "Expenses";
 
 /**
- * Represents the budget period for a specific budget category entry.
+ * Budget period for a specific category entry
  *
- * @see {@link Budget} - The budget entry type using this period definition.
+ * @see {@link Budget} - Budget entry type using this period definition
  */
 export type BudgetPeriod = { month: number, year: number };
 
 /**
- * Represents budget goal entry excluding user identifier.
+ * Budget goal entry excluding user identifier
  *
- * @see {@link budgetSchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link budgetSchema} - Schema defining validation rules
  */
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 
 /**
- * Represents budget amount and period excluding the unique budget category identifier.
+ * Budget amount and period without category identifier
  */
 export type BudgetGoal = Omit<Budget, "budget_category_id">;
 
 /**
- * Represents complete budget category with associated goals and metadata.
+ * Complete budget category with goals and metadata
  *
- * @see {@link budgetCategorySchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link budgetCategorySchema} - Schema defining validation rules
  */
 export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & {
    /* List of goals associated with the budget category */
@@ -152,7 +152,7 @@ export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id
 };
 
 /**
- * Represents hierarchical budget structure for a single type (Income/Expenses).
+ * Hierarchical budget structure for a single type (Income/Expenses)
  */
 export type OrganizedBudget = {
    /* Main budget category identifier */
@@ -166,10 +166,9 @@ export type OrganizedBudget = {
 };
 
 /**
- * Represents complete budget domain model with Income and Expenses hierarchies
- * for a given user.
+ * Complete budget domain model with Income and Expenses hierarchies
  *
- * @see {@link OrganizedBudget} - The type for a single budget type hierarchy.
+ * @see {@link OrganizedBudget} - Type for a single budget type hierarchy
  */
 export interface OrganizedBudgets {
    /* Income budget hierarchy */

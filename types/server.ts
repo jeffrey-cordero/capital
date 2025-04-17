@@ -1,7 +1,7 @@
 /**
- * Represents the HTTP status codes used throughout the application.
+ * HTTP status codes used throughout the application
  *
- * @see {@link ServerResponse} - The type for API response structure.
+ * @see {@link ServerResponse} - API response structure
  */
 export const HTTP_STATUS = {
    OK: 200,
@@ -17,9 +17,9 @@ export const HTTP_STATUS = {
 } as const;
 
 /**
- * Represents the standard API response structure with status code and optional data/errors.
+ * Standard API response structure
  *
- * @see {@link HTTP_STATUS} - The HTTP status codes used throughout the application.
+ * @see {@link HTTP_STATUS} - HTTP status codes
  */
 export type ServerResponse = {
    /* HTTP status code */

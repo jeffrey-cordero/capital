@@ -2,9 +2,9 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 /**
- * Robust schema for financial transaction validation.
+ * Schema for financial transaction validation
  *
- * @see {@link Transaction} - The type inferred from this schema.
+ * @see {@link Transaction} - Type inferred from this schema
  */
 export const transactionSchema = z.object({
    /* Unique transaction identifier */
@@ -49,8 +49,8 @@ export const transactionSchema = z.object({
 });
 
 /**
- * Represents a financial transaction record.
+ * Financial transaction record
  *
- * @see {@link transactionSchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link transactionSchema} - Schema defining validation rules
  */
 export type Transaction = z.infer<typeof transactionSchema>;

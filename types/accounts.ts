@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { zodPreprocessNumber } from './numerics';
 
 /**
- * Core account types supported in the application.
+ * Core account types supported in the application
  */
 const ACCOUNT_TYPES: readonly string[] = [
    "Checking", "Savings", "Credit Card", "Debt",
@@ -11,31 +11,30 @@ const ACCOUNT_TYPES: readonly string[] = [
 ] as const;
 
 /**
- * Account types representing financial liabilities.
+ * Account types representing financial liabilities
  *
- * @see {@link Account} - The account type these liabilities are part of.
+ * @see {@link Account} - Account type these liabilities are part of
  */
 export const liabilities: Set<string> = new Set(["Debt", "Credit Card", "Loan"]);
 
 /**
- * All supported account types defined as a Set for efficient lookups.
+ * All supported account types for efficient lookups
  *
- * @see {@link Account} - The account type using these type definitions.
+ * @see {@link Account} - Account type using these definitions
  */
 export const types: Set<string> = new Set(ACCOUNT_TYPES);
 
 /**
- * Lowercase account types for client-side image mapping, which
- * enables consistent visual representation across the application.
+ * Lowercase account types for client-side image mapping
  *
- * @see {@link Account} - The account type using these image mappings.
+ * @see {@link Account} - Account type using these image mappings
  */
 export const images: Set<string> = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 
 /**
- * Robust Zod schema for financial account validation.
+ * Schema for financial account validation
  *
- * @see {@link Account} - The type inferred from this schema.
+ * @see {@link Account} - Type inferred from this schema
  */
 export const accountSchema = z.object({
    /* Unique account identifier */
@@ -89,8 +88,8 @@ export const accountSchema = z.object({
 });
 
 /**
- * Represents the type of a financial account.
+ * Financial account type definition
  *
- * @see {@link accountSchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link accountSchema} - Schema defining validation rules
  */
 export type Account = z.infer<typeof accountSchema>;

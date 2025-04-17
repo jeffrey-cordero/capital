@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Advanced password validation requirements for security compliance.
+ * Password validation rules for security compliance
  */
 const passwordSchema = z.string().min(8, {
   message: "Password must be at least 8 characters long"
@@ -16,9 +16,9 @@ const passwordSchema = z.string().min(8, {
 });
 
 /**
- * Robust schema for user validation.
+ * Schema for user validation
  *
- * @see {@link User} - The type inferred from this schema.
+ * @see {@link User} - Type inferred from this schema
  */
 export const userSchema = z.object({
   /* Unique user identifier */
@@ -69,17 +69,17 @@ export const userSchema = z.object({
 });
 
 /**
- * Represents core user data without verification fields.
+ * Core user data without verification fields
  *
- * @see {@link userSchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link userSchema} - Schema defining validation rules
  */
 export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
 
 /**
- * Robust schema for user update validation.
+ * Schema for user update validation
  *
- * @see {@link userSchema} - The Zod schema that this derives from.
- * @see {@link UserUpdates} - The type inferred from this schema.
+ * @see {@link userSchema} - Base schema this derives from
+ * @see {@link UserUpdates} - Type inferred from this schema
  */
 export const updateUserSchema = userSchema.innerType().partial().extend({
   password: passwordSchema.optional(),
@@ -132,15 +132,15 @@ export const updateUserSchema = userSchema.innerType().partial().extend({
 });
 
 /**
- * Represents public user profile information.
+ * Public user profile information
  *
- * @see {@link User} - The base user type that this derives from.
+ * @see {@link User} - Base user type this derives from
  */
 export type UserDetails = Omit<User, "user_id" | "password">;
 
 /**
- * Represents user data for profile update operations.
+ * User data for profile update operations
  *
- * @see {@link updateUserSchema} - The Zod schema defining this structure's validation rules.
+ * @see {@link updateUserSchema} - Schema defining validation rules
  */
 export type UserUpdates = Omit<z.infer<typeof updateUserSchema>, "user_id">;
