@@ -24,7 +24,11 @@ export default function ExportAccount(): React.ReactNode {
          const exportData = {
             timestamp: new Date().toLocaleString(),
             settings,
-            accounts,
+            accounts: accounts.map((account) => ({
+               ...account,
+               account_order: undefined,
+               user_id: undefined
+            })),
             budgets: {
                Income: {
                   ...budgets.Income,
@@ -45,7 +49,12 @@ export default function ExportAccount(): React.ReactNode {
                   }))
                }
             },
-            transactions
+            transactions: transactions.map((transaction) => ({
+               ...transaction,
+               user_id: undefined,
+               account_id: transaction.account_id || undefined,
+               budget_category_id: transaction.budget_category_id || undefined
+            }))
          };
 
          // Convert to a valid JSON string

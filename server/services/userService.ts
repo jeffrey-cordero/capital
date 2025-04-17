@@ -1,10 +1,10 @@
 import { ServerResponse } from "capital/server";
 import {
+   updateUserSchema,
    User,
    UserDetails,
-   UserDetailUpdates,
    userSchema,
-   userUpdateSchema
+   UserUpdates
 } from "capital/user";
 import { Request, Response } from "express";
 
@@ -13,7 +13,7 @@ import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
-import { logoutUser } from "@/service/authenticationService";
+import { logoutUser } from "@/services/authenticationService";
 
 /**
  * Cache duration in seconds for user details (30 minutes)
@@ -86,14 +86,14 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, "User details", JSON.parse(cache) as UserDetails);
+      return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
    }
 
    // Cache miss - fetch from database and store in cache
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }
@@ -109,7 +109,7 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    // Cache user details
    setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(userDetails));
 
-   return sendServiceResponse(200, "User details", userDetails);
+   return sendServiceResponse(200, userDetails);
 }
 
 /**
@@ -125,7 +125,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid user fields");
+      return sendValidationErrors(fields);
    }
 
    // Validate user uniqueness by checking for existing username/email
@@ -141,11 +141,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       // Configure JWT token for authentication
       configureToken(res, user_id);
 
-      return sendServiceResponse(201, "Successfully registered", { success: true });
+      return sendServiceResponse(201, { success: true });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
-      return sendServiceResponse(409, "Invalid user fields", undefined, errors);
+      return sendServiceResponse(409, undefined, errors);
    }
 }
 
@@ -154,23 +154,23 @@ export async function createUser(req: Request, res: Response, user: User): Promi
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {Partial<UserDetailUpdates>} updates - User details to update
+ * @param {Partial<UserUpdates>} updates - User details to update
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
  */
-export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserDetailUpdates>): Promise<ServerResponse> {
+export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    const user_id: string = res.locals.user_id;
 
    // Validate update fields with user update schema
-   const fields = userUpdateSchema.safeParse(updates);
+   const fields = updateUserSchema.safeParse(updates);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid user fields");
+      return sendValidationErrors(fields);
    }
 
-   const details: Partial<UserDetailUpdates> = { ...fields.data };
+   const details: Partial<UserUpdates> = { ...fields.data };
 
    if (Object.keys(details).length === 0) {
-      return sendServiceResponse(400, "No updates provided");
+      return sendServiceResponse(400, { user: "No updates provided" });
    }
 
    // Validate username and email uniqueness if provided
@@ -184,7 +184,7 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
          // Handle username/email conflicts that are not tied to the current user
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
-         return sendServiceResponse(409, "Invalid user fields", undefined, errors);
+         return sendServiceResponse(409, undefined, errors);
       }
    }
 
@@ -194,14 +194,14 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       const current = await userRepository.findByUserId(user_id);
 
       if (!current) {
-         return sendServiceResponse(404, "User not found", undefined, {
+         return sendServiceResponse(404, undefined, {
             user: "User does not exist based on the provided ID"
          });
       }
 
       // Check if provided password matches current password
       if (!details.password || !(await compare(details.password, current.password))) {
-         return sendServiceResponse(400, "Invalid user fields", undefined, {
+         return sendServiceResponse(400, undefined, {
             password: "Invalid password"
          });
       }
@@ -215,7 +215,7 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
    const result = await userRepository.update(user_id, details);
 
    if (!result) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }
@@ -239,7 +239,7 @@ export async function deleteAccount(req: Request, res: Response, user_id: string
    const result = await userRepository.deleteUser(user_id);
 
    if (!result) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }

@@ -3,132 +3,176 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 /**
- * Reserved words that cannot be used as category names
+ * Reserved names for main budget categories
  */
-const RESERVED_WORDS = ["income", "expenses"];
+const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
 
 /**
- * Represents a budget schema
+ * Schema for monthly budget goal validation
+ *
+ * @see {@link Budget} - Type inferred from this schema
  */
 export const budgetSchema = z.object({
+   /* Unique budget category identifier */
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
+
+   /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal must be a valid number"
    }).min(0, {
-      message: "Goal must be at least $0"
-   }).max(999_999_999_999_999.99, {
-      message: "Goal cannot exceed $999,999,999,999,999.99"
+      message: "Goal must be $0 or greater"
+   }).max(999_999_999_999.99, {
+      message: "Goal exceeds the maximum allowed value"
    })),
+
+   /* Budget month */
    month: zodPreprocessNumber(z.coerce.number({
       message: "Month must be a valid number"
+   }).int({
+      message: "Month must be a whole number between 1 and 12"
    }).min(1, {
-      message: "Month must be between 1 and 12"
+      message: "Month must be 1 or greater"
    }).max(12, {
-      message: "Month must be between 1 and 12"
+      message: "Month must be 12 or less"
    })),
+
+   /* Budget year */
    year: zodPreprocessNumber(z.coerce.number({
       message: "Year must be a valid number"
+   }).int({
+      message: "Year must be a whole number"
    }).min(1800, {
-      message: "Year must be at least 1800"
-   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })).getUTCFullYear(), {
-      message: "Year must be not be in a future year"
+      message: "Year must be 1800 or later"
+   }).max(new Date().getFullYear(), {
+      message: `Year cannot be later than ${new Date().getFullYear()}`
    }))
 }).refine(data => {
-   const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+   // Prevent future budget entries
+   const today = new Date();
+   const month = today.getMonth() + 1;
+   const year = today.getFullYear();
 
-   return data.month <= (today.getUTCMonth() + 1) || data.year < today.getUTCFullYear();
+   return data.year < year || (data.year === year && data.month <= month);
 }, {
-   message: "Month must not be in a future month for the current year",
+   message: "Budget entries cannot be set for future months in the current year",
    path: ["month"]
 });
 
 /**
- * Represents a budget category schema
+ * Schema for budget category validation
+ *
+ * @see {@link BudgetCategory} - Type inferred from this schema
  */
 export const budgetCategorySchema = z.object({
+   /* Unique user identifier */
    user_id: z.string().trim().uuid({
       message: "User ID must be a valid UUID"
    }).optional(),
+
+   /* Unique budget category identifier */
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
+
+   /* Budget category type */
    type: z.enum(['Income', 'Expenses'], {
-      message: "Type must be either Income or Expenses"
+      message: "Type must be either 'Income' or 'Expenses'"
    }),
+
+   /* Budget category name */
    name: z.preprocess((value) => {
       if (typeof value === "string") {
          const trimmed = value.trim();
-         
-         if (RESERVED_WORDS.includes(trimmed.toLowerCase()) || trimmed === "null") {
-            // Return a special error indicator
-            return "__RESERVED__"; 
+
+         if (RESERVED_NAMES.includes(trimmed.toLowerCase()) || trimmed.toLowerCase() === "null") {
+            return "__RESERVED__";
          }
-         
+
          return trimmed;
-      } else {
-         // Non-main budget categories name must be a string
-         return undefined;
       }
+      return value;
    }, z.string()
-      .trim()
+      .min(1, { message: "Name must be at least 1 character" })
+      .max(30, { message: "Name must be at most 30 characters" })
       .refine(val => val !== "__RESERVED__", {
-         message: "Name cannot be a null or a reserved word (Income or Expenses)"
-      })
-      .refine(val => val.length >= 1 && val.length <= 30, {
-         message: "Name must be between 1 and 30 characters"
-      })
-      .nullable()
+         message: "Category name cannot be 'Income', 'Expenses', or 'null'"
+      }).nullable()
    ),
+
+   /* Display sequence */
    category_order: zodPreprocessNumber(z.coerce.number({
       message: "Category order must be a valid number"
+   }).int({
+      message: "Category order must be a whole number"
    }).min(0, {
-      message: "Category order must be at least 0"
+      message: "Category order cannot be negative"
    }).max(2_147_483_647, {
-      message: "Category order must be at most 2,147,483,647"
+      message: "Category order exceeds maximum value"
    })).nullable()
 });
 
 /**
- * Represents the type of a budget
+ * Budget category classification types
+ *
+ * @see {@link OrganizedBudgets} - Budget structure using these classifications
  */
 export type BudgetType = "Income" | "Expenses";
 
 /**
- * Represents the period of a budget
+ * Budget period for a specific category entry
+ *
+ * @see {@link Budget} - Budget entry type using this period definition
  */
 export type BudgetPeriod = { month: number, year: number };
 
 /**
- * Represents a budget with basic details for the specified period
+ * Budget goal entry excluding user identifier
+ *
+ * @see {@link budgetSchema} - Schema defining validation rules
  */
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 
 /**
- * Represents a budget goal
+ * Budget amount and period without category identifier
  */
 export type BudgetGoal = Omit<Budget, "budget_category_id">;
 
 /**
- * Represents a budget category basic details with goals for the specified periods
+ * Complete budget category with goals and metadata
+ *
+ * @see {@link budgetCategorySchema} - Schema defining validation rules
  */
-export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & { goals: BudgetGoal[], goalIndex: number };
+export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & {
+   /* List of goals associated with the budget category */
+   goals: BudgetGoal[];
+   /* Index of the current relevant goal */
+   goalIndex: number;
+};
 
 /**
- * Represents an organized budget
+ * Hierarchical budget structure for a single type (Income/Expenses)
  */
 export type OrganizedBudget = {
-   goalIndex: number;
-   goals: BudgetGoal[];
+   /* Main budget category identifier */
    budget_category_id: string;
+   /* Index of the current relevant goal */
+   goalIndex: number;
+   /* List of goals associated with the main budget category */
+   goals: BudgetGoal[];
+   /* List of subcategories associated with the main budget category */
    categories: Array<BudgetCategory>;
 };
 
 /**
- * Represents a collection of organized budgets (Income and Expenses) with current period tracking
+ * Complete budget domain model with Income and Expenses hierarchies
+ *
+ * @see {@link OrganizedBudget} - Type for a single budget type hierarchy
  */
 export interface OrganizedBudgets {
+   /* Income budget hierarchy */
    Income: OrganizedBudget;
+   /* Expenses budget hierarchy */
    Expenses: OrganizedBudget;
 }

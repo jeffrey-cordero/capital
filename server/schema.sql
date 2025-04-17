@@ -17,14 +17,14 @@ CREATE TABLE users (
 );
 
 CREATE TYPE account_type AS ENUM (
-   'Checking', 
-   'Savings', 
-   'Credit Card', 
-   'Debt', 
-   'Retirement', 
-   'Investment', 
-   'Loan', 
-   'Property', 
+   'Checking',
+   'Savings',
+   'Credit Card',
+   'Debt',
+   'Retirement',
+   'Investment',
+   'Loan',
+   'Property',
    'Other'
 );
 
@@ -55,12 +55,12 @@ CREATE TABLE budgets (
    year SMALLINT NOT NULL CHECK (year >= 1800),
    budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
    CHECK (
-      year <= CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT) 
-      AND 
+      year <= CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
+      AND
       (
          month <= CAST(EXTRACT(MONTH FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
          OR
-         year < CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT) 
+         year < CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
       )
    ),
    PRIMARY KEY(budget_category_id, year, month)
@@ -78,7 +78,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER prevent_main_budget_deletion_trigger
 BEFORE DELETE ON budget_categories
-FOR EACH ROW 
+FOR EACH ROW
    EXECUTE FUNCTION prevent_main_budget_category_deletion();
 
 CREATE OR REPLACE FUNCTION prevent_main_budget_category_updates()

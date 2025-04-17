@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/services";
-import * as dashboardService from "@/service/dashboardService";
+import * as dashboardService from "@/services/dashboardService";
 
 /**
  * Handles GET requests for fetching dashboard data for the authenticated user.

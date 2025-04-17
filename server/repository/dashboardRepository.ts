@@ -1,21 +1,21 @@
-import { ExternalAPIs } from "capital/dashboard";
+import { type Economy } from "capital/economy";
 import { PoolClient } from "pg";
 
 import { query, transaction } from "@/lib/database";
 
 /**
- * Fetches the latest external API data from the database.
+ * Fetches the latest external economy data from the database.
  *
- * @returns {Promise<{ time: string, data: ExternalAPIs } | null>} The latest external API data
+ * @returns {Promise<{ time: string, data: Economy } | null>} The latest external economy data
  */
-export async function getExternalAPIs(): Promise<{ time: string, data: ExternalAPIs } | null> {
-   // Retrieve the latest external API data
+export async function getExternalAPIs(): Promise<{ time: string, data: Economy } | null> {
+   // Retrieve the latest external economy data
    const search = `
-      SELECT * 
+      SELECT *
       FROM external_api_cache
       LIMIT 1;
    `;
-   const result: { time: string, data: ExternalAPIs }[] = await query(search, []);
+   const result: { time: string, data: Economy }[] = await query(search, []);
 
    return result.length > 0 ? result[0] : null;
 }
@@ -37,7 +37,7 @@ export async function updateExternalAPIs(time: Date, data: string): Promise<void
 
       // Insert new external API data
       const insertion = `
-         INSERT INTO external_api_cache (time, data) 
+         INSERT INTO external_api_cache (time, data)
          VALUES ($1, $2);
       `;
       await client.query(insertion, [time, data]);

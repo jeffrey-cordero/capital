@@ -1,9 +1,9 @@
-import { User, UserDetailUpdates } from "capital/user";
+import { User, UserUpdates } from "capital/user";
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 
 import { submitServiceRequest } from "@/lib/services";
-import * as userService from "@/service/userService";
+import * as userService from "@/services/userService";
 
 /**
  * Handles POST requests for creating a new user account.
@@ -35,7 +35,7 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
  * @returns {Promise<Response>} The service response for the user update request
  */
 export const PUT = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => userService.updateAccountDetails(req, res, req.body as Partial<UserDetailUpdates>))
+   submitServiceRequest(res, async() => userService.updateAccountDetails(req, res, req.body as Partial<UserUpdates>))
 );
 
 /**

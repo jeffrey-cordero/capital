@@ -8,7 +8,7 @@ import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
 import { setAccounts } from "@/redux/slices/accounts";
 import { setBudgets } from "@/redux/slices/budgets";
-import { setMarkets } from "@/redux/slices/markets";
+import { setEconomy } from "@/redux/slices/economy";
 import { setDetails } from "@/redux/slices/settings";
 import { setTransactions } from "@/redux/slices/transactions";
 
@@ -31,16 +31,15 @@ export async function fetchDashboard(
       const budgets = dashboard.budgets;
 
       dispatch(setDetails(dashboard.settings));
-      dispatch(setMarkets({
-         news: dashboard.externalAPIs.news,
-         trends: dashboard.externalAPIs.trends
+      dispatch(setEconomy({
+         news: dashboard.economy.news,
+         trends: dashboard.economy.trends
       }));
       dispatch(setAccounts(dashboard.accounts));
       dispatch(setBudgets(budgets));
       dispatch(setTransactions(dashboard.transactions.map((t) => {
          return {
             ...t,
-            // Pivot to default budget category IDs based on the transaction amount
             budget_category_id: t.budget_category_id || (
                t.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
             )

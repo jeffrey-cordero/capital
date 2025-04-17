@@ -29,9 +29,9 @@ app.use(rateLimit({
    handler: (req: Request, res: Response) => {
       logger.info(`Rate limited request from IP: ${req.ip}`);
 
-      return sendErrors(res, 429, "Too many requests",
-         { server: "Too many requests. Please try again later." }
-      );
+      return sendErrors(res, 429, {
+         server: "Too many requests. Please try again later."
+      });
    }
 }));
 
@@ -99,15 +99,15 @@ app.use("/authentication", authenticationRouter);
  * Error Handlers (404 and 500)
  */
 app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, "Not Found",
-      { server: "The requested resource could not be found" }
-   );
+   return sendErrors(res, 404, {
+      server: "The requested resource could not be found"
+   });
 });
 
 app.use(function(error: any, req: Request, res: Response) {
    logger.error(error.stack || "An unknown error occurred");
 
-   return sendErrors(res, error.status || 500, "Internal Server Error",
-      { server: error.message || error.code || "An unknown error occurred" }
-   );
+   return sendErrors(res, error.status || 500, {
+      server: "Internal Server Error"
+   });
 });

@@ -1,25 +1,22 @@
 import type { Account } from "./accounts";
 import type { OrganizedBudgets } from "./budgets";
-import type { MarketTrends } from "./markets";
-import type { News } from "./news";
+import type { Economy } from "./economy";
 import type { Transaction } from "./transactions";
-import { UserDetails } from "./user";
+import type { UserDetails } from "./user";
 
 /**
- * Represents the external API data for the dashboard page
- */
-export interface ExternalAPIs {
-   news: News;
-   trends: MarketTrends;
-}
-
-/**
- * Represents the dashboard interface for the dashboard page
+ * Dashboard data model that integrates all core user and economic components
+ *
+ * @see {@link Economy} - Economy data model
+ * @see {@link Account} - Accounts data model
+ * @see {@link UserDetails} - User settings data model
+ * @see {@link OrganizedBudgets} - Budgets data model
+ * @see {@link Transaction} - Transactions data model
  */
 export interface Dashboard {
-   externalAPIs: ExternalAPIs;
+   economy: Economy;
    accounts: Account[];
+   settings: UserDetails;
    budgets: OrganizedBudgets;
    transactions: Transaction[];
-   settings: UserDetails;
 }

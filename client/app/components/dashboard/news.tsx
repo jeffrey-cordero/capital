@@ -15,7 +15,7 @@ import {
    useTheme
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type News, type NewsArticle } from "capital/news";
+import { type Article, type News } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -38,7 +38,7 @@ const DEFAULT_VALUES = {
  * @param {NewsItemProps} props - The props for the NewsItem component
  * @returns {React.ReactNode} The NewsItem component
  */
-function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
+function NewsItem({ article }: { article: Article }): React.ReactNode {
    const theme = useTheme();
    const [expanded, setExpanded] = useState(false);
    const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("lg"));
@@ -174,8 +174,8 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
  * @returns {React.ReactNode} The Articles component
  */
 export default function Articles(): React.ReactNode {
-   const news: News = useSelector((state: RootState) => state.markets.value.news);
-   const items: NewsArticle[] = useMemo(() => {
+   const news: News = useSelector((state: RootState) => state.economy.value.news);
+   const items: Article[] = useMemo(() => {
       // Articles based on published date descending
       return [...news.response.data].reverse().slice(0, 24);
    }, [news]);
@@ -201,7 +201,7 @@ export default function Articles(): React.ReactNode {
                sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2, mt: 2, textAlign: "left" } }
             >
                {
-                  items.map((item: NewsArticle, index) => (
+                  items.map((item: Article, index) => (
                      <Grid
                         key = { `news-${index}` }
                         size = { { xs: 12, md: 6, lg: 12 } }

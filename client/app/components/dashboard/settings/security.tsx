@@ -9,7 +9,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { type UserDetails, type UserDetailUpdates, userUpdateSchema } from "capital/user";
+import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
 import { useCallback, useState } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -51,7 +51,7 @@ export default function Security(): React.ReactNode {
       reset,
       setError,
       formState: { isSubmitting, errors, dirtyFields }
-   } = useForm<UserDetailUpdates>({
+   } = useForm<UserUpdates>({
       defaultValues: settings || {}
    });
 
@@ -97,7 +97,7 @@ export default function Security(): React.ReactNode {
    // Handles form submissions
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = userUpdateSchema.safeParse({
+         const fields = updateUserSchema.safeParse({
             ...data,
             password: data.password || undefined,
             newPassword: data.newPassword || undefined,
@@ -110,8 +110,8 @@ export default function Security(): React.ReactNode {
          }
 
          // Only send fields that were changed
-         const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserDetailUpdates>, key) => {
-            acc[key as keyof UserDetailUpdates] = fields.data[key as keyof UserDetailUpdates];
+         const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserUpdates>, key) => {
+            acc[key as keyof UserUpdates] = fields.data[key as keyof UserUpdates];
             return acc;
          }, {});
 
