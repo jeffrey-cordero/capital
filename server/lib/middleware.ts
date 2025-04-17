@@ -37,10 +37,10 @@ export function authenticateToken(required: boolean) {
 
       if (!token && required) {
          // Token present for this endpoint, but not provided
-         return sendErrors(res, 401, "Unauthorized: No Token Provided");
+         return sendErrors(res, 401);
       } else if (token && !required) {
          // Token not required at this endpoint, but provided
-         return sendErrors(res, 302, "Unauthorized: Token Not Required");
+         return sendErrors(res, 302);
       } else if (required) {
          try {
             // Verify the JWT token, handling expected thrown errors
@@ -60,7 +60,7 @@ export function authenticateToken(required: boolean) {
                logger.error(error.stack);
             }
 
-            return sendErrors(res, 403, "Forbidden: Invalid Token");
+            return sendErrors(res, 403);
          }
       } else {
          // Proceed to the next middleware or route handler as token is not required

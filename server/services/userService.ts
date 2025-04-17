@@ -1,10 +1,10 @@
 import { ServerResponse } from "capital/server";
 import {
+   updateUserSchema,
    User,
    UserDetails,
-   UserUpdates,
    userSchema,
-   updateUserSchema
+   UserUpdates
 } from "capital/user";
 import { Request, Response } from "express";
 

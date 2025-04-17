@@ -16,8 +16,9 @@ export const HTTP_STATUS = {
 } as const;
 
 /**
- * Represents standard API response structure with status code and optional data/errors,
- * providing a consistent interface for all server responses.
+ * Represents standard API response structure with status code and optional data/errors, which
+ * provides a consistent interface for all server responses with appropriate status codes and
+ * payload containers.
  *
  * @see {@link HTTP_STATUS} - The HTTP status codes used throughout the application.
  */

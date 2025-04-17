@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 /**
- * Standardizes number inputs for validation with precision handling,
- * ensuring consistent numeric format and decimal precision for currency values
+ * Standardizes number inputs for validation with precision handling, which
+ * ensures consistent numeric format and decimal precision for currency values
  * with protection against invalid input formats.
  *
  * @param schema - Zod number schema for subsequent validation
@@ -13,6 +13,7 @@ export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
       if (value === null || value === undefined) {
          return NaN;
       } else if (typeof value === "string") {
+         // Ensure at most two decimal places
          const input: string = value.trim();
          const decimals: number = (value.toString().split('.')[1] || '').length;
 

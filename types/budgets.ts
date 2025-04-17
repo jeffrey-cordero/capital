@@ -120,12 +120,18 @@ export const budgetCategorySchema = z.object({
 });
 
 /**
- * Budget category classification types
+ * Budget category classification types, which defines the two primary
+ * budget categories for financial organization.
+ *
+ * @see {@link OrganizedBudgets} - The budget structure using these type classifications.
  */
 export type BudgetType = "Income" | "Expenses";
 
 /**
- * Represents the budget period for a budget entry to a respective budget category
+ * Represents the budget period for a budget entry to a respective budget category, which
+ * defines the temporal scope of a budget goal with month and year components.
+ *
+ * @see {@link Budget} - The budget entry type using this period definition.
  */
 export type BudgetPeriod = { month: number, year: number };
 

@@ -15,7 +15,7 @@ import {
    useTheme
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type News, type Article } from "capital/economy";
+import { type Article, type News } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 

@@ -10,7 +10,7 @@ import {
    TextField,
    useTheme
 } from "@mui/material";
-import { type UserDetails, type UserUpdates, updateUserSchema } from "capital/user";
+import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
 import { useCallback } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";

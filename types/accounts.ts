@@ -11,17 +11,26 @@ const ACCOUNT_TYPES: readonly string[] = [
 ] as const;
 
 /**
- * Account types representing financial liabilities
+ * Account types representing financial liabilities, which
+ * categorizes accounts with negative expected balances.
+ *
+ * @see {@link Account} - The account type these liabilities are part of.
  */
 export const liabilities: Set<string> = new Set(["Debt", "Credit Card", "Loan"]);
 
 /**
- * All supported account types defined as a Set for efficient lookups
+ * All supported account types defined as a Set for efficient lookups, which
+ * provides constant-time membership testing for account type validation.
+ *
+ * @see {@link Account} - The account type using these type definitions.
  */
 export const types: Set<string> = new Set(ACCOUNT_TYPES);
 
 /**
- * Lowercase account types for client-side image mapping
+ * Lowercase account types for client-side image mapping, which
+ * enables consistent visual representation across the application.
+ *
+ * @see {@link Account} - The account type using these image mappings.
  */
 export const images: Set<string> = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 

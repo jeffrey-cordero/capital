@@ -134,14 +134,16 @@ export const updateUserSchema = userSchema.innerType().partial().extend({
 });
 
 /**
- * Represents public user profile information inferred from the validation schema.
+ * Represents public user profile information inferred from the validation schema, which
+ * provides sanitized user data without sensitive authentication fields.
  *
  * @see {@link User} - The base user type that this derives from.
  */
 export type UserDetails = Omit<User, "user_id" | "password">;
 
 /**
- * Represents user data for profile update operations inferred from the validation schema.
+ * Represents user data for profile update operations inferred from the validation schema, which
+ * enables partial updates to user profiles with security validation.
  *
  * @see {@link updateUserSchema} - The Zod schema defining this structure's validation rules.
  */
