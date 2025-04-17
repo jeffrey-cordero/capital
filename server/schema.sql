@@ -39,7 +39,10 @@ CREATE TABLE accounts (
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE TYPE budget_type AS ENUM ('Income', 'Expenses');
+CREATE TYPE budget_type AS ENUM (
+   'Income',
+   'Expenses'
+);
 
 CREATE TABLE budget_categories (
    budget_category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -56,8 +59,7 @@ CREATE TABLE budgets (
    budget_category_id UUID NOT NULL REFERENCES budget_categories(budget_category_id) ON DELETE CASCADE,
    CHECK (
       year <= CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
-      AND
-      (
+      AND (
          month <= CAST(EXTRACT(MONTH FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
          OR
          year < CAST(EXTRACT(YEAR FROM NOW() AT TIME ZONE 'Pacific/Kiritimati') AS SMALLINT)
@@ -66,35 +68,20 @@ CREATE TABLE budgets (
    PRIMARY KEY(budget_category_id, year, month)
 );
 
-CREATE OR REPLACE FUNCTION prevent_main_budget_category_deletion()
+CREATE OR REPLACE FUNCTION prevent_main_budget_category_modifications()
 RETURNS TRIGGER AS $$
 BEGIN
    IF OLD.name IS NULL THEN
-      RAISE EXCEPTION 'Main budget category can''t be deleted';
-   END IF;
-   RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER prevent_main_budget_deletion_trigger
-BEFORE DELETE ON budget_categories
-FOR EACH ROW
-   EXECUTE FUNCTION prevent_main_budget_category_deletion();
-
-CREATE OR REPLACE FUNCTION prevent_main_budget_category_updates()
-RETURNS TRIGGER AS $$
-BEGIN
-   IF OLD.name IS NULL THEN
-      RAISE EXCEPTION 'Main budget category can''t be updated';
+      RAISE EXCEPTION 'Main budget category can''t be modified';
    END IF;
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER prevent_main_budget_category_specific_update_trigger
-BEFORE UPDATE ON budget_categories
+CREATE TRIGGER prevent_main_budget_category_modifications_trigger
+BEFORE DELETE OR UPDATE ON budget_categories
 FOR EACH ROW
-   EXECUTE FUNCTION prevent_main_budget_category_updates();
+   EXECUTE FUNCTION prevent_main_budget_category_modifications();
 
 CREATE TABLE transactions (
    transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -105,8 +92,6 @@ CREATE TABLE transactions (
    account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL
 );
-
-CREATE INDEX idx_transactions_dates ON transactions (user_id, date);
 
 CREATE TABLE external_api_cache (
    time TIMESTAMP PRIMARY KEY,
