@@ -130,7 +130,7 @@ export type BudgetType = "Income" | "Expenses";
 export type BudgetPeriod = { month: number, year: number };
 
 /**
- * Budget goal entry excluding user identifier automatically inferred from the validation schema
+ * Budget goal entry excluding user identifier inferred from the validation schema
  *
  * @see {@link budgetSchema} - The Zod schema defining this structure's validation rules.
  */
@@ -144,8 +144,8 @@ export type BudgetGoal = Omit<Budget, "budget_category_id">;
 /**
  * Complete budget category with associated goals and metadata, which
  * combines core category information with temporal goal entries and
- * tracking of current goal relevance with properties automatically
- * inferred from the validation schema.
+ * tracking of current goal relevance with properties inferred from the
+ * validation schema.
  *
  * @see {@link budgetCategorySchema} - The Zod schema defining this structure's validation rules.
  */

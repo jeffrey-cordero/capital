@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 /**
- * Preprocesses numbers for validation measures.
+ * Standardizes number inputs for validation with precision handling,
+ * ensuring consistent numeric format and decimal precision for currency values.
  *
- * @param {z.ZodNumber} schema - The schema to preprocess
- * @returns {z.ZodEffects<any>} The preprocessed schema for further validation
+ * @param schema - Zod number schema for subsequent validation
+ * @returns Preprocessed Zod schema with normalized numeric values
  */
 export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
    return z.preprocess((value) => {

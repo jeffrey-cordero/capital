@@ -84,7 +84,7 @@ export const accountSchema = z.object({
 });
 
 /**
- * Represents the type of a financial account automatically inferred from the validation schema.
+ * Represents the type of a financial account inferred from the validation schema.
  *
  * @see {@link accountSchema} - The Zod schema defining this structure's validation rules.
  */

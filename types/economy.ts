@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 /**
- * Represents the schema for the news data
+ * Robust schema for economic API response data validation, which
+ * validates the response structure and content types for economic
+ * news and market trends data.
+ *
+ * @see {@link News} - The type inferred from this schema.
  */
 export const newsSchema = z.object({
    response: z.object({
@@ -27,17 +31,25 @@ export const newsSchema = z.object({
 }).passthrough();
 
 /**
- * Represents the type for the news data
+ * Represents economic news API response data inferred from the schema
+ *
+ * @see {@link newsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type News = z.infer<typeof newsSchema>;
 
 /**
- * Represents the type for the news article data
+ * Represents a single news article with metadata and content-related fields inferred from the schema
+ *
+ * @see {@link News} - The parent type this is extracted from.
  */
 export type Article = News["response"]["data"][0];
 
 /**
- * Represents the schema for the indicator trends data
+ * Robust schema for economic indicator time series data validation, which
+ * validates the response structure and content types for economic indicator
+ * time series data.
+ *
+ * @see {@link IndicatorTrends} - The type inferred from this schema.
  */
 export const indicatorTrendsSchema = z.array(z.object({
    date: z.string().regex(/^\d{4,}-\d{2}-\d{2}$/),
@@ -45,12 +57,18 @@ export const indicatorTrendsSchema = z.array(z.object({
 }));
 
 /**
- * Represents economic indicator data for financial analysis, such as GDP, unemployment rate, etc.
+ * Represents time series data for economic indicators (GDP, unemployment, etc.) inferred from the schema
+ *
+ * @see {@link indicatorTrendsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type IndicatorTrends = z.infer<typeof indicatorTrendsSchema>;
 
 /**
- * Represents the schema for the stock indicator data
+ * Robust schema for individual stock market data points validation, which
+ * validates the response structure and content types for individual stock
+ * market data points.
+ *
+ * @see {@link StockIndicator} - The type inferred from this schema.
  */
 export const stockIndicatorSchema = z.object({
    ticker: z.string(),
@@ -61,12 +79,18 @@ export const stockIndicatorSchema = z.object({
 });
 
 /**
- * Represents stock indicator data for trending stocks, including price, change, volume, etc.
+ * Represents a single stock data point with price and movement metrics inferred from the schema
+ *
+ * @see {@link stockIndicatorSchema} - The Zod schema defining this structure's validation rules.
  */
 export type StockIndicator = z.infer<typeof stockIndicatorSchema>;
 
 /**
- * Represents stock trends data for trending stocks, including price, change, volume, etc.
+ * Robust schema for aggregated stock market trends validation, which
+ * validates the response structure and content types for aggregated
+ * stock market trends data.
+ *
+ * @see {@link StockTrends} - The type inferred from this schema.
  */
 export const stockTrendsSchema = z.object({
    metadata: z.string(),
@@ -77,17 +101,26 @@ export const stockTrendsSchema = z.object({
 });
 
 /**
- * Represents stock trends, including top gainers, top losers, and most actively traded stocks
+ * Represents aggregated stock market data including top gainers, losers and active stocks inferred from the schema
+ *
+ * @see {@link stockTrendsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type StockTrends = z.infer<typeof stockTrendsSchema>;
 
 /**
- * Represents economy trend data essential for the dashboard page
+ * Represents a collection of economic indicators and stock market data time series inferred from the schema
+ *
+ * @see {@link IndicatorTrends} - The type for economic indicator time series data.
+ * @see {@link StockTrends} - The type for aggregated stock market trends data.
  */
 export type Trends = Record<string, IndicatorTrends[] | StockTrends>;
 
 /**
- * Represents the economy external API data for the dashboard page
+ * Comprehensive economic data for dashboard financial insights,
+ * integrating news and economic trend information.
+ *
+ * @see {@link News} - The economic news component.
+ * @see {@link Trends} - The economic trends component.
  */
 export interface Economy {
    news: News;

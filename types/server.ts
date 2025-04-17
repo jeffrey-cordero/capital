@@ -1,14 +1,6 @@
 /**
- * Represents a server response
- */
-export type ServerResponse = {
-   code: number;
-   data?: any;
-   errors?: Record<string, string>;
-};
-
-/**
- * Represents common HTTP status codes used in the application
+ * Common HTTP status codes used throughout the application,
+ * defined as constants to ensure consistency and reduce potential errors.
  */
 export const HTTP_STATUS = {
    OK: 200,
@@ -22,3 +14,18 @@ export const HTTP_STATUS = {
    CONFLICT: 409,
    INTERNAL_SERVER_ERROR: 500
 } as const;
+
+/**
+ * Standard API response structure with status code and optional data/errors,
+ * providing a consistent interface for all server responses.
+ *
+ * @see {@link HTTP_STATUS} - The HTTP status codes used throughout the application.
+ */
+export type ServerResponse = {
+   /** HTTP status code */
+   code: number;
+   /** Optional data payload */
+   data?: any;
+   /** Optional error details */
+   errors?: Record<string, string>;
+};
