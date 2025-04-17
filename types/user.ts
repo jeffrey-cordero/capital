@@ -57,7 +57,7 @@ export const userSchema = z.object({
   /* Password confirmation */
   verifyPassword: passwordSchema,
 
-  /* Email address */
+  /* Unique email address */
   email: z.string().max(255, {
     message: "Email must be at most 255 characters long"
   }).email({
