@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Advanced password validation requirements for security compliance
+ * Advanced password validation requirements for security compliance.
  */
 const passwordSchema = z.string().min(8, {
   message: "Password must be at least 8 characters long"
@@ -16,19 +16,17 @@ const passwordSchema = z.string().min(8, {
 });
 
 /**
- * Robust schema for user validation with comprehensive rules, which
- * enforces strict type safety and business logic constraints for all user data
- * including format validation, security requirements, and data integrity.
+ * Robust schema for user validation.
  *
  * @see {@link User} - The type inferred from this schema.
  */
 export const userSchema = z.object({
-  /** Unique user identifier (UUID) */
+  /* Unique user identifier */
   user_id: z.string().trim().uuid({
     message: "User ID must be a valid UUID"
   }).nullable().optional(),
 
-  /** Username with length and character constraints (3-30 characters) */
+  /* Unique username */
   username: z.string().trim().min(3, {
     message: "Username must be at least 3 characters"
   }).max(30, {
@@ -37,14 +35,14 @@ export const userSchema = z.object({
     message: "Username may only contain letters, numbers, underscores, and hyphens"
   }),
 
-  /** Display name with length validation (3-30 characters) */
+  /* Full name */
   name: z.string().trim().min(3, {
     message: "Name must be at least 3 characters"
   }).max(30, {
     message: "Name must be at most 30 characters"
   }),
 
-  /** User birthdate with historical and future bounds protection (1800-present) */
+  /* Birthdate */
   birthday: z.coerce.date({
     message: "Birthday must be a valid date"
   }).min(new Date("1800-01-01"), {
@@ -53,13 +51,13 @@ export const userSchema = z.object({
     message: "Birthday cannot be in the future"
   }).transform((date) => date.toISOString()),
 
-  /** Primary password with security requirements (8+ characters, mixed case, numbers) */
+  /* Primary password */
   password: passwordSchema,
 
-  /** Password confirmation for validation */
+  /* Password confirmation */
   verifyPassword: passwordSchema,
 
-  /** Email address with format validation (max 255 characters) */
+  /* Email address */
   email: z.string().max(255, {
     message: "Email must be at most 255 characters long"
   }).email({
@@ -71,16 +69,14 @@ export const userSchema = z.object({
 });
 
 /**
- * Represents core user data without verification fields inferred from the validation schema.
+ * Represents core user data without verification fields.
  *
  * @see {@link userSchema} - The Zod schema defining this structure's validation rules.
  */
 export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
 
 /**
- * Robust schema for user updates with comprehensive security rules, which
- * enforces strict password change policies and data integrity validation
- * for partial user profile updates.
+ * Robust schema for user update validation.
  *
  * @see {@link userSchema} - The Zod schema that this derives from.
  * @see {@link UserUpdates} - The type inferred from this schema.
@@ -136,16 +132,14 @@ export const updateUserSchema = userSchema.innerType().partial().extend({
 });
 
 /**
- * Represents public user profile information inferred from the validation schema, which
- * provides sanitized user data without sensitive authentication fields.
+ * Represents public user profile information.
  *
  * @see {@link User} - The base user type that this derives from.
  */
 export type UserDetails = Omit<User, "user_id" | "password">;
 
 /**
- * Represents user data for profile update operations inferred from the validation schema, which
- * enables partial updates to user profiles with security validation.
+ * Represents user data for profile update operations.
  *
  * @see {@link updateUserSchema} - The Zod schema defining this structure's validation rules.
  */

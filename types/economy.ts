@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 /**
- * Robust schema for economic API response data validation, which
- * validates the response structure and content types for economic
- * news and market trends data.
+ * Robust schema for economic news API response data validation.
  *
  * @see {@link News} - The type inferred from this schema.
  */
@@ -31,25 +29,21 @@ export const newsSchema = z.object({
 }).passthrough();
 
 /**
- * Represents economic news API response data inferred from the schema, which
- * contains structured information about financial news articles and metadata.
+ * Represents economic news API response data.
  *
  * @see {@link newsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type News = z.infer<typeof newsSchema>;
 
 /**
- * Represents a single news article with metadata and content-related fields, which
- * provides structured access to article content, publication details, and source information.
+ * Represents a single news article with metadata and content-related fields.
  *
  * @see {@link News} - The parent type this is extracted from.
  */
 export type Article = News["response"]["data"][0];
 
 /**
- * Robust schema for economic indicator time series data validation, which
- * validates the response structure and content types for economic indicator
- * time series data.
+ * Robust schema for economic indicator time series API response data validation.
  *
  * @see {@link IndicatorTrends} - The type inferred from this schema.
  */
@@ -59,17 +53,14 @@ export const indicatorTrendsSchema = z.array(z.object({
 }));
 
 /**
- * Represents time series data for economic indicators (GDP, unemployment, etc.), which
- * provides chronological data points for tracking economic performance metrics.
+ * Represents time series data for economic indicators (GDP, unemployment, etc.).
  *
  * @see {@link indicatorTrendsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type IndicatorTrends = z.infer<typeof indicatorTrendsSchema>;
 
 /**
- * Robust schema for individual stock market data points validation, which
- * validates the response structure and content types for individual stock
- * market data points.
+ * Robust schema for individual stock market data points API response data validation.
  *
  * @see {@link StockIndicator} - The type inferred from this schema.
  */
@@ -82,17 +73,14 @@ export const stockIndicatorSchema = z.object({
 });
 
 /**
- * Represents a single stock data point with price and movement metrics, which
- * captures current pricing, trading volume, and directional market movements.
+ * Represents a single stock data point with price and movement metrics.
  *
  * @see {@link stockIndicatorSchema} - The Zod schema defining this structure's validation rules.
  */
 export type StockIndicator = z.infer<typeof stockIndicatorSchema>;
 
 /**
- * Robust schema for aggregated stock market trends validation, which
- * validates the response structure and content types for aggregated
- * stock market trends data.
+ * Robust schema for aggregated stock market trends API response data validation.
  *
  * @see {@link StockTrends} - The type inferred from this schema.
  */
@@ -105,16 +93,14 @@ export const stockTrendsSchema = z.object({
 });
 
 /**
- * Represents aggregated stock market data including top gainers, losers and active stocks, which
- * summarizes significant market movements and trading activity for analysis.
+ * Represents aggregated stock market data including top gainers, losers and active stocks.
  *
  * @see {@link stockTrendsSchema} - The Zod schema defining this structure's validation rules.
  */
 export type StockTrends = z.infer<typeof stockTrendsSchema>;
 
 /**
- * Represents a collection of economic indicators and stock market data time series, which
- * aggregates financial metrics across multiple indicators for trend analysis.
+ * Represents a collection of economic indicators and stock market data time series.
  *
  * @see {@link IndicatorTrends} - The type for economic indicator time series data.
  * @see {@link StockTrends} - The type for aggregated stock market trends data.
@@ -122,8 +108,7 @@ export type StockTrends = z.infer<typeof stockTrendsSchema>;
 export type Trends = Record<string, IndicatorTrends[] | StockTrends>;
 
 /**
- * Comprehensive economic data for dashboard financial insights, which
- * integrates news and economic trend information for user analysis.
+ * Comprehensive economic data for dashboard financial insights.
  *
  * @see {@link News} - The economic news component.
  * @see {@link Trends} - The economic trends component.

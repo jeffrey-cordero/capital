@@ -1,6 +1,7 @@
 /**
- * Common HTTP status codes used throughout the application,
- * defined as constants to ensure consistency and reduce potential errors.
+ * Represents the HTTP status codes used throughout the application.
+ *
+ * @see {@link ServerResponse} - The type for API response structure.
  */
 export const HTTP_STATUS = {
    OK: 200,
@@ -16,17 +17,15 @@ export const HTTP_STATUS = {
 } as const;
 
 /**
- * Represents standard API response structure with status code and optional data/errors, which
- * provides a consistent interface for all server responses with appropriate status codes and
- * payload containers.
+ * Represents the standard API response structure with status code and optional data/errors.
  *
  * @see {@link HTTP_STATUS} - The HTTP status codes used throughout the application.
  */
 export type ServerResponse = {
-   /** HTTP status code */
+   /* HTTP status code */
    code: number;
-   /** Optional data payload */
+   /* Optional data payload */
    data?: any;
-   /** Optional error details */
+   /* Optional errors payload */
    errors?: Record<string, string>;
 };

@@ -3,24 +3,22 @@ import { z } from "zod";
 import { zodPreprocessNumber } from "./numerics";
 
 /**
- * Reserved words (case-insensitive) for budget system integrity
+ * Reserved category names for main budget categories.
  */
 const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
 
 /**
- * Robust schema for monthly budget goals with comprehensive validation, which
- * ensures data integrity with strict validation for identifiers, numeric values,
- * and temporal constraints preventing impossible budget configurations.
+ * Robust Zod schema for monthly budget goal validation.
  *
  * @see {@link Budget} - The type inferred from this schema.
  */
 export const budgetSchema = z.object({
-   /** Unique budget category identifier (UUID) */
+   /* Unique budget category identifier */
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
 
-   /** Target monetary amount with range protection (0-999B) */
+   /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal must be a valid number"
    }).min(0, {
@@ -29,7 +27,7 @@ export const budgetSchema = z.object({
       message: "Goal exceeds the maximum allowed value"
    })),
 
-   /** Target month with historical and future bounds (1-12) */
+   /* Budget month */
    month: zodPreprocessNumber(z.coerce.number({
       message: "Month must be a valid number"
    }).int({
@@ -40,7 +38,7 @@ export const budgetSchema = z.object({
       message: "Month must be 12 or less"
    })),
 
-   /** Target year with historical and future bounds (1800-present) */
+   /* Budget year */
    year: zodPreprocessNumber(z.coerce.number({
       message: "Year must be a valid number"
    }).int({
@@ -51,7 +49,7 @@ export const budgetSchema = z.object({
       message: `Year cannot be later than ${new Date().getFullYear()}`
    }))
 }).refine(data => {
-   // Protection against future budget entries
+   // Prevent future budget entries
    const today = new Date();
    const month = today.getMonth() + 1;
    const year = today.getFullYear();
@@ -63,35 +61,32 @@ export const budgetSchema = z.object({
 });
 
 /**
- * Robust schema for budget categories with data integrity safeguards, which
- * enforces consistent naming, type classification, and order sequencing
- * with protection against reserved names and invalid inputs.
+ * Robust Zod schema for budget category validation.
  *
  * @see {@link BudgetCategory} - The type inferred from this schema.
  */
 export const budgetCategorySchema = z.object({
-   /** Unique user identifier (UUID) */
+   /* Unique user identifier */
    user_id: z.string().trim().uuid({
       message: "User ID must be a valid UUID"
    }).optional(),
 
-   /** Unique budget category identifier (UUID) */
+   /* Unique budget category identifier */
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
 
-   /** Income/Expenses classification */
+   /* Budget category type */
    type: z.enum(['Income', 'Expenses'], {
       message: "Type must be either 'Income' or 'Expenses'"
    }),
 
-   /** Budget category identifier with reserved word protection (1-30 characters) */
+   /* Budget category name */
    name: z.preprocess((value) => {
       if (typeof value === "string") {
          const trimmed = value.trim();
 
          if (RESERVED_NAMES.includes(trimmed.toLowerCase()) || trimmed.toLowerCase() === "null") {
-            // Reserved for main categories
             return "__RESERVED__";
          }
 
@@ -103,11 +98,10 @@ export const budgetCategorySchema = z.object({
       .max(30, { message: "Name must be at most 30 characters" })
       .refine(val => val !== "__RESERVED__", {
          message: "Category name cannot be 'Income', 'Expenses', or 'null'"
-      })
-      .nullable()
+      }).nullable()
    ),
 
-   /** Display sequence with integer validation (0-2B) */
+   /* Display sequence */
    category_order: zodPreprocessNumber(z.coerce.number({
       message: "Category order must be a valid number"
    }).int({
@@ -120,72 +114,66 @@ export const budgetCategorySchema = z.object({
 });
 
 /**
- * Budget category classification types, which defines the two primary
- * budget categories for financial organization.
+ * Represents budget category classification types.
  *
  * @see {@link OrganizedBudgets} - The budget structure using these type classifications.
  */
 export type BudgetType = "Income" | "Expenses";
 
 /**
- * Represents the budget period for a budget entry to a respective budget category, which
- * defines the temporal scope of a budget goal with month and year components.
+ * Represents the budget period for a specific budget category entry.
  *
  * @see {@link Budget} - The budget entry type using this period definition.
  */
 export type BudgetPeriod = { month: number, year: number };
 
 /**
- * Represents budget goal entry excluding user identifier inferred from the validation schema
+ * Represents budget goal entry excluding user identifier.
  *
  * @see {@link budgetSchema} - The Zod schema defining this structure's validation rules.
  */
 export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
 
 /**
- * Represents budget amount and period without the unique budget category identifier
+ * Represents budget amount and period excluding the unique budget category identifier.
  */
 export type BudgetGoal = Omit<Budget, "budget_category_id">;
 
 /**
- * Represents complete budget category with associated goals and metadata, which
- * combines core category information with temporal goal entries and
- * tracking of current goal relevance with properties inferred from the
- * validation schema.
+ * Represents complete budget category with associated goals and metadata.
  *
  * @see {@link budgetCategorySchema} - The Zod schema defining this structure's validation rules.
  */
 export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & {
-   /** List of goals associated with the budget category */
+   /* List of goals associated with the budget category */
    goals: BudgetGoal[];
-   /** Index of the current relevant goal */
+   /* Index of the current relevant goal */
    goalIndex: number;
 };
 
 /**
- * Represents hierarchical budget structure for a single type (Income/Expenses), which
- * organizes parent category with all subcategories and their respective goals.
+ * Represents hierarchical budget structure for a single type (Income/Expenses).
  */
 export type OrganizedBudget = {
-   /** Unique budget category identifier (UUID) */
+   /* Main budget category identifier */
    budget_category_id: string;
-   /** Index of the current relevant goal */
+   /* Index of the current relevant goal */
    goalIndex: number;
-   /** List of goals associated with the main budget category */
+   /* List of goals associated with the main budget category */
    goals: BudgetGoal[];
-   /** List of subcategories associated with the main budget category */
+   /* List of subcategories associated with the main budget category */
    categories: Array<BudgetCategory>;
 };
 
 /**
- * Represents complete budget domain model with Income and Expenses hierarchies, which
- * represents the entire budget system organization.
+ * Represents complete budget domain model with Income and Expenses hierarchies
+ * for a given user.
  *
  * @see {@link OrganizedBudget} - The type for a single budget type hierarchy.
  */
 export interface OrganizedBudgets {
-   /** Income budget hierarchy */
+   /* Income budget hierarchy */
    Income: OrganizedBudget;
-   /** Expenses budget hierarchy */
+   /* Expenses budget hierarchy */
    Expenses: OrganizedBudget;
 }

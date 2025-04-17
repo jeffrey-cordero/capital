@@ -6,8 +6,7 @@ import type { UserDetails } from "./user";
 
 /**
  * Represents complete dashboard data model containing all elements needed for the main view, which
- * integrates accounts, budgets, transactions, economy data, and user settings to provide a
- * comprehensive financial overview.
+ * integrates accounts, budgets, transactions, economy data, and user settings.
  *
  * @see {@link Economy} - The economy data model.
  * @see {@link Account} - The accounts data model.

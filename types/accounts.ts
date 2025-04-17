@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { zodPreprocessNumber } from './numerics';
 
 /**
- * Core account types supported in the application
+ * Core account types supported in the application.
  */
 const ACCOUNT_TYPES: readonly string[] = [
    "Checking", "Savings", "Credit Card", "Debt",
@@ -11,16 +11,14 @@ const ACCOUNT_TYPES: readonly string[] = [
 ] as const;
 
 /**
- * Account types representing financial liabilities, which
- * categorizes accounts with negative expected balances.
+ * Account types representing financial liabilities.
  *
  * @see {@link Account} - The account type these liabilities are part of.
  */
 export const liabilities: Set<string> = new Set(["Debt", "Credit Card", "Loan"]);
 
 /**
- * All supported account types defined as a Set for efficient lookups, which
- * provides constant-time membership testing for account type validation.
+ * All supported account types defined as a Set for efficient lookups.
  *
  * @see {@link Account} - The account type using these type definitions.
  */
@@ -35,26 +33,24 @@ export const types: Set<string> = new Set(ACCOUNT_TYPES);
 export const images: Set<string> = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
 
 /**
- * Robust schema for financial account validation with comprehensive rules, which
- * enforces strict type safety and business logic constraints for all account data
- * including format validation, numeric boundaries, and temporal validations.
+ * Robust Zod schema for financial account validation.
  *
  * @see {@link Account} - The type inferred from this schema.
  */
 export const accountSchema = z.object({
-   /** Unique account identifier (UUID) */
+   /* Unique account identifier */
    account_id: z.string().trim().uuid({
       message: "Account ID must be a valid UUID"
    }).optional(),
 
-   /** Account display name (1-30 characters) */
+   /* Account display name */
    name: z.string().trim().min(1, {
       message: "Name must be at least 1 character"
    }).max(30, {
       message: "Name must be at most 30 characters"
    }),
 
-   /** Current monetary balance with strict range validation (-999B to 999B) */
+   /* Current monetary balance */
    balance: zodPreprocessNumber(
       z.coerce.number().min(-999_999_999_999.99, {
          message: "Balance is below the minimum allowed value"
@@ -63,7 +59,7 @@ export const accountSchema = z.object({
       })
    ),
 
-   /** Last update timestamp with validation against future dates (1800-present) */
+   /* Last update timestamp */
    last_updated: z.coerce.date({
       message: "Last updated must be a valid date representation"
    }).min(new Date("1800-01-01"), {
@@ -72,17 +68,17 @@ export const accountSchema = z.object({
       message: "Last updated cannot be in the future"
    }).transform((date) => date.toISOString()),
 
-   /** Account classification from predefined types */
+   /* Account classification */
    type: z.enum(ACCOUNT_TYPES as [string, ...string[]], {
-      message: `Invalid account type. Must be one of: ${ACCOUNT_TYPES.join(', ')}`
+      message: `Invalid account type. Must be one of: ${ACCOUNT_TYPES.join(", ")}`
    }),
 
-   /** Visual representation reference (predefined type or custom URL) */
+   /* Visual account representation */
    image: z.enum(Array.from(images) as [string, ...string[]]).or(z.string().url({
       message: "Image must be a valid URL"
    })).or(z.literal("")).nullable().optional(),
 
-   /** Display priority with bounds protection (0-2B) */
+   /* Display priority */
    account_order: zodPreprocessNumber(z.coerce.number().int({
       message: "Account order must be an integer"
    }).min(0, {
@@ -93,7 +89,7 @@ export const accountSchema = z.object({
 });
 
 /**
- * Represents the type of a financial account inferred from the validation schema.
+ * Represents the type of a financial account.
  *
  * @see {@link accountSchema} - The Zod schema defining this structure's validation rules.
  */
