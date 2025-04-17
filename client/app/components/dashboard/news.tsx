@@ -15,7 +15,7 @@ import {
    useTheme
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type News, type NewsArticle } from "capital/news";
+import { type News, type NewsArticle } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -174,7 +174,7 @@ function NewsItem({ article }: { article: NewsArticle }): React.ReactNode {
  * @returns {React.ReactNode} The Articles component
  */
 export default function Articles(): React.ReactNode {
-   const news: News = useSelector((state: RootState) => state.markets.value.news);
+   const news: News = useSelector((state: RootState) => state.economy.value.news);
    const items: NewsArticle[] = useMemo(() => {
       // Articles based on published date descending
       return [...news.response.data].reverse().slice(0, 24);

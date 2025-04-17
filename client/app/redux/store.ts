@@ -3,7 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import accountsReducer from "@/redux/slices/accounts";
 import authenticationReducer from "@/redux/slices/authentication";
 import budgetsReducer from "@/redux/slices/budgets";
-import marketReducer from "@/redux/slices/markets";
+import economyReducer from "@/redux/slices/economy";
 import notificationsReducer from "@/redux/slices/notifications";
 import settingsReducer from "@/redux/slices/settings";
 import themeReducer from "@/redux/slices/theme";
@@ -17,7 +17,7 @@ const store = configureStore({
       theme: themeReducer,
       authentication: authenticationReducer,
       notifications: notificationsReducer,
-      markets: marketReducer,
+      economy: economyReducer,
       accounts: accountsReducer,
       budgets: budgetsReducer,
       transactions: transactionsReducer,

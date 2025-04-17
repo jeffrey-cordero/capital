@@ -12,7 +12,7 @@ import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 export default function Finances(): React.ReactNode {
    return (
       <Box
-         id = "marketTrends"
+         id = "finances"
          sx = { { width: "100%" } }
       >
          <Box

@@ -8,7 +8,7 @@ import {
    Typography
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { IndicatorTrends, MarketTrends, StockIndicator, StockTrends } from "capital/markets";
+import type { IndicatorTrends, StockIndicator, StockTrends, Trends } from "capital/economy";
 import { useSelector } from "react-redux";
 
 import Graph from "@/components/global/graph";
@@ -174,12 +174,12 @@ function Stocks({ data }: StocksProps): React.ReactNode {
 }
 
 /**
- * The Markets component to render the market trends, such as indicators and stocks.
+ * The Economy component to render the economy trends, such as indicators and stocks.
  *
- * @returns {React.ReactNode} The Markets component
+ * @returns {React.ReactNode} The Economy component
  */
-export default function Markets(): React.ReactNode {
-   const trends: MarketTrends = useSelector((state: RootState) => state.markets.value.trends);
+export default function Economy(): React.ReactNode {
+   const trends: Trends = useSelector((state: RootState) => state.economy.value.trends);
 
    // Extract and format indicators data
    const indicators: Record<string, IndicatorTrends[]> = Object.keys(trends)
@@ -197,7 +197,7 @@ export default function Markets(): React.ReactNode {
    return (
       <Stack
          direction = "column"
-         id = "markets"
+         id = "economy"
          sx = { { justifyContent: "space-between" } }
       >
          <Stack
@@ -205,7 +205,7 @@ export default function Markets(): React.ReactNode {
             sx = { { my: 4 } }
          >
             <Box
-               alt = "Stocks"
+               alt = "Economy"
                component = "img"
                src = "/svg/economy.svg"
                sx = { { height: 300, mx: "auto", mb: -3 } }

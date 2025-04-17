@@ -94,8 +94,8 @@ const dashboard: NavigationLink[] = [{
    title: "Budgets",
    icon: faPieChart
 }, {
-   path: "/dashboard#markets",
-   title: "Markets",
+   path: "/dashboard#economy",
+   title: "Economy",
    icon: faBusinessTime
 }, {
    path: "/dashboard#news",

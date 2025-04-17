@@ -1,8 +1,8 @@
 import { Container, Grow, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
+import Markets from "@/components/dashboard/economy";
 import Finances from "@/components/dashboard/finances";
-import Markets from "@/components/dashboard/markets";
 import Articles from "@/components/dashboard/news";
 
 /**
