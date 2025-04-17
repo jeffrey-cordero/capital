@@ -49,14 +49,14 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, "Transactions", JSON.parse(cache) as Transaction[]);
+      return sendServiceResponse(200, JSON.parse(cache) as Transaction[]);
    }
 
    // Cache miss - fetch from database and store in the cache
    const result: Transaction[] = await transactionsRepository.findByUserId(user_id);
    setCacheValue(key, TRANSACTION_CACHE_DURATION, JSON.stringify(result));
 
-   return sendServiceResponse(200, "Transactions", result);
+   return sendServiceResponse(200, result);
 }
 
 /**
@@ -71,14 +71,14 @@ export async function createTransaction(user_id: string, transaction: Transactio
    const fields = transactionSchema.strict().safeParse(transaction);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid transaction fields");
+      return sendValidationErrors(fields);
    }
 
    // Create the transaction in the database
    const result: string = await transactionsRepository.create(user_id, fields.data as Transaction);
    clearTransactionCache(user_id);
 
-   return sendServiceResponse(201, "Transaction created", { transaction_id: result });
+   return sendServiceResponse(201, { transaction_id: result });
 }
 
 /**
@@ -91,28 +91,30 @@ export async function createTransaction(user_id: string, transaction: Transactio
  */
 export async function updateTransaction(user_id: string, transaction_id: string, updates: Partial<Transaction>): Promise<ServerResponse> {
    if (!transaction_id) {
-      return sendValidationErrors(null, "Invalid transaction fields", {
+      return sendValidationErrors(null, {
          transaction_id: "Missing transaction ID"
       });
    }
 
    // Ensure there are fields to update
    if (Object.keys(updates).length === 0) {
-      return sendValidationErrors(null, "No transaction fields to update");
+      return sendValidationErrors(null, {
+         transaction: "No transaction fields to update"
+      });
    }
 
    // Validate input against the partial transaction schema
    const fields = transactionSchema.partial().safeParse(updates);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid transaction fields");
+      return sendValidationErrors(fields);
    }
 
    // Update the transaction
    const result: boolean = await transactionsRepository.update(user_id, transaction_id, fields.data as Partial<Transaction>);
 
    if (!result) {
-      return sendServiceResponse(404, "Transaction not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          transaction: "Transaction does not exist or does not belong to the user based on the provided ID"
       });
    }
@@ -129,7 +131,7 @@ export async function updateTransaction(user_id: string, transaction_id: string,
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
    if (!transactionIds) {
-      return sendValidationErrors(null, "Invalid transaction fields", {
+      return sendValidationErrors(null, {
          transactionIds: "Missing transaction IDs"
       });
    }
@@ -138,7 +140,7 @@ export async function deleteTransactions(user_id: string, transactionIds: string
    const result: boolean = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {
-      return sendServiceResponse(404, "Transaction(s) not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          transaction: "Transaction(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }

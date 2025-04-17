@@ -93,7 +93,7 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }
@@ -125,7 +125,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    const fields = userSchema.safeParse(user);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid user fields");
+      return sendValidationErrors(fields);
    }
 
    // Validate user uniqueness by checking for existing username/email
@@ -141,11 +141,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       // Configure JWT token for authentication
       configureToken(res, user_id);
 
-      return sendServiceResponse(201, "Successfully registered", { success: true });
+      return sendServiceResponse(201, { success: true });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
-      return sendServiceResponse(409, "Invalid user fields", undefined, errors);
+      return sendServiceResponse(409, undefined, errors);
    }
 }
 
@@ -164,13 +164,13 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
    const fields = userUpdateSchema.safeParse(updates);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid user fields");
+      return sendValidationErrors(fields);
    }
 
    const details: Partial<UserDetailUpdates> = { ...fields.data };
 
    if (Object.keys(details).length === 0) {
-      return sendServiceResponse(400, "No updates provided");
+      return sendServiceResponse(400, { user: "No updates provided" });
    }
 
    // Validate username and email uniqueness if provided
@@ -184,7 +184,7 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
          // Handle username/email conflicts that are not tied to the current user
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
-         return sendServiceResponse(409, "Invalid user fields", undefined, errors);
+         return sendServiceResponse(409, undefined, errors);
       }
    }
 
@@ -194,14 +194,14 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       const current = await userRepository.findByUserId(user_id);
 
       if (!current) {
-         return sendServiceResponse(404, "User not found", undefined, {
+         return sendServiceResponse(404, undefined, {
             user: "User does not exist based on the provided ID"
          });
       }
 
       // Check if provided password matches current password
       if (!details.password || !(await compare(details.password, current.password))) {
-         return sendServiceResponse(400, "Invalid user fields", undefined, {
+         return sendServiceResponse(400, undefined, {
             password: "Invalid password"
          });
       }
@@ -215,7 +215,7 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
    const result = await userRepository.update(user_id, details);
 
    if (!result) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }
@@ -239,7 +239,7 @@ export async function deleteAccount(req: Request, res: Response, user_id: string
    const result = await userRepository.deleteUser(user_id);
 
    if (!result) {
-      return sendServiceResponse(404, "User not found", undefined, {
+      return sendServiceResponse(404, undefined, {
          user: "User does not exist based on the provided ID"
       });
    }

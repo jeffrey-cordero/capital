@@ -34,7 +34,7 @@ export type News = z.infer<typeof newsSchema>;
 /**
  * Represents the type for the news article data
  */
-export type NewsArticle = News["response"]["data"][0];
+export type Article = News["response"]["data"][0];
 
 /**
  * Represents the schema for the indicator trends data

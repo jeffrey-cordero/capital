@@ -10,13 +10,11 @@ import { sendErrors, sendSuccess } from "@/lib/response";
  * responses with a `400` status code.
  *
  * @param {SafeParseReturnType<any, any> | null} fields - Zod schema validation results (`fields.success = false`)
- * @param {string} message - Error message to include in the response
  * @param {Record<string, string>} [errors] - Optional prepared error details, which assumes `fields` is `null`
  * @returns {ServerResponse} Validation errors response
  */
 export function sendValidationErrors(
    fields: SafeParseReturnType<any, any> | null,
-   message: string,
    errors?: Record<string, string>
 ): ServerResponse {
    if (fields !== null) {
@@ -25,7 +23,6 @@ export function sendValidationErrors(
 
       return {
          code: 400,
-         message: message,
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
                field, errors?.at(0) || "Unknown error"
@@ -36,26 +33,22 @@ export function sendValidationErrors(
       // Custom validation errors
       return {
          code: 400,
-         message: message,
          errors: errors || {}
       };
    }
 }
 
 /**
- * Sends a response from a service request with the specified code, message,
- * data, and errors.
+ * Sends a response from a service request with the specified code, data, and errors.
  *
  * @param {number} code - HTTP status code
- * @param {string} [message] - Optional message to include in the response
  * @param {any} [data] - Optional data to include in the response
  * @param {Record<string, string>} [errors] - Optional prepared error details
  * @returns {ServerResponse} Server response
  */
-export function sendServiceResponse(code: number, message?: string, data?: any, errors?: Record<string, string>): ServerResponse {
+export function sendServiceResponse(code: number, data?: any, errors?: Record<string, string>): ServerResponse {
    return {
       code: code,
-      message: message || undefined,
       data: data ?? undefined,
       errors: errors || undefined
    };
@@ -77,16 +70,16 @@ export const submitServiceRequest = async(
 
       if (result.code === 200 || result.code === 201 || result.code === 204) {
          // Successful request with data or no content
-         return sendSuccess(res, result.code, result.message, result.data ?? undefined);
+         return sendSuccess(res, result.code, result.data ?? undefined);
       } else {
          // Validation errors and/or potential database conflicts
-         return sendErrors(res, result.code, result.message, result.errors);
+         return sendErrors(res, result.code, result.errors);
       }
    } catch (error: any) {
       logger.error(error.stack);
 
-      return sendErrors(res, 500, "Internal Server Error",
-         { server: error.message || error.code || "An unknown error occurred" }
+      return sendErrors(res, 500,
+         { server: "Internal Server Error" }
       );
    }
 };

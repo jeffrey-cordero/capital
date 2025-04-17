@@ -21,20 +21,18 @@ export async function getAuthentication(res: Response, token: string): Promise<S
       // Verify the JWT token, handling expected thrown errors
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
-      return sendServiceResponse(200, "Authenticated Status", { authenticated: true });
+      return sendServiceResponse(200, { authenticated: true });
    } catch (error: any) {
       // Handle JWT verification errors
       if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
          // Clear the expired or invalid authentication token cookies
          res.clearCookie("token");
 
-         return sendServiceResponse(200, "Invalid Token", { authenticated: false });
+         return sendServiceResponse(200, { authenticated: false });
       } else {
          logger.error(error.stack);
 
-         return sendServiceResponse(500, "Internal Server Error", undefined,
-            { server: error.message || error.code || "An unknown error occurred" }
-         );
+         return sendServiceResponse(500, undefined, { server: "Internal Server Error" });
       }
    }
 }
@@ -52,7 +50,7 @@ export async function authenticateUser(res: Response, username: string, password
    const user: User | null = await findByUsername(username);
 
    if (!user || !(await compare(password, user.password))) {
-      return sendServiceResponse(401, "Invalid Credentials", undefined, {
+      return sendServiceResponse(401, undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
       });
@@ -60,7 +58,7 @@ export async function authenticateUser(res: Response, username: string, password
       // Configure JWT token for authentication purposes
       configureToken(res, user?.user_id as string);
 
-      return sendServiceResponse(200, "Successfully logged in", { success: true });
+      return sendServiceResponse(200, { success: true });
    }
 }
 
@@ -75,5 +73,5 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
    // Clear the authentication token cookies
    res.clearCookie("token");
 
-   return sendServiceResponse(200, "Successfully logged out", { success: true });
+   return sendServiceResponse(200, { success: true });
 }

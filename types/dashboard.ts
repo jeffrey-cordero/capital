@@ -10,7 +10,7 @@ import type { UserDetails } from "./user";
 export interface Dashboard {
    economy: Economy;
    accounts: Account[];
+   settings: UserDetails;
    budgets: OrganizedBudgets;
    transactions: Transaction[];
-   settings: UserDetails;
 }

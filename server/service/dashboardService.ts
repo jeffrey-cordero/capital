@@ -172,7 +172,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       const cache = await getCacheValue("economy");
 
       if (cache) {
-         return sendServiceResponse(200, "Economical Data", JSON.parse(cache || "") as Economy);
+         return sendServiceResponse(200, JSON.parse(cache || "") as Economy);
       }
 
       // Check if we have fresh data in the database
@@ -182,7 +182,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       if (!isStale) {
          // Return the existing non-stale database content
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, JSON.stringify(stored.data));
-         return sendServiceResponse(200, "Economical Data", stored.data as Economy);
+         return sendServiceResponse(200, stored.data as Economy);
       }
 
       // Need to fetch from external API's - acquire mutex to prevent duplicate API calls
@@ -193,7 +193,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          const updates = await dashboardRepository.getExternalAPIs();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
-            return sendServiceResponse(200, "Economical Data", updates.data as Economy);
+            return sendServiceResponse(200, updates.data as Economy);
          }
 
          // Define external APIs to fetch
@@ -227,7 +227,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          await dashboardRepository.updateExternalAPIs(time, data);
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, data);
 
-         return sendServiceResponse(200, "Economical Data", economy);
+         return sendServiceResponse(200, economy);
       } finally {
          // Always release the mutex to prevent deadlocks
          release();
@@ -239,7 +239,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       // Use the backup economy data and cache for a shorter duration
       setCacheValue("economy", BACKUP_ECONOMY_DATA_CACHE_DURATION, JSON.stringify(backupEconomyData));
 
-      return sendServiceResponse(200, "Economical Data", backupEconomyData);
+      return sendServiceResponse(200, backupEconomyData);
    }
 }
 
@@ -260,7 +260,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    ]);
 
    // Combine all data into a single dashboard response
-   return sendServiceResponse(200, "Dashboard", {
+   return sendServiceResponse(200, {
       accounts: accounts.data,
       budgets: budgets.data,
       economy: economy.data,

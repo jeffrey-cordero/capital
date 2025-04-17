@@ -58,14 +58,14 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, "Budgets", JSON.parse(cache) as OrganizedBudgets);
+      return sendServiceResponse(200, JSON.parse(cache) as OrganizedBudgets);
    }
 
    // Cache miss - fetch from repository and store in cache
    const result: OrganizedBudgets = await budgetsRepository.findByUserId(user_id);
    setCacheValue(key, BUDGET_CACHE_DURATION, JSON.stringify(result));
 
-   return sendServiceResponse(200, "Budgets", result);
+   return sendServiceResponse(200, result);
 }
 
 /**
@@ -80,13 +80,13 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    const budgetFields = budgetSchema.safeParse(category);
 
    if (!budgetFields.success) {
-      return sendValidationErrors(budgetFields, "Invalid budget fields");
+      return sendValidationErrors(budgetFields);
    }
 
    const categoryFields = budgetCategorySchema.safeParse(category);
 
    if (!categoryFields.success) {
-      return sendValidationErrors(categoryFields, "Invalid budget category fields");
+      return sendValidationErrors(categoryFields);
    }
 
    // Create category and initial budget
@@ -106,20 +106,20 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
  */
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
    if (!category.budget_category_id) {
-      return sendValidationErrors(null, "Invalid budget category fields",
-         { budget_category_id: "Budget category ID is required" }
-      );
+      return sendValidationErrors(null, {
+         budget_category_id: "Budget category ID is required"
+      });
    }
 
    // Validate input against its partial schema
    const fields = budgetCategorySchema.partial().safeParse(category);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget category fields");
+      return sendValidationErrors(fields);
    } else if (category.name === null) {
-      return sendValidationErrors(null, "Invalid budget category fields",
-         { name: "Budget category name can't be null" }
-      );
+      return sendValidationErrors(null, {
+         name: "Budget category name can't be null"
+      });
    }
 
    // Attempt to update the category
@@ -128,15 +128,15 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    // Handle different update scenarios
    switch (result) {
       case "failure":
-         return sendServiceResponse(404, "Budget category not found", undefined,
-            { budget_category_id: "Budget category does not exist based on the provided ID" }
-         );
+         return sendServiceResponse(404, undefined, {
+            budget_category_id: "Budget category does not exist based on the provided ID"
+         });
       case "no_updates":
          return sendServiceResponse(204);
       case "main_category_conflict":
-         return sendServiceResponse(409, "Budget category conflicts", undefined,
-            { budget_category_id: "Main budget categories (Income/Expenses) can't be updated" }
-         );
+         return sendServiceResponse(409, undefined, {
+            budget_category_id: "Main budget categories (Income/Expenses) can't be updated"
+         });
       case "success":
          return clearCacheOnSuccess(user_id);
       default:
@@ -154,9 +154,9 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {
    // Validate category IDs array
    if (!Array.isArray(categoryIds) || !categoryIds.length) {
-      return sendValidationErrors(null, "Invalid category ordering fields",
-         { categories: "Category ID array must be non-empty" }
-      );
+      return sendValidationErrors(null, {
+         categories: "Category ID array must be non-empty"
+      });
    }
 
    // Validate each UUID and create updates array
@@ -168,9 +168,9 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
       const uuidFields = uuidSchema.safeParse(categoryId);
 
       if (!uuidFields.success) {
-         return sendValidationErrors(null, "Invalid category ordering fields",
-            { budget_category_id: `Category ID must be a valid UUID: '${categoryId}'` }
-         );
+         return sendValidationErrors(null, {
+            budget_category_id: `Category ID must be a valid UUID: '${categoryId}'`
+         });
       }
 
       updates.push({ budget_category_id: uuidFields.data, category_order: i });
@@ -180,9 +180,9 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
    const result = await budgetsRepository.updateCategoryOrderings(user_id, updates);
 
    if (!result) {
-      return sendServiceResponse(404, "Invalid category ordering", undefined,
-         { categories: "No possible ordering updates based on provided category IDs" }
-      );
+      return sendServiceResponse(404, undefined, {
+         categories: "No possible ordering updates based on provided category IDs"
+      });
    }
 
    return clearCacheOnSuccess(user_id);
@@ -200,21 +200,21 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
    const fields = budgetSchema.safeParse(budget);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget fields");
+      return sendValidationErrors(fields);
    }
 
    // Create or update budget
    const result = await budgetsRepository.createBudget(fields.data as Budget);
 
    if (result === "failure") {
-      return sendServiceResponse(404, "Budget category not found", undefined,
-         { budget_category_id: "No budget category found based on the provided budget category ID" }
-      );
+      return sendServiceResponse(404, undefined, {
+         budget_category_id: "No budget category found based on the provided budget category ID"
+      });
    }
 
    // Invalidate cache to ensure fresh data on next fetch
    clearBudgetCache(user_id);
-   return sendServiceResponse(201, "Budget created successfully", { success: true });
+   return sendServiceResponse(201, { success: true });
 }
 
 /**
@@ -229,16 +229,16 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
    const fields = budgetSchema.safeParse(budget);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid budget fields");
+      return sendValidationErrors(fields);
    }
 
    // Update budget
    const result = await budgetsRepository.updateBudget(fields.data as Budget);
 
    if (!result) {
-      return sendServiceResponse(404, "Budget not found", undefined,
-         { budget_category_id: "Budget does not exist based on the provided year, month, and budget category ID" }
-      );
+      return sendServiceResponse(404, undefined, {
+         budget_category_id: "Budget does not exist based on the provided year, month, and budget category ID"
+      });
    }
 
    return clearCacheOnSuccess(user_id);
@@ -253,18 +253,18 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
  */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    if (!budget_category_id) {
-      return sendValidationErrors(null, "Invalid budget category fields",
-         { budget_category_id: "Budget category ID is required" }
-      );
+      return sendValidationErrors(null, {
+         budget_category_id: "Budget category ID is required"
+      });
    }
 
    // Delete category
    const result = await budgetsRepository.deleteCategory(user_id, budget_category_id);
 
    if (!result) {
-      return sendServiceResponse(404, "Budget category not found", undefined,
-         { budget_category_id: "Budget category does not exist based on the provided budget category ID" }
-      );
+      return sendServiceResponse(404, undefined, {
+         budget_category_id: "Budget category does not exist based on the provided budget category ID"
+      });
    }
 
    return clearCacheOnSuccess(user_id);

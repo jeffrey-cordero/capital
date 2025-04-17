@@ -52,14 +52,14 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, "Accounts", JSON.parse(cache) as Account[]);
+      return sendServiceResponse(200, JSON.parse(cache) as Account[]);
    }
 
    // Cache miss - fetch from database and store in cache
    const result: Account[] = await accountsRepository.findByUserId(user_id);
    setCacheValue(key, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
 
-   return sendServiceResponse(200, "Accounts", result);
+   return sendServiceResponse(200, result);
 }
 
 /**
@@ -74,7 +74,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
    const fields = accountSchema.strict().safeParse(account);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid account fields");
+      return sendValidationErrors(fields);
    }
 
    // Create account
@@ -82,7 +82,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
 
    // Invalidate cache to ensure fresh data on next fetch
    clearAccountCache(user_id);
-   return sendServiceResponse(201, "Account created", { account_id });
+   return sendServiceResponse(201, { account_id });
 }
 
 /**
@@ -98,24 +98,24 @@ export async function updateAccount(
 ): Promise<ServerResponse> {
    // Validate base account fields
    if (!account.account_id) {
-      return sendValidationErrors(null, "Invalid account fields",
-         { account_id: "Missing account ID" });
+      return sendValidationErrors(null, { account_id: "Missing account ID" });
    } else if (Object.keys(account).length <= 1) {
       // Last updated is required for timezone purposes
-      return sendValidationErrors(null, "No account fields to update other than `last_updated`");
+      return sendValidationErrors(null, { account: "No account fields to update other than `last_updated`" });
    }
 
    const fields = accountSchema.partial().safeParse(account);
 
    if (!fields.success) {
-      return sendValidationErrors(fields, "Invalid account fields");
+      return sendValidationErrors(fields);
    }
 
    const result = await accountsRepository.updateDetails(account.account_id, fields.data as Partial<Account>);
 
    if (!result) {
-      return sendServiceResponse(404, "Account not found", undefined,
-         { account: "Account does not exist based on the provided ID" });
+      return sendServiceResponse(404, undefined, {
+         account: "Account does not exist based on the provided ID"
+      });
    }
 
    return clearCacheOnSuccess(user_id);
@@ -131,8 +131,9 @@ export async function updateAccount(
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate array of account IDs
    if (!Array.isArray(accounts) || !accounts?.length) {
-      return sendValidationErrors(null, "Invalid account ordering fields",
-         { accounts: "Account ID array must be non-empty" });
+      return sendValidationErrors(null, {
+         accounts: "Account ID array must be non-empty"
+      });
    }
 
    // Validate each account ID against UUID schema
@@ -143,9 +144,9 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       const uuidFields = uuidSchema.safeParse(accounts[i]);
 
       if (!uuidFields.success) {
-         return sendValidationErrors(null, "Invalid account ordering fields",
-            { account_id: `Account ID must be a valid UUID: '${accounts[i]}'` }
-         );
+         return sendValidationErrors(null, {
+            account_id: `Account ID must be a valid UUID: '${accounts[i]}'`
+         });
       }
 
       updates.push({ account_id: uuidFields.data, account_order: i });
@@ -155,8 +156,9 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    const result = await accountsRepository.updateOrdering(user_id, updates);
 
    if (!result) {
-      return sendServiceResponse(404, "Invalid account ordering fields", undefined,
-         { accounts: "No possible ordering updates based on provided account IDs" });
+      return sendServiceResponse(404, undefined, {
+         accounts: "No possible ordering updates based on provided account IDs"
+      });
    }
 
    return clearCacheOnSuccess(user_id);
@@ -172,16 +174,18 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
    // Validate account ID input
    if (!account_id) {
-      return sendValidationErrors(null, "Invalid account fields",
-         { account_id: "Account ID is required" });
+      return sendValidationErrors(null, {
+         account_id: "Account ID is required"
+      });
    }
 
    // Delete account
    const result = await accountsRepository.deleteAccount(user_id, account_id);
 
    if (!result) {
-      return sendServiceResponse(404, "Account not found", undefined,
-         { account: "Account does not exist based on the provided ID" });
+      return sendServiceResponse(404, undefined, {
+         account: "Account does not exist based on the provided ID"
+      });
    }
 
    return clearCacheOnSuccess(user_id);
