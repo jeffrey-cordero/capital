@@ -7,7 +7,7 @@ import { createCategory } from "@/repository/budgetsRepository";
 /**
  * The fields that can be updated for a user
  */
-const USER_UPDATES = ["username", "name", "password", "email"] as const;
+const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
 
 /**
  * Finds conflicting users based on username and/or email.
@@ -20,7 +20,7 @@ const USER_UPDATES = ["username", "name", "password", "email"] as const;
 export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
    const conflicts = `
-      SELECT * FROM users 
+      SELECT * FROM users
       WHERE (username_normalized = $1 OR email_normalized = $2)
       AND (user_id IS DISTINCT FROM $3);
    `;
@@ -40,7 +40,7 @@ export async function findConflictingUsers(username: string, email: string, user
 export async function findByUsername(username: string): Promise<User | null> {
    // Find user by their unique username
    const search = `
-      SELECT * FROM users 
+      SELECT * FROM users
       WHERE username = $1;
    `;
    const result: User[] = await query(search, [username]);
@@ -57,7 +57,7 @@ export async function findByUsername(username: string): Promise<User | null> {
 export async function findByUserId(user_id: string): Promise<User | null> {
    // Find user by their unique user ID
    const search = `
-      SELECT * FROM users 
+      SELECT * FROM users
       WHERE user_id = $1;
    `;
    const result: User[] = await query(search, [user_id]);

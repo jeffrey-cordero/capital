@@ -91,7 +91,7 @@ export default function Details(): React.ReactNode {
             reset({
                name: updates.name || settings.name,
                birthday: (updates.birthday || settings.birthday).split("T")[0]
-            });
+            }, { keepDirty: false });
          }
       } catch (error) {
          console.error("Failed to update settings:", error);

@@ -86,7 +86,9 @@ export type User = Omit<z.infer<typeof userSchema>, "verifyPassword">;
  * @see {@link UserUpdates} - The type inferred from this schema.
  */
 export const updateUserSchema = userSchema.innerType().partial().extend({
-  newPassword: passwordSchema
+  password: passwordSchema.optional(),
+  newPassword: passwordSchema.optional(),
+  verifyPassword: passwordSchema.optional()
 }).superRefine((data, ctx) => {
   const { password, newPassword, verifyPassword } = data;
 
