@@ -81,8 +81,6 @@ export async function updateDetails(user_id: string, account_id: string, updates
    values.push(user_id, account_id);
    param++;
 
-   console.log(fields, values, param);
-
    const update = `
       UPDATE accounts
       SET ${fields.join(", ")}

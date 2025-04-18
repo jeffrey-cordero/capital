@@ -167,7 +167,7 @@ export async function updateCategory(
    values.push(user_id, budget_category_id);
    param++;
 
-   const updateQuery = `
+   const update = `
       UPDATE budget_categories
       SET ${fields.join(", ")}
       WHERE user_id = $${param - 1}
@@ -176,7 +176,7 @@ export async function updateCategory(
    `;
 
    try {
-      const result = await query(updateQuery, values);
+      const result = await query(update, values);
 
       return result.length > 0;
    } catch (error: any) {
@@ -217,9 +217,6 @@ export async function deleteCategory(user_id: string, budget_category_id: string
  * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
  */
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
-   // Skip processing if no updates provided
-   if (!Array.isArray(updates) || updates.length === 0) return true;
-
    // Bulk update category ordering formatting
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
@@ -241,6 +238,26 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 /**
+ * Verifies if a budget category belongs to a user within a transaction block.
+ *
+ * @param {PoolClient} client - The database client
+ * @param {string} user_id - The user ID
+ * @param {string} budget_category_id - The budget category ID
+ * @returns {Promise<boolean>} True if the budget category belongs to the user, false otherwise
+ */
+async function verifyCategoryOwnership(client: PoolClient, user_id: string, budget_category_id: string): Promise<boolean> {
+   const query = `
+      SELECT 1
+      FROM budget_categories
+      WHERE user_id = $1
+      AND budget_category_id = $2;
+   `;
+   const result = await client.query(query, [user_id, budget_category_id]);
+
+   return result.rows.length > 0;
+}
+
+/**
  * Creates a new budget.
  *
  * @param {string} user_id - The user ID
@@ -249,16 +266,8 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "failure"> {
    return await transaction(async(client: PoolClient): Promise<"created" | "failure"> => {
-      // Fetch the existing budget category
-      const budget_category = `
-         SELECT budget_category_id
-         FROM budget_categories
-         WHERE user_id = $1
-         AND budget_category_id = $2;
-      `;
-      const existing = await client.query(budget_category, [user_id, budget.budget_category_id]);
-
-      if (existing.rows.length === 0) {
+      // Verify that the budget category belongs to the user
+      if (!verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
          return "failure";
       }
 
@@ -289,25 +298,13 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
  */
 export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
-      // Fetch the existing budget category
-      const budget_category = `
-         SELECT budget_category_id
-         FROM budget_categories
-         WHERE user_id = $1
-         AND budget_category_id = $2;
-      `;
-
-      const existing = await client.query(budget_category, [
-         user_id,
-         budget_category_id
-      ]);
-
-      if (existing.rows.length === 0) {
+      // Verify that the budget category belongs to the user
+      if (!verifyCategoryOwnership(client, user_id, budget_category_id)) {
          return false;
       }
 
       // Update the budget record
-      const updateQuery = `
+      const update = `
          UPDATE budgets
          SET goal = $1
          WHERE budget_category_id = $2
@@ -315,7 +312,7 @@ export async function updateBudget(user_id: string, budget_category_id: string, 
          AND month = $4
          RETURNING budget_category_id;
       `;
-      const result = await client.query(updateQuery, [
+      const result = await client.query(update, [
          updates.goal,
          updates.budget_category_id,
          updates.year,

@@ -9,13 +9,12 @@ import { query, transaction } from "@/lib/database";
  * @returns {Promise<{ time: string, data: Economy } | null>} The latest economic data
  */
 export async function getEconomicData(): Promise<{ time: string, data: Economy } | null> {
-   // Retrieve the latest external economy data
    const search = `
       SELECT *
       FROM economy
       LIMIT 1;
    `;
-   const result: { time: string, data: Economy }[] = await query(search, []);
+   const result = await query(search, []);
 
    return result.length > 0 ? result[0] : null;
 }
@@ -27,7 +26,6 @@ export async function getEconomicData(): Promise<{ time: string, data: Economy }
  * @param {string} data - The economic data
  */
 export async function updateEconomicData(time: Date, data: string): Promise<void> {
-   // Update the economic data content in the database through a transaction
    return await transaction(async(client: PoolClient) => {
       // Clear existing cache data first
       const removal = `
