@@ -21,7 +21,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
       ORDER BY account_order ASC;
    `;
 
-   return await query(search, [user_id]) as Account[];
+   return await query(search, [user_id]);
 }
 
 /**
@@ -38,10 +38,15 @@ export async function create(user_id: string, account: Account): Promise<string>
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING account_id;
    `;
-   const result = await query(
-      creation,
-      [user_id, account.name, account.type, account.image, account.account_order, account.balance, account.last_updated]
-   ) as { account_id: string }[];
+   const result = await query(creation, [
+      user_id,
+      account.name,
+      account.type,
+      account.image,
+      account.account_order,
+      account.balance,
+      account.last_updated
+   ]);
 
    return result[0].account_id;
 }
@@ -53,43 +58,34 @@ export async function create(user_id: string, account: Account): Promise<string>
  * @param {Partial<Account>} updates - The updates
  * @returns {Promise<boolean>} True if the account was updated, false otherwise
  */
-export async function updateDetails(
-   account_id: string,
-   updates: Partial<Account>
-): Promise<boolean> {
+export async function updateDetails(account_id: string, updates: Partial<Account>): Promise<boolean> {
    // Build dynamic update query based on provided fields
+   let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
-   let params = FIRST_PARAM;
 
    // Only include fields that are present in the updates
    ACCOUNT_UPDATES.forEach((field: string) => {
       if (field in updates) {
-         fields.push(`${field} = $${params}`);
+         fields.push(`${field} = $${param}`);
          values.push(updates[field as keyof Account]);
-         params++;
-
-         // Trim string fields (except account_order which is numeric)
-         if (field !== "account_order") {
-            values[values.length - 1] = String(values[values.length - 1]);
-         }
+         param++;
       }
    });
 
-   // Skip query if no fields to update
+   // Skip query if there are no fields to update
    if (fields.length === 0) return true;
 
-   // Add account ID for WHERE clause
+   // Append the account ID
    values.push(account_id);
 
-   const updateQuery = `
+   const update = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE account_id = $${params}
+      WHERE account_id = $${param}
       RETURNING account_id;
    `;
-
-   const result = await query(updateQuery, values) as Account[];
+   const result = await query(update, values);
 
    return result.length > 0;
 }
@@ -117,8 +113,7 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       AND accounts.user_id = $${params.length + 1}
       RETURNING accounts.user_id;
    `;
-
-   const result = await query(update, [...params, user_id]) as { account_id: string }[];
+   const result = await query(update, [...params, user_id]);
 
    return result.length > 0;
 }
@@ -133,12 +128,11 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    const removal = `
       DELETE FROM accounts
-      WHERE user_id = $1 
+      WHERE user_id = $1
       AND account_id = $2
       RETURNING account_id;
    `;
-
-   const result = await query(removal, [user_id, account_id]) as { account_id: string }[];
+   const result = await query(removal, [user_id, account_id]);
 
    return result.length > 0;
 }

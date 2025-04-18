@@ -74,7 +74,7 @@ BEGIN
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be modified';
    END IF;
-   RETURN NEW;
+   RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 

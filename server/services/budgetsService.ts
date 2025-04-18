@@ -125,25 +125,13 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    // Attempt to update the category
    const result = await budgetsRepository.updateCategory(fields.data as Partial<BudgetCategory>);
 
-   // Handle different update scenarios
-   switch (result) {
-      case "failure":
-         return sendServiceResponse(404, undefined, {
-            budget_category_id: "Budget category does not exist based on the provided ID"
-         });
-      case "no_updates":
-         return sendServiceResponse(204);
-      case "main_category_conflict":
-         return sendServiceResponse(409, undefined, {
-            budget_category_id: "Main budget categories (Income/Expenses) can't be updated"
-         });
-      case "success":
-         return clearCacheOnSuccess(user_id);
-      default:
-         return sendServiceResponse(500, undefined, {
-            budget_category_id: "Unexpected error updating budget category"
-         });
+   if (!result) {
+      return sendServiceResponse(404, undefined, {
+         budget_category_id: "Budget category does not exist based on the provided ID"
+      });
    }
+
+   return clearCacheOnSuccess(user_id);
 }
 
 /**
