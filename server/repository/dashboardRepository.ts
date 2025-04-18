@@ -4,15 +4,15 @@ import { PoolClient } from "pg";
 import { query, transaction } from "@/lib/database";
 
 /**
- * Fetches the latest external economy data from the database.
+ * Fetches the latest economic data from the database.
  *
- * @returns {Promise<{ time: string, data: Economy } | null>} The latest external economy data
+ * @returns {Promise<{ time: string, data: Economy } | null>} The latest economic data
  */
-export async function getExternalAPIs(): Promise<{ time: string, data: Economy } | null> {
+export async function getEconomicData(): Promise<{ time: string, data: Economy } | null> {
    // Retrieve the latest external economy data
    const search = `
       SELECT *
-      FROM external_api_cache
+      FROM economy
       LIMIT 1;
    `;
    const result: { time: string, data: Economy }[] = await query(search, []);
@@ -21,23 +21,23 @@ export async function getExternalAPIs(): Promise<{ time: string, data: Economy }
 }
 
 /**
- * Clears the existing external API data and inserts new external API data.
+ * Clears the existing economic data and inserts new economic data.
  *
- * @param {Date} time - The time of the external API data
- * @param {string} data - The external API data
+ * @param {Date} time - The time of the economic data
+ * @param {string} data - The economic data
  */
-export async function updateExternalAPIs(time: Date, data: string): Promise<void> {
-   // Update the external API data content in the database through a transaction
+export async function updateEconomicData(time: Date, data: string): Promise<void> {
+   // Update the economic data content in the database through a transaction
    return await transaction(async(client: PoolClient) => {
       // Clear existing cache data first
       const removal = `
-         DELETE FROM external_api_cache;
+         DELETE FROM economy;
       `;
       await client.query(removal);
 
       // Insert new external API data
       const insertion = `
-         INSERT INTO external_api_cache (time, data)
+         INSERT INTO economy (time, data)
          VALUES ($1, $2);
       `;
       await client.query(insertion, [time, data]);

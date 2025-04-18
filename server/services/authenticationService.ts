@@ -1,9 +1,9 @@
+import argon2 from "argon2";
 import { ServerResponse } from "capital/server";
 import { User } from "capital/user";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
-import { compare } from "@/lib/cryptography";
 import { logger } from "@/lib/logger";
 import { configureToken } from "@/lib/middleware";
 import { sendServiceResponse } from "@/lib/services";
@@ -49,7 +49,7 @@ export async function authenticateUser(res: Response, username: string, password
    // Authenticate user based on the provided credentials
    const user: User | null = await findByUsername(username);
 
-   if (!user || !(await compare(password, user.password))) {
+   if (!user || !(await argon2.verify(password, user.password))) {
       return sendServiceResponse(401, undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"

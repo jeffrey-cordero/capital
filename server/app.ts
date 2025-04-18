@@ -7,8 +7,6 @@ import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "path";
-import serveIndex from "serve-index";
 
 import { logger } from "@/lib/logger";
 import { sendErrors } from "@/lib/response";
@@ -17,7 +15,8 @@ import dashboardRouter from "@/routers/dashboardRouter";
 import indexRouter from "@/routers/indexRouter";
 import userRouter from "@/routers/userRouter";
 
-export const app = express();
+const app = express();
+const port = process.env.PORT || 8000;
 
 /**
  * Rate limiting with logging measures
@@ -82,12 +81,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /**
- * Serve static files from the resources folder for development purposes
- */
-app.use("/resources", express.static(path.join(__dirname, "resources")));
-app.use("/resources", serveIndex(path.join(__dirname, "resources"), { "icons": true }));
-
-/**
  * Routers for handling requests
  */
 app.use("/", indexRouter);
@@ -114,3 +107,8 @@ app.use(function(error: any, req: Request, res: Response) {
       server: "Internal Server Error"
    });
 });
+
+/**
+ * Run the web server
+ */
+app.listen(port);

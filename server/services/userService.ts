@@ -1,3 +1,4 @@
+import argon2 from "argon2";
 import { ServerResponse } from "capital/server";
 import {
    updateUserSchema,
@@ -8,7 +9,6 @@ import {
 } from "capital/user";
 import { Request, Response } from "express";
 
-import { compare, hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
@@ -135,7 +135,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
 
    if (existingUsers.length === 0) {
       // Hash password and create the new user
-      const hashedPassword = await hash(fields.data.password);
+      const hashedPassword = await argon2.hash(fields.data.password);
       const user_id: string = await userRepository.create({ ...fields.data, password: hashedPassword });
 
       // Configure JWT token for authentication
@@ -200,14 +200,14 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       }
 
       // Check if provided password matches current password
-      if (!details.password || !(await compare(details.password, current.password))) {
+      if (!details.password || !(await argon2.verify(details.password, current.password))) {
          return sendServiceResponse(400, undefined, {
             password: "Invalid password"
          });
       }
 
       // Hash the new password
-      const hashedPassword = await hash(details.newPassword);
+      const hashedPassword = await argon2.hash(details.newPassword);
       details.password = hashedPassword;
    }
 

@@ -176,7 +176,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       }
 
       // Check if we have fresh data in the database
-      const stored = await dashboardRepository.getExternalAPIs();
+      const stored = await dashboardRepository.getEconomicData();
       const isStale = !stored || new Date(stored.time) < new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000);
 
       if (!isStale) {
@@ -190,7 +190,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
       try {
          // Double-check if another request already updated the database
-         const updates = await dashboardRepository.getExternalAPIs();
+         const updates = await dashboardRepository.getEconomicData();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
             return sendServiceResponse(200, updates.data as Economy);
@@ -224,7 +224,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          const time = new Date();
          const data = JSON.stringify(economy);
 
-         await dashboardRepository.updateExternalAPIs(time, data);
+         await dashboardRepository.updateEconomicData(time, data);
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, data);
 
          return sendServiceResponse(200, economy);

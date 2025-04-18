@@ -93,7 +93,7 @@ CREATE TABLE transactions (
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL
 );
 
-CREATE TABLE external_api_cache (
+CREATE TABLE economy (
    time TIMESTAMP PRIMARY KEY,
    data JSONB NOT NULL
 );

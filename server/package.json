@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "npx tsc",
-    "start": "npm run build && NODE_ENV=production ts-node -r module-alias/register ./bin/www.ts",
-    "dev": "npm run build && nodemon -L -r module-alias/register ./bin/www.ts",
+    "start": "npm run build && NODE_ENV=production ts-node -r module-alias/register ./app.ts",
+    "dev": "npm run build && nodemon -L -r module-alias/register ./app.ts",
     "lint": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'"
   },
   "keywords": [],
@@ -35,7 +35,6 @@
     "morgan": "~1.9.1",
     "pg": "^8.13.3",
     "redis": "^4.6.12",
-    "serve-index": "^1.9.1",
     "util": "^0.12.5",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
