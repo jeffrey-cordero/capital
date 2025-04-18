@@ -5,14 +5,14 @@ import Redis from "ioredis";
 import { logger } from "@/lib/logger";
 
 /**
- * Initializes and connects to the Redis server with no retry strategy
+ * Redis client with no retry strategy
  */
 const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6380", {
    retryStrategy: () => null
 });
 
 /**
- * Logs Redis connection errors and acts as a fallback for unexpected errors
+ * Error handler for Redis connection issues
  */
 redisClient.on("error", (error: any) => {
    if (error.code === "ECONNREFUSED") {
@@ -21,10 +21,10 @@ redisClient.on("error", (error: any) => {
 });
 
 /**
- * Retrieves a value from Redis by key
+ * Retrieves a value from Redis cache
  *
- * @param {string} key - Redis key to fetch
- * @returns {Promise<any>} Parsed value or null if key doesn't exist
+ * @param {string} key - Cache key to retrieve
+ * @returns {Promise<string | null>} Cached value or null if not found/error
  */
 export async function getCacheValue(key: string): Promise<string | null> {
    try {
@@ -36,11 +36,11 @@ export async function getCacheValue(key: string): Promise<string | null> {
 }
 
 /**
- * Sets a key-value pair in Redis with a specific time to live (`TTL`) in seconds
+ * Saves a value to Redis cache with expiration
  *
- * @param {string} key - Redis key to set
- * @param {number} time - Time to live (`TTL`) in seconds
- * @param {string} value - Value to store in Redis cache
+ * @param {string} key - Cache key
+ * @param {number} time - Time-to-live in seconds
+ * @param {string} value - String value to store
  */
 export function setCacheValue(key: string, time: number, value: string): void {
    redisClient.setex(key, time, value).catch((error: any) => {
@@ -49,9 +49,9 @@ export function setCacheValue(key: string, time: number, value: string): void {
 }
 
 /**
- * Removes a key from Redis
+ * Deletes a key from Redis cache
  *
- * @param {string} key - Redis key to delete
+ * @param {string} key - Cache key to remove
  */
 export function removeCacheValue(key: string): void {
    redisClient.del(key).catch((error: any) => {
