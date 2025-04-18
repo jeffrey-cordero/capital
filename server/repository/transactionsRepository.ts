@@ -3,7 +3,7 @@ import { Transaction } from "capital/transactions";
 import { FIRST_PARAM, query } from "@/lib/database";
 
 /**
- * The fields that can be updated for a transaction
+ * Updatable transaction fields
  */
 const TRANSACTION_UPDATES = [
    "amount",
@@ -14,10 +14,10 @@ const TRANSACTION_UPDATES = [
 ] as const;
 
 /**
- * Fetches all transactions for a specific user, ordered by date descending.
+ * Fetches user transactions
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<Transaction[]>} The transactions
+ * @param {string} user_id - User identifier
+ * @returns {Promise<Transaction[]>} User's transactions
  */
 export async function findByUserId(user_id: string): Promise<Transaction[]> {
    const search = `
@@ -32,11 +32,11 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
 }
 
 /**
- * Creates a new transaction for a specific user.
+ * Creates a new transaction
  *
- * @param {string} user_id - The user ID
- * @param {Transaction} transaction - The transaction data to insert
- * @returns {Promise<string>} The inserted transaction ID
+ * @param {string} user_id - User identifier
+ * @param {Transaction} transaction - Transaction details
+ * @returns {Promise<string>} Created transaction ID
  */
 export async function create(user_id: string, transaction: Transaction): Promise<string> {
    const creation = `
@@ -57,12 +57,12 @@ export async function create(user_id: string, transaction: Transaction): Promise
 }
 
 /**
- * Updates an existing transaction for a specific user.
+ * Updates a transaction
  *
- * @param {string} user_id - The user ID
- * @param {string} transaction_id - The transaction ID to update
- * @param {Partial<Transaction>} updates - The fields to update
- * @returns {Promise<boolean>} True if the transaction was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} transaction_id - Transaction identifier
+ * @param {Partial<Transaction>} updates - Fields to update
+ * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, transaction_id: string, updates: Partial<Transaction>): Promise<boolean> {
    // Build dynamic update query based on provided fields
@@ -108,11 +108,11 @@ export async function update(user_id: string, transaction_id: string, updates: P
 }
 
 /**
- * Deletes a list of transactions for a specific user.
+ * Deletes transactions
  *
- * @param {string} user_id - The user ID
- * @param {string[]} transactionIds - The transaction IDs to delete
- * @returns {Promise<boolean>} True if any transactions were deleted, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string[]} transactionIds - Transaction identifiers to delete
+ * @returns {Promise<boolean>} Success status
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<boolean> {
    const removal = `

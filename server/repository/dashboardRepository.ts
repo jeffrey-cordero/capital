@@ -4,9 +4,9 @@ import { PoolClient } from "pg";
 import { query, transaction } from "@/lib/database";
 
 /**
- * Fetches the latest economic data from the database.
+ * Fetches latest economic data
  *
- * @returns {Promise<{ time: string, data: Economy } | null>} The latest economic data
+ * @returns {Promise<{ time: string, data: Economy } | null>} Economic data or null if not found
  */
 export async function getEconomicData(): Promise<{ time: string, data: Economy } | null> {
    const search = `
@@ -20,10 +20,10 @@ export async function getEconomicData(): Promise<{ time: string, data: Economy }
 }
 
 /**
- * Clears the existing economic data and inserts new economic data.
+ * Updates economic data
  *
- * @param {Date} time - The time of the economic data
- * @param {string} data - The economic data
+ * @param {Date} time - Timestamp of data update
+ * @param {string} data - Economic data in JSON format
  */
 export async function updateEconomicData(time: Date, data: string): Promise<void> {
    return await transaction(async(client: PoolClient) => {

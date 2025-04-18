@@ -2,16 +2,14 @@ import { Account } from "capital/accounts";
 
 import { FIRST_PARAM, query } from "@/lib/database";
 
-/**
- * The fields that can be updated for an account
- */
+/** Updatable account fields */
 const ACCOUNT_UPDATES = ["name", "type", "image", "account_order", "balance", "last_updated"] as const;
 
 /**
- * Fetches all accounts for a user.
+ * Fetches all accounts for a user
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<Account[]>} The accounts
+ * @param {string} user_id - User identifier
+ * @returns {Promise<Account[]>} User's financial accounts
  */
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
@@ -25,11 +23,11 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
 }
 
 /**
- * Creates a new account.
+ * Creates a new account
  *
- * @param {string} user_id - The user ID
- * @param {Account} account - The account to be inserted
- * @returns {Promise<string>} The inserted account ID
+ * @param {string} user_id - User identifier
+ * @param {Account} account - Account details to create
+ * @returns {Promise<string>} Created account ID
  */
 export async function create(user_id: string, account: Account): Promise<string> {
    // Create account record with basic details
@@ -52,12 +50,12 @@ export async function create(user_id: string, account: Account): Promise<string>
 }
 
 /**
- * Updates the basic details of an account.
+ * Updates account details
  *
- * @param {string} user_id - The user ID
- * @param {string} account_id - The account ID
- * @param {Partial<Account>} updates - The updates
- * @returns {Promise<boolean>} True if the account was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} account_id - Account identifier
+ * @param {Partial<Account>} updates - Fields to update
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account>): Promise<boolean> {
    // Build dynamic update query based on provided fields
@@ -94,11 +92,11 @@ export async function updateDetails(user_id: string, account_id: string, updates
 }
 
 /**
- * Updates the ordering of accounts.
+ * Updates account ordering
  *
- * @param {string} user_id - The user ID
- * @param {Partial<Account>[]} updates - The updates
- * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {Partial<Account>[]} updates - Account order updates
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
    // Bulk update account ordering formatting
@@ -124,9 +122,9 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
 /**
  * Deletes an account
  *
- * @param {string} user_id - The user ID
- * @param {string} account_id - The account ID
- * @returns {Promise<boolean>} True if the account was deleted, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} account_id - Account identifier
+ * @returns {Promise<boolean>} Success status
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    const removal = `

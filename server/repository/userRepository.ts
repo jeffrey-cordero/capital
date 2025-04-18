@@ -5,17 +5,17 @@ import { FIRST_PARAM, query, transaction } from "@/lib/database";
 import { createCategory } from "@/repository/budgetsRepository";
 
 /**
- * The fields that can be updated for a user
+ * Updatable user fields
  */
 const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
 
 /**
- * Finds conflicting users based on username and/or email.
+ * Finds potentially conflicting users
  *
- * @param {string} username - The username
- * @param {string} email - The email
- * @param {string} [user_id] - The potential user ID to exclude from the conflict check
- * @returns {Promise<User[]>} The potential conflicting users
+ * @param {string} username - Username to check
+ * @param {string} email - Email to check
+ * @param {string} [user_id] - User ID to exclude from check
+ * @returns {Promise<User[]>} Matching users
  */
 export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
@@ -31,10 +31,10 @@ export async function findConflictingUsers(username: string, email: string, user
 }
 
 /**
- * Finds a user by their unique username.
+ * Finds user by username
  *
- * @param {string} username - The username
- * @returns {Promise<User | null>} The potential user
+ * @param {string} username - Username to find
+ * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUsername(username: string): Promise<User | null> {
    // Find user by their unique username
@@ -49,10 +49,10 @@ export async function findByUsername(username: string): Promise<User | null> {
 }
 
 /**
- * Finds a user by their unique user ID.
+ * Finds user by ID
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<User | null>} The potential user
+ * @param {string} user_id - User identifier
+ * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUserId(user_id: string): Promise<User | null> {
    // Find user by their unique user ID
@@ -66,10 +66,10 @@ export async function findByUserId(user_id: string): Promise<User | null> {
 }
 
 /**
- * Creates a new user with their initial Income and Expenses budget records.
+ * Creates a new user with initial budget categories
  *
- * @param {User} user - The user to be inserted
- * @returns {Promise<string>} The inserted user ID
+ * @param {User} user - User details
+ * @returns {Promise<string>} Created user ID
  */
 export async function create(user: User): Promise<string> {
    return await transaction(async(client: PoolClient) => {
@@ -119,11 +119,11 @@ export async function create(user: User): Promise<string> {
 }
 
 /**
- * Updates a user's information.
+ * Updates user information
  *
- * @param {string} user_id - The user ID
- * @param {Partial<UserUpdates>} updates - The updates
- * @returns {Promise<boolean>} True if the user was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {Partial<UserUpdates>} updates - Fields to update
+ * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, updates: Partial<UserUpdates>): Promise<boolean> {
    // Build dynamic update query based on provided fields
@@ -158,16 +158,17 @@ export async function update(user_id: string, updates: Partial<UserUpdates>): Pr
 }
 
 /**
- * Deletes a user and their associated data.
+ * Deletes a user and associated data
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<boolean>} True if the user was deleted, false otherwise
+ * @param {string} user_id - User identifier
+ * @returns {Promise<boolean>} Success status
  */
 export async function deleteUser(user_id: string): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
       // Disable the main budget category trigger
       await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
+      // Delete the user
       const deletion = `
          DELETE FROM users
          WHERE user_id = $1;

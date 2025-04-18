@@ -197,7 +197,7 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
       }
 
       // Check if provided password matches current password
-      if (!details.password || !(await argon2.verify(details.password, current.password))) {
+      if (!details.password || !(await argon2.verify(current.password, details.password))) {
          return sendServiceResponse(400, undefined, {
             password: "Invalid password"
          });

@@ -10,15 +10,15 @@ import { PoolClient } from "pg";
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
 
 /**
- * The fields that can be updated for a budget category
+ * Updatable budget category fields
  */
 const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
 
 /**
- * Fetches all budget categories for a user with their respective budget goals.
+ * Fetches budgets with categories for a user
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<OrganizedBudgets>} The organized budgets
+ * @param {string} user_id - User identifier
+ * @returns {Promise<OrganizedBudgets>} Organized budget data
  */
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single query
@@ -86,12 +86,12 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 }
 
 /**
- * Creates a new budget category and initial budget goal record.
+ * Creates a budget category with initial budget goal
  *
- * @param {string} user_id - The user ID
- * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - The budget category
- * @param {PoolClient} [externalClient] - The optional external client for nested transactions
- * @returns {Promise<string>} The budget category ID
+ * @param {string} user_id - User identifier
+ * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - Category details
+ * @param {PoolClient} [externalClient] - Optional client for transactions
+ * @returns {Promise<string>} Created category ID
  */
 export async function createCategory(
    user_id: string,
@@ -134,12 +134,12 @@ export async function createCategory(
 }
 
 /**
- * Updates the basic details of a budget category.
+ * Updates a budget category
  *
- * @param {string} user_id - The user ID
- * @param {string} budget_category_id - The budget category ID
- * @param {Partial<BudgetCategory>} updates - The updates
- * @returns {Promise<boolean>} True if the update was successful, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} budget_category_id - Category identifier
+ * @param {Partial<BudgetCategory>} updates - Fields to update
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateCategory(
    user_id: string,
@@ -191,11 +191,11 @@ export async function updateCategory(
 }
 
 /**
- * Deletes a budget category.
+ * Deletes a budget category
  *
- * @param {string} user_id - The user ID
- * @param {string} budget_category_id - The budget category ID
- * @returns {Promise<boolean>} True if the budget category was deleted, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} budget_category_id - Category identifier
+ * @returns {Promise<boolean>} Success status
  */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<boolean> {
    const removal = `
@@ -210,11 +210,11 @@ export async function deleteCategory(user_id: string, budget_category_id: string
 }
 
 /**
- * Updates the ordering of budget categories.
+ * Updates budget category ordering
  *
- * @param {string} user_id - The user ID
- * @param {Partial<BudgetCategory>[]} updates - The updates
- * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {Partial<BudgetCategory>[]} updates - Category order updates
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
    // Bulk update category ordering formatting
@@ -238,12 +238,12 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 /**
- * Verifies if a budget category belongs to a user within a transaction block.
+ * Verifies if a budget category belongs to a user
  *
- * @param {PoolClient} client - The database client
- * @param {string} user_id - The user ID
- * @param {string} budget_category_id - The budget category ID
- * @returns {Promise<boolean>} True if the budget category belongs to the user, false otherwise
+ * @param {PoolClient} client - Database transaction client
+ * @param {string} user_id - User identifier
+ * @param {string} budget_category_id - Category identifier
+ * @returns {Promise<boolean>} Ownership verification result
  */
 async function verifyCategoryOwnership(client: PoolClient, user_id: string, budget_category_id: string): Promise<boolean> {
    const query = `
@@ -258,11 +258,11 @@ async function verifyCategoryOwnership(client: PoolClient, user_id: string, budg
 }
 
 /**
- * Creates a new budget.
+ * Creates a new budget
  *
- * @param {string} user_id - The user ID
- * @param {Budget} budget - The budget
- * @returns {Promise<"created" | "failure">} The result of the creation or update
+ * @param {string} user_id - User identifier
+ * @param {Budget} budget - Budget details
+ * @returns {Promise<"created" | "failure">} Creation result
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "failure"> {
    return await transaction(async(client: PoolClient): Promise<"created" | "failure"> => {
@@ -289,12 +289,12 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
 }
 
 /**
- * Updates a budget goal.
+ * Updates a budget goal
  *
- * @param {string} user_id - The user ID
- * @param {string} budget_category_id - The budget category ID
- * @param {Budget} updates - The updates
- * @returns {Promise<boolean>} True if the budget goal was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} budget_category_id - Category identifier
+ * @param {Budget} updates - Budget details to update
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
