@@ -196,7 +196,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
    // Create or update budget
    const result = await budgetsRepository.createBudget(user_id, fields.data);
 
-   if (result === "failure") {
+   if (!result) {
       return sendServiceResponse(404, undefined, {
          budget_category_id: "No budget category found based on the provided budget category ID"
       });

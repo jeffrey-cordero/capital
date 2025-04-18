@@ -262,13 +262,13 @@ async function verifyCategoryOwnership(client: PoolClient, user_id: string, budg
  *
  * @param {string} user_id - User identifier
  * @param {Budget} budget - Budget details
- * @returns {Promise<"created" | "failure">} Creation result
+ * @returns {Promise<boolean>} Creation result
  */
-export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "failure"> {
-   return await transaction(async(client: PoolClient): Promise<"created" | "failure"> => {
+export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
+   return await transaction(async(client: PoolClient): Promise<boolean> => {
       // Verify category ownership
       if (!verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
-         return "failure";
+         return false;
       }
 
       // Create budget record
@@ -284,8 +284,8 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
          budget.month
       ]);
 
-      return result.rows.length > 0 ? "created" : "failure";
-   }) as "created" | "failure";
+      return result.rows.length > 0;
+   }) as boolean;
 }
 
 /**
