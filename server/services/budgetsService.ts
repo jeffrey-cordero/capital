@@ -123,7 +123,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    }
 
    // Attempt to update the category
-   const result = await budgetsRepository.updateCategory(fields.data as Partial<BudgetCategory>);
+   const result = await budgetsRepository.updateCategory(user_id, category.budget_category_id, fields.data);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
@@ -194,7 +194,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
    }
 
    // Create or update budget
-   const result = await budgetsRepository.createBudget(fields.data as Budget);
+   const result = await budgetsRepository.createBudget(user_id, fields.data);
 
    if (result === "failure") {
       return sendServiceResponse(404, undefined, {
@@ -223,7 +223,7 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
    }
 
    // Update budget
-   const result = await budgetsRepository.updateBudget(fields.data as Budget);
+   const result = await budgetsRepository.updateBudget(user_id, budget.budget_category_id, fields.data);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {

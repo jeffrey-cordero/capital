@@ -95,9 +95,8 @@ export async function update(user_id: string, transaction_id: string, updates: P
    if (fields.length === 0) return true;
 
    // Append transaction ID and user ID to values array and increment the params index
-   values.push(transaction_id);
+   values.push(transaction_id, user_id);
    params++;
-   values.push(user_id);
 
    const updateQuery = `
       UPDATE transactions

@@ -54,11 +54,12 @@ export async function create(user_id: string, account: Account): Promise<string>
 /**
  * Updates the basic details of an account.
  *
+ * @param {string} user_id - The user ID
  * @param {string} account_id - The account ID
  * @param {Partial<Account>} updates - The updates
  * @returns {Promise<boolean>} True if the account was updated, false otherwise
  */
-export async function updateDetails(account_id: string, updates: Partial<Account>): Promise<boolean> {
+export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account>): Promise<boolean> {
    // Build dynamic update query based on provided fields
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
@@ -76,13 +77,17 @@ export async function updateDetails(account_id: string, updates: Partial<Account
    // Skip query if there are no fields to update
    if (fields.length === 0) return true;
 
-   // Append the account ID
-   values.push(account_id);
+   // Append the user and account ID's
+   values.push(user_id, account_id);
+   param++;
+
+   console.log(fields, values, param);
 
    const update = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE account_id = $${param}
+      WHERE user_id = $${param - 1}
+      AND account_id = $${param}
       RETURNING account_id;
    `;
    const result = await query(update, values);

@@ -110,7 +110,7 @@ export async function updateAccount(
       return sendValidationErrors(fields);
    }
 
-   const result = await accountsRepository.updateDetails(account.account_id, fields.data as Partial<Account>);
+   const result = await accountsRepository.updateDetails(user_id, account.account_id, fields.data);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {

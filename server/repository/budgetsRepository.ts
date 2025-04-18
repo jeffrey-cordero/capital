@@ -136,10 +136,14 @@ export async function createCategory(
 /**
  * Updates the basic details of a budget category.
  *
+ * @param {string} user_id - The user ID
+ * @param {string} budget_category_id - The budget category ID
  * @param {Partial<BudgetCategory>} updates - The updates
  * @returns {Promise<boolean>} True if the update was successful, false otherwise
  */
 export async function updateCategory(
+   user_id: string,
+   budget_category_id: string,
    updates: Partial<BudgetCategory>
 ): Promise<boolean> {
    // Dynamically builds an update query based on the provided updates
@@ -159,13 +163,15 @@ export async function updateCategory(
    // Skip query if there are no fields to update
    if (fields.length === 0) return true;
 
-   // Append the budget category ID
-   values.push(updates.budget_category_id);
+   // Append the user ID and budget category ID
+   values.push(user_id, budget_category_id);
+   param++;
 
    const updateQuery = `
       UPDATE budget_categories
       SET ${fields.join(", ")}
-      WHERE budget_category_id = $${param}
+      WHERE user_id = $${param - 1}
+      AND budget_category_id = $${param}
       RETURNING budget_category_id;
    `;
 
@@ -237,46 +243,85 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 /**
  * Creates a new budget.
  *
+ * @param {string} user_id - The user ID
  * @param {Budget} budget - The budget
  * @returns {Promise<"created" | "failure">} The result of the creation or update
  */
-export async function createBudget(budget: Budget): Promise<"created" | "failure"> {
-   const creation = `
-      INSERT INTO budgets (budget_category_id, goal, year, month)
-      VALUES ($1, $2, $3, $4)
-      RETURNING budget_category_id;
-   `;
-   const result = await query(creation, [
-      budget.budget_category_id,
-      budget.goal,
-      budget.year,
-      budget.month
-   ]);
+export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "failure"> {
+   return await transaction(async(client: PoolClient): Promise<"created" | "failure"> => {
+      // Fetch the existing budget category
+      const budget_category = `
+         SELECT budget_category_id
+         FROM budget_categories
+         WHERE user_id = $1
+         AND budget_category_id = $2;
+      `;
+      const existing = await client.query(budget_category, [user_id, budget.budget_category_id]);
 
-   return result.length > 0 ? "created" : "failure";
+      if (existing.rows.length === 0) {
+         return "failure";
+      }
+
+      // Create the budget record
+      const creation = `
+         INSERT INTO budgets (budget_category_id, goal, year, month)
+         VALUES ($1, $2, $3, $4)
+         RETURNING budget_category_id;
+      `;
+      const result = await client.query(creation, [
+         budget.budget_category_id,
+         budget.goal,
+         budget.year,
+         budget.month
+      ]);
+
+      return result.rows.length > 0 ? "created" : "failure";
+   }) as "created" | "failure";
 }
 
 /**
  * Updates a budget goal.
  *
+ * @param {string} user_id - The user ID
+ * @param {string} budget_category_id - The budget category ID
  * @param {Budget} updates - The updates
  * @returns {Promise<boolean>} True if the budget goal was updated, false otherwise
  */
-export async function updateBudget(updates: Budget): Promise<boolean> {
-   const updateQuery = `
-      UPDATE budgets
-      SET goal = $1
-      WHERE budget_category_id = $2
-      AND year = $3
-      AND month = $4
-      RETURNING budget_category_id;
-   `;
-   const result = await query(updateQuery, [
-      updates.goal,
-      updates.budget_category_id,
-      updates.year,
-      updates.month
-   ]);
+export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
+   return await transaction(async(client: PoolClient): Promise<boolean> => {
+      // Fetch the existing budget category
+      const budget_category = `
+         SELECT budget_category_id
+         FROM budget_categories
+         WHERE user_id = $1
+         AND budget_category_id = $2;
+      `;
 
-   return result.length > 0;
+      const existing = await client.query(budget_category, [
+         user_id,
+         budget_category_id
+      ]);
+
+      if (existing.rows.length === 0) {
+         return false;
+      }
+
+      // Update the budget record
+      const updateQuery = `
+         UPDATE budgets
+         SET goal = $1
+         WHERE budget_category_id = $2
+         AND year = $3
+         AND month = $4
+         RETURNING budget_category_id;
+      `;
+      const result = await client.query(updateQuery, [
+         updates.goal,
+         updates.budget_category_id,
+         updates.year,
+         updates.month
+      ]);
+
+      return result.rows.length > 0;
+   }) as boolean;
 }
