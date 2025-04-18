@@ -74,7 +74,12 @@ BEGIN
    IF OLD.name IS NULL THEN
       RAISE EXCEPTION 'Main budget category can''t be modified';
    END IF;
-   RETURN OLD;
+
+   IF TG_OP = 'UPDATE' THEN
+      RETURN NEW;
+   ELSE
+      RETURN OLD;
+   END IF;
 END;
 $$ LANGUAGE plpgsql;
 
