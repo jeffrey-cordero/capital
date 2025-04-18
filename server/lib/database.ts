@@ -6,11 +6,11 @@ import { Pool, PoolClient } from "pg";
  * Connection pool for database connections
  */
 const pool = new Pool({
-   host: process.env.DB_HOST || "postgres",
+   host: process.env.DB_HOST || "localhost",
    user: process.env.DB_USER,
    password: process.env.DB_PASSWORD,
    database: process.env.DB_NAME,
-   port: Number(process.env.DB_PORT) || 5432,
+   port: Number(process.env.DB_PORT) || 5433,
    max: 50
 });
 
@@ -27,7 +27,6 @@ export const FIRST_PARAM = 1;
  * @returns {Promise<any[]>} Resulting rows from the query
  */
 export async function query(query: string, parameters: any[]): Promise<any[]> {
-   // Submit the query and return the resulting rows
    return (await pool.query(query, parameters)).rows;
 }
 
@@ -47,13 +46,13 @@ export async function transaction(
    let client: PoolClient | null = null;
 
    try {
-      // Connect to the database pool
+      // Fetch a client from the database pool
       client = await pool.connect();
 
-      // Begin the transaction with the proper isolation level
+      // Begin the transaction with the given isolation level
       await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
 
-      // Run a series of statements,
+      // Run a series of SQL statements and the return the potential result
       const result = await statements(client) as unknown;
 
       // Commit the transaction
@@ -62,12 +61,12 @@ export async function transaction(
       // Return the potential results of the transaction
       return result;
    } catch (error: any) {
-      // Rollback any change
+      // Rollback any changes made to the database
       await client?.query("ROLLBACK;");
 
       throw error;
    } finally {
-      // Release from the database pool
+      // Release the client back to the database pool
       client?.release();
    }
 }

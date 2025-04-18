@@ -19,7 +19,7 @@ export function sendValidationErrors(
 ): ServerResponse {
    if (fields !== null) {
       // Zod schema validation errors
-      const errors: Record<string, string[] | undefined> = fields.error?.flatten().fieldErrors || {};
+      const errors = fields.error?.flatten().fieldErrors || {};
 
       return {
          code: 400,
@@ -30,7 +30,7 @@ export function sendValidationErrors(
          )
       };
    } else {
-      // Custom validation errors
+      // Predefined validation errors
       return {
          code: 400,
          errors: errors || {}
@@ -72,14 +72,13 @@ export const submitServiceRequest = async(
          // Successful request with data or no content
          return sendSuccess(res, result.code, result.data ?? undefined);
       } else {
-         // Validation errors and/or potential database conflicts
+         // Error response
          return sendErrors(res, result.code, result.errors);
       }
    } catch (error: any) {
+      // Log unexpected errors
       logger.error(error.stack);
 
-      return sendErrors(res, 500,
-         { server: "Internal Server Error" }
-      );
+      return sendErrors(res, 500, { server: "Internal Server Error" });
    }
 };

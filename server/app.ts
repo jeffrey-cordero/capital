@@ -109,6 +109,6 @@ app.use(function(error: any, req: Request, res: Response) {
 });
 
 /**
- * Run the web server
+ * Start the web server
  */
 app.listen(port);

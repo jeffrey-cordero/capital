@@ -8,10 +8,7 @@ import { Response } from "express";
  * @param {Record<string, string>} [errors] - Optional additional error details
  */
 export function sendErrors(res: Response, code: number, errors?: Record<string, string>): void {
-   res.status(code).json({
-      code: code,
-      errors: errors || {}
-   }).end();
+   res.status(code).json({ code: code, errors: errors || {} }).end();
 }
 
 /**
@@ -26,9 +23,6 @@ export function sendSuccess(res: Response, code: number, data?: any): void {
    if (code === 204) {
       res.status(code).end();
    } else {
-      res.status(code).json({
-         code: code,
-         data: data
-      }).end();
+      res.status(code).json({ code: code, data: data }).end();
    }
 }

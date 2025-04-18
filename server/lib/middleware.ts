@@ -14,12 +14,12 @@ export function configureToken(res: Response, user_id: string): void {
    // Generate the JWT token
    const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
-   // Store the JWT token in the client cookies
+   // Store the JWT token in the client-side cookies
    res.cookie("token", token, {
-      httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-      sameSite: "strict", // CORS-friendly
-      maxAge: 1000 * 60 * 60 * 24, // 24 hour expiration
-      secure: process.env.NODE_ENV === "production" // Only send the cookie over HTTPS in production
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 1000 * 60 * 60 * 24,
+      secure: process.env.NODE_ENV === "production"
    });
 }
 
@@ -36,34 +36,30 @@ export function authenticateToken(required: boolean) {
       const token = req.cookies.token;
 
       if (!token && required) {
-         // Token present for this endpoint, but not provided
          return sendErrors(res, 401);
       } else if (token && !required) {
-         // Token not required at this endpoint, but provided
          return sendErrors(res, 302);
       } else if (required) {
          try {
             // Verify the JWT token, handling expected thrown errors
             const user = jwt.verify(token, process.env.SESSION_SECRET || "") as any;
 
-            // Attach the user ID for further request handlers
+            // Attach the user ID for further route handlers
             res.locals.user_id = user.user_id;
-
-            // Proceed to the next request handler
             next();
          } catch (error: any) {
             if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-               // Clear the expired or invalid authentication token cookies
+               // Clear the expired and/or invalid authentication token cookies
                res.clearCookie("token");
             } else {
-               // Unexpected JWT verification errors
+               // Log unexpected JWT verification errors
                logger.error(error.stack);
             }
 
             return sendErrors(res, 403);
          }
       } else {
-         // Proceed to the next middleware or route handler as token is not required
+         // Proceed to further route handlers as the token is not required
          next();
       }
    };

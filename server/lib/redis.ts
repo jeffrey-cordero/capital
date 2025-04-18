@@ -5,18 +5,10 @@ import Redis from "ioredis";
 import { logger } from "@/lib/logger";
 
 /**
- * Initializes and connects to the Redis server, where the application follows a
- * retry strategy of `150ms` for connection attempts and cache aside / lazy-loading
- * approach for caching values
+ * Initializes and connects to the Redis server with no retry strategy
  */
-const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
-   retryStrategy: (times) => {
-      if (times <= 1) {
-         return 150; // 150ms retry strategy
-      } else {
-         return null; // No retries after the first attempt
-      }
-   }
+const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6380", {
+   retryStrategy: () => null
 });
 
 /**
@@ -24,7 +16,6 @@ const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
  */
 redisClient.on("error", (error: any) => {
    if (error.code === "ECONNREFUSED") {
-      // Log connection errors, where method handler's log more specific errors
       logger.error(`redisClient.connect(): ${error.message}\n\n${error.stack}`);
    }
 });
@@ -40,7 +31,6 @@ export async function getCacheValue(key: string): Promise<string | null> {
       return await redisClient.get(key);
    } catch (error: any) {
       logger.error(`redisClient.get(${key}): ${error.message}\n\n${error.stack}`);
-
       return null;
    }
 }
