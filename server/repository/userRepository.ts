@@ -18,7 +18,7 @@ const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as co
  * @returns {Promise<User[]>} Matching users
  */
 export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
-   // Conflicts based on existing username and/or email
+   // Check for username/email conflicts
    const conflicts = `
       SELECT user_id, username, email
       FROM users
@@ -37,7 +37,7 @@ export async function findConflictingUsers(username: string, email: string, user
  * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUsername(username: string): Promise<User | null> {
-   // Find user by their unique username
+   // Find by username
    const search = `
       SELECT user_id, username, password
       FROM users
@@ -55,7 +55,7 @@ export async function findByUsername(username: string): Promise<User | null> {
  * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUserId(user_id: string): Promise<User | null> {
-   // Find user by their unique user ID
+   // Find by user ID
    const search = `
       SELECT * FROM users
       WHERE user_id = $1;
@@ -73,7 +73,7 @@ export async function findByUserId(user_id: string): Promise<User | null> {
  */
 export async function create(user: User): Promise<string> {
    return await transaction(async(client: PoolClient) => {
-      // Create the new user with provided fields
+      // Create user record
       const creation = `
          INSERT INTO users (username, name, password, email, birthday)
          VALUES ($1, $2, $3, $4, $5)
@@ -87,7 +87,7 @@ export async function create(user: User): Promise<string> {
          user.birthday
       ]);
 
-      // Insert the main Income and Expenses budget categories
+      // Create default Income and Expenses categories
       const today = new Date(new Date().setHours(0, 0, 0, 0));
       const month = today.getUTCMonth() + 1;
       const year = today.getUTCFullYear();
@@ -126,12 +126,12 @@ export async function create(user: User): Promise<string> {
  * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, updates: Partial<UserUpdates>): Promise<boolean> {
-   // Build dynamic update query based on provided fields
+   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Only include fields that are present in the updates
+   // Include only fields present in updates
    USER_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);
@@ -140,10 +140,10 @@ export async function update(user_id: string, updates: Partial<UserUpdates>): Pr
       }
    });
 
-   // Skip query if no fields to update
+   // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Append the user ID
+   // Add user ID
    values.push(user_id);
 
    const update = `
@@ -165,17 +165,17 @@ export async function update(user_id: string, updates: Partial<UserUpdates>): Pr
  */
 export async function deleteUser(user_id: string): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
-      // Disable the main budget category trigger
+      // Disable main budget category protections
       await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
-      // Delete the user
+      // Delete user record
       const deletion = `
          DELETE FROM users
          WHERE user_id = $1;
       `;
       const result = await client.query(deletion, [user_id]);
 
-      // Re-enable the main budget category trigger
+      // Re-enable main budget category protections
       await client.query("ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
       return result.rowCount === 1;

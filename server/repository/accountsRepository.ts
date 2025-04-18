@@ -30,7 +30,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
  * @returns {Promise<string>} Created account ID
  */
 export async function create(user_id: string, account: Account): Promise<string> {
-   // Create account record with basic details
+   // Create account record
    const creation = `
       INSERT INTO accounts (user_id, name, type, image, account_order, balance, last_updated)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -58,12 +58,12 @@ export async function create(user_id: string, account: Account): Promise<string>
  * @returns {Promise<boolean>} Success status
  */
 export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account>): Promise<boolean> {
-   // Build dynamic update query based on provided fields
+   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Only include fields that are present in the updates
+   // Include only fields present in updates
    ACCOUNT_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);
@@ -72,10 +72,10 @@ export async function updateDetails(user_id: string, account_id: string, updates
       }
    });
 
-   // Skip query if there are no fields to update
+   // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Append the user and account ID's
+   // Add user and account IDs
    values.push(user_id, account_id);
    param++;
 
@@ -99,7 +99,7 @@ export async function updateDetails(user_id: string, account_id: string, updates
  * @returns {Promise<boolean>} Success status
  */
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
-   // Bulk update account ordering formatting
+   // Format bulk update for multiple accounts
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.account_id),

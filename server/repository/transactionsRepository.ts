@@ -65,19 +65,19 @@ export async function create(user_id: string, transaction: Transaction): Promise
  * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, transaction_id: string, updates: Partial<Transaction>): Promise<boolean> {
-   // Build dynamic update query based on provided fields
+   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Only include valid, updatable fields that are present in the updates
+   // Include only valid fields present in updates
    TRANSACTION_UPDATES.forEach((field) => {
       const key = field as keyof typeof updates;
 
       if (key in updates && updates[key] !== undefined) {
          fields.push(`${field} = $${param}`);
 
-         // Normalize optional foreign keys
+         // Handle optional foreign keys
          if (key === "budget_category_id" || key === "account_id") {
             values.push(updates[key] === "" ? null : updates[key]);
          } else {
@@ -88,10 +88,10 @@ export async function update(user_id: string, transaction_id: string, updates: P
       }
    });
 
-   // Skip query if no valid fields to update were provided
+   // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Append transaction ID and user ID to values array and increment the param index
+   // Add transaction and user IDs
    values.push(transaction_id, user_id);
    param++;
 

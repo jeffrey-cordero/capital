@@ -21,7 +21,7 @@ const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
  * @returns {Promise<OrganizedBudgets>} Organized budget data
  */
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
-   // Fetch all budgets for a user with categories in a single query
+   // Fetch budgets with categories in a single query
    const overall = `
       SELECT bc.budget_category_id, bc.name, bc.type, bc.category_order, b.goal, b.year, b.month
       FROM budget_categories AS bc
@@ -32,7 +32,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    `;
    const results = await query(overall, [user_id]);
 
-   // Initialize organized structure with Income and Expenses sections
+   // Initialize structure with Income and Expenses sections
    const categories: Record<string, number> = {};
    const result: OrganizedBudgets = {
       Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [] },
@@ -42,7 +42,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    for (const row of results) {
       const type: BudgetType = row.type;
 
-      // Extract the budget category data
+      // Extract budget category data
       const category: BudgetCategory = {
          budget_category_id: row.budget_category_id,
          type: row.type,
@@ -52,14 +52,14 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          goals: []
       };
 
-      // Extract the budget data
+      // Extract budget goal data
       const budget: BudgetGoal = {
          goal: row.goal,
          year: row.year,
          month: row.month
       };
 
-      // Handle the main budget category (Income/Expenses)
+      // Handle main budget category (Income/Expenses)
       if (!category.name) {
          result[type].goals.push(budget);
          result[type].budget_category_id = row.budget_category_id;
@@ -67,17 +67,17 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          continue;
       }
 
-      // Check if the budget category already exists in our map
+      // Check if category already exists in map
       const categoryIndex: number | undefined = categories[row.budget_category_id];
 
       if (categoryIndex === undefined) {
-         // New budget category, thus we add it to the result and track its position
+         // Add new category to result and track position
          const index: number = result[type].categories.length;
 
          result[type].categories.push({ ...category, goals: [budget] });
          categories[row.budget_category_id] = index;
       } else {
-         // Existing budget category, thus we append the budget to the goals
+         // Append budget to existing category goals
          result[type].categories[categoryIndex].goals.push(budget);
       }
    }
@@ -99,10 +99,10 @@ export async function createCategory(
    externalClient?: PoolClient
 ): Promise<string> {
    return await transaction(async(internalClient: PoolClient) => {
-      // Use provided external client or internal transaction client
+      // Use provided client or internal transaction client
       const client: PoolClient = externalClient || internalClient;
 
-      // Create the budget category record
+      // Create budget category record
       const creation = `
          INSERT INTO budget_categories (user_id, type, name, category_order)
          VALUES ($1, $2, $3, $4)
@@ -115,7 +115,7 @@ export async function createCategory(
          category.category_order
       ]);
 
-      // Create the initial budget record for the newly created budget category
+      // Create initial budget record
       const budget_category_id: string = result.rows[0].budget_category_id;
       const budget = `
          INSERT INTO budgets (budget_category_id, goal, year, month)
@@ -146,12 +146,12 @@ export async function updateCategory(
    budget_category_id: string,
    updates: Partial<BudgetCategory>
 ): Promise<boolean> {
-   // Dynamically builds an update query based on the provided updates
+   // Build dynamic update query from provided fields
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Only include fields that are present in the updates
+   // Include only fields present in updates
    BUDGET_CATEGORY_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);
@@ -160,10 +160,10 @@ export async function updateCategory(
       }
    });
 
-   // Skip query if there are no fields to update
+   // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Append the user ID and budget category ID
+   // Add user and category IDs
    values.push(user_id, budget_category_id);
    param++;
 
@@ -180,12 +180,12 @@ export async function updateCategory(
 
       return result.length > 0;
    } catch (error: any) {
-      // Catch main category conflicts, where updates are forbidden for data integrity
+      // Handle main category update restrictions
       if (error.message.includes("Main budget category can't be updated")) {
          return false;
       }
 
-      // Unexpected error
+      // Re-throw unexpected errors
       throw error;
    }
 }
@@ -217,7 +217,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
  * @returns {Promise<boolean>} Success status
  */
 export async function updateCategoryOrderings(user_id: string, updates: Partial<BudgetCategory>[]): Promise<boolean> {
-   // Bulk update category ordering formatting
+   // Format bulk update for multiple categories
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.budget_category_id),
@@ -266,12 +266,12 @@ async function verifyCategoryOwnership(client: PoolClient, user_id: string, budg
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<"created" | "failure"> {
    return await transaction(async(client: PoolClient): Promise<"created" | "failure"> => {
-      // Verify that the budget category belongs to the user
+      // Verify category ownership
       if (!verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
          return "failure";
       }
 
-      // Create the budget record
+      // Create budget record
       const creation = `
          INSERT INTO budgets (budget_category_id, goal, year, month)
          VALUES ($1, $2, $3, $4)
@@ -298,12 +298,12 @@ export async function createBudget(user_id: string, budget: Budget): Promise<"cr
  */
 export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
-      // Verify that the budget category belongs to the user
+      // Verify category ownership
       if (!verifyCategoryOwnership(client, user_id, budget_category_id)) {
          return false;
       }
 
-      // Update the budget record
+      // Update budget record
       const update = `
          UPDATE budgets
          SET goal = $1

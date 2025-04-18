@@ -9,6 +9,7 @@ import { query, transaction } from "@/lib/database";
  * @returns {Promise<{ time: string, data: Economy } | null>} Economic data or null if not found
  */
 export async function getEconomicData(): Promise<{ time: string, data: Economy } | null> {
+   // Fetch the latest economic data, where an empty table can imply initial setup
    const search = `
       SELECT *
       FROM economy
@@ -27,13 +28,13 @@ export async function getEconomicData(): Promise<{ time: string, data: Economy }
  */
 export async function updateEconomicData(time: Date, data: string): Promise<void> {
    return await transaction(async(client: PoolClient) => {
-      // Clear existing cache data first
+      // Clear existing data
       const removal = `
          DELETE FROM economy;
       `;
       await client.query(removal);
 
-      // Insert new external API data
+      // Insert new API data
       const insertion = `
          INSERT INTO economy (time, data)
          VALUES ($1, $2);
