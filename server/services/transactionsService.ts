@@ -85,33 +85,32 @@ export async function createTransaction(user_id: string, transaction: Transactio
  * Updates an existing transaction.
  *
  * @param {string} user_id - User ID
- * @param {string} transaction_id - Transaction ID
- * @param {Partial<Transaction>} updates - Transaction object with updates from request body
+ * @param {Partial<Transaction>} transaction - Transaction object with updates from request body
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
-export async function updateTransaction(user_id: string, transaction_id: string, updates: Partial<Transaction>): Promise<ServerResponse> {
-   if (!transaction_id) {
+export async function updateTransaction(user_id: string, transaction: Partial<Transaction>): Promise<ServerResponse> {
+   if (!transaction.transaction_id) {
       return sendValidationErrors(null, {
          transaction_id: "Missing transaction ID"
       });
    }
 
    // Ensure there are fields to update
-   if (Object.keys(updates).length === 0) {
+   if (Object.keys(transaction).length === 0) {
       return sendValidationErrors(null, {
          transaction: "No transaction fields to update"
       });
    }
 
    // Validate input against the partial transaction schema
-   const fields = transactionSchema.partial().safeParse(updates);
+   const fields = transactionSchema.partial().safeParse(transaction);
 
    if (!fields.success) {
       return sendValidationErrors(fields);
    }
 
    // Update the transaction
-   const result: boolean = await transactionsRepository.update(user_id, transaction_id, fields.data as Partial<Transaction>);
+   const result: boolean = await transactionsRepository.update(user_id, transaction.transaction_id, fields.data as Partial<Transaction>);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {

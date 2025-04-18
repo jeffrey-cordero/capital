@@ -152,14 +152,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
 /**
  * Updates user account details including password changes.
  *
- * @param {Request} req - Express request object
- * @param {Response} res - Express response object
+ * @param {string} user_id - User ID
  * @param {Partial<UserUpdates>} updates - User details to update
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
  */
-export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserUpdates>): Promise<ServerResponse> {
-   const user_id: string = res.locals.user_id;
-
+export async function updateAccountDetails(user_id: string, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    // Validate update fields with user update schema
    const fields = updateUserSchema.safeParse(updates);
 
@@ -231,11 +228,11 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {string} user_id - The ID of the user to delete
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` if the user does not exist
  */
-export async function deleteAccount(req: Request, res: Response, user_id: string): Promise<ServerResponse> {
+export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
    // Attempt to delete the user and their data
+   const user_id: string = res.locals.user_id;
    const result = await userRepository.deleteUser(user_id);
 
    if (!result) {

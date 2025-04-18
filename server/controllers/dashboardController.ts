@@ -11,6 +11,6 @@ import * as dashboardService from "@/services/dashboardService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the dashboard fetch request
  */
-export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => dashboardService.fetchDashboard(res.locals.user_id))
-);
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => dashboardService.fetchDashboard(res.locals.user_id));
+});

@@ -22,29 +22,29 @@ dashboardRouter.use(authenticateToken(true));
 dashboardRouter.get("/", dashboardController.GET);
 
 /**
- * Fetches all user financial accounts - GET /dashboard/accounts
+ * Fetches all user accounts - GET /dashboard/accounts
  */
 dashboardRouter.get("/accounts", accountsController.GET);
 
 /**
- * Creates a new financial account - POST /dashboard/accounts
+ * Creates a new user account - POST /dashboard/accounts
  *
- * @requires {Account} req.body - Financial account data
+ * @requires {Account} req.body - User account data
  */
 dashboardRouter.post("/accounts", accountsController.POST);
 
 /**
- * Updates a financial account or a series of financial account orderings - PUT /dashboard/accounts/:id
+ * Updates a user account or a series of user account orderings - PUT /dashboard/accounts/:id
  *
- * @param {string} id - Financial account ID or "ordering"
- * @requires {Partial<Account>|{accountsIds: string[]}} req.body - Financial account data or UUIDs
+ * @param {string} id - User account ID or "ordering"
+ * @requires {Partial<Account>|{accountsIds: string[]}} req.body - User account data or UUIDs
  */
 dashboardRouter.put("/accounts/:id", accountsController.PUT);
 
 /**
- * Deletes a financial account - DELETE /dashboard/accounts/:id
+ * Deletes a user account - DELETE /dashboard/accounts/:id
  *
- * @param {string} id - Financial account ID
+ * @param {string} id - User account ID
  */
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 

@@ -11,9 +11,9 @@ import * as authenticationService from "@/services/authenticationService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the authentication status request
  */
-export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token))
-);
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token));
+});
 
 /**
  * Handles POST requests for authenticating user login attempts.
@@ -22,9 +22,11 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the login request
  */
-export const LOGIN = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => authenticationService.authenticateUser(res, req.body.username, req.body.password))
-);
+export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
+   const { username, password } = req.body;
+
+   return submitServiceRequest(res, async() => authenticationService.authenticateUser(res, username, password));
+});
 
 /**
  * Handles POST requests for logging out current users.
@@ -33,6 +35,6 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) =>
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the logout request
  */
-export const LOGOUT = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => authenticationService.logoutUser(req, res))
-);
+export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => authenticationService.logoutUser(req, res));
+});

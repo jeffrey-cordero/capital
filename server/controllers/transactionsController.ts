@@ -12,9 +12,9 @@ import * as transactionsService from "@/services/transactionsService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the fetch request
  */
-export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => transactionsService.fetchTransactions(res.locals.user_id))
-);
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => transactionsService.fetchTransactions(res.locals.user_id));
+});
 
 /**
  * Handles POST requests for creating a new transaction for a user.
@@ -23,9 +23,12 @@ export const GET = asyncHandler(async(req: Request, res: Response) =>
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} The service response for the creation request
  */
-export const POST = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => transactionsService.createTransaction(res.locals.user_id, req.body as Transaction))
-);
+export const POST = asyncHandler(async(req: Request, res: Response) => {
+   const user_id: string = res.locals.user_id;
+   const transaction: Transaction = { ...req.body };
+
+   return submitServiceRequest(res, async() => transactionsService.createTransaction(user_id, transaction));
+});
 
 /**
  * Handles PUT requests for updating an existing transactions.
@@ -37,9 +40,9 @@ export const POST = asyncHandler(async(req: Request, res: Response) =>
 export const PUT = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
    const transaction_id: string = req.params.id;
-   const updates: Partial<Transaction> = { ...req.body };
+   const transaction: Partial<Transaction> = { ...req.body, transaction_id };
 
-   return submitServiceRequest(res, async() => transactionsService.updateTransaction(user_id, transaction_id, updates));
+   return submitServiceRequest(res, async() => transactionsService.updateTransaction(user_id, transaction));
 });
 
 /**
@@ -51,8 +54,7 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
-
-   // Format transaction IDs based on the request body (bulk deletion) or the request params (single deletion)
    const transactionIds: string[] = req.body.transactionIds || [req.params.id];
+
    return submitServiceRequest(res, async() => transactionsService.deleteTransactions(user_id, transactionIds));
 });
