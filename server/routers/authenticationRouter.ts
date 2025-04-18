@@ -6,20 +6,24 @@ import { authenticateToken } from "@/lib/middleware";
 const authenticationRouter = express.Router();
 
 /**
- * GET /authentication/
- *    req.cookies: { token: string }
+ * Validates a user session via their JWT token - GET /authentication/
+ *
+ * @requires {string} req.cookies.token - Authentication token
  */
 authenticationRouter.get("/", controller.GET);
 
 /**
- * POST /authentication/login
- *    req.body: { username: string, password: string }
+ * Authenticates a user and creates their session - POST /authentication/login
+ *
+ * @requires {string} req.body.username - Username credential
+ * @requires {string} req.body.password - Password credential
  */
 authenticationRouter.post("/login", authenticateToken(false), controller.LOGIN);
 
 /**
- * POST /authentication/logout
- *    req.cookies: { token: string }
+ * Terminates a user session - POST /authentication/logout
+ *
+ * @requires {string} req.cookies.token - Authentication token
  */
 authenticationRouter.post("/logout", authenticateToken(true), controller.LOGOUT);
 

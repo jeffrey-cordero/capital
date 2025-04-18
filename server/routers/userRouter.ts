@@ -6,19 +6,21 @@ import { authenticateToken } from "@/lib/middleware";
 const usersRouter = express.Router();
 
 /**
- * POST /users
- *    req.body: User
+ * Creates a new user account - POST /users
+ *
+ * @requires {User} req.body - User data to insert
  */
 usersRouter.post("/", authenticateToken(false), controller.POST);
 
 /**
- * PUT /users
- *    req.body: Partial<User>
+ * Updates an existing user account - PUT /users
+ *
+ * @requires {Partial<User>} req.body - User data to update
  */
 usersRouter.put("/", authenticateToken(true), controller.PUT);
 
 /**
- * DELETE /users
+ * Removes an existing user account - DELETE /users
  */
 usersRouter.delete("/", authenticateToken(true), controller.DELETE);
 
