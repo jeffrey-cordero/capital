@@ -15,10 +15,10 @@ const ACCOUNT_UPDATES = ["name", "type", "image", "account_order", "balance", "l
  */
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
-      SELECT a.*
-      FROM accounts as a
-      WHERE a.user_id = $1
-      ORDER BY a.account_order ASC;
+      SELECT account_id, name, type, image, balance, last_updated, account_order
+      FROM accounts
+      WHERE user_id = $1
+      ORDER BY account_order ASC;
    `;
 
    return await query(search, [user_id]) as Account[];

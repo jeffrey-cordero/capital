@@ -5,22 +5,22 @@ import { submitServiceRequest } from "@/lib/services";
 import * as authenticationService from "@/services/authenticationService";
 
 /**
- * Handles GET requests for verifying current authentication status.
+ * Verifies current authentication status
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with authentication token
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the authentication status request
+ * @returns {Promise<Response>} Service response with authentication status
  */
 export const GET = asyncHandler(async(req: Request, res: Response) => {
    return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token));
 });
 
 /**
- * Handles POST requests for authenticating user login attempts.
+ * Authenticates user login attempts
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with login credentials
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the login request
+ * @returns {Promise<Response>} Service response with authentication confirmation
  */
 export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
    const { username, password } = req.body;
@@ -29,11 +29,11 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
 });
 
 /**
- * Handles POST requests for logging out current users.
+ * Logs out the current user
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the logout request
+ * @returns {Promise<Response>} Service response with logout confirmation
  */
 export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
    return submitServiceRequest(res, async() => authenticationService.logoutUser(req, res));

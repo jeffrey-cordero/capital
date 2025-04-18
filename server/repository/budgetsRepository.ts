@@ -23,7 +23,7 @@ const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    // Fetch all budgets for a user with categories in a single efficient query
    const overall = `
-      SELECT b.*, bc.*
+      SELECT bc.budget_category_id, bc.name, bc.type, bc.category_order, b.goal, b.year, b.month
       FROM budget_categories AS bc
       INNER JOIN budgets AS b
       ON b.budget_category_id = bc.budget_category_id

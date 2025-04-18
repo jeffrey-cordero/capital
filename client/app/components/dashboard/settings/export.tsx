@@ -26,8 +26,7 @@ export default function ExportAccount(): React.ReactNode {
             settings,
             accounts: accounts.map((account) => ({
                ...account,
-               account_order: undefined,
-               user_id: undefined
+               account_order: undefined
             })),
             budgets: {
                Income: {
@@ -51,7 +50,6 @@ export default function ExportAccount(): React.ReactNode {
             },
             transactions: transactions.map((transaction) => ({
                ...transaction,
-               user_id: undefined,
                account_id: transaction.account_id || undefined,
                budget_category_id: transaction.budget_category_id || undefined
             }))

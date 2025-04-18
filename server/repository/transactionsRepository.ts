@@ -21,10 +21,10 @@ const TRANSACTION_UPDATES = [
  */
 export async function findByUserId(user_id: string): Promise<Transaction[]> {
    const search = `
-      SELECT t.*
-      FROM transactions t
-      WHERE t.user_id = $1
-      ORDER BY t.date DESC;
+      SELECT transaction_id, amount, description, date, budget_category_id, account_id
+      FROM transactions
+      WHERE user_id = $1
+      ORDER BY date DESC;
    `;
 
    const result = await query(search, [user_id]) as Transaction[];

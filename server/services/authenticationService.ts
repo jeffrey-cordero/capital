@@ -56,7 +56,7 @@ export async function authenticateUser(res: Response, username: string, password
       });
    } else {
       // Configure JWT token for authentication purposes
-      configureToken(res, user?.user_id as string);
+      configureToken(res, user.user_id as string);
 
       return sendServiceResponse(200, { success: true });
    }

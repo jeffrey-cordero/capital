@@ -6,33 +6,33 @@ import { submitServiceRequest } from "@/lib/services";
 import * as accountsService from "@/services/accountsService";
 
 /**
- * Handles GET requests for fetching all financial accounts for a user.
+ * Fetches all financial accounts for the authenticated user
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the fetch request
+ * @returns {Promise<Response>} Service response with user's accounts
  */
 export const GET = asyncHandler(async (req: Request, res: Response) => {
    return submitServiceRequest(res, async () => accountsService.fetchAccounts(res.locals.user_id));
 });
 
 /**
- * Handles POST requests for creating a new financial account for a user.
+ * Creates a new financial account for the authenticated user
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with account details
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the creation request
+ * @returns {Promise<Response>} Service response with creation confirmation
  */
 export const POST = asyncHandler(async (req: Request, res: Response) => {
    return submitServiceRequest(res, async () => accountsService.createAccount(res.locals.user_id, req.body));
 });
 
 /**
- * Handles PUT requests for updating account details or accounts ordering.
+ * Updates account details or changes account ordering
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with account update data
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the update request
+ * @returns {Promise<Response>} Service response with update confirmation
  */
 export const PUT = asyncHandler(async (req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
@@ -52,11 +52,11 @@ export const PUT = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * Handles DELETE requests for deleting an account.
+ * Deletes a specific account
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with account ID
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the deletion request
+ * @returns {Promise<Response>} Service response with deletion confirmation
  */
 export const DELETE = asyncHandler(async (req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;

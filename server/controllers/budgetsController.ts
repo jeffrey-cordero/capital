@@ -6,22 +6,22 @@ import { submitServiceRequest } from "@/lib/services";
 import * as budgetsService from "@/services/budgetsService";
 
 /**
- * Handles GET requests for fetching all budgets for the authenticated user.
+ * Fetches all budgets for the authenticated user
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the fetch request
+ * @returns {Promise<Response>} Service response with organized budgets data
  */
 export const GET = asyncHandler(async (req: Request, res: Response) => {
    return submitServiceRequest(res, async () => budgetsService.fetchBudgets(res.locals.user_id));
 });
 
 /**
- * Handles POST requests for creating either a new budget category or budget entry.
+ * Creates a new budget category or budget entry
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with budget and/or category data
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the creation request
+ * @returns {Promise<Response>} Service response with creation confirmation
  */
 export const POST = asyncHandler(async (req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
@@ -39,11 +39,11 @@ export const POST = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * Handles PUT requests for updating budget categories, categories ordering, or individual budgets.
+ * Updates budget categories, ordering, or individual budgets
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with update data
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the update request
+ * @returns {Promise<Response>} Service response with update confirmation
  */
 export const PUT = asyncHandler(async (req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;
@@ -69,11 +69,11 @@ export const PUT = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * Handles DELETE requests for deleting a budget category.
+ * Deletes a budget category
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with category ID
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the deletion request
+ * @returns {Promise<Response>} Service response with deletion confirmation
  */
 export const DELETE = asyncHandler(async (req: Request, res: Response) => {
    const user_id: string = res.locals.user_id;

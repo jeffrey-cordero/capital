@@ -20,7 +20,7 @@ const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as co
 export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
    // Conflicts based on existing username and/or email
    const conflicts = `
-      SELECT * FROM users
+      SELECT user_id, username, email FROM users
       WHERE (username_normalized = $1 OR email_normalized = $2)
       AND (user_id IS DISTINCT FROM $3);
    `;
@@ -40,7 +40,7 @@ export async function findConflictingUsers(username: string, email: string, user
 export async function findByUsername(username: string): Promise<User | null> {
    // Find user by their unique username
    const search = `
-      SELECT * FROM users
+      SELECT user_id, username, password FROM users
       WHERE username = $1;
    `;
    const result: User[] = await query(search, [username]);
