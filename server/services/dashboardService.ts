@@ -1,5 +1,4 @@
 import { Mutex } from "async-mutex";
-import type { Dashboard } from "capital/dashboard";
 import {
    Economy,
    IndicatorTrends,

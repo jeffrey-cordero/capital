@@ -3,8 +3,8 @@ import { Response } from "express";
 import { SafeParseReturnType } from "zod";
 
 import { logger } from "@/lib/logger";
-import { sendErrors, sendSuccess } from "@/lib/response";
 import { removeCacheValue } from "@/lib/redis";
+import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
  * Formats validation errors with a 400 status code based on Zod schema results.
