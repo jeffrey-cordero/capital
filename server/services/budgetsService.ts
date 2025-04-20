@@ -68,13 +68,15 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
       return sendValidationErrors(categoryFields);
    }
 
-   // Create the category and initial budget record
+   // Create a complete record by combining validated data
    const record: Budget & BudgetCategory = {
       ...categoryFields.data,
       ...budgetFields.data,
       goals: [],
       goalIndex: 0
    };
+
+   // Create the category in the database
    const result = await budgetsRepository.createCategory(user_id, record);
 
    // Invalidate cache to ensure fresh data for the next request
@@ -91,6 +93,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
+   // Ensure the category ID is provided to identify which record to update
    if (!category.budget_category_id) {
       return sendValidationErrors(null, {
          budget_category_id: "Missing budget category ID"
@@ -108,6 +111,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
       });
    }
 
+   // Update the category in the database
    const result = await budgetsRepository.updateCategory(user_id, category.budget_category_id, fields.data);
 
    if (!result) {
@@ -127,14 +131,14 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {
-   // Validate the array of category IDs
+   // Ensure the category IDs array is valid
    if (!Array.isArray(categoryIds) || !categoryIds.length) {
       return sendValidationErrors(null, {
          categories: "Category ID's array must be a valid array representation"
       });
    }
 
-   // Validate each UUID and create updates array
+   // Validate each UUID in the array and build updates with new ordering
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<BudgetCategory>[] = [];
 
@@ -151,6 +155,7 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
       updates.push({ budget_category_id: uuidFields.data, category_order: i });
    }
 
+   // Perform bulk update of category ordering
    const result = await budgetsRepository.updateCategoryOrderings(user_id, updates);
 
    if (!result) {
@@ -170,14 +175,14 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
  * @returns {Promise<ServerResponse>} A server response of `201` with success status or `400`/`404` with respective errors
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate input against its schema
+   // Validate budget data against schema
    const fields = budgetSchema.safeParse(budget);
 
    if (!fields.success) {
       return sendValidationErrors(fields);
    }
 
-   // Create or update budget
+   // Create budget record in the database
    const result = await budgetsRepository.createBudget(user_id, fields.data);
 
    if (!result) {
@@ -200,13 +205,14 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
-   // Validate input against its schema
+   // Validate budget data against schema
    const fields = budgetSchema.safeParse(budget);
 
    if (!fields.success) {
       return sendValidationErrors(fields);
    }
 
+   // Update the budget in the database
    const result = await budgetsRepository.updateBudget(user_id, budget.budget_category_id, fields.data);
 
    if (!result) {
@@ -226,12 +232,14 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
+   // Ensure a category ID was provided
    if (!budget_category_id) {
       return sendValidationErrors(null, {
          budget_category_id: "Missing budget category ID"
       });
    }
 
+   // Delete the category and all related budgets
    const result = await budgetsRepository.deleteCategory(user_id, budget_category_id);
 
    if (!result) {

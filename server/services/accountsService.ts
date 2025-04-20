@@ -56,7 +56,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
       return sendValidationErrors(fields);
    }
 
-   // Create account
+   // Create account in the database and retrieve the inserted account ID
    const account_id: string = await accountsRepository.create(user_id, fields.data as Account);
 
    // Invalidate cache to ensure fresh data for the next request
@@ -76,7 +76,7 @@ export async function updateAccount(
    user_id: string,
    account: Partial<Account>
 ): Promise<ServerResponse> {
-   // Validate base account fields
+   // Verify required fields are present for the update
    if (!account.account_id) {
       return sendValidationErrors(null, { account_id: "Missing account ID" });
    } else if (!account.last_updated) {
@@ -90,6 +90,7 @@ export async function updateAccount(
       return sendValidationErrors(fields);
    }
 
+   // Update account details in the database
    const result = await accountsRepository.updateDetails(user_id, account.account_id, fields.data);
 
    if (!result) {
@@ -109,14 +110,14 @@ export async function updateAccount(
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
-   // Validate the array of account IDs
+   // Validate the array of account IDs is not empty
    if (!Array.isArray(accounts) || !accounts?.length) {
       return sendValidationErrors(null, {
          accounts: "Account ID's array must be a valid array representation"
       });
    }
 
-   // Validate each account ID against the UUID schema
+   // Validate each account ID against the UUID schema and create order updates
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
 
@@ -132,6 +133,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
       updates.push({ account_id: uuidFields.data, account_order: i });
    }
 
+   // Perform bulk order update in the database
    const result = await accountsRepository.updateOrdering(user_id, updates);
 
    if (!result) {
@@ -151,13 +153,14 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   // Validate the account ID input
+   // Validate the account ID input exists
    if (!account_id) {
       return sendValidationErrors(null, {
          account_id: "Missing account ID"
       });
    }
 
+   // Attempt to delete the account from the database
    const result = await accountsRepository.deleteAccount(user_id, account_id);
 
    if (!result) {

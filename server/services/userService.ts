@@ -10,7 +10,7 @@ import {
 import { Request, Response } from "express";
 
 import { configureToken } from "@/lib/middleware";
-import { getCacheValue, setCacheValue } from "@/lib/redis";
+import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
 import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
 import { logoutUser } from "@/services/authenticationService";
@@ -41,9 +41,11 @@ const generateConflictErrors = (
    username: string,
    email: string
 ): Record<string, string> => {
+   // Normalize inputs for consistent comparison
    const normalizedUsername = normalizeUserInput(username);
    const normalizedEmail = normalizeUserInput(email);
 
+   // Check each existing user for conflicts with the provided username/email
    return existingUsers.reduce((acc, record: User) => {
       if (normalizeUserInput(record.username) === normalizedUsername) {
          acc.username = "Username already exists";
@@ -80,7 +82,7 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
       return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
    }
 
-   // Cache miss - fetch from the database and store in the cache
+   // Cache miss - fetch complete user data from the database
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
@@ -96,7 +98,6 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
       email: user.email,
       birthday: user.birthday
    };
-
    setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(record));
 
    return sendServiceResponse(200, record);
@@ -155,26 +156,25 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
       return sendValidationErrors(fields);
    }
 
-   const details: Partial<UserUpdates> = { ...fields.data };
+   const details: Partial<UserUpdates> = fields.data;
 
-   // Validate username and email uniqueness if provided
+   // If username or email is being updated, check for conflicts with existing users
    if (details.username || details.email) {
-      // Check for conflicts excluding the current user
       const existingUsers: User[] = await userRepository.findConflictingUsers(
          details.username || "", details.email || "", user_id
       );
 
       if (existingUsers.length > 0) {
-         // Handle username/email conflicts that are not tied to the current user attributes
+         // Handle username/email conflicts
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
          return sendServiceResponse(409, undefined, errors);
       }
    }
 
-   // Handle password changes
+   // Handle password changes if requested
    if (details.newPassword) {
-      // Verify the current password first
+      // Verify that the current user exists
       const current: User | null = await userRepository.findByUserId(user_id);
 
       if (!current) {
@@ -183,19 +183,19 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
          });
       }
 
-      // Check if provided password matches current password
+      // Check if provided password credentials are correct
       if (!details.password || !(await argon2.verify(current.password, details.password))) {
          return sendServiceResponse(400, undefined, {
             password: "Invalid credentials"
          });
       }
 
-      // Hash the new password
+      // Hash the new password for secure storage
       const digest: string = await argon2.hash(details.newPassword);
       details.password = digest;
    }
 
-   // Update user details in the database
+   // Apply the updates to the database
    const result = await userRepository.update(user_id, details);
 
    if (!result) {
@@ -215,7 +215,7 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
  */
 export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
-   // Attempt to delete the user and their data
+   // Attempt to delete the user and their associated data
    const user_id: string = res.locals.user_id;
    const result = await userRepository.deleteUser(user_id);
 
@@ -225,8 +225,13 @@ export async function deleteAccount(req: Request, res: Response): Promise<Server
       });
    }
 
-   // Clear the user session and cache
+   // Clear the user authentication status
    await logoutUser(req, res);
 
-   return clearCacheAndSendSuccess(getUserCacheKey(user_id));
+   // Clear the respective cache values
+   ["accounts", "budgets", "transactions", "user"].forEach((key: string) => {
+      removeCacheValue(`${key}:${user_id}`);
+   });
+
+   return sendServiceResponse(204);
 }

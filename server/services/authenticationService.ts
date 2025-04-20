@@ -23,14 +23,14 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 
       return sendServiceResponse(200, { authenticated: true });
    } catch (error: any) {
-      // Handle JWT verification errors
+      // Handle specific JWT verification errors
       if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-         // Clear the expired or invalid authentication token cookies
+         // For expired or invalid tokens, clear the cookie and return unauthenticated state
          res.clearCookie("token");
 
          return sendServiceResponse(200, { authenticated: false });
       } else {
-         // Log unexpected errors
+         // For unexpected errors, log them and return server error status
          logger.error(error.stack);
 
          return sendServiceResponse(500, undefined, { server: "Internal Server Error" });
@@ -47,16 +47,18 @@ export async function getAuthentication(res: Response, token: string): Promise<S
  * @returns {Promise<ServerResponse>} A server response of `200` with success status or `401` with error details
  */
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
-   // Authenticate user based on the provided credentials
+   // Look up the user by username
    const user: User | null = await findByUsername(username);
 
+   // Check if user exists and password matches using argon2 verification
    if (!user || !(await argon2.verify(user.password, password))) {
+      // Return the same error message regardless of whether username or password was incorrect
       return sendServiceResponse(401, undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
       });
    } else {
-      // Configure JWT token for authentication purposes
+      // On successful authentication, configure a JWT token as a cookie
       configureToken(res, user.user_id as string);
 
       return sendServiceResponse(200, { success: true });
@@ -71,7 +73,7 @@ export async function authenticateUser(res: Response, username: string, password
  * @returns {Promise<ServerResponse>} A server response of `200` with success status
  */
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
-   // Clear the authentication token cookies
+   // Clearing the token cookie effectively forces client to re-authenticate
    res.clearCookie("token");
 
    return sendServiceResponse(200, { success: true });

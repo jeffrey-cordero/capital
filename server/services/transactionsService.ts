@@ -55,10 +55,11 @@ export async function createTransaction(user_id: string, transaction: Transactio
       return sendValidationErrors(fields);
    }
 
+   // Create the transaction in the database and retrieve the inserted transaction ID
    const result: string = await transactionsRepository.create(user_id, fields.data);
-
    // Invalidate the cache to ensure fresh data for the next request
    removeCacheValue(getTransactionCacheKey(user_id));
+
    return sendServiceResponse(201, { transaction_id: result });
 }
 
@@ -70,6 +71,7 @@ export async function createTransaction(user_id: string, transaction: Transactio
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateTransaction(user_id: string, transaction: Partial<Transaction>): Promise<ServerResponse> {
+   // Ensure the transaction ID is provided to identify which record to update
    if (!transaction.transaction_id) {
       return sendValidationErrors(null, {
          transaction_id: "Missing transaction ID"
@@ -83,6 +85,7 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
       return sendValidationErrors(fields);
    }
 
+   // Update the transaction in the database
    const result = await transactionsRepository.update(user_id, transaction.transaction_id, fields.data);
 
    if (!result) {
@@ -102,13 +105,14 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
  * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
-   // Validate the transaction IDs input
+   // Verify that transaction IDs are provided as a non-empty array
    if (!Array.isArray(transactionIds) || !transactionIds?.length) {
       return sendValidationErrors(null, {
          transactionIds: "Missing transaction IDs"
       });
    }
 
+   // Delete all specified transactions in a batch operation
    const result = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {
