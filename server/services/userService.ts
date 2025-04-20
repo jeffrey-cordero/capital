@@ -10,13 +10,13 @@ import {
 import { Request, Response } from "express";
 
 import { configureToken } from "@/lib/middleware";
-import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
-import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { getCacheValue, setCacheValue } from "@/lib/redis";
+import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
 import { logoutUser } from "@/services/authenticationService";
 
 /**
- * Cache duration in seconds for user details (30 minutes)
+ * Cache duration in seconds for user details - `30` minutes
  */
 const USER_DETAILS_CACHE_DURATION = 30 * 60;
 
@@ -44,7 +44,7 @@ const generateConflictErrors = (
    const normalizedUsername = normalizeUserInput(username);
    const normalizedEmail = normalizeUserInput(email);
 
-   return existingUsers.reduce((acc: Record<string, string>, record: User) => {
+   return existingUsers.reduce((acc, record: User) => {
       if (normalizeUserInput(record.username) === normalizedUsername) {
          acc.username = "Username already exists";
       }
@@ -54,7 +54,7 @@ const generateConflictErrors = (
       }
 
       return acc;
-   }, {});
+   }, {} as Record<string, string>);
 };
 
 /**
@@ -64,15 +64,6 @@ const generateConflictErrors = (
  * @returns {string} User cache key
  */
 const getUserCacheKey = (user_id: string): string => `user:${user_id}`;
-
-/**
- * Helper function to clear user cache on successful user updates.
- *
- * @param {string} user_id - User ID
- */
-const clearUserCache = (user_id: string): void => {
-   removeCacheValue(getUserCacheKey(user_id));
-};
 
 /**
  * Fetches user details from cache or database.
@@ -89,27 +80,26 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
       return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
    }
 
-   // Cache miss - fetch from database and store in cache
+   // Cache miss - fetch from the database and store in the cache
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Create a user details object without sensitive information
-   const userDetails: UserDetails = {
+   // Create a user details record without sensitive information
+   const record: UserDetails = {
       username: user.username,
       name: user.name,
       email: user.email,
       birthday: user.birthday
    };
 
-   // Cache user details
-   setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(userDetails));
+   setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(record));
 
-   return sendServiceResponse(200, userDetails);
+   return sendServiceResponse(200, record);
 }
 
 /**
@@ -134,17 +124,18 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    );
 
    if (existingUsers.length === 0) {
-      // Hash password and create the new user
-      const hashedPassword = await argon2.hash(fields.data.password);
-      const user_id: string = await userRepository.create({ ...fields.data, password: hashedPassword });
+      // Create the new user with a hashed password
+      const digest: string = await argon2.hash(fields.data.password);
+      const user_id: string = await userRepository.create({ ...fields.data, password: digest });
 
-      // Configure JWT token for authentication
+      // Configure JWT token for authentication purposes
       configureToken(res, user_id);
 
       return sendServiceResponse(201, { success: true });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
+
       return sendServiceResponse(409, undefined, errors);
    }
 }
@@ -166,10 +157,6 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
 
    const details: Partial<UserUpdates> = { ...fields.data };
 
-   if (Object.keys(details).length === 0) {
-      return sendServiceResponse(400, { user: "No updates provided" });
-   }
-
    // Validate username and email uniqueness if provided
    if (details.username || details.email) {
       // Check for conflicts excluding the current user
@@ -178,7 +165,7 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
       );
 
       if (existingUsers.length > 0) {
-         // Handle username/email conflicts that are not tied to the current user
+         // Handle username/email conflicts that are not tied to the current user attributes
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
          return sendServiceResponse(409, undefined, errors);
@@ -188,24 +175,24 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
    // Handle password changes
    if (details.newPassword) {
       // Verify the current password first
-      const current = await userRepository.findByUserId(user_id);
+      const current: User | null = await userRepository.findByUserId(user_id);
 
       if (!current) {
          return sendServiceResponse(404, undefined, {
-            user: "User does not exist based on the provided ID"
+            user_id: "User does not exist based on the provided ID"
          });
       }
 
       // Check if provided password matches current password
       if (!details.password || !(await argon2.verify(current.password, details.password))) {
          return sendServiceResponse(400, undefined, {
-            password: "Invalid password"
+            password: "Invalid credentials"
          });
       }
 
       // Hash the new password
-      const hashedPassword = await argon2.hash(details.newPassword);
-      details.password = hashedPassword;
+      const digest: string = await argon2.hash(details.newPassword);
+      details.password = digest;
    }
 
    // Update user details in the database
@@ -213,14 +200,11 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Clear the user cache to ensure fresh data on next fetch
-   clearUserCache(user_id);
-
-   return sendServiceResponse(204);
+   return clearCacheAndSendSuccess(getUserCacheKey(user_id));
 }
 
 /**
@@ -237,13 +221,12 @@ export async function deleteAccount(req: Request, res: Response): Promise<Server
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Clear the user cache and log the user out
-   clearUserCache(user_id);
+   // Clear the user session and cache
    await logoutUser(req, res);
 
-   return sendServiceResponse(204);
+   return clearCacheAndSendSuccess(getUserCacheKey(user_id));
 }

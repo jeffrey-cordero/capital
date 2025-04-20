@@ -4,6 +4,7 @@ import { SafeParseReturnType } from "zod";
 
 import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
+import { removeCacheValue } from "@/lib/redis";
 
 /**
  * Formats validation errors with a 400 status code based on Zod schema results.
@@ -79,4 +80,15 @@ export const submitServiceRequest = async(
 
       return sendErrors(res, 500, { server: "Internal Server Error" });
    }
+};
+
+/**
+ * Helper function to send a successful update response after clearing a cache key for strong consistency.
+ *
+ * @param {string} key - Cache key
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content
+ */
+export const clearCacheAndSendSuccess = (key: string): ServerResponse => {
+   removeCacheValue(key);
+   return sendServiceResponse(204);
 };

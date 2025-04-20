@@ -3,42 +3,21 @@ import { ServerResponse } from "capital/server";
 import { z } from "zod";
 
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
-import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as accountsRepository from "@/repository/accountsRepository";
 
 /**
- * Cache duration in seconds for account data (10 minutes)
+ * Cache duration in seconds for user accounts - `30` minutes
  */
-const ACCOUNT_CACHE_DURATION = 10 * 60;
+const ACCOUNT_CACHE_DURATION = 30 * 60;
 
 /**
- * Helper function to generate account cache key for Redis.
+ * Helper function to generate user accounts cache key for Redis.
  *
  * @param {string} user_id - User ID
- * @returns {string} Account cache key
+ * @returns {string} User accounts cache key
  */
 const getAccountCacheKey = (user_id: string): string => `accounts:${user_id}`;
-
-/**
- * Helper function to clear account cache on successful account updates.
- *
- * @param {string} user_id - User ID
- */
-const clearAccountCache = (user_id: string): void => {
-   removeCacheValue(getAccountCacheKey(user_id));
-};
-
-/**
- * Helper function to send a successful update response.
- *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `204` (no content)
- */
-const clearCacheOnSuccess = (user_id: string): ServerResponse => {
-   // Invalidate cache to ensure fresh data on next fetch
-   clearAccountCache(user_id);
-   return sendServiceResponse(204);
-};
 
 /**
  * Fetches user financial accounts from cache or database.
@@ -47,12 +26,12 @@ const clearCacheOnSuccess = (user_id: string): ServerResponse => {
  * @returns {Promise<ServerResponse>} A server response of `200` (`Account[]`)
  */
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
-   // Try to get accounts from cache first
+   // Try to get financial accounts from cache first
    const key: string = getAccountCacheKey(user_id);
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, JSON.parse(cache) as Account[]);
+      return sendServiceResponse(200, JSON.parse(cache));
    }
 
    // Cache miss - fetch from database and store in cache
@@ -80,13 +59,14 @@ export async function createAccount(user_id: string, account: Account): Promise<
    // Create account
    const account_id: string = await accountsRepository.create(user_id, fields.data as Account);
 
-   // Invalidate cache to ensure fresh data on next fetch
-   clearAccountCache(user_id);
+   // Invalidate cache to ensure fresh data for the next request
+   removeCacheValue(getAccountCacheKey(user_id));
+
    return sendServiceResponse(201, { account_id });
 }
 
 /**
- * Updates an account.
+ * Updates an account with a last updated timestamp.
  *
  * @param {string} user_id - User ID
  * @param {Partial<Account>} account - Account object to update
@@ -99,11 +79,11 @@ export async function updateAccount(
    // Validate base account fields
    if (!account.account_id) {
       return sendValidationErrors(null, { account_id: "Missing account ID" });
-   } else if (Object.keys(account).length <= 1) {
-      // Last updated is required for timezone purposes
-      return sendValidationErrors(null, { account: "No account fields to update other than `last_updated`" });
+   } else if (!account.last_updated) {
+      return sendValidationErrors(null, { last_updated: "Missing last updated timestamp" });
    }
 
+   // Validate account fields against the account schema
    const fields = accountSchema.partial().safeParse(account);
 
    if (!fields.success) {
@@ -114,11 +94,11 @@ export async function updateAccount(
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         account: "Account does not exist based on the provided ID"
+         account_id: "Account does not exist based on the provided ID"
       });
    }
 
-   return clearCacheOnSuccess(user_id);
+   return clearCacheAndSendSuccess(getAccountCacheKey(user_id));
 }
 
 /**
@@ -129,14 +109,14 @@ export async function updateAccount(
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
-   // Validate array of account IDs
+   // Validate the array of account IDs
    if (!Array.isArray(accounts) || !accounts?.length) {
       return sendValidationErrors(null, {
-         accounts: "Account ID array must be non-empty"
+         accounts: "Account ID's array must be a valid array representation"
       });
    }
 
-   // Validate each account ID against UUID schema
+   // Validate each account ID against the UUID schema
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
 
@@ -145,23 +125,22 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 
       if (!uuidFields.success) {
          return sendValidationErrors(null, {
-            account_id: `Account ID must be a valid UUID: '${accounts[i]}'`
+            account_id: `Invalid account ID: '${accounts[i]}'`
          });
       }
 
       updates.push({ account_id: uuidFields.data, account_order: i });
    }
 
-   // Update account ordering in database
    const result = await accountsRepository.updateOrdering(user_id, updates);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         accounts: "No possible ordering updates based on provided account IDs"
+         accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }
 
-   return clearCacheOnSuccess(user_id);
+   return clearCacheAndSendSuccess(getAccountCacheKey(user_id));
 }
 
 /**
@@ -172,21 +151,20 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
-   // Validate account ID input
+   // Validate the account ID input
    if (!account_id) {
       return sendValidationErrors(null, {
-         account_id: "Account ID is required"
+         account_id: "Missing account ID"
       });
    }
 
-   // Delete account
    const result = await accountsRepository.deleteAccount(user_id, account_id);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         account: "Account does not exist based on the provided ID"
+         account_id: "Account does not exist based on the provided ID or does not belong to the user"
       });
    }
 
-   return clearCacheOnSuccess(user_id);
+   return clearCacheAndSendSuccess(getAccountCacheKey(user_id));
 }

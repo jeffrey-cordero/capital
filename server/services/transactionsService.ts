@@ -2,11 +2,11 @@ import { ServerResponse } from "capital/server";
 import { Transaction, transactionSchema } from "capital/transactions";
 
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
-import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as transactionsRepository from "@/repository/transactionsRepository";
 
 /**
- * Cache duration in seconds for transaction data (10 minutes)
+ * Cache duration in seconds for user transactions - `10` minutes
  */
 const TRANSACTION_CACHE_DURATION = 10 * 60;
 
@@ -19,40 +19,21 @@ const TRANSACTION_CACHE_DURATION = 10 * 60;
 const getTransactionCacheKey = (user_id: string): string => `transactions:${user_id}`;
 
 /**
- * Helper function to clear transaction cache on successful transaction updates.
- *
- * @param {string} user_id - User ID
- */
-const clearTransactionCache = (user_id: string): void => {
-   removeCacheValue(getTransactionCacheKey(user_id));
-};
-
-/**
- * Helper function to send a successful update/delete response mapping to a cache clear for strong consistency.
- *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `204` (no content)
- */
-const clearCacheOnSuccess = (user_id: string): ServerResponse => {
-   clearTransactionCache(user_id);
-   return sendServiceResponse(204);
-};
-
-/**
  * Fetches user transactions from the cache or database ordered by date descending.
  *
  * @param {string} user_id - User ID
  * @returns {Promise<ServerResponse>} A server response of `200` (`Transaction[]`)
  */
 export async function fetchTransactions(user_id: string): Promise<ServerResponse> {
+   // Try to get the transactions from the cache
    const key: string = getTransactionCacheKey(user_id);
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, JSON.parse(cache) as Transaction[]);
+      return sendServiceResponse(200, JSON.parse(cache));
    }
 
-   // Cache miss - fetch from database and store in the cache
+   // Cache miss - fetch from the database and store in the cache
    const result: Transaction[] = await transactionsRepository.findByUserId(user_id);
    setCacheValue(key, TRANSACTION_CACHE_DURATION, JSON.stringify(result));
 
@@ -74,10 +55,10 @@ export async function createTransaction(user_id: string, transaction: Transactio
       return sendValidationErrors(fields);
    }
 
-   // Create the transaction in the database
-   const result: string = await transactionsRepository.create(user_id, fields.data as Transaction);
-   clearTransactionCache(user_id);
+   const result: string = await transactionsRepository.create(user_id, fields.data);
 
+   // Invalidate the cache to ensure fresh data for the next request
+   removeCacheValue(getTransactionCacheKey(user_id));
    return sendServiceResponse(201, { transaction_id: result });
 }
 
@@ -95,13 +76,6 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
       });
    }
 
-   // Ensure there are fields to update
-   if (Object.keys(transaction).length === 0) {
-      return sendValidationErrors(null, {
-         transaction: "No transaction fields to update"
-      });
-   }
-
    // Validate input against the partial transaction schema
    const fields = transactionSchema.partial().safeParse(transaction);
 
@@ -109,16 +83,15 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
       return sendValidationErrors(fields);
    }
 
-   // Update the transaction
-   const result: boolean = await transactionsRepository.update(user_id, transaction.transaction_id, fields.data as Partial<Transaction>);
+   const result = await transactionsRepository.update(user_id, transaction.transaction_id, fields.data);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         transaction: "Transaction does not exist or does not belong to the user based on the provided ID"
+         transaction_id: "Transaction does not exist or does not belong to the user based on the provided ID"
       });
    }
 
-   return clearCacheOnSuccess(user_id);
+   return clearCacheAndSendSuccess(getTransactionCacheKey(user_id));
 }
 
 /**
@@ -129,20 +102,20 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
  * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` (not found)
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
-   if (!transactionIds) {
+   // Validate the transaction IDs input
+   if (!Array.isArray(transactionIds) || !transactionIds?.length) {
       return sendValidationErrors(null, {
          transactionIds: "Missing transaction IDs"
       });
    }
 
-   // Delete the list of transactions
-   const result: boolean = await transactionsRepository.deleteTransactions(user_id, transactionIds);
+   const result = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         transaction: "Transaction(s) do not exist or do not belong to the user based on the provided IDs"
+         transactionIds: "Transaction(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }
 
-   return clearCacheOnSuccess(user_id);
+   return clearCacheAndSendSuccess(getTransactionCacheKey(user_id));
 }

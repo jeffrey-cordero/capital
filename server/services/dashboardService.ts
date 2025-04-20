@@ -23,7 +23,7 @@ import { fetchTransactions } from "@/services/transactionsService";
 import { fetchUserDetails } from "@/services/userService";
 
 /**
- * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
+ * Mutex to ensure only one external API batch call is processed at a time
  */
 const mutex = new Mutex();
 
@@ -33,17 +33,17 @@ const mutex = new Mutex();
 const backupEconomyData = {
    news: economy.News,
    trends: {
-      Stocks: economy.Stocks,
-      GDP: economy.GDP,
-      Inflation: economy.Inflation,
-      Unemployment: economy.Unemployment,
+      "Stocks": economy.Stocks,
+      "GDP": economy.GDP,
+      "Inflation": economy.Inflation,
+      "Unemployment": economy.Unemployment,
       "Treasury Yield": economy["Treasury Yield"],
       "Federal Interest Rate": economy["Federal Interest Rate"]
    }
 };
 
 /**
- * Cache durations in seconds the economy data (24 hours)
+ * Cache durations in seconds for the economy data - `24` hours or `5` minutes
  */
 const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
 const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
@@ -96,13 +96,13 @@ async function fetchStocks(): Promise<StockTrends> {
    const fields = stockTrendsSchema.safeParse(response);
 
    if (!fields.success) {
-      // Potential rate limit error or unexpected API response structure
+      // Potential rate limit error or unexpected changes in the API structure
       logger.error("Error fetching stock trends", JSON.stringify(response));
 
       return stockTrendsSchema.safeParse(economy.Stocks).data as StockTrends;
    }
 
-   return fields.data as StockTrends;
+   return fields.data;
 }
 
 /**
@@ -120,12 +120,12 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
    const fields = indicatorTrendsSchema.safeParse(response["data"]);
 
    if (!fields.success) {
-      // Potential rate limit error or new API response structure
+      // Potential rate limit error or changes in the API structure
       logger.error("Error fetching economic indicators", JSON.stringify(response));
 
       return indicatorTrendsSchema.safeParse(
-         economy[getEconomicIndicatorKey(indicator)
-         ]).data as unknown as IndicatorTrends[];
+         economy[getEconomicIndicatorKey(indicator)]
+      ).data as unknown as IndicatorTrends[];
    }
 
    return fields.data as unknown as IndicatorTrends[];
@@ -138,10 +138,9 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
  */
 export async function fetchNews(): Promise<News> {
    // Fetch news based on yesterday's date
-   const today = new Date();
-   const yesterday = new Date(today);
-   yesterday.setDate(today.getDate() - 1);
-   const midnightYesterday = yesterday.setUTCHours(0, 0, 0, 0);
+   const midnightYesterday = new Date();
+   midnightYesterday.setDate(midnightYesterday.getDate() - 1);
+   midnightYesterday.setHours(0, 0, 0, 0);
 
    const response = await fetch(`https://global-economy-news.p.rapidapi.com/?initial=${midnightYesterday}&category=economy&country=us`, {
       method: "GET",
@@ -153,12 +152,13 @@ export async function fetchNews(): Promise<News> {
    const fields = newsSchema.safeParse(response);
 
    if (!fields.success) {
+      // Potential rate limit error or changes in the API structure
       logger.error("Error fetching news", response);
 
       return newsSchema.safeParse(economy.News).data as News;
    }
 
-   return fields.data as News;
+   return fields.data;
 }
 
 /**
@@ -168,11 +168,11 @@ export async function fetchNews(): Promise<News> {
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
-      // Try to get external APIs from cache first
+      // Try to get external APIs from the cache first
       const cache = await getCacheValue("economy");
 
       if (cache) {
-         return sendServiceResponse(200, JSON.parse(cache || "") as Economy);
+         return sendServiceResponse(200, JSON.parse(cache));
       }
 
       // Check if we have fresh data in the database
@@ -182,21 +182,21 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       if (!isStale) {
          // Return the existing non-stale database content
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, JSON.stringify(stored.data));
-         return sendServiceResponse(200, stored.data as Economy);
+         return sendServiceResponse(200, stored.data);
       }
 
-      // Need to fetch from external API's - acquire mutex to prevent duplicate API calls
+      // Need to fetch from external API's, thus we acquire mutex to prevent duplicate API batch calls
       const release = await mutex.acquire();
 
       try {
-         // Double-check if another request already updated the database
+         // Double-check if another request handler has already updated the database
          const updates = await dashboardRepository.getEconomicData();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
-            return sendServiceResponse(200, updates.data as Economy);
+            return sendServiceResponse(200, updates.data);
          }
 
-         // Define external APIs to fetch
+         // Define the external APIs to fetch
          const methods = [
             { key: "News", fetch: fetchNews },
             { key: "Stocks", fetch: fetchStocks },
@@ -210,7 +210,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          // Fetch all external APIs in parallel
          const results = await Promise.all(methods.map(method => method.fetch()));
 
-         // Construct external APIs object for response
+         // Construct the external APIs object for the response
          const economy: Economy = {
             news: results[0] as News,
             trends: results.slice(1).reduce((acc, record, index) => {
@@ -220,7 +220,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
             }, {} as Trends)
          };
 
-         // Store data in database and cache
+         // Store the data in the database and cache
          const time = new Date();
          const data = JSON.stringify(economy);
 
@@ -233,9 +233,8 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          release();
       }
    } catch (error: any) {
-      // Log error and use backup data
+      // Log the unexpected error and use the backup data
       logger.error(error.stack);
-
       // Use the backup economy data and cache for a shorter duration
       setCacheValue("economy", BACKUP_ECONOMY_DATA_CACHE_DURATION, JSON.stringify(backupEconomyData));
 
@@ -250,7 +249,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
  * @returns {Promise<ServerResponse>} A server response of `200` (`Dashboard`)
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   // Fetch all dashboard components in parallel
+   // Fetch all the essential dashboard components in parallel
    const [economy, accounts, budgets, transactions, settings] = await Promise.all([
       fetchEconomicalData(),
       fetchAccounts(user_id),
@@ -259,12 +258,12 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
       fetchUserDetails(user_id)
    ]);
 
-   // Combine all data into a single dashboard response
+   // Combine all the essential dashboard components into a single response
    return sendServiceResponse(200, {
       accounts: accounts.data,
       budgets: budgets.data,
       economy: economy.data,
       transactions: transactions.data,
       settings: settings.data
-   } as Dashboard);
+   });
 }

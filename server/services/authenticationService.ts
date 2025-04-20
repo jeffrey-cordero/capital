@@ -18,7 +18,7 @@ import { findByUsername } from "@/repository/userRepository";
  */
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
-      // Verify the JWT token, handling expected thrown errors
+      // Verify the JWT token where errors are potentially thrown
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
       return sendServiceResponse(200, { authenticated: true });
@@ -30,6 +30,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
 
          return sendServiceResponse(200, { authenticated: false });
       } else {
+         // Log unexpected errors
          logger.error(error.stack);
 
          return sendServiceResponse(500, undefined, { server: "Internal Server Error" });
@@ -41,6 +42,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
  * Authenticates a user with username and password credentials, configuring a
  * JWT token for authentication purposes on success.
  *
+ * @param {Response} res - Express response object
  * @param {string} username - User's username
  * @param {string} password - User's password
  * @returns {Promise<ServerResponse>} A server response of `200` (`{ success: true }`) or `401` with respective errors
