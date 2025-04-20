@@ -10,7 +10,7 @@ import { createCategory } from "@/repository/budgetsRepository";
 const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
 
 /**
- * Finds potentially conflicting users
+ * Finds potentially conflicting users for email and/or username unique constraints
  *
  * @param {string} username - Username to check
  * @param {string} email - Email to check
@@ -18,7 +18,6 @@ const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as co
  * @returns {Promise<User[]>} Matching users
  */
 export async function findConflictingUsers(username: string, email: string, user_id?: string): Promise<User[]> {
-   // Check for username/email conflicts
    const conflicts = `
       SELECT user_id, username, email
       FROM users
@@ -37,7 +36,6 @@ export async function findConflictingUsers(username: string, email: string, user
  * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUsername(username: string): Promise<User | null> {
-   // Find by username
    const search = `
       SELECT user_id, username, password
       FROM users
@@ -55,12 +53,11 @@ export async function findByUsername(username: string): Promise<User | null> {
  * @returns {Promise<User | null>} Matching user or null
  */
 export async function findByUserId(user_id: string): Promise<User | null> {
-   // Find by user ID
    const search = `
       SELECT * FROM users
       WHERE user_id = $1;
    `;
-   const result: User[] = await query(search, [user_id]);
+   const result = await query(search, [user_id]);
 
    return result.length > 0 ? result[0] : null;
 }
@@ -126,12 +123,10 @@ export async function create(user: User): Promise<string> {
  * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, updates: Partial<UserUpdates>): Promise<boolean> {
-   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Include only fields present in updates
    USER_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);

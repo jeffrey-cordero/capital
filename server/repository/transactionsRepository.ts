@@ -28,7 +28,7 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
    `;
    const result = await query(search, [user_id]) as Transaction[];
 
-   return result.map((transaction) => ({ ...transaction, amount: Number(transaction.amount) }));
+   return result;
 }
 
 /**
@@ -65,19 +65,17 @@ export async function create(user_id: string, transaction: Transaction): Promise
  * @returns {Promise<boolean>} Success status
  */
 export async function update(user_id: string, transaction_id: string, updates: Partial<Transaction>): Promise<boolean> {
-   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Include only valid fields present in updates
    TRANSACTION_UPDATES.forEach((field) => {
       const key = field as keyof typeof updates;
 
       if (key in updates && updates[key] !== undefined) {
          fields.push(`${field} = $${param}`);
 
-         // Handle optional foreign keys
+         // Handle optional foreign keys for budget categories and accounts
          if (key === "budget_category_id" || key === "account_id") {
             values.push(updates[key] === "" ? null : updates[key]);
          } else {

@@ -40,6 +40,7 @@ export async function fetchDashboard(
       dispatch(setTransactions(dashboard.transactions.map((t) => {
          return {
             ...t,
+            amount: Number(t.amount),
             budget_category_id: t.budget_category_id || (
                t.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
             )

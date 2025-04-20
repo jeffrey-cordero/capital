@@ -58,12 +58,10 @@ export async function create(user_id: string, account: Account): Promise<string>
  * @returns {Promise<boolean>} Success status
  */
 export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account>): Promise<boolean> {
-   // Build dynamic update query
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Include only fields present in updates
    ACCOUNT_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);

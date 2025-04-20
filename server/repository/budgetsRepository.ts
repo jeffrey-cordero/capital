@@ -1,10 +1,4 @@
-import {
-   Budget,
-   BudgetCategory,
-   BudgetGoal,
-   BudgetType,
-   OrganizedBudgets
-} from "capital/budgets";
+import { Budget, BudgetCategory, BudgetGoal, OrganizedBudgets } from "capital/budgets";
 import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
@@ -21,7 +15,7 @@ const BUDGET_CATEGORY_UPDATES = ["name", "type", "category_order"] as const;
  * @returns {Promise<OrganizedBudgets>} Organized budget data
  */
 export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
-   // Fetch budgets with categories in a single query
+   // Fetch budget categories with their respective goals in a single query
    const overall = `
       SELECT bc.budget_category_id, bc.name, bc.type, bc.category_order, b.goal, b.year, b.month
       FROM budget_categories AS bc
@@ -40,7 +34,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
    };
 
    for (const row of results) {
-      const type: BudgetType = row.type;
+      const type: "Income" | "Expenses" = row.type;
 
       // Extract budget category data
       const category: BudgetCategory = {
@@ -63,14 +57,13 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
       if (!category.name) {
          result[type].goals.push(budget);
          result[type].budget_category_id = row.budget_category_id;
-
          continue;
       }
 
       // Check if category already exists in map
-      const categoryIndex: number | undefined = categories[row.budget_category_id];
+      const index: number | undefined = categories[row.budget_category_id];
 
-      if (categoryIndex === undefined) {
+      if (index === undefined) {
          // Add new category to result and track position
          const index: number = result[type].categories.length;
 
@@ -78,7 +71,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
          categories[row.budget_category_id] = index;
       } else {
          // Append budget to existing category goals
-         result[type].categories[categoryIndex].goals.push(budget);
+         result[type].categories[index].goals.push(budget);
       }
    }
 
@@ -146,12 +139,10 @@ export async function updateCategory(
    budget_category_id: string,
    updates: Partial<BudgetCategory>
 ): Promise<boolean> {
-   // Build dynamic update query from provided fields
    let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
 
-   // Include only fields present in updates
    BUDGET_CATEGORY_UPDATES.forEach((field: string) => {
       if (field in updates) {
          fields.push(`${field} = $${param}`);
@@ -185,7 +176,7 @@ export async function updateCategory(
          return false;
       }
 
-      // Re-throw unexpected errors
+      // Re-throw unexpected database errors
       throw error;
    }
 }
@@ -238,7 +229,7 @@ export async function updateCategoryOrderings(user_id: string, updates: Partial<
 }
 
 /**
- * Verifies if a budget category belongs to a user
+ * Verifies if a budget category belongs to a user for security purposes
  *
  * @param {PoolClient} client - Database transaction client
  * @param {string} user_id - User identifier
@@ -266,8 +257,7 @@ async function verifyCategoryOwnership(client: PoolClient, user_id: string, budg
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
-      // Verify category ownership
-      if (!verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
+      if (!await verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
          return false;
       }
 
@@ -298,8 +288,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
  */
 export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
    return await transaction(async(client: PoolClient): Promise<boolean> => {
-      // Verify category ownership
-      if (!verifyCategoryOwnership(client, user_id, budget_category_id)) {
+      if (!await verifyCategoryOwnership(client, user_id, budget_category_id)) {
          return false;
       }
 

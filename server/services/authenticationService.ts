@@ -49,7 +49,7 @@ export async function authenticateUser(res: Response, username: string, password
    // Authenticate user based on the provided credentials
    const user: User | null = await findByUsername(username);
 
-   if (!user || !(await argon2.verify(password, user.password))) {
+   if (!user || !(await argon2.verify(user.password, password))) {
       return sendServiceResponse(401, undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
