@@ -28,7 +28,7 @@ import { fetchUserDetails } from "@/services/userService";
 const mutex = new Mutex();
 
 /**
- * Backup economy data to use in case of failure during data fetching
+ * Backup economy data for fallback during data fetching failures
  */
 const backupEconomyData = {
    news: economy.News,
@@ -43,28 +43,27 @@ const backupEconomyData = {
 };
 
 /**
- * Cache durations in seconds for the economy data - `24` hours or `5` minutes
+ * Cache durations for economy data (24 hours or 5 minutes backup duration)
  */
 const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
 const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
 
 /**
- * Helper function to generate Alpha Vantage API URL with the provided function name and parameters,
- * requiring the `XRapidAPIKey` environment variable to be set
+ * Generates Alpha Vantage API URL with function name and parameters
  *
  * @param {string} name - The function name to fetch
- * @param {string} params - The parameters to fetch from the function
- * @returns {string} The formatted Alpha Vantage API URL
+ * @param {string} [params] - The parameters to fetch from the function
+ * @returns {string} Formatted Alpha Vantage API URL
  */
 const getAlphaVantageUrl = (name: string, params: string = ""): string => {
    return `https://www.alphavantage.co/query?function=${name}${params}&apikey=${process.env.XRapidAPIKey}`;
 };
 
 /**
- * Helper function to get the key for the economy data
+ * Gets the key for the economy data from indicator name
  *
  * @param {string} indicator - The indicator to fetch
- * @returns {keyof typeof economy} The key for the economy data
+ * @returns {keyof typeof economy} Key for the economy data
  */
 const getEconomicIndicatorKey = (indicator: string): keyof typeof economy => {
    switch (indicator) {
@@ -84,9 +83,10 @@ const getEconomicIndicatorKey = (indicator: string): keyof typeof economy => {
 };
 
 /**
- * Fetches stock trends (Top Gainers, Losers, Most Active) from the Alpha Vantage API
+ * Fetches stock trends from Alpha Vantage API
  *
- * @returns {Promise<StockTrends>} The stock trends
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
+ * @returns {Promise<StockTrends>} Stock trends data (top gainers, losers, most active)
  */
 async function fetchStocks(): Promise<StockTrends> {
    // Retrieve stock trends (Top Gainers, Losers, Most Active)
@@ -106,12 +106,12 @@ async function fetchStocks(): Promise<StockTrends> {
 }
 
 /**
- * Fetches economic indicators from the Alpha Vantage API
+ * Fetches economic indicators from Alpha Vantage API
  *
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
  * @param {string} indicator - The indicator to fetch
- * @returns {Promise<IndicatorTrends[]>} The economic indicators
- * @throws {Error} If the indicator API response is invalid or the API call fails
-*/
+ * @returns {Promise<IndicatorTrends[]>} Economic indicator trends
+ */
 async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTrends[]> {
    // Retrieve economic indicators (GDP, Inflation, Unemployment, etc.)
    const response = await fetch(getAlphaVantageUrl(indicator, "&interval=quarterly"), {
@@ -132,9 +132,10 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 }
 
 /**
- * Fetches the latest financial news from the Global Economy News API (TrawlingWeb)
+ * Fetches financial news from Global Economy News API
  *
- * @returns {Promise<News>} The latest economic news
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Global Economy News API
+ * @returns {Promise<News>} Latest economic news
  */
 export async function fetchNews(): Promise<News> {
    // Fetch news based on yesterday's date
@@ -162,9 +163,10 @@ export async function fetchNews(): Promise<News> {
 }
 
 /**
- * Fetches most-recent economy data from the cache, database, or external API's.
+ * Fetches economy data from cache, database, or external APIs
  *
- * @returns {Promise<ServerResponse>} The economical data
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
+ * @returns {Promise<ServerResponse>} A server response of `200` with economy data
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
@@ -243,10 +245,10 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 }
 
 /**
- * Fetches the dashboard data for the user.
+ * Fetches the dashboard data for the user
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`Dashboard`)
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with dashboard data
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    // Fetch all the essential dashboard components in parallel

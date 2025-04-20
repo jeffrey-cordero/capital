@@ -7,23 +7,23 @@ import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } f
 import * as accountsRepository from "@/repository/accountsRepository";
 
 /**
- * Cache duration in seconds for user accounts - `30` minutes
+ * Cache duration for user accounts (30 minutes)
  */
 const ACCOUNT_CACHE_DURATION = 30 * 60;
 
 /**
- * Helper function to generate user accounts cache key for Redis.
+ * Generates user accounts cache key for Redis
  *
- * @param {string} user_id - User ID
- * @returns {string} User accounts cache key
+ * @param {string} user_id - User identifier
+ * @returns {string} Redis cache key for user accounts
  */
 const getAccountCacheKey = (user_id: string): string => `accounts:${user_id}`;
 
 /**
- * Fetches user financial accounts from cache or database.
+ * Fetches user financial accounts
  *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`Account[]`)
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with user accounts array
  */
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Try to get financial accounts from cache first
@@ -42,11 +42,11 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
 }
 
 /**
- * Creates a new account.
+ * Creates a new account
  *
- * @param {string} user_id - User ID
- * @param {Account} account - Account object to create
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ account_id: string }`) or `400` with respective errors
+ * @param {string} user_id - User identifier
+ * @param {Account} account - Account details to create
+ * @returns {Promise<ServerResponse>} A server response of `201` with the inserted account ID or `400` with validation errors
  */
 export async function createAccount(user_id: string, account: Account): Promise<ServerResponse> {
    // Validate input against account schema
@@ -66,11 +66,11 @@ export async function createAccount(user_id: string, account: Account): Promise<
 }
 
 /**
- * Updates an account with a last updated timestamp.
+ * Updates an account with a last updated timestamp
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Partial<Account>} account - Account object to update
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
  */
 export async function updateAccount(
    user_id: string,
@@ -102,11 +102,11 @@ export async function updateAccount(
 }
 
 /**
- * Updates the ordering of accounts.
+ * Updates the ordering of accounts
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {string[]} accounts - Array of account IDs
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate the array of account IDs
@@ -144,11 +144,11 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
 }
 
 /**
- * Deletes an account.
+ * Deletes an account
  *
- * @param {string} user_id - User ID
- * @param {string} account_id - Account ID
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @param {string} user_id - User identifier
+ * @param {string} account_id - Account identifier
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
    // Validate the account ID input

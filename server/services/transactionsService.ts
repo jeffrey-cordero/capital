@@ -6,23 +6,23 @@ import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } f
 import * as transactionsRepository from "@/repository/transactionsRepository";
 
 /**
- * Cache duration in seconds for user transactions - `10` minutes
+ * Cache duration for user transactions (10 minutes)
  */
 const TRANSACTION_CACHE_DURATION = 10 * 60;
 
 /**
- * Helper function to generate transaction cache key for Redis.
+ * Generates transaction cache key for Redis
  *
- * @param {string} user_id - User ID
- * @returns {string} Transaction cache key
+ * @param {string} user_id - User identifier
+ * @returns {string} Redis cache key for transactions
  */
 const getTransactionCacheKey = (user_id: string): string => `transactions:${user_id}`;
 
 /**
- * Fetches user transactions from the cache or database ordered by date descending.
+ * Fetches user transactions ordered by date descending
  *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`Transaction[]`)
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with transaction array
  */
 export async function fetchTransactions(user_id: string): Promise<ServerResponse> {
    // Try to get the transactions from the cache
@@ -41,11 +41,11 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
 }
 
 /**
- * Creates a new transaction.
+ * Creates a new transaction
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Transaction} transaction - Transaction object to create
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ transaction_id: string }`) or `400` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `201` with the inserted transaction ID or `400` with validation errors
  */
 export async function createTransaction(user_id: string, transaction: Transaction): Promise<ServerResponse> {
    // Validate input against the transaction schema
@@ -63,11 +63,11 @@ export async function createTransaction(user_id: string, transaction: Transactio
 }
 
 /**
- * Updates an existing transaction.
+ * Updates an existing transaction
  *
- * @param {string} user_id - User ID
- * @param {Partial<Transaction>} transaction - Transaction object with updates from request body
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @param {string} user_id - User identifier
+ * @param {Partial<Transaction>} transaction - Transaction object with updates
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateTransaction(user_id: string, transaction: Partial<Transaction>): Promise<ServerResponse> {
    if (!transaction.transaction_id) {
@@ -95,11 +95,11 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
 }
 
 /**
- * Deletes a list of transactions.
+ * Deletes a list of transactions
  *
- * @param {string} user_id - User ID
- * @param {string[]} transactionIds - Transaction IDs
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` (not found)
+ * @param {string} user_id - User identifier
+ * @param {string[]} transactionIds - Transaction IDs to delete
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
    // Validate the transaction IDs input

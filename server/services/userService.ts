@@ -16,25 +16,25 @@ import * as userRepository from "@/repository/userRepository";
 import { logoutUser } from "@/services/authenticationService";
 
 /**
- * Cache duration in seconds for user details - `30` minutes
+ * Cache duration for user details (30 minutes)
  */
 const USER_DETAILS_CACHE_DURATION = 30 * 60;
 
 /**
- * Helper function to normalize user input for case-insensitive comparison (username, email).
+ * Normalizes user input for case-insensitive comparison
  *
  * @param {string} input - User input to normalize
- * @returns {string} Normalized user input
+ * @returns {string} Normalized lowercase trimmed string
  */
 const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
 
 /**
- * Helper function to generate error messages for username/email conflicts.
+ * Generates error messages for username/email conflicts
  *
  * @param {User[]} existingUsers - Array of existing users
  * @param {string} username - Username to check
  * @param {string} email - Email to check
- * @returns {Record<string, string>} Error messages
+ * @returns {Record<string, string>} Object with error messages representing the attribute conflicts
  */
 const generateConflictErrors = (
    existingUsers: User[],
@@ -58,18 +58,18 @@ const generateConflictErrors = (
 };
 
 /**
- * Helper function to generate user cache key for Redis.
+ * Generates user cache key for Redis
  *
- * @param {string} user_id - User ID
- * @returns {string} User cache key
+ * @param {string} user_id - User identifier
+ * @returns {string} Redis cache key for user details
  */
 const getUserCacheKey = (user_id: string): string => `user:${user_id}`;
 
 /**
- * Fetches user details from cache or database.
+ * Fetches user details
  *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`UserDetails`) or `404` if not found
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with user details or `404` with respective errors
  */
 export async function fetchUserDetails(user_id: string): Promise<ServerResponse> {
    // Try to get user details from cache first
@@ -103,12 +103,12 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
 }
 
 /**
- * Creates a new user and configures their JWT token for authentication.
+ * Creates a new user and configures JWT token
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {User} user - User object
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ success: true }`) or `400`/`409` with respective errors
+ * @param {User} user - User object to create
+ * @returns {Promise<ServerResponse>} A server response of `201` with success status or `400`/`409` with respective errors
  */
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields against the user schema
@@ -141,11 +141,11 @@ export async function createUser(req: Request, res: Response, user: User): Promi
 }
 
 /**
- * Updates user account details including password changes.
+ * Updates user account details including account security information
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Partial<UserUpdates>} updates - User details to update
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404`/`409` with respective errors
  */
 export async function updateAccountDetails(user_id: string, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    // Validate update fields with user update schema
@@ -208,11 +208,11 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
 }
 
 /**
- * Deletes a user account and all their associated data.
+ * Deletes a user account and all associated data
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` if the user does not exist
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
  */
 export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
    // Attempt to delete the user and their data

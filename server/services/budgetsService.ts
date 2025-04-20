@@ -13,23 +13,23 @@ import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } f
 import * as budgetsRepository from "@/repository/budgetsRepository";
 
 /**
- * Cache duration in seconds for user budgets - `30` minutes
+ * Cache duration for user budgets (30 minutes)
  */
 const BUDGET_CACHE_DURATION = 30 * 60;
 
 /**
- * Helper function to generate budgets cache key.
+ * Generates budgets cache key
  *
- * @param {string} user_id - User ID
- * @returns {string} Budgets cache key
+ * @param {string} user_id - User identifier
+ * @returns {string} Redis cache key for budgets
  */
 const getBudgetsCacheKey = (user_id: string): string => `budgets:${user_id}`;
 
 /**
- * Fetches budgets from cache or database and returns them as a server response.
+ * Fetches budgets for a user
  *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`OrganizedBudgets`)
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with organized budgets
  */
 export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
    // Try to get from cache first
@@ -48,11 +48,11 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
 }
 
 /**
- * Creates a new budget category with initial budget records.
+ * Creates a new budget category with initial budget records
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Budget & BudgetCategory} category - Budget category object
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ budget_category_id: string }`) or `400` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `201` with the inserted budget category ID or `400` with validation errors
  */
 export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
    // Validate budget and category fields against their respective schemas
@@ -84,11 +84,11 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
 }
 
 /**
- * Updates a budget category.
+ * Updates a budget category
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Partial<BudgetCategory>} category - Budget category object
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateCategory(user_id: string, category: Partial<BudgetCategory>): Promise<ServerResponse> {
    if (!category.budget_category_id) {
@@ -120,11 +120,11 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
 }
 
 /**
- * Updates the ordering of budget categories.
+ * Updates the ordering of budget categories
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {string[]} categoryIds - Array of category IDs
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateCategoryOrdering(user_id: string, categoryIds: string[]): Promise<ServerResponse> {
    // Validate the array of category IDs
@@ -163,11 +163,11 @@ export async function updateCategoryOrdering(user_id: string, categoryIds: strin
 }
 
 /**
- * Creates a new budget.
+ * Creates a new budget
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Budget} budget - Budget object
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ success: true }`) or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `201` with success status or `400`/`404` with respective errors
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
    // Validate input against its schema
@@ -193,11 +193,11 @@ export async function createBudget(user_id: string, budget: Budget): Promise<Ser
 }
 
 /**
- * Updates a budget.
+ * Updates a budget
  *
- * @param {string} user_id - User ID
+ * @param {string} user_id - User identifier
  * @param {Budget} budget - Budget object
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function updateBudget(user_id: string, budget: Budget): Promise<ServerResponse> {
    // Validate input against its schema
@@ -219,11 +219,11 @@ export async function updateBudget(user_id: string, budget: Budget): Promise<Ser
 }
 
 /**
- * Deletes a budget category.
+ * Deletes a budget category
  *
- * @param {string} user_id - User ID
- * @param {string} budget_category_id - Budget category ID
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404` with respective errors
+ * @param {string} user_id - User identifier
+ * @param {string} budget_category_id - Budget category identifier
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
  */
 export async function deleteCategory(user_id: string, budget_category_id: string): Promise<ServerResponse> {
    if (!budget_category_id) {
