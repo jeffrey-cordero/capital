@@ -6,39 +6,38 @@ import { Pool, PoolClient } from "pg";
  * Connection pool for database connections
  */
 const pool = new Pool({
-   host: process.env.DB_HOST || "postgres",
+   host: process.env.DB_HOST || "localhost",
    user: process.env.DB_USER,
    password: process.env.DB_PASSWORD,
    database: process.env.DB_NAME,
-   port: Number(process.env.DB_PORT) || 5432,
+   port: Number(process.env.DB_PORT) || 5433,
    max: 50
 });
 
 /**
- * Constant for query parameter indexing
+ * Starting index for updating query parameters
  */
 export const FIRST_PARAM = 1;
 
 /**
- * Executes a query on the database pool
+ * Executes a SQL query using the database pool
  *
- * @param {string} query - The prepared SQL query to execute
- * @param {any[]} parameters - Array of parameters for the query
- * @returns {Promise<any[]>} Resulting rows from the query
+ * @param {string} query - SQL query string with placeholders
+ * @param {any[]} parameters - Values for the query placeholders
+ * @returns {Promise<any[]>} Array of result rows
  */
 export async function query(query: string, parameters: any[]): Promise<any[]> {
-   // Submit the query and return the resulting rows
    return (await pool.query(query, parameters)).rows;
 }
 
 /**
- * Wraps multiple database operations in a transaction with automatic
+ * Executes multiple database operations within a transaction and automatically handles
  * `BEGIN`, `COMMIT`, and `ROLLBACK` statements.
  *
- * @param {() => Promise<any>} statements - Async function containing database operations.
- * @param {string} [isolationLevel] - The isolation level for the transaction.
- * @returns {Promise<any>} The result of the transaction statements.
- * @throws {Error} If the transaction fails or is rolled back.
+ * @param {(client: PoolClient) => Promise<any>} statements - Function containing database operations
+ * @param {string} [isolationLevel] - Transaction isolation level
+ * @returns {Promise<unknown>} Result of the transaction
+ * @throws {Error} If transaction fails
  */
 export async function transaction(
    statements: (client: PoolClient) => Promise<any>,
@@ -47,27 +46,26 @@ export async function transaction(
    let client: PoolClient | null = null;
 
    try {
-      // Connect to the database pool
+      // Get a client from the pool
       client = await pool.connect();
 
-      // Begin the transaction with the proper isolation level
+      // Start transaction with specified isolation
       await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
 
-      // Run a series of statements,
+      // Execute the transaction statements
       const result = await statements(client) as unknown;
 
-      // Commit the transaction
+      // Commit changes
       await client.query("COMMIT;");
 
-      // Return the potential results of the transaction
       return result;
    } catch (error: any) {
-      // Rollback any change
+      // Rollback on error
       await client?.query("ROLLBACK;");
 
       throw error;
    } finally {
-      // Release from the database pool
+      // Return client to pool
       client?.release();
    }
 }

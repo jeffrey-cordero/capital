@@ -2,107 +2,102 @@ import { Account } from "capital/accounts";
 
 import { FIRST_PARAM, query } from "@/lib/database";
 
-/**
- * The fields that can be updated for an account
- */
+/** Updatable account fields */
 const ACCOUNT_UPDATES = ["name", "type", "image", "account_order", "balance", "last_updated"] as const;
 
 /**
- * Fetches all accounts for a user.
+ * Fetches all accounts for a user
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<Account[]>} The accounts
+ * @param {string} user_id - User identifier
+ * @returns {Promise<Account[]>} User's financial accounts
  */
 export async function findByUserId(user_id: string): Promise<Account[]> {
    const search = `
-      SELECT a.*
-      FROM accounts as a
-      WHERE a.user_id = $1
-      ORDER BY a.account_order ASC;
+      SELECT account_id, name, type, image, balance, last_updated, account_order
+      FROM accounts
+      WHERE user_id = $1
+      ORDER BY account_order ASC;
    `;
 
-   return await query(search, [user_id]) as Account[];
+   return await query(search, [user_id]);
 }
 
 /**
- * Creates a new account.
+ * Creates a new account
  *
- * @param {string} user_id - The user ID
- * @param {Account} account - The account to be inserted
- * @returns {Promise<string>} The inserted account ID
+ * @param {string} user_id - User identifier
+ * @param {Account} account - Account details to create
+ * @returns {Promise<string>} Created account ID
  */
 export async function create(user_id: string, account: Account): Promise<string> {
-   // Create account record with basic details
+   // Create account record
    const creation = `
       INSERT INTO accounts (user_id, name, type, image, account_order, balance, last_updated)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING account_id;
    `;
-   const result = await query(
-      creation,
-      [user_id, account.name, account.type, account.image, account.account_order, account.balance, account.last_updated]
-   ) as { account_id: string }[];
+   const result = await query(creation, [
+      user_id,
+      account.name,
+      account.type,
+      account.image,
+      account.account_order,
+      account.balance,
+      account.last_updated
+   ]);
 
    return result[0].account_id;
 }
 
 /**
- * Updates the basic details of an account.
+ * Updates account details
  *
- * @param {string} account_id - The account ID
- * @param {Partial<Account>} updates - The updates
- * @returns {Promise<boolean>} True if the account was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} account_id - Account identifier
+ * @param {Partial<Account>} updates - Fields to update
+ * @returns {Promise<boolean>} Success status
  */
-export async function updateDetails(
-   account_id: string,
-   updates: Partial<Account>
-): Promise<boolean> {
-   // Build dynamic update query based on provided fields
+export async function updateDetails(user_id: string, account_id: string, updates: Partial<Account>): Promise<boolean> {
+   let param: number = FIRST_PARAM;
    const fields: string[] = [];
    const values: any[] = [];
-   let params = FIRST_PARAM;
 
-   // Only include fields that are present in the updates
    ACCOUNT_UPDATES.forEach((field: string) => {
       if (field in updates) {
-         fields.push(`${field} = $${params}`);
+         fields.push(`${field} = $${param}`);
          values.push(updates[field as keyof Account]);
-         params++;
-
-         // Trim string fields (except account_order which is numeric)
-         if (field !== "account_order") {
-            values[values.length - 1] = String(values[values.length - 1]);
-         }
+         param++;
       }
    });
 
-   // Skip query if no fields to update
+   // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Add account ID for WHERE clause
-   values.push(account_id);
+   // Add user and account IDs
+   values.push(user_id, account_id);
+   param++;
 
-   const updateQuery = `
+   const update = `
       UPDATE accounts
       SET ${fields.join(", ")}
-      WHERE account_id = $${params}
+      WHERE user_id = $${param - 1}
+      AND account_id = $${param}
       RETURNING account_id;
    `;
-
-   const result = await query(updateQuery, values) as Account[];
+   const result = await query(update, values);
 
    return result.length > 0;
 }
 
 /**
- * Updates the ordering of accounts.
+ * Updates account ordering
  *
- * @param {string} user_id - The user ID
- * @param {Partial<Account>[]} updates - The updates
- * @returns {Promise<boolean>} True if the ordering was updated, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {Partial<Account>[]} updates - Account order updates
+ * @returns {Promise<boolean>} Success status
  */
 export async function updateOrdering(user_id: string, updates: Partial<Account>[]): Promise<boolean> {
-   // Bulk update account ordering formatting
+   // Format bulk update for multiple accounts
    const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
    const params = updates.flatMap(update => [
       String(update.account_id),
@@ -117,8 +112,7 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
       AND accounts.user_id = $${params.length + 1}
       RETURNING accounts.user_id;
    `;
-
-   const result = await query(update, [...params, user_id]) as { account_id: string }[];
+   const result = await query(update, [...params, user_id]);
 
    return result.length > 0;
 }
@@ -126,19 +120,18 @@ export async function updateOrdering(user_id: string, updates: Partial<Account>[
 /**
  * Deletes an account
  *
- * @param {string} user_id - The user ID
- * @param {string} account_id - The account ID
- * @returns {Promise<boolean>} True if the account was deleted, false otherwise
+ * @param {string} user_id - User identifier
+ * @param {string} account_id - Account identifier
+ * @returns {Promise<boolean>} Success status
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<boolean> {
    const removal = `
       DELETE FROM accounts
-      WHERE user_id = $1 
+      WHERE user_id = $1
       AND account_id = $2
       RETURNING account_id;
    `;
-
-   const result = await query(removal, [user_id, account_id]) as { account_id: string }[];
+   const result = await query(removal, [user_id, account_id]);
 
    return result.length > 0;
 }

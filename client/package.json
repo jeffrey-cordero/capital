@@ -6,7 +6,7 @@
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
-    "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
+    "start": "npm run build && cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
     "lint": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' && npx stylelint npx stylelint '**/*.scss' --fix",
     "typecheck": "react-router typegen && tsc"
   },

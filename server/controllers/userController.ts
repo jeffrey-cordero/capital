@@ -6,45 +6,50 @@ import { submitServiceRequest } from "@/lib/services";
 import * as userService from "@/services/userService";
 
 /**
- * Handles POST requests for creating a new user account.
+ * Creates a new user account
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with user details
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the user creation request
+ * @returns {Promise<Response>} Service response with creation confirmation
  */
-export const POST = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => userService.createUser(req, res, req.body as User))
-);
+export const POST = asyncHandler(async(req: Request, res: Response) => {
+   const user: User = req.body;
+
+   return submitServiceRequest(res, async() => userService.createUser(req, res, user));
+});
 
 /**
- * Handles GET requests for fetching user account settings.
+ * Fetches account settings for the authenticated user
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the user details request
+ * @returns {Promise<Response>} Service response with user details
  */
-export const GET = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => userService.fetchUserDetails(res.locals.user_id))
-);
+export const GET = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => userService.fetchUserDetails(res.locals.user_id));
+});
 
 /**
- * Handles PUT requests for updating user account settings.
+ * Updates account settings for the authenticated user
  *
- * @param {Request} req - Express request object
+ * @param {Request} req - Express request object with updates
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the user update request
+ * @returns {Promise<Response>} Service response with update confirmation
  */
-export const PUT = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => userService.updateAccountDetails(req, res, req.body as Partial<UserUpdates>))
-);
+export const PUT = asyncHandler(async(req: Request, res: Response) => {
+   const user_id: string = res.locals.user_id;
+   const updates: Partial<UserUpdates> = req.body;
+
+   return submitServiceRequest(res, async() => userService.updateAccountDetails(user_id, updates));
+});
 
 /**
- * Handles DELETE requests for removing a user account.
+ * Deletes the current user's account
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} The service response for the user deletion request
+ * @returns {Promise<Response>} Service response with deletion confirmation
  */
-export const DELETE = asyncHandler(async(req: Request, res: Response) =>
-   submitServiceRequest(res, async() => userService.deleteAccount(req, res, res.locals.user_id))
-);
+export const DELETE = asyncHandler(async(req: Request, res: Response) => {
+   return submitServiceRequest(res, async() => userService.deleteAccount(req, res));
+});

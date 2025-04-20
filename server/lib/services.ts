@@ -3,14 +3,14 @@ import { Response } from "express";
 import { SafeParseReturnType } from "zod";
 
 import { logger } from "@/lib/logger";
+import { removeCacheValue } from "@/lib/redis";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
- * Formats validation errors based on Zod schema validation results for API
- * responses with a `400` status code.
+ * Formats validation errors with a 400 status code based on Zod schema results.
  *
- * @param {SafeParseReturnType<any, any> | null} fields - Zod schema validation results (`fields.success = false`)
- * @param {Record<string, string>} [errors] - Optional prepared error details, which assumes `fields` is `null`
+ * @param {SafeParseReturnType<any, any> | null} fields - Zod validation results or null
+ * @param {Record<string, string>} [errors] - Optional prepared error messages (used when fields is null)
  * @returns {ServerResponse} Validation errors response
  */
 export function sendValidationErrors(
@@ -18,8 +18,8 @@ export function sendValidationErrors(
    errors?: Record<string, string>
 ): ServerResponse {
    if (fields !== null) {
-      // Zod schema validation errors
-      const errors: Record<string, string[] | undefined> = fields.error?.flatten().fieldErrors || {};
+      // Extract Zod validation errors
+      const errors = fields.error?.flatten().fieldErrors || {};
 
       return {
          code: 400,
@@ -30,7 +30,7 @@ export function sendValidationErrors(
          )
       };
    } else {
-      // Custom validation errors
+      // Use predefined validation errors
       return {
          code: 400,
          errors: errors || {}
@@ -39,12 +39,12 @@ export function sendValidationErrors(
 }
 
 /**
- * Sends a response from a service request with the specified code, data, and errors.
+ * Creates a structured service response with specified status code and data.
  *
  * @param {number} code - HTTP status code
- * @param {any} [data] - Optional data to include in the response
- * @param {Record<string, string>} [errors] - Optional prepared error details
- * @returns {ServerResponse} Server response
+ * @param {any} [data] - Optional response data
+ * @param {Record<string, string>} [errors] - Optional error details
+ * @returns {ServerResponse} Formatted server response
  */
 export function sendServiceResponse(code: number, data?: any, errors?: Record<string, string>): ServerResponse {
    return {
@@ -55,11 +55,10 @@ export function sendServiceResponse(code: number, data?: any, errors?: Record<st
 }
 
 /**
- * Submits a service request and handles the API response formatting, acting as a
- * global error handler for all service requests.
+ * Handles service requests and formats API responses with global error handling.
  *
- * @param {Response} res - Express response object to send the formatted response
- * @param {Function} serviceMethod - Async function representing the service request
+ * @param {Response} res - Express response object
+ * @param {Function} serviceMethod - Async function containing the service logic
  */
 export const submitServiceRequest = async(
    res: Response,
@@ -69,17 +68,27 @@ export const submitServiceRequest = async(
       const result: ServerResponse = await serviceMethod();
 
       if (result.code === 200 || result.code === 201 || result.code === 204) {
-         // Successful request with data or no content
+         // Success response
          return sendSuccess(res, result.code, result.data ?? undefined);
       } else {
-         // Validation errors and/or potential database conflicts
+         // Error response
          return sendErrors(res, result.code, result.errors);
       }
    } catch (error: any) {
+      // Log unexpected errors
       logger.error(error.stack);
 
-      return sendErrors(res, 500,
-         { server: "Internal Server Error" }
-      );
+      return sendErrors(res, 500, { server: "Internal Server Error" });
    }
+};
+
+/**
+ * Helper function to send a successful update response after clearing a cache key for strong consistency.
+ *
+ * @param {string} key - Cache key
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content
+ */
+export const clearCacheAndSendSuccess = (key: string): ServerResponse => {
+   removeCacheValue(key);
+   return sendServiceResponse(204);
 };

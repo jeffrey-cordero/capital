@@ -1,63 +1,5 @@
 services:
-  client:
-    image: node:alpine
-    working_dir: /app
-    volumes:
-      - ./client:/app
-      - ./client/.env:/app/.env
-      - ./types:/types
-    networks:
-      - capital_network
-    ports:
-      - "3000:3000"
-    depends_on:
-      server:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: always
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command: sh -c "npm install --legacy-peer-deps && npm run dev"
-    container_name: capital_client
-
-  server:
-    image: node:alpine
-    working_dir: /app
-    volumes:
-      - ./server:/app
-      - ./server/.env:/app/.env
-      - ./types:/types
-    networks:
-      - capital_network
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_started
-      redis:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: always
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command: sh -c "npm uninstall bcrypt && npm install bcrypt && npm run dev"
-    container_name: capital_server
-
-  postgres: 
+  postgres:
     image: postgres
     environment:
       POSTGRES_USER: postgres
@@ -69,7 +11,7 @@ services:
     networks:
       - capital_network
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
        test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'capital']
        interval: 60s
@@ -86,7 +28,7 @@ services:
   redis:
     image: redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - capital_network
     volumes:

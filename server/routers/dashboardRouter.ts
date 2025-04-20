@@ -10,103 +10,117 @@ import { authenticateToken } from "@/lib/middleware";
 const dashboardRouter = express.Router();
 
 /**
- * JWT Middleware for token validation
+ * Protects all dashboard routes with JWT authentication
+ *
+ * @requires {string} req.cookies.token - Authentication token
  */
 dashboardRouter.use(authenticateToken(true));
 
 /**
- * GET /dashboard/
+ * Retrieves dashboard overview data - GET /dashboard/
  */
 dashboardRouter.get("/", dashboardController.GET);
 
 /**
- * GET /dashboard/accounts
+ * Fetches all user accounts - GET /dashboard/accounts
  */
 dashboardRouter.get("/accounts", accountsController.GET);
 
 /**
- * POST /dashboard/accounts
- *    req.body: Account
+ * Creates a new user account - POST /dashboard/accounts
+ *
+ * @requires {Account} req.body - User account data
  */
 dashboardRouter.post("/accounts", accountsController.POST);
 
 /**
- * PUT /dashboard/accounts/:id
- *    req.params.id: Account ID || "ordering"
- *    req.body: Partial<Account> || { accountsIds: string[] }
+ * Updates a user account or a series of user account orderings - PUT /dashboard/accounts/:id
+ *
+ * @param {string} id - User account ID or "ordering"
+ * @requires {Partial<Account>|{accountsIds: string[]}} req.body - User account data or UUIDs
  */
 dashboardRouter.put("/accounts/:id", accountsController.PUT);
 
 /**
- * DELETE /dashboard/accounts/:id
- *    req.params.id: Account ID
+ * Deletes a user account - DELETE /dashboard/accounts/:id
+ *
+ * @param {string} id - User account ID
  */
 dashboardRouter.delete("/accounts/:id", accountsController.DELETE);
 
 /**
- * GET /dashboard/budgets
+ * Fetches all budget categories and their respective budget goals - GET /dashboard/budgets
  */
 dashboardRouter.get("/budgets", budgetsController.GET);
 
 /**
- * POST /dashboard/budgets/category
- *    req.body: BudgetCategory & Budget
+ * Creates a budget category - POST /dashboard/budgets/category
+ *
+ * @requires {BudgetCategory & Budget} req.body - Budget category and initial budget goal data
  */
 dashboardRouter.post("/budgets/category", budgetsController.POST);
 
 /**
- * POST /dashboard/budgets/budget/:id
- *    req.body: Budget
- *    req.params.id: Budget Category ID
+ * Creates a budget goal for a budget category - POST /dashboard/budgets/budget/:id
+ *
+ * @param {string} id - Budget category ID
+ * @requires {Budget} req.body - Budget goal data
  */
 dashboardRouter.post("/budgets/budget/:id", budgetsController.POST);
 
 /**
- * PUT /dashboard/budgets/budget/:id
- *    req.params.id: Budget Category ID
- *    req.body: Budget
+ * Updates a budget goal for a budget category - PUT /dashboard/budgets/budget/:id
+ *
+ * @param {string} id - Budget category ID
+ * @requires {Budget} req.body - Budget goal data
  */
 dashboardRouter.put("/budgets/budget/:id", budgetsController.PUT);
 
 /**
- * PUT /dashboard/budgets/category/:id
- *    req.params.id: Budget Category ID || "ordering"
- *    req.body: BudgetCategory || { categoryIds: string[] }
+ * Updates a budget category or a series of budget category orderings - PUT /dashboard/budgets/category/:id
+ *
+ * @param {string} id - Budget category ID or "ordering"
+ * @requires {BudgetCategory|{categoryIds: string[]}} req.body - Budget category data or UUIDs
  */
 dashboardRouter.put("/budgets/category/:id", budgetsController.PUT);
 
 /**
- * DELETE /dashboard/budgets/category/:id
- *    req.params.id: Budget Category ID
+ * Deletes a budget category - DELETE /dashboard/budgets/category/:id
+ *
+ * @param {string} id - Budget category ID
  */
 dashboardRouter.delete("/budgets/category/:id", budgetsController.DELETE);
 
 /**
- * GET /dashboard/transactions
+ * Fetches all transactions - GET /dashboard/transactions
  */
 dashboardRouter.get("/transactions", transactionsController.GET);
 
 /**
- * POST /dashboard/transactions
- *    req.body: Transaction
+ * Creates a new transaction - POST /dashboard/transactions
+ *
+ * @requires {Transaction} req.body - Transaction data
  */
 dashboardRouter.post("/transactions", transactionsController.POST);
 
 /**
- * PUT /dashboard/transactions/:id
- *    req.params.id: Transaction ID
- *    req.body: Partial<Transaction>
+ * Updates a transaction - PUT /dashboard/transactions/:id
+ *
+ * @param {string} id - Transaction ID
+ * @requires {Partial<Transaction>} req.body - Transaction data to update
  */
 dashboardRouter.put("/transactions/:id", transactionsController.PUT);
 
 /**
- * DELETE /dashboard/transactions/:id
- *    req.params.id: Transaction ID || req.body: { transactionIds: string[] }
+ * Deletes one or more transactions - DELETE /dashboard/transactions/:id
+ *
+ * @param {string} id - Transaction ID
+ * @requires {string[]|undefined} [req.body.transactionIds] - Optional transaction UUIDs for batch deletions
  */
 dashboardRouter.delete("/transactions/:id", transactionsController.DELETE);
 
 /**
- * GET /dashboard/settings
+ * Fetches user account settings - GET /dashboard/settings
  */
 dashboardRouter.get("/settings", userController.GET);
 

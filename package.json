@@ -3,8 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "install:all": "npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install  --legacy-peer-deps",
-    "build:all": "npm --prefix client run build && npm --prefix server run build",
-    "lint:all": "npm --prefix client run lint && npm --prefix server run lint"
+    "install": "npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install  --legacy-peer-deps",
+    "build": "concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
+    "server:start": "npm --prefix server run start",
+    "client:start": "npm --prefix client run start",
+    "server:dev": "npm --prefix server run dev",
+    "client:dev": "npm --prefix client run dev",
+    "start": "concurrently \"npm run server:start\" \"npm run client:start\"",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "lint": "concurrently \"npm --prefix client run lint\" \"npm --prefix server run lint\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

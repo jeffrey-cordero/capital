@@ -5,52 +5,42 @@ import Redis from "ioredis";
 import { logger } from "@/lib/logger";
 
 /**
- * Initializes and connects to the Redis server, where the application follows a
- * retry strategy of `150ms` for connection attempts and cache aside / lazy-loading
- * approach for caching values
+ * Redis client with no retry strategy
  */
-const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
-   retryStrategy: (times) => {
-      if (times <= 1) {
-         return 150; // 150ms retry strategy
-      } else {
-         return null; // No retries after the first attempt
-      }
-   }
+const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6380", {
+   retryStrategy: () => null
 });
 
 /**
- * Logs Redis connection errors and acts as a fallback for unexpected errors
+ * Error handler for Redis connection issues
  */
 redisClient.on("error", (error: any) => {
    if (error.code === "ECONNREFUSED") {
-      // Log connection errors, where method handler's log more specific errors
       logger.error(`redisClient.connect(): ${error.message}\n\n${error.stack}`);
    }
 });
 
 /**
- * Retrieves a value from Redis by key
+ * Retrieves a value from Redis cache
  *
- * @param {string} key - Redis key to fetch
- * @returns {Promise<any>} Parsed value or null if key doesn't exist
+ * @param {string} key - Cache key to retrieve
+ * @returns {Promise<string | null>} Cached value or null if not found/error
  */
 export async function getCacheValue(key: string): Promise<string | null> {
    try {
       return await redisClient.get(key);
    } catch (error: any) {
       logger.error(`redisClient.get(${key}): ${error.message}\n\n${error.stack}`);
-
       return null;
    }
 }
 
 /**
- * Sets a key-value pair in Redis with a specific time to live (`TTL`) in seconds
+ * Saves a value to Redis cache with expiration
  *
- * @param {string} key - Redis key to set
- * @param {number} time - Time to live (`TTL`) in seconds
- * @param {string} value - Value to store in Redis cache
+ * @param {string} key - Cache key
+ * @param {number} time - Time-to-live in seconds
+ * @param {string} value - String value to store
  */
 export function setCacheValue(key: string, time: number, value: string): void {
    redisClient.setex(key, time, value).catch((error: any) => {
@@ -59,9 +49,9 @@ export function setCacheValue(key: string, time: number, value: string): void {
 }
 
 /**
- * Removes a key from Redis
+ * Deletes a key from Redis cache
  *
- * @param {string} key - Redis key to delete
+ * @param {string} key - Cache key to remove
  */
 export function removeCacheValue(key: string): void {
    redisClient.del(key).catch((error: any) => {

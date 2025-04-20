@@ -1,5 +1,4 @@
 import { Mutex } from "async-mutex";
-import type { Dashboard } from "capital/dashboard";
 import {
    Economy,
    IndicatorTrends,
@@ -23,48 +22,47 @@ import { fetchTransactions } from "@/services/transactionsService";
 import { fetchUserDetails } from "@/services/userService";
 
 /**
- * Mutex to ensure only one API call occurs at runtime to prevent rate limiting errors
+ * Mutex to ensure only one external API batch call is processed at a time
  */
 const mutex = new Mutex();
 
 /**
- * Backup economy data to use in case of failure during data fetching
+ * Backup economy data for fallback during data fetching failures
  */
 const backupEconomyData = {
    news: economy.News,
    trends: {
-      Stocks: economy.Stocks,
-      GDP: economy.GDP,
-      Inflation: economy.Inflation,
-      Unemployment: economy.Unemployment,
+      "Stocks": economy.Stocks,
+      "GDP": economy.GDP,
+      "Inflation": economy.Inflation,
+      "Unemployment": economy.Unemployment,
       "Treasury Yield": economy["Treasury Yield"],
       "Federal Interest Rate": economy["Federal Interest Rate"]
    }
 };
 
 /**
- * Cache durations in seconds the economy data (24 hours)
+ * Cache durations for economy data (24 hours or 5 minutes backup duration)
  */
 const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
 const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
 
 /**
- * Helper function to generate Alpha Vantage API URL with the provided function name and parameters,
- * requiring the `XRapidAPIKey` environment variable to be set
+ * Generates Alpha Vantage API URL with function name and parameters
  *
  * @param {string} name - The function name to fetch
- * @param {string} params - The parameters to fetch from the function
- * @returns {string} The formatted Alpha Vantage API URL
+ * @param {string} [params] - The parameters to fetch from the function
+ * @returns {string} Formatted Alpha Vantage API URL
  */
 const getAlphaVantageUrl = (name: string, params: string = ""): string => {
    return `https://www.alphavantage.co/query?function=${name}${params}&apikey=${process.env.XRapidAPIKey}`;
 };
 
 /**
- * Helper function to get the key for the economy data
+ * Gets the key for the economy data from indicator name
  *
  * @param {string} indicator - The indicator to fetch
- * @returns {keyof typeof economy} The key for the economy data
+ * @returns {keyof typeof economy} Key for the economy data
  */
 const getEconomicIndicatorKey = (indicator: string): keyof typeof economy => {
    switch (indicator) {
@@ -84,65 +82,73 @@ const getEconomicIndicatorKey = (indicator: string): keyof typeof economy => {
 };
 
 /**
- * Fetches stock trends (Top Gainers, Losers, Most Active) from the Alpha Vantage API
+ * Fetches stock trends from Alpha Vantage API
  *
- * @returns {Promise<StockTrends>} The stock trends
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
+ * @returns {Promise<StockTrends>} Stock trends data (top gainers, losers, most active)
  */
 async function fetchStocks(): Promise<StockTrends> {
-   // Retrieve stock trends (Top Gainers, Losers, Most Active)
+   // Fetch top gainers, losers and most active stocks in a single API call
    const response = await fetch(getAlphaVantageUrl("TOP_GAINERS_LOSERS"), {
       method: "GET"
    }).then(response => response.json());
+
+   // Validate the API response matches our expected schema
    const fields = stockTrendsSchema.safeParse(response);
 
    if (!fields.success) {
-      // Potential rate limit error or unexpected API response structure
+      // Potential rate limit error or unexpected changes in the API structure
       logger.error("Error fetching stock trends", JSON.stringify(response));
 
+      // Return backup data from our local storage
       return stockTrendsSchema.safeParse(economy.Stocks).data as StockTrends;
    }
 
-   return fields.data as StockTrends;
+   return fields.data;
 }
 
 /**
- * Fetches economic indicators from the Alpha Vantage API
+ * Fetches economic indicators from Alpha Vantage API
  *
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
  * @param {string} indicator - The indicator to fetch
- * @returns {Promise<IndicatorTrends[]>} The economic indicators
- * @throws {Error} If the indicator API response is invalid or the API call fails
-*/
+ * @returns {Promise<IndicatorTrends[]>} Economic indicator trends
+ */
 async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTrends[]> {
-   // Retrieve economic indicators (GDP, Inflation, Unemployment, etc.)
+   // Fetch economic indicator data with quarterly interval
    const response = await fetch(getAlphaVantageUrl(indicator, "&interval=quarterly"), {
       method: "GET"
    }).then(response => response.json());
+
+   // Parse the data field from the response
    const fields = indicatorTrendsSchema.safeParse(response["data"]);
 
    if (!fields.success) {
-      // Potential rate limit error or new API response structure
+      // Potential rate limit error or changes in the API structure
       logger.error("Error fetching economic indicators", JSON.stringify(response));
 
+      // Use our local backup data for this specific indicator
       return indicatorTrendsSchema.safeParse(
-         economy[getEconomicIndicatorKey(indicator)
-         ]).data as unknown as IndicatorTrends[];
+         economy[getEconomicIndicatorKey(indicator)]
+      ).data as unknown as IndicatorTrends[];
    }
 
    return fields.data as unknown as IndicatorTrends[];
 }
 
 /**
- * Fetches the latest financial news from the Global Economy News API (TrawlingWeb)
+ * Fetches financial news from Global Economy News API
  *
- * @returns {Promise<News>} The latest economic news
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Global Economy News API
+ * @returns {Promise<News>} Latest economic news
  */
 export async function fetchNews(): Promise<News> {
-   // Fetch news based on yesterday's date
-   const today = new Date();
-   const yesterday = new Date(today);
-   yesterday.setDate(today.getDate() - 1);
-   const midnightYesterday = yesterday.setUTCHours(0, 0, 0, 0);
+   // Calculate yesterday's midnight timestamp to fetch recent news
+   const midnightYesterday = new Date();
+   midnightYesterday.setDate(midnightYesterday.getDate() - 1);
+   midnightYesterday.setHours(0, 0, 0, 0);
 
+   // Fetch news for US economy since yesterday
    const response = await fetch(`https://global-economy-news.p.rapidapi.com/?initial=${midnightYesterday}&category=economy&country=us`, {
       method: "GET",
       headers: {
@@ -150,53 +156,61 @@ export async function fetchNews(): Promise<News> {
          "x-rapidapi-key": process.env.XRapidAPIKey || ""
       }
    }).then(response => response.json());
+
+   // Validate response with our news schema
    const fields = newsSchema.safeParse(response);
 
    if (!fields.success) {
+      // Potential rate limit error or changes in the API structure
       logger.error("Error fetching news", response);
 
+      // Return our local backup news data
       return newsSchema.safeParse(economy.News).data as News;
    }
 
-   return fields.data as News;
+   return fields.data;
 }
 
 /**
- * Fetches most-recent economy data from the cache, database, or external API's.
+ * Fetches economy data from cache, database, or external APIs
  *
- * @returns {Promise<ServerResponse>} The economical data
+ * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
+ * @returns {Promise<ServerResponse>} A server response of `200` with economy data
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
-      // Try to get external APIs from cache first
+      // First check if we have fresh data in Redis cache
       const cache = await getCacheValue("economy");
 
       if (cache) {
-         return sendServiceResponse(200, JSON.parse(cache || "") as Economy);
+         return sendServiceResponse(200, JSON.parse(cache));
       }
 
-      // Check if we have fresh data in the database
-      const stored = await dashboardRepository.getExternalAPIs();
+      // No cache hit - check if we have fresh data in the database
+      const stored = await dashboardRepository.getEconomicData();
+
+      // Check if the stored data is stale (older than our cache duration)
       const isStale = !stored || new Date(stored.time) < new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000);
 
       if (!isStale) {
-         // Return the existing non-stale database content
+         // We have fresh data in the database - cache it and return
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, JSON.stringify(stored.data));
-         return sendServiceResponse(200, stored.data as Economy);
+         return sendServiceResponse(200, stored.data);
       }
 
-      // Need to fetch from external API's - acquire mutex to prevent duplicate API calls
+      // Need to fetch from external APIs - acquire mutex to avoid duplicate calls
+      // This prevents multiple API requests if several users hit the endpoint simultaneously
       const release = await mutex.acquire();
 
       try {
-         // Double-check if another request already updated the database
-         const updates = await dashboardRepository.getExternalAPIs();
+         // Double-check if another request handler has already updated the database
+         const updates = await dashboardRepository.getEconomicData();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
-            return sendServiceResponse(200, updates.data as Economy);
+            return sendServiceResponse(200, updates.data);
          }
 
-         // Define external APIs to fetch
+         // Define all the API data we need to fetch
          const methods = [
             { key: "News", fetch: fetchNews },
             { key: "Stocks", fetch: fetchStocks },
@@ -210,7 +224,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          // Fetch all external APIs in parallel
          const results = await Promise.all(methods.map(method => method.fetch()));
 
-         // Construct external APIs object for response
+         // Construct the external APIs object for the response
          const economy: Economy = {
             news: results[0] as News,
             trends: results.slice(1).reduce((acc, record, index) => {
@@ -220,23 +234,23 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
             }, {} as Trends)
          };
 
-         // Store data in database and cache
+         // Save the data to database and cache
          const time = new Date();
          const data = JSON.stringify(economy);
 
-         await dashboardRepository.updateExternalAPIs(time, data);
+         await dashboardRepository.updateEconomicData(time, data);
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, data);
 
          return sendServiceResponse(200, economy);
       } finally {
-         // Always release the mutex to prevent deadlocks
+         // Always release the mutex regardless of success or failure
          release();
       }
    } catch (error: any) {
-      // Log error and use backup data
+      // Log any unexpected errors
       logger.error(error.stack);
 
-      // Use the backup economy data and cache for a shorter duration
+      // Use backup data with a shorter cache duration to eventually retry the API call
       setCacheValue("economy", BACKUP_ECONOMY_DATA_CACHE_DURATION, JSON.stringify(backupEconomyData));
 
       return sendServiceResponse(200, backupEconomyData);
@@ -244,13 +258,13 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 }
 
 /**
- * Fetches the dashboard data for the user.
+ * Fetches the dashboard data for the user
  *
- * @param {string} user_id - The user ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`Dashboard`)
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with dashboard data
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
-   // Fetch all dashboard components in parallel
+   // Fetch all the essential dashboard components in parallel
    const [economy, accounts, budgets, transactions, settings] = await Promise.all([
       fetchEconomicalData(),
       fetchAccounts(user_id),
@@ -259,12 +273,12 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
       fetchUserDetails(user_id)
    ]);
 
-   // Combine all data into a single dashboard response
+   // Combine all the components into a single dashboard response
    return sendServiceResponse(200, {
       accounts: accounts.data,
       budgets: budgets.data,
       economy: economy.data,
       transactions: transactions.data,
       settings: settings.data
-   } as Dashboard);
+   });
 }

@@ -4,40 +4,39 @@ import { PoolClient } from "pg";
 import { query, transaction } from "@/lib/database";
 
 /**
- * Fetches the latest external economy data from the database.
+ * Fetches latest economic data
  *
- * @returns {Promise<{ time: string, data: Economy } | null>} The latest external economy data
+ * @returns {Promise<{ time: string, data: Economy } | null>} Economic data or null if not found
  */
-export async function getExternalAPIs(): Promise<{ time: string, data: Economy } | null> {
-   // Retrieve the latest external economy data
+export async function getEconomicData(): Promise<{ time: string, data: Economy } | null> {
+   // Fetch the latest economic data, where an empty table can imply initial application setup
    const search = `
       SELECT *
-      FROM external_api_cache
+      FROM economy
       LIMIT 1;
    `;
-   const result: { time: string, data: Economy }[] = await query(search, []);
+   const result = await query(search, []);
 
    return result.length > 0 ? result[0] : null;
 }
 
 /**
- * Clears the existing external API data and inserts new external API data.
+ * Updates economic data
  *
- * @param {Date} time - The time of the external API data
- * @param {string} data - The external API data
+ * @param {Date} time - Timestamp of data update
+ * @param {string} data - Economic data in JSON format
  */
-export async function updateExternalAPIs(time: Date, data: string): Promise<void> {
-   // Update the external API data content in the database through a transaction
+export async function updateEconomicData(time: Date, data: string): Promise<void> {
    return await transaction(async(client: PoolClient) => {
-      // Clear existing cache data first
+      // Clear existing economic data
       const removal = `
-         DELETE FROM external_api_cache;
+         DELETE FROM economy;
       `;
       await client.query(removal);
 
-      // Insert new external API data
+      // Insert new API economic data
       const insertion = `
-         INSERT INTO external_api_cache (time, data)
+         INSERT INTO economy (time, data)
          VALUES ($1, $2);
       `;
       await client.query(insertion, [time, data]);

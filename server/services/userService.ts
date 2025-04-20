@@ -1,3 +1,4 @@
+import argon2 from "argon2";
 import { ServerResponse } from "capital/server";
 import {
    updateUserSchema,
@@ -8,43 +9,44 @@ import {
 } from "capital/user";
 import { Request, Response } from "express";
 
-import { compare, hash } from "@/lib/cryptography";
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
-import { sendServiceResponse, sendValidationErrors } from "@/lib/services";
+import { clearCacheAndSendSuccess, sendServiceResponse, sendValidationErrors } from "@/lib/services";
 import * as userRepository from "@/repository/userRepository";
 import { logoutUser } from "@/services/authenticationService";
 
 /**
- * Cache duration in seconds for user details (30 minutes)
+ * Cache duration for user details (30 minutes)
  */
 const USER_DETAILS_CACHE_DURATION = 30 * 60;
 
 /**
- * Helper function to normalize user input for case-insensitive comparison (username, email).
+ * Normalizes user input for case-insensitive comparison
  *
  * @param {string} input - User input to normalize
- * @returns {string} Normalized user input
+ * @returns {string} Normalized lowercase trimmed string
  */
 const normalizeUserInput = (input: string): string => input.toLowerCase().trim();
 
 /**
- * Helper function to generate error messages for username/email conflicts.
+ * Generates error messages for username/email conflicts
  *
  * @param {User[]} existingUsers - Array of existing users
  * @param {string} username - Username to check
  * @param {string} email - Email to check
- * @returns {Record<string, string>} Error messages
+ * @returns {Record<string, string>} Object with error messages representing the attribute conflicts
  */
 const generateConflictErrors = (
    existingUsers: User[],
    username: string,
    email: string
 ): Record<string, string> => {
+   // Normalize inputs for consistent comparison
    const normalizedUsername = normalizeUserInput(username);
    const normalizedEmail = normalizeUserInput(email);
 
-   return existingUsers.reduce((acc: Record<string, string>, record: User) => {
+   // Check each existing user for conflicts with the provided username/email
+   return existingUsers.reduce((acc, record: User) => {
       if (normalizeUserInput(record.username) === normalizedUsername) {
          acc.username = "Username already exists";
       }
@@ -54,31 +56,22 @@ const generateConflictErrors = (
       }
 
       return acc;
-   }, {});
+   }, {} as Record<string, string>);
 };
 
 /**
- * Helper function to generate user cache key for Redis.
+ * Generates user cache key for Redis
  *
- * @param {string} user_id - User ID
- * @returns {string} User cache key
+ * @param {string} user_id - User identifier
+ * @returns {string} Redis cache key for user details
  */
 const getUserCacheKey = (user_id: string): string => `user:${user_id}`;
 
 /**
- * Helper function to clear user cache on successful user updates.
+ * Fetches user details
  *
- * @param {string} user_id - User ID
- */
-const clearUserCache = (user_id: string): void => {
-   removeCacheValue(getUserCacheKey(user_id));
-};
-
-/**
- * Fetches user details from cache or database.
- *
- * @param {string} user_id - User ID
- * @returns {Promise<ServerResponse>} A server response of `200` (`UserDetails`) or `404` if not found
+ * @param {string} user_id - User identifier
+ * @returns {Promise<ServerResponse>} A server response of `200` with user details or `404` with respective errors
  */
 export async function fetchUserDetails(user_id: string): Promise<ServerResponse> {
    // Try to get user details from cache first
@@ -89,36 +82,34 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
       return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
    }
 
-   // Cache miss - fetch from database and store in cache
+   // Cache miss - fetch complete user data from the database
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Create a user details object without sensitive information
-   const userDetails: UserDetails = {
+   // Create a user details record without sensitive information
+   const record: UserDetails = {
       username: user.username,
       name: user.name,
       email: user.email,
       birthday: user.birthday
    };
+   setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(record));
 
-   // Cache user details
-   setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(userDetails));
-
-   return sendServiceResponse(200, userDetails);
+   return sendServiceResponse(200, record);
 }
 
 /**
- * Creates a new user and configures their JWT token for authentication.
+ * Creates a new user and configures JWT token
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {User} user - User object
- * @returns {Promise<ServerResponse>} A server response of `201` (`{ success: true }`) or `400`/`409` with respective errors
+ * @param {User} user - User object to create
+ * @returns {Promise<ServerResponse>} A server response of `201` with success status or `400`/`409` with respective errors
  */
 export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields against the user schema
@@ -134,32 +125,30 @@ export async function createUser(req: Request, res: Response, user: User): Promi
    );
 
    if (existingUsers.length === 0) {
-      // Hash password and create the new user
-      const hashedPassword = await hash(fields.data.password);
-      const user_id: string = await userRepository.create({ ...fields.data, password: hashedPassword });
+      // Create the new user with a hashed password
+      const digest: string = await argon2.hash(fields.data.password);
+      const user_id: string = await userRepository.create({ ...fields.data, password: digest });
 
-      // Configure JWT token for authentication
+      // Configure JWT token for authentication purposes
       configureToken(res, user_id);
 
       return sendServiceResponse(201, { success: true });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
+
       return sendServiceResponse(409, undefined, errors);
    }
 }
 
 /**
- * Updates user account details including password changes.
+ * Updates user account details including account security information
  *
- * @param {Request} req - Express request object
- * @param {Response} res - Express response object
+ * @param {string} user_id - User identifier
  * @param {Partial<UserUpdates>} updates - User details to update
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `400`/`404`/`409` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404`/`409` with respective errors
  */
-export async function updateAccountDetails(req: Request, res: Response, updates: Partial<UserUpdates>): Promise<ServerResponse> {
-   const user_id: string = res.locals.user_id;
-
+export async function updateAccountDetails(user_id: string, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    // Validate update fields with user update schema
    const fields = updateUserSchema.safeParse(updates);
 
@@ -167,86 +156,82 @@ export async function updateAccountDetails(req: Request, res: Response, updates:
       return sendValidationErrors(fields);
    }
 
-   const details: Partial<UserUpdates> = { ...fields.data };
+   const details: Partial<UserUpdates> = fields.data;
 
-   if (Object.keys(details).length === 0) {
-      return sendServiceResponse(400, { user: "No updates provided" });
-   }
-
-   // Validate username and email uniqueness if provided
+   // If username or email is being updated, check for conflicts with existing users
    if (details.username || details.email) {
-      // Check for conflicts excluding the current user
       const existingUsers: User[] = await userRepository.findConflictingUsers(
          details.username || "", details.email || "", user_id
       );
 
       if (existingUsers.length > 0) {
-         // Handle username/email conflicts that are not tied to the current user
+         // Handle username/email conflicts
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
          return sendServiceResponse(409, undefined, errors);
       }
    }
 
-   // Handle password changes
+   // Handle password changes if requested
    if (details.newPassword) {
-      // Verify the current password first
-      const current = await userRepository.findByUserId(user_id);
+      // Verify that the current user exists
+      const current: User | null = await userRepository.findByUserId(user_id);
 
       if (!current) {
          return sendServiceResponse(404, undefined, {
-            user: "User does not exist based on the provided ID"
+            user_id: "User does not exist based on the provided ID"
          });
       }
 
-      // Check if provided password matches current password
-      if (!details.password || !(await compare(details.password, current.password))) {
+      // Check if provided password credentials are correct
+      if (!details.password || !(await argon2.verify(current.password, details.password))) {
          return sendServiceResponse(400, undefined, {
-            password: "Invalid password"
+            password: "Invalid credentials"
          });
       }
 
-      // Hash the new password
-      const hashedPassword = await hash(details.newPassword);
-      details.password = hashedPassword;
+      // Hash the new password for secure storage
+      const digest: string = await argon2.hash(details.newPassword);
+      details.password = digest;
    }
 
-   // Update user details in the database
+   // Apply the updates to the database
    const result = await userRepository.update(user_id, details);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Clear the user cache to ensure fresh data on next fetch
-   clearUserCache(user_id);
-
-   return sendServiceResponse(204);
+   return clearCacheAndSendSuccess(getUserCacheKey(user_id));
 }
 
 /**
- * Deletes a user account and all their associated data.
+ * Deletes a user account and all associated data
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @param {string} user_id - The ID of the user to delete
- * @returns {Promise<ServerResponse>} A server response of `204` (no content) or `404` if the user does not exist
+ * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
  */
-export async function deleteAccount(req: Request, res: Response, user_id: string): Promise<ServerResponse> {
-   // Attempt to delete the user and their data
+export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
+   // Attempt to delete the user and their associated data
+   const user_id: string = res.locals.user_id;
    const result = await userRepository.deleteUser(user_id);
 
    if (!result) {
       return sendServiceResponse(404, undefined, {
-         user: "User does not exist based on the provided ID"
+         user_id: "User does not exist based on the provided ID"
       });
    }
 
-   // Clear the user cache and log the user out
-   clearUserCache(user_id);
+   // Clear the user authentication status
    await logoutUser(req, res);
+
+   // Clear the respective cache values
+   ["accounts", "budgets", "transactions", "user"].forEach((key: string) => {
+      removeCacheValue(`${key}:${user_id}`);
+   });
 
    return sendServiceResponse(204);
 }

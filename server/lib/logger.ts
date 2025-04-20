@@ -2,12 +2,13 @@ import winston, { format, transports } from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 
 /**
- * Divider for log file formatting (32 characters)
+ * Divider for log entries (32 equals signs)
  */
 const divider: string = "=".repeat(32);
 
 /**
- * File transport for logging to a daily rotating file
+ * Rotating file transport for persistent logs, which creates daily log
+ * files up to 20MB, retained for 14 days
  */
 const fileTransport = new DailyRotateFile({
    level: "info",
@@ -18,7 +19,8 @@ const fileTransport = new DailyRotateFile({
 });
 
 /**
- * Console transport for logging to the console
+ * Console transport for immediate log visibility,
+ * including colorized output for better readability
  */
 const consoleTransport = new transports.Console({
    level: "info",
@@ -32,7 +34,8 @@ const consoleTransport = new transports.Console({
 });
 
 /**
- * Application logger for recording events and errors
+ * Application logger for events and errors, which logs to both console
+ * and rotating files
  */
 export const logger = winston.createLogger({
    level: "info",

@@ -1,8 +1,9 @@
 # capital
 
 ```bash
-$npm run install:all
-$npm run build:all
-$npm run lint:all
+# Postgres / Redis containers (adjust local ports within `docker-compose.yaml`)
 $docker compose up
+
+# Client / Server processes
+$npm run dev
 ```
