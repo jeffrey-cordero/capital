@@ -72,11 +72,13 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    }, [data, option]);
 
    // Filter data based on date range
-   const range = sorted.filter((a) => {
-      const date = normalizeDate(a.date);
-      return (from !== "" ? date >= normalizeDate(from) : true)
-         && (to !== "" ? date <= normalizeDate(to) : true);
-   });
+   const range = useMemo(() => {
+      return sorted.filter((a) => {
+         const date = normalizeDate(a.date);
+         return (from !== "" ? date >= normalizeDate(from) : true)
+            && (to !== "" ? date <= normalizeDate(to) : true);
+      });
+   }, [sorted, from, to]);
 
    const constructGraphData = () => {
       // Supports Year and Month views with special handling for single data points
@@ -158,10 +160,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    };
 
    // Process data and handle empty datasets
-   const filteredRange = constructGraphData();
-   const filtered = filteredRange.length > 0 ?
-      filteredRange // filtered data
-      : [{ date: normalizeDate(new Date().toISOString(), view), value: 0 }]; // default empty data
+   const filtered = constructGraphData();
 
    // Calculate growth trend as percentage change from start to end
    const trend = filtered.length === 0 ? 0 : calculatePercentageChange(
@@ -173,12 +172,128 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    const color = getGraphColor(theme, trend);
    const chip = getChipColor(trend);
 
-   // Date range for filter controls
-   const fromValue = from === "" ? range[0]?.date : from; // default to oldest date
-   const toValue = to === "" ? range[range.length - 1]?.date : to; // default to newest date
-
    const minDate = sorted.length > 0 ? normalizeDate(sorted[0].date).toISOString().split("T")[0] : ""; // oldest date
    const maxDate = sorted.length > 0 ? normalizeDate(sorted[sorted.length - 1].date).toISOString().split("T")[0] : ""; // newest date
+
+   const chart = useMemo(() => (
+      <ResponsiveChartContainer height = { graphHeight }>
+         {
+            filtered.length > 0 ? (
+               graph === "Line" ? (
+                  <LineChart
+                     colors = { [color] }
+                     experimentalMarkRendering = { true }
+                     grid = { { horizontal: true } }
+                     height = { graphHeight }
+                     margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
+                     series = {
+                        [
+                           {
+                              id: "value",
+                              label: "Value",
+                              showMark: false,
+                              curve: "linear",
+                              area: true,
+                              data: filtered.map(d => Number(d.value)),
+                              valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
+                           }
+                        ]
+                     }
+                     slotProps = {
+                        {
+                           legend: {
+                              hidden: true
+                           }
+                        }
+                     }
+                     sx = {
+                        {
+                           "& .MuiAreaElement-series-value": {
+                              fill: "url('#value')"
+                           }
+                        }
+                     }
+                     xAxis = {
+                        [
+                           {
+                              scaleType: "point",
+                              data: filtered.map(d => d.date)
+                           }
+                        ]
+                     }
+                     yAxis = {
+                        [{
+                           domainLimit: "nice",
+                           valueFormatter: (value) => displayVolume(value)
+                        }]
+                     }
+                  >
+                     <AreaGradient
+                        color = { color }
+                        id = "value"
+                     />
+                  </LineChart>
+               ) : (
+                  <BarChart
+                     borderRadius = { 8 }
+                     grid = { { horizontal: true } }
+                     height = { graphHeight }
+                     margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
+                     resolveSizeBeforeRender = { true }
+                     series = {
+                        [
+                           {
+                              id: "value",
+                              label: "Value",
+                              data: filtered.map(d => Number(d.value))
+                           }
+                        ]
+                     }
+                     slotProps = {
+                        {
+                           legend: {
+                              hidden: true
+                           }
+                        }
+                     }
+                     xAxis = {
+                        [
+                           {
+                              scaleType: "band",
+                              data: filtered.map(d => d.date)
+                           }
+                        ]
+                     }
+                     yAxis = {
+                        [{
+                           domainLimit: "nice",
+                           valueFormatter: (value) => displayVolume(value),
+                           colorMap: {
+                              type: "piecewise",
+                              thresholds: [0],
+                              colors: ["hsl(0, 90%, 50%)", "hsl(210, 98%, 50%)"]
+                           }
+                        }]
+                     }
+                  />
+
+               )
+            ) : (
+               <Stack
+                  sx = { { height: "100%", width: "100%", alignItems: "center", justifyContent: "center" } }
+               >
+                  <Typography
+                     sx = { { fontWeight: "600" } }
+                     variant = "subtitle2"
+                  >
+                     No available data
+                  </Typography>
+               </Stack>
+            )
+         }
+      </ResponsiveChartContainer>
+   ), [filtered, graphHeight, graph, color, average, view]);
 
    return (
       <Card
@@ -228,126 +343,31 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      spacing = { 0.75 }
                      sx = { { alignItems: "center", justifyContent: { xs: "center", lg: card ? "flex-start" : "center" } } }
                   >
-                     <Typography
-                        sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
-                        variant = "subtitle1"
-                     >
-                        { option === "GDP" || !indicators ? "$" : "" }
-                        { displayNumeric(Number(filtered[filtered.length - 1].value)) }
-                        { indicators ? option === "GDP" ? "B" : "%" : "" }
-                     </Typography>
-                     <Chip
-                        color = { chip as any }
-                        label = { displayPercentage(Number(trend.toFixed(2))) }
-                        size = "small"
-                        sx = { { mt: "2px !important" } }
-                     />
+                     {
+                        filtered.length > 0 && (
+                           <>
+                              <Typography
+                                 sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
+                                 variant = "subtitle1"
+                              >
+                                 { option === "GDP" || !indicators ? "$" : "" }
+                                 { displayNumeric(Number(filtered[filtered.length - 1].value)) }
+                                 { indicators ? option === "GDP" ? "B" : "%" : "" }
+                              </Typography>
+                              <Chip
+                                 color = { chip as any }
+                                 label = { displayPercentage(Number(trend.toFixed(2))) }
+                                 size = "small"
+                                 sx = { { mt: "2px !important" } }
+                              />
+                           </>
+                        )
+                     }
                   </Stack>
                </Stack>
             </Stack>
             <ResponsiveChartContainer height = { graphHeight }>
-               {
-                  graph === "Line" ? (
-                     <LineChart
-                        colors = { [color] }
-                        experimentalMarkRendering = { true }
-                        grid = { { horizontal: true } }
-                        height = { graphHeight }
-                        margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
-                        resolveSizeBeforeRender = { true }
-                        series = {
-                           [
-                              {
-                                 id: "value",
-                                 label: "Value",
-                                 showMark: false,
-                                 curve: "linear",
-                                 area: true,
-                                 data: filtered.map(d => Number(d.value)),
-                                 valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
-                              }
-                           ]
-                        }
-                        slotProps = {
-                           {
-                              legend: {
-                                 hidden: true
-                              }
-                           }
-                        }
-                        sx = {
-                           {
-                              "& .MuiAreaElement-series-value": {
-                                 fill: "url('#value')"
-                              }
-                           }
-                        }
-                        xAxis = {
-                           [
-                              {
-                                 scaleType: "point",
-                                 data: filtered.map(d => d.date)
-                              }
-                           ]
-                        }
-                        yAxis = {
-                           [{
-                              domainLimit: "nice",
-                              valueFormatter: (value) => displayVolume(value)
-                           }]
-                        }
-                     >
-                        <AreaGradient
-                           color = { color }
-                           id = "value"
-                        />
-                     </LineChart>
-                  ) : (
-                     <BarChart
-                        borderRadius = { 8 }
-                        grid = { { horizontal: true } }
-                        height = { graphHeight }
-                        margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
-                        resolveSizeBeforeRender = { true }
-                        series = {
-                           [
-                              {
-                                 id: "value",
-                                 label: "Value",
-                                 data: filtered.map(d => Number(d.value))
-                              }
-                           ]
-                        }
-                        slotProps = {
-                           {
-                              legend: {
-                                 hidden: true
-                              }
-                           }
-                        }
-                        xAxis = {
-                           [
-                              {
-                                 scaleType: "band",
-                                 data: filtered.map(d => d.date)
-                              }
-                           ]
-                        }
-                        yAxis = {
-                           [{
-                              domainLimit: "nice",
-                              valueFormatter: (value) => displayVolume(value),
-                              colorMap: {
-                                 type: "piecewise",
-                                 thresholds: [0],
-                                 colors: ["hsl(0, 90%, 50%)", "hsl(210, 98%, 50%)"]
-                              }
-                           }]
-                        }
-                     />
-
-                  )
-               }
+               { chart }
             </ResponsiveChartContainer>
             <Stack
                direction = { { xs: "column", sm: "row" } }
@@ -506,7 +526,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                                  }
                               }
                               type = "date"
-                              value = { fromValue }
+                              value = { field.value || minDate }
                            />
                         </FormControl>
                      )
@@ -539,7 +559,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               }
                            }
                            type = "date"
-                           value = { toValue }
+                           value = { field.value || maxDate }
                         />
                      )
                   }

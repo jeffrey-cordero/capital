@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 import { Pool, PoolClient } from "pg";
+
 import { logger } from "@/lib/logger";
 
 /**
