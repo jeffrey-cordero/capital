@@ -180,8 +180,7 @@ export default function Login(): React.ReactNode {
                      >
                         Don&apos;t have an account?{ " " }
                         <Link
-                           className = "success"
-                           color = "success"
+                           color = "primary"
                            fontWeight = "bold"
                            id = "register"
                            onClick = { () => navigate("/register") }

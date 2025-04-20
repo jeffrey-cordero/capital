@@ -33,7 +33,7 @@ export const components: Components = {
       styleOverrides: {
          root: {
             borderRadius: "12px",
-            fontSize: "0.95rem",
+            fontSize: "0.85rem",
             borderColor: "primary.main",
             overflow: "hidden"
          },

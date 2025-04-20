@@ -1,34 +1,34 @@
-// MUI overrides
+// MUI-related overrides
 input:-webkit-autofill,
 .MuiInputBase-root:has(> input:-webkit-autofill) {
-  background-color: $autofill-light;
+  background-color: $autofill-light !important;
 }
 
 body[data-dark="true"] {
   input:-webkit-autofill,
   .MuiInputBase-root:has(> input:-webkit-autofill) {
-    background-color: $autofill-dark;
+    background-color: $autofill-dark !important;
   }
 
   .nav {
-    background-color: hsl(0deg 0% 15%);
+    background-color: hsl(0deg 0% 15%) !important;
   }
 
   .css-qtfkgb-MuiInputBase-input-MuiOutlinedInput-input:-webkit-autofill {
-    border-radius: 0;
+    border-radius: 0 !important;
   }
 }
 
 div {
   &.form-floating {
-   z-index: 0;
+    z-index: 0 !important;
   }
 
   &.MuiAlert-action {
     button {
-      --IconButton-hoverBg: none;
+      --IconButton-hoverBg: none !important;
 
-      margin-bottom: 4px;
+      margin-bottom: 4px !important;
     }
   }
 }
