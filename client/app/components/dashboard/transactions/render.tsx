@@ -49,7 +49,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
          break;
       }
       case "description": {
-         value = params.row.description || "No Description";
+         value = params.row.description || "";
          break;
       }
       default: {

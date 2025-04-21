@@ -1,6 +1,6 @@
 import { faClockRotateLeft, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Collapse, Stack } from "@mui/material";
+import { Button, Collapse, Stack, useMediaQuery } from "@mui/material";
 
 /**
  * Props for the SubmitButton component
@@ -31,6 +31,7 @@ interface SubmitButtonProps {
  */
 export default function SubmitButton(props: SubmitButtonProps): React.ReactNode {
    const { visible, type, isSubmitting, onCancel, onSubmit, unmountOnExit = true } = props;
+   const xss = useMediaQuery("(max-width: 320px)");
 
    return (
       <Collapse
@@ -42,7 +43,7 @@ export default function SubmitButton(props: SubmitButtonProps): React.ReactNode 
          unmountOnExit = { unmountOnExit }
       >
          <Stack
-            direction = "row"
+            direction = { xss ? "column" : "row" }
             spacing = { 1 }
             sx = { { width: "100%" } }
          >

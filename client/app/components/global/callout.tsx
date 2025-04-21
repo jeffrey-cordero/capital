@@ -32,7 +32,7 @@ export default function Callout({ type, children, sx, sizes }: CalloutProps): Re
          <Grid size = { sizes || { xs: 12, sm: 10, md: 8, lg: 6 } }>
             <Paper
                elevation = { 3 }
-               sx = { { p: 3, borderTop: 8,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "6px" } }
+               sx = { { px: { xs: 2, sm: 4 }, py: 3, borderTop: 8,  borderTopColor: type === "primary" ? "primary.main" : "error.main", borderRadius: "6px" } }
             >
                { children }
             </Paper>

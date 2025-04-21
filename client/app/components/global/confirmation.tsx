@@ -88,7 +88,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                }
             }
          >
-            <Box sx = { { p: 1 } }>
+            <Box sx = { { py: 1, px: 0.5 } }>
                <DialogContent sx = { { pb: 0 } }>
                   <DialogContentText>
                      { message }

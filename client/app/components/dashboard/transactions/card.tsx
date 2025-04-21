@@ -63,7 +63,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   </Typography>
                   <RenderCategoryChip
                      budget_category_id = { transaction.budget_category_id || "" }
-                     type = { transaction.budget_type }
+                     type = { transaction.type }
                   />
                </Stack>
                <Stack

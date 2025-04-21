@@ -86,7 +86,7 @@ export function filterTransactions(
 
    return transactions.reduce((acc, record, index) => {
       // Determine the type of the transaction based on the budget category ID or the amount
-      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.budget_type);
+      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.type);
       const transaction: TransactionRowModel = {
          ...record,
          index,
@@ -94,7 +94,8 @@ export function filterTransactions(
          account: accountsMap[record.account_id ?? ""]?.name || "",
          category: categoryInfo?.name || "",
          balance: balances[record.account_id || ""] || undefined,
-         type: record.budget_type
+         type: record.type,
+         budget_category_id: record.budget_category_id || budgets[record.type]?.budget_category_id
       };
 
       if (record.account_id && balances[record.account_id]) {
@@ -114,7 +115,7 @@ export function filterTransactions(
          case "budget": {
             // Match transactions based on the current budget period
             const [year, month] = transaction.date.split("T")[0].split("-");
-            const isValidType = identifier === record.budget_type;
+            const isValidType = identifier === record.type;
 
             if (isValidType && parseInt(year) === period.year && parseInt(month) === period.month) {
                acc.push(transaction);

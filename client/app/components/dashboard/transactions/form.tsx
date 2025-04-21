@@ -142,7 +142,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       try {
          // Validate the form data against the transaction schema
          const type: BudgetType = data.budget_category_id ? budgetsMap[data.budget_category_id] : (data.amount >= 0 ? "Income" : "Expenses");
-         const fields = transactionSchema.safeParse({ ...data, budget_type: type });
+         const fields = transactionSchema.safeParse({ ...data, type: type });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -158,7 +158,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
             }, {} as Partial<Transaction>);
 
             if (Object.keys(updatedFields).length > 0) {
-               updatedFields.budget_type = type;
+               updatedFields.type = type;
                const result = await sendApiRequest<number>(
                   `dashboard/transactions/${transaction.transaction_id}`, "PUT", updatedFields, dispatch, navigate
                );
@@ -172,7 +172,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          } else {
             const payload = {
                ...fields.data,
-               budget_type: type,
+               type: type,
                budget_category_id: fields.data.budget_category_id || null
             } as Transaction;
 

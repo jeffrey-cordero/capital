@@ -39,7 +39,7 @@ export const transactionSchema = z.object({
    }).default(""),
 
    /* Type of the transaction */
-   budget_type: z.enum(["Income", "Expenses"], {
+   type: z.enum(["Income", "Expenses"], {
       message: "Transaction type must be either Income or Expenses"
    }),
 

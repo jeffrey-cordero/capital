@@ -19,6 +19,7 @@ import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
+import type { Transaction } from "capital/transactions";
 
 /**
  * The data for the chart
@@ -92,9 +93,26 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       };
    }, [today, theme]);
 
-   const trends = useMemo(() => {
+   const formatBudgets = useCallback(() => {
       const empty = [].concat(...new Array(12).fill([0]));
 
+      return [{
+         id: "Income",
+         label: "Income",
+         data: [...empty],
+         stack: "A",
+         color: theme.palette.success.main
+      }, {
+         id: "Expenses",
+         label: "Expenses",
+         data: [...empty],
+         stack: "B",
+         color: theme.palette.error.main
+      }];
+
+   }, [theme]);
+
+   const trends = useMemo(() => {
       // Store the propagating account balances and indices
       const balances = accounts.reduce((acc, record, index) => {
          acc[record.account_id || ""] = {
@@ -113,20 +131,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             acc[year] = {};
 
             // Format the budget trends
-            acc[year].budgets = type !== "budgets" ? [] : [{
-               id: "Income",
-               label: "Income",
-               data: [...empty],
-               stack: "A",
-               color: theme.palette.success.main
-            }, {
-               id: "Expenses",
-               label: "Expenses",
-               data: [...empty],
-               stack: "B",
-               color: theme.palette.error.main
-            }];
-
+            acc[year].budgets = type === "budgets" ? formatBudgets() : [];
             // Format the account trends
             acc[year].accounts = type !== "accounts" ? [] : accounts.map((account) => {
                return formatAccounts(account, balances[account.account_id || ""].balance, year);
@@ -137,7 +142,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          // Increment Income or Expense stack based on the transaction amount
          if (type === "budgets") {
-            acc[year].budgets[record.budget_type === "Income" ? 0 : 1].data[month - 1] += amount;
+            acc[year].budgets[record.type === "Income" ? 0 : 1].data[month - 1] += amount;
          }
 
          // Decrement account balance based on the transaction amount as we are going back in time
@@ -159,7 +164,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const series = useMemo(() => {
       if (type === "budgets") {
          // Budgets will always be based on existing year
-         return trends[year]?.budgets || [];
+         return trends[year]?.budgets || formatBudgets();
       } else {
          // Handle years with no transactions
          if (year in trends) {
@@ -306,6 +311,12 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         size = "sm"
                      />
                   </IconButton>
+                  <Typography
+                     sx = { { fontWeight: "600" } }
+                     variant = "subtitle2"
+                  >
+                     { year }
+                  </Typography>
                   <IconButton
                      disabled = { year === today.getFullYear() }
                      onClick = { () => updateYear("next") }

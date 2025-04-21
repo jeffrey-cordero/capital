@@ -10,6 +10,7 @@ import {
 import {
    DataGrid,
    type GridColDef,
+   type GridColumnVisibilityModel,
    type GridFilterInputMultipleValueProps,
    type GridPaginationModel,
    type GridRenderCellParams,
@@ -203,7 +204,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderCategoryChip
                budget_category_id = { params.row.budget_category_id || "" }
-               type = { params.row.budget_type }
+               type = { params.row.type }
             />
          ),
          valueFormatter: (_value: never, row: TransactionRowModel) => row.budget_category_id,
@@ -270,6 +271,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
          align: "center",
          width: 100,
          minWidth: 100,
+         hideable: false,
          sortable: false,
          flex: 0.2,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
@@ -315,7 +317,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
    return (
       <Box
          id = { `transactions-table-${filter}` }
-         sx = { { width: "100%" } }
+         sx = { { width: "100%", mt: 2 } }
       >
          <Box sx = { { display: "flex", justifyContent: "flex-end", mb: 1 } }>
             <ToggleButtonGroup

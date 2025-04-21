@@ -39,14 +39,14 @@ CREATE TABLE accounts (
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE TYPE budget_type AS ENUM (
+CREATE TYPE transaction_type AS ENUM (
    'Income',
    'Expenses'
 );
 
 CREATE TABLE budget_categories (
    budget_category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   type budget_type NOT NULL,
+   type transaction_type NOT NULL,
    name VARCHAR(30) CHECK (name IS NULL OR (name <> 'Income' AND name <> 'Expenses')),
    category_order INT CHECK ((name IS NULL AND category_order IS NULL) OR (name IS NOT NULL AND category_order >= 0)),
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
@@ -93,7 +93,7 @@ CREATE TABLE transactions (
    amount DECIMAL(18, 2) NOT NULL CHECK (amount <> 0),
    description TEXT NOT NULL DEFAULT '',
    date DATE NOT NULL CHECK (check_date_range(date)),
-   budget_type budget_type NOT NULL,
+   type transaction_type NOT NULL,
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL
