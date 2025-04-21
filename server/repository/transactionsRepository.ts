@@ -9,6 +9,7 @@ const TRANSACTION_UPDATES = [
    "amount",
    "description",
    "date",
+   "budget_type",
    "account_id",
    "budget_category_id"
 ] as const;
@@ -21,7 +22,7 @@ const TRANSACTION_UPDATES = [
  */
 export async function findByUserId(user_id: string): Promise<Transaction[]> {
    const search = `
-      SELECT transaction_id, amount, description, date, budget_category_id, account_id
+      SELECT transaction_id, amount, description, date, budget_type, budget_category_id, account_id
       FROM transactions
       WHERE user_id = $1
       ORDER BY date DESC;
@@ -40,8 +41,8 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
  */
 export async function create(user_id: string, transaction: Transaction): Promise<string> {
    const creation = `
-      INSERT INTO transactions (user_id, amount, description, date, budget_category_id, account_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO transactions (user_id, amount, description, date, budget_type, budget_category_id, account_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING transaction_id;
    `;
    const result = await query(creation, [
@@ -49,6 +50,7 @@ export async function create(user_id: string, transaction: Transaction): Promise
       transaction.amount,
       transaction.description,
       transaction.date,
+      transaction.budget_type,
       transaction.budget_category_id || null,
       transaction.account_id || null
    ]);

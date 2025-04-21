@@ -70,7 +70,7 @@ app.disable("x-powered-by");
 app.use(helmet());
 
 /**
- * Request logging for logging measures
+ * Request logging for development purposes
  */
 app.use(morgan("short"));
 

@@ -100,18 +100,13 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
  * @param { {budget_category_id: string} } params - The budget category ID for the grid render cell.
  * @returns {React.ReactNode} The rendered category chip.
  */
-export function RenderCategoryChip({ budget_category_id }: { budget_category_id: string }): React.ReactNode {
+export function RenderCategoryChip({ budget_category_id, type }: { budget_category_id: string, type: BudgetType }): React.ReactNode {
    const budgets = useSelector((state: RootState) => state.budgets.value);
-   const [type, category] = useMemo(() => {
-      const type: BudgetType = budget_category_id === budgets.Income.budget_category_id || budgets.Income.categories.some((c) => {
-         return c.budget_category_id === budget_category_id;
-      }) ? "Income" : "Expenses";
-      const category: BudgetCategory | undefined = budgets[type].categories.find((c) => {
+   const category: BudgetCategory | undefined = useMemo(() => {
+      return budgets[type].categories.find((c) => {
          return c.budget_category_id === budget_category_id;
       });
-
-      return [type, category];
-   }, [budgets, budget_category_id]);
+   }, [budgets, budget_category_id, type]);
 
    const color: "success" | "error" = type === "Income" ? "success" : "error";
    const label: string = category?.name || type;

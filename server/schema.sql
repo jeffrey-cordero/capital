@@ -93,6 +93,7 @@ CREATE TABLE transactions (
    amount DECIMAL(18, 2) NOT NULL CHECK (amount <> 0),
    description TEXT NOT NULL DEFAULT '',
    date DATE NOT NULL CHECK (check_date_range(date)),
+   budget_type budget_type NOT NULL,
    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
    account_id UUID REFERENCES accounts(account_id) ON DELETE SET NULL,
    budget_category_id UUID REFERENCES budget_categories(budget_category_id) ON DELETE SET NULL

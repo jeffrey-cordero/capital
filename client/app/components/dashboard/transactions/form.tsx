@@ -33,6 +33,7 @@ import type { RootState } from "@/redux/store";
  * @interface TransactionFormProps
  * @property {Transaction | undefined} transaction - The transaction to edit.
  * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
+ * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
  * @property {boolean} open - Whether the modal is open.
  * @property {number} index - The index of the transaction in the transactions array.
  * @property {() => void} onClose - The function to call when the modal is closed.
@@ -42,6 +43,7 @@ import type { RootState } from "@/redux/store";
 interface TransactionFormProps {
    transaction: Transaction | undefined;
    accountsMap: Record<string, Account>;
+   budgetsMap: Record<string, BudgetType>;
    open: boolean;
    index: number;
    onClose: () => void;
@@ -55,7 +57,7 @@ interface TransactionFormProps {
  * @param {TransactionFormProps} props - The props for the TransactionForm component
  * @returns {React.ReactNode} The TransactionForm component
  */
-export default function TransactionForm({ transaction, accountsMap, open, index, onClose, filter, identifier }: TransactionFormProps): React.ReactNode {
+export default function TransactionForm({ transaction, accountsMap, budgetsMap, open, index, onClose, filter, identifier }: TransactionFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const updating = transaction !== undefined;
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
@@ -68,8 +70,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
       reset,
       setError,
       clearErrors,
-      watch,
-      setValue,
       formState: { isSubmitting, errors, dirtyFields }
    } = useForm({
       defaultValues: {
@@ -88,7 +88,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
 
    const defaultBudgetCategoryID: string = useMemo(() => {
       if (filter === "budget") {
-         return budgets[identifier as BudgetType].budget_category_id;
+         return budgets[identifier as BudgetType]?.budget_category_id;
       }
 
       return "";
@@ -96,26 +96,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
 
    // Setup minimum and maximum dates for transactions
    const [minDate, maxDate] = useMemo(() => getDateRange(), []);
-
-   // Handle swapping between income and expenses based on current amount input
-   const amount = watch("amount");
-
-   const transactionType: BudgetType | null = useMemo(() => {
-      if (!amount || amount >= 0) return "Income";
-      if (amount < 0) return "Expenses";
-
-      return null;
-   }, [amount]);
-   const disableIncome: boolean = transactionType !== "Income";
-   const disableExpenses: boolean = !disableIncome;
-
-   useEffect(() => {
-      setValue(
-         "budget_category_id",
-         disableIncome ? budgets.Expenses.budget_category_id : budgets.Income.budget_category_id,
-         { shouldDirty: true }
-      );
-   }, [disableIncome, budgets.Expenses.budget_category_id, budgets.Income.budget_category_id, amount, setValue]);
 
    const onReset = useCallback(() => {
       if (transaction) {
@@ -161,7 +141,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
    const onSubmit = async(data: FieldValues) => {
       try {
          // Validate the form data against the transaction schema
-         const fields = transactionSchema.safeParse(data);
+         const type: BudgetType = data.budget_category_id ? budgetsMap[data.budget_category_id] : (data.amount >= 0 ? "Income" : "Expenses");
+         const fields = transactionSchema.safeParse({ ...data, budget_type: type });
 
          if (!fields.success) {
             handleValidationErrors(fields, setError);
@@ -177,6 +158,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
             }, {} as Partial<Transaction>);
 
             if (Object.keys(updatedFields).length > 0) {
+               updatedFields.budget_type = type;
                const result = await sendApiRequest<number>(
                   `dashboard/transactions/${transaction.transaction_id}`, "PUT", updatedFields, dispatch, navigate
                );
@@ -190,10 +172,8 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
          } else {
             const payload = {
                ...fields.data,
-               // Normalize the budget category ID based on the transaction amount
-               budget_category_id: fields.data.budget_category_id || (
-                  fields.data.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
-               )
+               budget_type: type,
+               budget_category_id: fields.data.budget_category_id || null
             } as Transaction;
 
             const result = await sendApiRequest<{ transaction_id: string }>(
@@ -411,6 +391,7 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                           (value) => (
                                              <RenderCategoryChip
                                                 budget_category_id = { value }
+                                                type = { budgetsMap[value] || "Income" }
                                              />
                                           )
                                        }
@@ -421,10 +402,9 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                              }
                                           }
                                        }
-                                       value = { !amount ? field.value : field.value || budgets.Income.budget_category_id }
+                                       value = { field.value || "" }
                                     >
                                        <MenuItem
-                                          disabled = { disableIncome }
                                           sx = { { fontWeight: "bold" } }
                                           value = { budgets.Income.budget_category_id }
                                        >
@@ -433,7 +413,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        {
                                           incomeCategoryOptions.map((category) => (
                                              <MenuItem
-                                                disabled = { disableIncome }
                                                 key = { `income-category-${category.budget_category_id}` }
                                                 sx = { { pl: 3.5 } }
                                                 value = { category.budget_category_id }
@@ -443,7 +422,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                           ))
                                        }
                                        <MenuItem
-                                          disabled = { disableExpenses }
                                           sx = { { fontWeight: "bold" } }
                                           value = { budgets.Expenses.budget_category_id }
                                        >
@@ -452,7 +430,6 @@ export default function TransactionForm({ transaction, accountsMap, open, index,
                                        {
                                           expenseCategoryOptions.map((category) => (
                                              <MenuItem
-                                                disabled = { disableExpenses }
                                                 key = { `expense-category-${category.budget_category_id}` }
                                                 sx = { { pl: 3.5 } }
                                                 value = { category.budget_category_id }

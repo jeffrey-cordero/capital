@@ -137,7 +137,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          // Increment Income or Expense stack based on the transaction amount
          if (type === "budgets") {
-            acc[year].budgets[record.amount >= 0 ? 0 : 1].data[month - 1] += amount;
+            acc[year].budgets[record.budget_type === "Income" ? 0 : 1].data[month - 1] += amount;
          }
 
          // Decrement account balance based on the transaction amount as we are going back in time

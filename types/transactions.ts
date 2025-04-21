@@ -15,12 +15,12 @@ export const transactionSchema = z.object({
    /* Unique budget category identifier */
    budget_category_id: z.string().trim().uuid({
       message: "Budget category ID must be a valid UUID"
-   }).or(z.literal("")).optional(),
+   }).or(z.literal("")).optional().nullable(),
 
    /* Unique financial account identifier */
    account_id: z.string().trim().uuid({
       message: "Account ID must be a valid UUID"
-   }).or(z.literal("")).optional(),
+   }).or(z.literal("")).optional().nullable(),
 
    /* Monetary amount */
    amount: zodPreprocessNumber(z.coerce.number({
@@ -37,6 +37,11 @@ export const transactionSchema = z.object({
    description: z.string().trim().max(255, {
       message: "Description must be at most 255 characters"
    }).default(""),
+
+   /* Type of the transaction */
+   budget_type: z.enum(["Income", "Expenses"], {
+      message: "Transaction type must be either Income or Expenses"
+   }),
 
    /* Date of the given transaction */
    date: z.coerce.date({

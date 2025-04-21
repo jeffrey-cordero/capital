@@ -33,7 +33,7 @@ export default function Page(): React.ReactNode {
          // Add the amount to the category and respective type
          const amount = Math.abs(transaction.amount);
          acc[period][transaction.budget_category_id || ""] += amount;
-         acc[period][transaction.amount >= 0 ? "Income" : "Expenses"] += amount;
+         acc[period][transaction.budget_type] += amount;
 
          return acc;
       }, {} as Record<string, Record<string, number>>);

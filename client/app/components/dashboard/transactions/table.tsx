@@ -66,12 +66,14 @@ export type TransactionRowModel = GridValidRowModel & Transaction & {
  * @property {string} filter - The filter to apply to the table.
  * @property {string} identifier - The identifier to filter the table by.
  * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
+ * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
  * @property {(index: number) => void} onEdit - The callback to edit a transaction based on index.
  */
 interface TransactionsTableProps {
    filter: "account" | "budget" | undefined;
    identifier: string | undefined;
    accountsMap: Record<string, Account>;
+   budgetsMap: Record<string, BudgetType>;
    onEdit: (_index: number) => void;
 }
 
@@ -81,7 +83,7 @@ interface TransactionsTableProps {
  * @param {TransactionsTableProps} props - The props for the TransactionsTable component.
  * @returns {React.ReactNode} The rendered TransactionsTable component.
  */
-export default function TransactionsTable({ accountsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
+export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
    const theme = useTheme();
    const budgets: BudgetsState["value"] = useSelector((state: RootState) => state.budgets.value);
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
@@ -185,6 +187,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             getApplyFilterFn: getApplyFilterFn,
             InputComponent: (props: GridFilterInputMultipleValueProps) => (
                <TransactionFilter
+                  budgetsMap = { budgetsMap }
                   props = { props }
                   type = "Account"
                />
@@ -200,6 +203,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderCategoryChip
                budget_category_id = { params.row.budget_category_id || "" }
+               type = { params.row.budget_type }
             />
          ),
          valueFormatter: (_value: never, row: TransactionRowModel) => row.budget_category_id,
@@ -215,6 +219,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             getApplyFilterFn: getApplyFilterFn,
             InputComponent: (props: GridFilterInputMultipleValueProps) => (
                <TransactionFilter
+                  budgetsMap = { budgetsMap }
                   props = { props }
                   type = "Category"
                />
@@ -276,7 +281,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       });
 
       return visible;
-   }, [onEdit, filter]);
+   }, [onEdit, filter, budgetsMap]);
 
    // DataGrid columns (list view)
    const cards: GridColDef<TransactionRowModel>[] = useMemo(() => [{

@@ -2,6 +2,7 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import type { Account } from "capital/accounts";
+import type { BudgetCategory, BudgetType, OrganizedBudget, OrganizedBudgets } from "capital/budgets";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -62,14 +63,35 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
          acc[record.account_id || ""] = record;
 
          return acc;
-      }, {});
+      }, {} as Record<string, Account>);
    }, [accounts]);
+
+   // Memoize the budget category mappings leveraged by various child components
+   const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
+   const budgetsMap: Record<string, BudgetType> = useMemo(() => {
+      return Object.values(budgets).reduce((acc: Record<string, BudgetType>, record: OrganizedBudget) => {
+         if (!record.budget_category_id) {
+            // Budget period values should be ignored
+            return acc;
+         }
+
+         const type: BudgetType = record.budget_category_id === budgets.Income.budget_category_id ? "Income" : "Expenses";
+
+         acc[record.budget_category_id || ""] = type;
+         record.categories.forEach((category: BudgetCategory) => {
+            acc[category.budget_category_id || ""] = type;
+         });
+
+         return acc;
+      }, {} as Record<string, BudgetType>);
+   }, [budgets]);
 
    return (
       <Box sx = { { textAlign: "center" } }>
          <Box sx = { { mt: 0.5 } }>
             <TransactionsTable
                accountsMap = { accountsMap }
+               budgetsMap = { budgetsMap }
                filter = { filter }
                identifier = { identifier }
                onEdit = { openModal }
@@ -86,6 +108,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                </Button>
                <TransactionForm
                   accountsMap = { accountsMap }
+                  budgetsMap = { budgetsMap }
                   filter = { filter }
                   identifier = { identifier }
                   index = { editState.index ?? 0 }

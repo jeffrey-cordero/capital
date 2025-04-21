@@ -28,21 +28,9 @@ import type { RootState } from "@/redux/store";
  */
 export default function Security(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-
-   // Gather user settings from Redux store
    const settings = useSelector((state: RootState) => state.settings.value);
-
-   // States for input fields disabled status
-   const [disabled, setDisabled] = useState({
-      username: true,
-      email: true,
-      // Determines if password fields are editable
-      passwords: true,
-      // Determines if input fields are password or text
-      password: true,
-      newPassword: true,
-      verifyPassword: true
-   });
+   const [disabled, setDisabled] = useState({ username: true, email: true, passwords: true });
+   const [visible, setVisible] = useState({ password: false, newPassword: false, verifyPassword: false });
 
    // Form setup with react-hook-form
    const {
@@ -82,16 +70,12 @@ export default function Security(): React.ReactNode {
       resetVisibility();
    }, [reset, resetVisibility, settings.username, settings.email]);
 
-   const toggleFieldEditable = useCallback((fields: (keyof typeof disabled)[]) => {
-      setDisabled(prev => {
-         const updates = { ...prev };
+   const togglePasswordVisibility = useCallback((field: keyof typeof visible) => {
+      setVisible(prev => ({ ...prev, [field]: !prev[field] }));
+   }, []);
 
-         fields.forEach(field => {
-            updates[field] = !prev[field];
-         });
-
-         return updates;
-      });
+   const toggleFieldEditable = useCallback((field: keyof typeof disabled) => {
+      setDisabled(prev => ({ ...prev, [field]: !prev[field] }));
    }, []);
 
    // Handles form submissions
@@ -185,7 +169,7 @@ export default function Security(): React.ReactNode {
                                     <FontAwesomeIcon
                                        className = "primary"
                                        icon = { faPenToSquare }
-                                       onClick = { () => toggleFieldEditable(["username"]) }
+                                       onClick = { () => toggleFieldEditable("username") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
@@ -222,7 +206,7 @@ export default function Security(): React.ReactNode {
                                     <FontAwesomeIcon
                                        className = "primary"
                                        icon = { faPenToSquare }
-                                       onClick = { () => toggleFieldEditable(["email"]) }
+                                       onClick = { () => toggleFieldEditable("email") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
@@ -259,22 +243,22 @@ export default function Security(): React.ReactNode {
                                  disabled.passwords ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       icon = { disabled.passwords ? faPenToSquare : disabled.password ? faEye : faEyeSlash }
-                                       onClick = { () => toggleFieldEditable(["passwords"]) }
+                                       icon = { disabled.passwords ? faPenToSquare : visible.password ? faEye : faEyeSlash }
+                                       onClick = { () => toggleFieldEditable("passwords") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : (
                                     <FontAwesomeIcon
-                                       className = { disabled.password ? undefined : "primary" }
-                                       icon = { disabled.password ? faEye : faEyeSlash }
-                                       onClick = { () => toggleFieldEditable(["password"]) }
+                                       className = { visible.password ? undefined : "primary" }
+                                       icon = { visible.password ? faEye : faEyeSlash }
+                                       onClick = { () => togglePasswordVisibility("password") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  )
                               }
                               id = "password"
                               label = "Password"
-                              type = { disabled.password ? "password" : "text" }
+                              type = { visible.password ? "text" : "password" }
                               value = { disabled.passwords ? "********" : field.value || "" }
                            />
                            <FormHelperText>
@@ -313,16 +297,16 @@ export default function Security(): React.ReactNode {
                                     autoComplete = "new-password"
                                     endAdornment = {
                                        <FontAwesomeIcon
-                                          className = { disabled.newPassword ? undefined : "primary" }
-                                          icon = { disabled.newPassword ? faEye : faEyeSlash }
-                                          onClick = { () => toggleFieldEditable(["newPassword"]) }
+                                          className = { visible.newPassword ? undefined : "primary" }
+                                          icon = { visible.newPassword ? faEye : faEyeSlash }
+                                          onClick = { () => togglePasswordVisibility("newPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }
                                     id = "newPassword"
                                     label = "New Password"
-                                    type = { disabled.newPassword ? "password" : "text" }
-                                    value = { field.value || "" }
+                                    type = { visible.newPassword ? "text" : "password" }
+                                    value = { disabled.passwords ? "********" : field.value || "" }
                                  />
                                  <FormHelperText>
                                     { errors.newPassword?.message?.toString() }
@@ -348,16 +332,16 @@ export default function Security(): React.ReactNode {
                                     autoComplete = "new-password"
                                     endAdornment = {
                                        <FontAwesomeIcon
-                                          className = { disabled.verifyPassword ? undefined : "primary" }
-                                          icon = { disabled.verifyPassword ? faEye : faEyeSlash }
-                                          onClick = { () => toggleFieldEditable(["verifyPassword"]) }
+                                          className = { visible.verifyPassword ? undefined : "primary" }
+                                          icon = { visible.verifyPassword ? faEye : faEyeSlash }
+                                          onClick = { () => togglePasswordVisibility("verifyPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }
                                     id = "verifyPassword"
                                     label = "Verify Password"
-                                    type = { disabled.verifyPassword ? "password" : "text" }
-                                    value = { field.value || "" }
+                                    type = { visible.verifyPassword ? "text" : "password" }
+                                    value = { disabled.passwords ? "********" : field.value || "" }
                                  />
                                  <FormHelperText>
                                     { errors.verifyPassword?.message?.toString() }

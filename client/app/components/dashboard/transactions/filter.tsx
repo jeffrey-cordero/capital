@@ -85,9 +85,8 @@ export function filterTransactions(
    }, {} as Record<string, number>);
 
    return transactions.reduce((acc, record, index) => {
-      const type: BudgetType = record.amount >= 0 ? "Income" : "Expenses";
-      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, type);
-
+      // Determine the type of the transaction based on the budget category ID or the amount
+      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.budget_type);
       const transaction: TransactionRowModel = {
          ...record,
          index,
@@ -95,7 +94,7 @@ export function filterTransactions(
          account: accountsMap[record.account_id ?? ""]?.name || "",
          category: categoryInfo?.name || "",
          balance: balances[record.account_id || ""] || undefined,
-         type: categoryInfo?.type || type
+         type: record.budget_type
       };
 
       if (record.account_id && balances[record.account_id]) {
@@ -115,7 +114,7 @@ export function filterTransactions(
          case "budget": {
             // Match transactions based on the current budget period
             const [year, month] = transaction.date.split("T")[0].split("-");
-            const isValidType = identifier === type;
+            const isValidType = identifier === record.budget_type;
 
             if (isValidType && parseInt(year) === period.year && parseInt(month) === period.month) {
                acc.push(transaction);
@@ -139,10 +138,12 @@ export function filterTransactions(
  * @interface TransactionFilterProps
  * @property {GridFilterInputMultipleValueProps} props - The props for the grid filter multi-select input.
  * @property {"Account" | "Category"} type - The type of the filter.
+ * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
  */
 interface TransactionFilterProps {
    props: GridFilterInputMultipleValueProps;
    type: "Account" | "Category";
+   budgetsMap: Record<string, BudgetType>;
 }
 
 /**
@@ -151,7 +152,7 @@ interface TransactionFilterProps {
  * @param {TransactionFilterProps} props - The props for the TransactionFilter component.
  * @returns {React.ReactNode} The TransactionFilter component.
  */
-export function TransactionFilter({ props, type }: TransactionFilterProps): React.ReactNode {
+export function TransactionFilter({ props, budgetsMap, type }: TransactionFilterProps): React.ReactNode {
    const { item, applyValue } = props; // eslint-disable-line react/prop-types
    const multiSelectRef = useRef<string[]>(["all"]);
 
@@ -211,6 +212,7 @@ export function TransactionFilter({ props, type }: TransactionFilterProps): Reac
                                     <RenderCategoryChip
                                        budget_category_id = { value }
                                        key = { `selected-${value}` }
+                                       type = { budgetsMap[value] || "Income" }
                                     />
                                  )
                               );
