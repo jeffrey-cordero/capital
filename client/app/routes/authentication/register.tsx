@@ -84,7 +84,7 @@ export default function Register(): React.ReactNode {
    return (
       <Container className = "center">
          <Callout
-            sx = { { width: "100%", my: 12 } }
+            sx = { { width: "100%", my: 10.6 } }
             type = "primary"
          >
             <Stack

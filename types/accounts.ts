@@ -51,7 +51,9 @@ export const accountSchema = z.object({
 
    /* Current monetary balance */
    balance: zodPreprocessNumber(
-      z.coerce.number().min(-999_999_999_999.99, {
+      z.coerce.number({
+         message: "Balance must be a valid currency amount"
+      }).min(-999_999_999_999.99, {
          message: "Balance is below the minimum allowed value"
       }).max(999_999_999_999.99, {
          message: "Balance exceeds the maximum allowed value"

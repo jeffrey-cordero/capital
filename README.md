@@ -1,9 +1,6 @@
 # capital
 
 ```bash
-# Postgres / Redis containers (adjust local ports within `docker-compose.yaml`)
+# Client+Server / Postgres / Redis containers
 $docker compose up
-
-# Client / Server processes
-$npm run dev
 ```
