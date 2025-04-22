@@ -81,7 +81,10 @@ export default function Page(): React.ReactNode {
             </Grow>
             {
                transactions.length > 0 && (
-                  <Grid size = { { xs: 12 } } sx = {{ mt: -4 }}>
+                  <Grid
+                     size = { { xs: 12 } }
+                     sx = { { mt: -4 } }
+                  >
                      <Grow
                         in = { true }
                         mountOnEnter = { true }

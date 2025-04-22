@@ -48,7 +48,7 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 3 } }
+         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 2 } }
          variant = "elevation"
       >
          <CardContent>

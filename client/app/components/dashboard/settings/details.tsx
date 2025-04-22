@@ -115,7 +115,7 @@ export default function Details(): React.ReactNode {
                   alt = "Details"
                   component = "img"
                   src = "/svg/details.svg"
-                  sx = { { width: 280, mb: "20px !important", px: 2 } }
+                  sx = { { width: 300, mb: "20px !important", px: 2 } }
                />
                <Controller
                   control = { control }

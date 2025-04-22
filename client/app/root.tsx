@@ -105,12 +105,12 @@ export function ErrorBoundary(): React.ReactNode {
                className = "floating"
                component = "img"
                src = "/svg/error.svg"
-               sx = { { width: 350, height: "auto", mb: -4 } }
+               sx = { { width: 300, height: "auto", mb: -4 } }
             />
          </Box>
          <Typography
             align = "center"
-            sx = { { fontWeight: "bold", margin: "0", px: 3 } }
+            sx = { { fontWeight: "bold", margin: "0", px: 3, maxWidth: "350px" } }
             variant = "body1"
          >
             Oops, Something went wrong. If the issue persists, please visit this { " " }

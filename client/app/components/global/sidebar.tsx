@@ -13,7 +13,7 @@ import {
    type IconDefinition
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconButton, Stack, Switch, Typography } from "@mui/material";
+import { IconButton, Stack, Switch } from "@mui/material";
 import Box from "@mui/material/Box";
 import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";

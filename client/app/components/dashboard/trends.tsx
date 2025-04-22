@@ -122,7 +122,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          return acc;
       }, {} as Record<string, { balance: number; index: number; }>);
 
-      return transactions.reduce((acc, record) => {
+      const trends = transactions.reduce((acc, record) => {
          const year: number = Number(record.date.substring(0, 4));
          const month: number = Number(record.date.substring(5, 7));
 
@@ -158,7 +158,16 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          return acc;
       }, {} as Record<string, Record<string, ChartData[]>>);
-   }, [transactions, accounts, theme, type, formatAccounts, formatBudgets]);
+
+      if (type === "accounts" && accounts.length > 0 && !trends[year]) {
+         // If there are no transactions for the current year, we need to fill in the missing data
+         trends[year] = {
+            accounts: accounts.map((account) => formatAccounts(account, balances[account.account_id || ""].balance, year))
+         };
+      }
+
+      return trends;
+   }, [transactions, accounts, year, type, formatAccounts, formatBudgets]);
 
    const series = useMemo(() => {
       if (type === "budgets") {
@@ -235,7 +244,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             )
          }
       </ResponsiveChartContainer>
-   ), [colorPalette, isCard, yearAbbreviations, series, graphHeight]);
+   ), [colorPalette, isCard, type, yearAbbreviations, series, graphHeight]);
 
    return (
       <Box sx = { { position: "relative" } }>

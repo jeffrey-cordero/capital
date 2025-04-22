@@ -67,7 +67,7 @@ export default function Page(): React.ReactNode {
                            alt = "Accounts"
                            component = "img"
                            src = "/svg/accounts.svg"
-                           sx = { { width: 400, mb: 2 } }
+                           sx = { { width: 415, mb: 2 } }
                         />
                         <AccountTrends isCard = { false } />
                      </Grid>

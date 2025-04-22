@@ -15,13 +15,13 @@ export default function Actions(): React.ReactNode {
          <Stack
             direction = "column"
             spacing = { 1 }
-            sx = { { mt: 9, width: "100%", textAlign: "center", alignItems: "center" } }
+            sx = { { mt: 10, width: "100%", textAlign: "center", alignItems: "center" } }
          >
             <Box
                alt = "Actions"
                component = "img"
                src = "/svg/actions.svg"
-               sx = { { width: 290, px: 2, mb: "25px !important" } }
+               sx = { { width: 305, px: 2, mb: "25px !important" } }
             />
             <ExportAccount />
             <Logout />
