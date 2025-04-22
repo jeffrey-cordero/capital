@@ -20,6 +20,11 @@ body[data-dark="true"] {
 }
 
 div {
+  .MuiListItemText-primary {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+  }
+
   &.form-floating {
     z-index: 0 !important;
   }

@@ -332,7 +332,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                   })
                }
             </Box>
-            <Box sx = { { position: "relative", mb: 19 } }>
+            <Box sx = { { position: "relative", mb: 18 } }>
                {
                   links === dashboard ? (
                      <Box>

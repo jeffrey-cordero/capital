@@ -196,7 +196,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          displayWarning = { Object.keys(dirtyFields).length > 0 }
          onClose = { onClose }
          open = { open }
-         sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, p: { xs: 2, sm: 3 } } }
+         sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "95%" } }
       >
          <ModalSection title = "Transaction">
             <Box sx = { { mt: 2 } }>

@@ -136,7 +136,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
                   <ListItemText
                      primary = { category.name }
                      secondary = { displayCurrency(goal) }
-                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5 } }
+                     sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5, fontWeight: "600" } }
                   />
                   <Stack
                      direction = "row"

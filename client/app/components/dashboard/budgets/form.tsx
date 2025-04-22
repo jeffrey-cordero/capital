@@ -137,7 +137,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          displayWarning = { displayWarning }
          onClose = { onClose }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, p: { xs: 2, sm: 3 }, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "90%" } }
       >
          <Stack
             direction = "column"

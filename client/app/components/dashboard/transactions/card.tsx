@@ -52,6 +52,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
             >
                <Stack
                   direction = "row"
+                  rowGap = { 1 }
                   sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%" } }
                >
                   <Typography
@@ -68,7 +69,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                </Stack>
                <Stack
                   direction = "row"
-                  spacing = { 0.5 }
+                  rowGap = { 1 }
                   sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
                   <Box>

@@ -135,7 +135,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          displayWarning = { Object.keys(dirtyFields).length > 0 }
          onClose = { onClose }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, p: { xs: 2, sm: 3 }, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "90%" } }
       >
          <Stack
             direction = "column"
