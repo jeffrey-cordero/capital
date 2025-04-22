@@ -52,7 +52,7 @@ export interface GraphProps {
 export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps): React.ReactNode {
    const theme = useTheme();
    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-   const graphHeight = isMobile ? 300 : 430;
+   const graphHeight = isMobile ? 315 : 445;
    const { watch, control } = useForm();
 
    // Form control values with defaults

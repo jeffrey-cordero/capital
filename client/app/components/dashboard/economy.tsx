@@ -32,12 +32,10 @@ interface StocksProps {
  * @interface TrendProps
  * @property {string} title - The title for the trend card
  * @property {StockIndicator[]} data - The data for the trend card
- * @property {string} image - The image for the trend card
  */
 interface TrendProps {
    title: string;
    data: StockIndicator[];
-   image: string;
 }
 
 /**
@@ -46,28 +44,20 @@ interface TrendProps {
  * @param {TrendProps} props - The props for the TrendCard component
  * @returns {React.ReactNode} The TrendCard component
  */
-function StockTrendCard({ title, data, image }: TrendProps): React.ReactNode {
+function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, px: 1, py: 0 } }
+         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 3 } }
          variant = "elevation"
       >
          <CardContent>
-            <Box sx = { { textAlign: "center" } }>
-               <Box
-                  alt = { title }
-                  component = "img"
-                  src = { image }
-                  sx = { { width: 200, height: "auto", mx: "auto", my: 0 } }
-               />
-               <Typography
-                  sx = { { mb: 3, fontWeight: "bold" } }
-                  variant = "h5"
-               >
-                  { title }
-               </Typography>
-            </Box>
+            <Typography
+               sx = { { mb: 2.5, fontWeight: "bold", textAlign: "center" } }
+               variant = "h5"
+            >
+               { title }
+            </Typography>
             {
                data.map((stock, index) => (
                   <Stack
@@ -139,32 +129,29 @@ function Stocks({ data }: StocksProps): React.ReactNode {
       <Stack
          direction = "column"
          id = "stocks"
-         sx = { { gap: 2, mt: 1, textAlign: "center", justifyContent: "center", alignItems: "center" } }
+         sx = { { gap: 2, textAlign: "center", justifyContent: "center", alignItems: "center" } }
       >
          <Grid
             container = { true }
             direction = "row"
             spacing = { 2 }
-            sx = { { width: "100%", mt: 2 } }
+            sx = { { width: "100%" } }
          >
             <Grid size = { { xs: 12, sm: 6, md: 4 } }>
                <StockTrendCard
                   data = { top_gainers }
-                  image = "/svg/winners.svg"
                   title = "Top Gainers"
                />
             </Grid>
             <Grid size = { { xs: 12, sm: 6, md: 4 } }>
                <StockTrendCard
                   data = { top_losers }
-                  image = "/svg/loss.svg"
                   title = "Top Losers"
                />
             </Grid>
             <Grid size = { { xs: 12, md: 4 } }>
                <StockTrendCard
                   data = { most_actively_traded }
-                  image = "/svg/active.svg"
                   title = "Most Active"
                />
             </Grid>
@@ -202,15 +189,15 @@ export default function Economy(): React.ReactNode {
       >
          <Stack
             direction = "column"
-            sx = { { my: 4 } }
+            sx = { { mb: 3 } }
          >
             <Box
                alt = "Economy"
                component = "img"
                src = "/svg/economy.svg"
-               sx = { { height: 300, mx: "auto", mb: -3 } }
+               sx = { { height: 315, mx: "auto" } }
             />
-            <Box>
+            <Box sx = { { mt: -5 } }>
                <Typography
                   fontWeight = "bold"
                   sx = { { px: 2 } }
@@ -229,7 +216,7 @@ export default function Economy(): React.ReactNode {
          </Stack>
          <Stack
             direction = "column"
-            spacing = { 2 }
+            sx = { { gap: 2.2 } }
          >
             <Graph
                average = { true }

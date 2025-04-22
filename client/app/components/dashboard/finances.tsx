@@ -23,7 +23,7 @@ export default function Finances(): React.ReactNode {
          />
          <Stack
             direction = "column"
-            sx = { { justifyContent: "center", alignItems: "center", gap: 3.1 } }
+            sx = { { justifyContent: "center", alignItems: "center", gap: 2.2 } }
          >
             <Grid size = { 12 }>
                <AccountTrends isCard = { true } />

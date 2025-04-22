@@ -19,7 +19,6 @@ import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-import type { Transaction } from "capital/transactions";
 
 /**
  * The data for the chart
@@ -60,7 +59,7 @@ interface TrendProps {
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-   const graphHeight = isCard ? 300 : (isMobile ? 400 : 500);
+   const graphHeight = isCard ? (isMobile ? 315 : 330) : (isMobile ? 400 : 500);
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
@@ -131,7 +130,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             acc[year] = {};
 
             // Format the budget trends
-            acc[year].budgets = type === "budgets" ? formatBudgets() : [];
+            acc[year].budgets = type === "budgets" && transactions.length > 0 ? formatBudgets() : [];
             // Format the account trends
             acc[year].accounts = type !== "accounts" ? [] : accounts.map((account) => {
                return formatAccounts(account, balances[account.account_id || ""].balance, year);
@@ -159,12 +158,12 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          return acc;
       }, {} as Record<string, Record<string, ChartData[]>>);
-   }, [transactions, accounts, theme, type, formatAccounts]);
+   }, [transactions, accounts, theme, type, formatAccounts, formatBudgets]);
 
    const series = useMemo(() => {
       if (type === "budgets") {
          // Budgets will always be based on existing year
-         return trends[year]?.budgets || formatBudgets();
+         return trends[year]?.budgets || [];
       } else {
          // Handle years with no transactions
          if (year in trends) {
@@ -230,7 +229,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                      sx = { { fontWeight: "600" } }
                      variant = "subtitle2"
                   >
-                     No available data
+                     No available { type === "accounts" ? "accounts" : "transactions" }
                   </Typography>
                </Stack>
             )

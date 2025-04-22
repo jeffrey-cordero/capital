@@ -41,75 +41,75 @@ export default function Page(): React.ReactNode {
 
    return (
       <Container
-         maxWidth="xl"
-         sx={{ py: 4, px: 2 }}
+         maxWidth = "xl"
+         sx = { { py: 4, px: 2 } }
       >
          <Grid
-            container={true}
-            rowSpacing={6}
-            sx={{ width: "100%", height: "100%" }}
+            container = { true }
+            rowSpacing = { 6 }
+            sx = { { width: "100%", height: "100%" } }
          >
             <Grow
-               in={true}
-               mountOnEnter={true}
-               style={{ transformOrigin: "center top" }}
-               timeout={1000}
-               unmountOnExit={true}
+               in = { true }
+               mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
+               timeout = { 1000 }
+               unmountOnExit = { true }
             >
                <Grid
-                  size={{ xs: 12 }}
-                  sx={{ textAlign: "center" }}
+                  size = { { xs: 12 } }
+                  sx = { { textAlign: "center" } }
                >
                   <Box
-                     alt="Budgets"
-                     component="img"
-                     src="/svg/budgets.svg"
-                     sx={{ height: 310, mb: -10, mt: -2 }}
+                     alt = "Budgets"
+                     component = "img"
+                     src = "/svg/budgets.svg"
+                     sx = { { width: 335, mb: -5 } }
                   />
                </Grid>
             </Grow>
             <Grow
-               in={true}
-               mountOnEnter={true}
-               style={{ transformOrigin: "center top" }}
-               timeout={1000}
-               unmountOnExit={true}
+               in = { true }
+               mountOnEnter = { true }
+               style = { { transformOrigin: "center top" } }
+               timeout = { 1000 }
+               unmountOnExit = { true }
             >
-               <Grid size={{ xs: 12 }}>
-                  <Budgets allocations={allocations} />
+               <Grid size = { { xs: 12 } }>
+                  <Budgets allocations = { allocations } />
                </Grid>
             </Grow>
             {
                transactions.length > 0 && (
-                  <Grid size={{ xs: 12 }}>
+                  <Grid size = { { xs: 12 } } sx = {{ mt: -4 }}>
                      <Grow
-                        in={true}
-                        mountOnEnter={true}
-                        style={{ transformOrigin: "center top" }}
-                        timeout={1000}
-                        unmountOnExit={true}
+                        in = { true }
+                        mountOnEnter = { true }
+                        style = { { transformOrigin: "center top" } }
+                        timeout = { 1000 }
+                        unmountOnExit = { true }
                      >
                         <Grid
-                           container={true}
-                           rowSpacing={4}
+                           container = { true }
+                           rowSpacing = { 4 }
                         >
-                           <Grid size={{ xs: 12, md: 6 }}>
+                           <Grid size = { { xs: 12, md: 6 } }>
                               <BudgetPieChart
-                                 allocations={allocations}
-                                 type="Income"
+                                 allocations = { allocations }
+                                 type = "Income"
                               />
                            </Grid>
                            <Grid
-                              size={{ xs: 12, md: 6 }}
-                              sx={{ mt: { xs: -4, md: 0 } }}
+                              size = { { xs: 12, md: 6 } }
+                              sx = { { mt: { xs: -4, md: 0 } } }
                            >
                               <BudgetPieChart
-                                 allocations={allocations}
-                                 type="Expenses"
+                                 allocations = { allocations }
+                                 type = "Expenses"
                               />
                            </Grid>
-                           <Grid size={{ xs: 12 }}>
-                              <BudgetTrends isCard={false} />
+                           <Grid size = { { xs: 12 } }>
+                              <BudgetTrends isCard = { false } />
                            </Grid>
                         </Grid>
                      </Grow>

@@ -47,7 +47,7 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
    const authorInitial = author.charAt(0).toUpperCase();
    const publishDate = new Date(article.published).toLocaleString() || new Date().toLocaleString();
    const title = article.title || DEFAULT_VALUES.TITLE;
-   const description = article.text.replace(/\n/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
+   const description = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
    const link = article.url || "";
 
    const updateExpandedState = useCallback(() => {
@@ -176,8 +176,7 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.economy.value.news);
    const items: Article[] = useMemo(() => {
-      // Articles based on published date descending
-      return [...news.response.data].reverse().slice(0, 24);
+      return [...news.response.data].reverse().slice(0, 23);
    }, [news]);
 
    return (
@@ -198,13 +197,13 @@ export default function Articles(): React.ReactNode {
             <Grid
                columnSpacing = { 2 }
                container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2, mt: 2, textAlign: "left" } }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2.2, mt: 2, textAlign: "left" } }
             >
                {
                   items.map((item: Article, index) => (
                      <Grid
                         key = { `news-${index}` }
-                        size = { { xs: 12, md: 6, lg: 12 } }
+                        size = { { xs: 12 } }
                      >
                         <NewsItem article = { item } />
                      </Grid>

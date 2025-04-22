@@ -10,7 +10,6 @@ import {
 import {
    DataGrid,
    type GridColDef,
-   type GridColumnVisibilityModel,
    type GridFilterInputMultipleValueProps,
    type GridPaginationModel,
    type GridRenderCellParams,

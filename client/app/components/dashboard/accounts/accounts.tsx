@@ -46,7 +46,7 @@ export default function Accounts(): React.ReactNode {
       })
    );
 
-   const handleDragEnd = useCallback(async(event: DragEndEvent) => {
+   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
       const { active, over } = event;
 
       // Only proceed if dropping on a different position
@@ -94,59 +94,58 @@ export default function Accounts(): React.ReactNode {
    }, [accounts, dispatch, navigate]);
 
    return (
-      <Box id = "accounts">
+      <Box id="accounts">
          <Grid
-            container = { true }
-            justifyContent = "center"
-            spacing = { 3 }
-            sx = { { mt: -6 } }
+            container={true}
+            justifyContent="center"
+            spacing={3}
+            sx={{ mt: -6 }}
          >
             <DndContext
-               collisionDetection = { closestCenter }
-               onDragEnd = { handleDragEnd }
-               sensors = { sensors }
+               collisionDetection={closestCenter}
+               onDragEnd={handleDragEnd}
+               sensors={sensors}
             >
                <SortableContext
-                  items = { ids }
-                  strategy = { rectSortingStrategy }
+                  items={ids}
+                  strategy={rectSortingStrategy}
                >
                   {
                      accounts.length > 0 ? (
                         accounts.map((account, index) => (
                            <Grow
-                              in = { true }
-                              key = { `grow-${account.account_id}` }
-                              mountOnEnter = { true }
-                              timeout = { 200 + index * 200 }
-                              unmountOnExit = { true }
+                              in={true}
+                              key={`grow-${account.account_id}`}
+                              mountOnEnter={true}
+                              timeout={200 + index * 200}
+                              unmountOnExit={true}
                            >
                               <Grid
-                                 size = { { xs: 12, sm: 6, md: 4, lg: 3 } }
-                                 sx = {
+                                 size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                                 sx={
                                     {
                                        minWidth: { xs: "none", sm: "330px" },
                                        maxWidth: "330px"
                                     }
                                  }
                               >
-                                 <AccountCard account = { account } />
+                                 <AccountCard account={account} />
                               </Grid>
                            </Grow>
                         ))
                      ) : (
-                        <Typography
-                           fontWeight = "bold"
-                           variant = "body1"
+                        <Box
+                           sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "175px ", width: "100%", fontWeight: "bold" }}
                         >
                            No available accounts
-                        </Typography>
+                        </Box>
                      )
                   }
                </SortableContext>
             </DndContext>
          </Grid>
-         <Box sx = { { mt: 6 } }>
-            <AccountCard account = { undefined } />
+         <Box sx={{ mt: 6 }}>
+            <AccountCard account={undefined} />
          </Box>
       </Box>
    );

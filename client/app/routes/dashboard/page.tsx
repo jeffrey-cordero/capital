@@ -34,9 +34,8 @@ export default function Page(): React.ReactNode {
                   sx = { { minHeight: "100%" } }
                >
                   <Stack
-                     direction = "column"
                      id = "finances-container"
-                     spacing = { 2 }
+                     direction = "column"
                      style = { { justifyContent: "space-between" } }
                      sx = {
                         {

@@ -219,7 +219,7 @@ export function SideBar(): React.ReactNode {
                {
                   [`& .${drawerClasses.paper}`]: {
                      pt: 2.5,
-                     pr: 1,
+                     pr: 0.75,
                      overflow: "unset",
                      width: "250px",
                      borderColor: alpha(theme.palette.grey[500], 0.08),
@@ -268,14 +268,8 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                alt = "Logo"
                component = "img"
                src = "/svg/logo.svg"
-               sx = { { width: 125, height: "auto" } }
+               sx = { { width: 150, mb: -2, height: "auto" } }
             />
-            <Typography
-               sx = { { fontWeight: "fontWeightBold", color: theme.palette.primary.main } }
-               variant = "h4"
-            >
-               Capital
-            </Typography>
          </Stack>
          <Box
             component = "nav"
@@ -283,7 +277,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
          >
             <Box
                component = "ul"
-               sx = { { gap: 0.5, pl: 1 } }
+               sx = { { gap: 0.5, pl: 0.75 } }
             >
                {
                   links.map((link) => {
@@ -303,7 +297,6 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                                     pl: 1.5,
                                     py: 1,
                                     gap: 2,
-                                    pr: 1.5,
                                     borderRadius: 0.75,
                                     typography: "body2",
                                     fontWeight: "fontWeightMedium",
@@ -339,7 +332,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                   })
                }
             </Box>
-            <Box sx = { { position: "relative", mb: 22 } }>
+            <Box sx = { { position: "relative", mb: 19 } }>
                {
                   links === dashboard ? (
                      <Box>
