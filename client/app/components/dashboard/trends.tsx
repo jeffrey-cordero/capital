@@ -59,7 +59,7 @@ interface TrendProps {
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-   const graphHeight = isCard ? (isMobile ? 315 : 330) : (isMobile ? 400 : 500);
+   const graphHeight = isCard ? (isMobile ? 315 : 330) : (isMobile ? 330 : 445);
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);

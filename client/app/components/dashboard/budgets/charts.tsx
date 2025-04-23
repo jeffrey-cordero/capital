@@ -125,7 +125,7 @@ interface BudgetProgressChartProps {
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
-   const pieChartDimensions = 275;
+   const pieChartDimensions = 250;
 
    return (
       <Stack
@@ -156,7 +156,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                      [
                         {
                            data: data,
-                           innerRadius: 75,
+                           innerRadius: 77,
                            outerRadius: 100,
                            paddingAngle: 0,
                            highlightScope: { faded: "global", highlighted: "item" }
