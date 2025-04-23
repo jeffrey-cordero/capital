@@ -13,18 +13,17 @@ import queryClient from "@/tanstack/client";
 import type { Route } from "./+types/root";
 
 /**
- * Returns the links for the root layout.
- *
- * @returns {Route.LinksFunction} The links functions
+ * Root layout links for fonts and styling resources
  */
 export const links: Route.LinksFunction = () => [
-   { rel: "preconnect", href: "https://fonts.googleapis.com" },
    {
+      rel: "preconnect",
+      href: "https://fonts.googleapis.com"
+   }, {
       rel: "preconnect",
       href: "https://fonts.gstatic.com",
       crossOrigin: "anonymous"
-   },
-   {
+   }, {
       rel: "stylesheet",
       href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
    }, {
@@ -34,24 +33,11 @@ export const links: Route.LinksFunction = () => [
 ];
 
 /**
- * Main layout component that initializes the theme based on localStorage or preferred color scheme.
+ * Main layout component that provides the HTML structure
  *
- * @param {React.ReactNode} children - The children to render
- * @returns {React.ReactNode} The main application layout
+ * @param {React.ReactNode} children - Child components to render
  */
 export function Layout({ children }: { children: React.ReactNode }): React.ReactNode {
-   useEffect(() => {
-      // Initialize the theme based on localStorage or preferred color scheme
-      const preferredTheme: string | undefined = localStorage.theme;
-      const prefersDarkMode: boolean = window?.matchMedia("(prefers-color-scheme: dark)").matches;
-      const darkMode: boolean = preferredTheme === "dark" || (!preferredTheme && prefersDarkMode);
-
-      store.dispatch({
-         type: "theme/setTheme",
-         payload: darkMode ? "dark" : "light"
-      });
-   }, []);
-
    return (
       <html lang = "en">
          <head>
@@ -60,7 +46,9 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
                content = "width=device-width, initial-scale=1"
                name = "viewport"
             />
-            <title>Capital</title>
+            <title>
+               Capital
+            </title>
             <Meta />
             <Links />
          </head>
@@ -74,11 +62,20 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
 }
 
 /**
- * Main application component that provides the Redux and React Query Providers.
- *
- * @returns {React.ReactNode} The main application component
+ * Application root component with Redux and React Query providers, which
+ * initializes the theme based on user preferences
  */
 export default function App(): React.ReactNode {
+   useEffect(() => {
+      const preferredTheme = localStorage.theme;
+      const prefersDarkMode = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      store.dispatch({
+         type: "theme/setTheme",
+         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light"
+      });
+   }, []);
+
    return (
       <Provider store = { store }>
          <QueryClientProvider client = { queryClient }>
@@ -89,7 +86,7 @@ export default function App(): React.ReactNode {
 }
 
 /**
- * Global error boundary component that displays an error message.
+ * Global error boundary component for fallback error display
  *
  * @returns {React.ReactNode} The error boundary component
  */
