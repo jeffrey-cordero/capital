@@ -15,11 +15,11 @@ import { type Account, liabilities } from "capital/accounts";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { breakpoints, heights } from "@/components/global/graph";
 import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-import { breakpoints, heights } from "@/components/global/graph";
 
 /**
  * The data for the chart
@@ -59,14 +59,15 @@ interface TrendProps {
  */
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
-   const { xss, xs, sm, md, lg } = {
+   const { xss, xs, sm, md, lg, xl } = {
       xss: useMediaQuery(breakpoints.xss),
       xs: useMediaQuery(breakpoints.xs),
       sm: useMediaQuery(breakpoints.sm),
       md: useMediaQuery(breakpoints.md),
-      lg: useMediaQuery(breakpoints.lg)
+      lg: useMediaQuery(breakpoints.lg),
+      xl: useMediaQuery(breakpoints.xl)
    };
-   const graphHeight = xss ? heights.xss : (xs ? heights.xs : (sm ? heights.sm : (md || isCard ? heights.md : (lg ? heights.lg : heights.xl))));
+   const graphHeight = xss ? heights.xss : (xs ? heights.xs : (sm || isCard ? heights.sm : (md ? heights.md : (lg ? heights.lg : xl ? heights.xl : heights.xxl))));
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);

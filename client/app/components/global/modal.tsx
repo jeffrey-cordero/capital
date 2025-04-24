@@ -17,8 +17,6 @@ import {
 import { useCallback, useState } from "react";
 
 import { gray } from "@/styles/mui/colors";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * The global ModalContent component to wrap the modal children components.

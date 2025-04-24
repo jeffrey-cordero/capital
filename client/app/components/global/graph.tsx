@@ -47,25 +47,25 @@ export interface GraphProps {
  * The heights for graph components across the application based on breakpoints
  */
 export const heights = {
-   xss: 215,
-   xs: 275,
+   xss: 245,
+   xs: 285,
    sm: 300,
    md: 315,
-   lg: 325,
-   xl: 350,
-   xxl: 390
+   lg: 345,
+   xl: 375,
+   xxl: 400
 };
 
 /**
  * The breakpoints for graph components across the application
  */
 export const breakpoints = {
-   "xss": "(max-width: 415px)",
-   "xs": "(max-width: 515px)",
-   "sm": "(max-width: 625px)",
+   "xss": "(max-width: 375px)",
+   "xs": "(max-width: 475px)",
+   "sm": "(max-width: 600px)",
    "md": "(max-width: 750px)",
    "lg": "(max-width: 850px)",
-   "xl": "(max-width: 1050px)",
+   "xl": "(max-width: 1100px)",
    "xll": "(max-width: 1200px)"
 };
 

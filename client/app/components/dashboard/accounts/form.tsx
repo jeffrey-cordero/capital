@@ -1,3 +1,5 @@
+import { faBank, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    FormControl,
@@ -23,8 +25,6 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
-import { faBank, faMoneyBillTransfer, faUser } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 /**
  * The AccountForm component to create and update accounts
@@ -143,7 +143,14 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             direction = "column"
             spacing = { 3 }
          >
-            <Section title = { <FontAwesomeIcon icon = { faBank } size = "lg" /> }>
+            <Section
+               title = {
+                  <FontAwesomeIcon
+                     icon = { faBank }
+                     size = "lg"
+                  />
+               }
+            >
                <Box>
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
@@ -278,7 +285,14 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             </Section>
             {
                updating && account && (
-                  <Section title = { <FontAwesomeIcon icon = { faMoneyBillTransfer } size = "lg" /> }>
+                  <Section
+                     title = {
+                        <FontAwesomeIcon
+                           icon = { faMoneyBillTransfer }
+                           size = "lg"
+                        />
+                     }
+                  >
                      <Transactions
                         filter = "account"
                         identifier = { account.account_id }

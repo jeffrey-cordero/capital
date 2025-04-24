@@ -4,6 +4,7 @@ import {
    Stack,
    styled,
    Typography,
+   useMediaQuery,
    useTheme
 } from "@mui/material";
 import { PieChart, useDrawingArea } from "@mui/x-charts";
@@ -15,7 +16,7 @@ import { Trends } from "@/components/dashboard/trends";
 import ResponsiveChartContainer from "@/components/global/responsive";
 import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-
+import { breakpoints } from "@/components/global/graph";
 /**
  * Define the props for the StyledText component
  *
@@ -125,7 +126,14 @@ interface BudgetProgressChartProps {
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
-   const pieChartDimensions = 250;
+   const { xss, xs, md } = {
+      xss: useMediaQuery("(max-width: 310px)"),
+      xs: useMediaQuery("(max-width: 335px)"),
+      md: useMediaQuery("(max-width: 900px)")
+   };
+   const dimensions = xss ? 275 : xs ? 310 : 330;
+   const outerRadius = xss ? 105 : xs ? 110 : 120;
+   const innerRadius = xss ? 80 : xs ? 85 : 95;
 
    return (
       <Stack
@@ -137,13 +145,13 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
          >
             { title }
          </Typography>
-         <ResponsiveChartContainer height = { pieChartDimensions }>
+         <ResponsiveChartContainer height = { dimensions }>
             <Stack
                direction = "column"
                sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
             >
                <PieChart
-                  height = { pieChartDimensions }
+                  height = { dimensions }
                   margin = {
                      {
                         left: 80,
@@ -156,8 +164,8 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                      [
                         {
                            data: data,
-                           innerRadius: 77,
-                           outerRadius: 100,
+                           innerRadius: innerRadius,
+                           outerRadius: outerRadius,
                            paddingAngle: 0,
                            highlightScope: { faded: "global", highlighted: "item" }
                         }
@@ -170,7 +178,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                         }
                      }
                   }
-                  width = { pieChartDimensions }
+                  width = { dimensions }
                >
                   <PieCenterLabel
                      primaryText = { `$${displayVolume(current)}` }

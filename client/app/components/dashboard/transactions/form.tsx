@@ -1,3 +1,5 @@
+import { faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    FormControl,
@@ -26,8 +28,6 @@ import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Props for the TransactionForm component.
@@ -200,7 +200,14 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          open = { open }
          sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "95%" } }
       >
-         <Section title = { <FontAwesomeIcon icon = { faMoneyBillTransfer } size = "lg" /> }>
+         <Section
+            title = {
+               <FontAwesomeIcon
+                  icon = { faMoneyBillTransfer }
+                  size = "lg"
+               />
+            }
+         >
             <Box sx = { { mt: 2 } }>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack

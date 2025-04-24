@@ -1,11 +1,11 @@
-import { Box, Stack } from "@mui/material";
+import { faToolbox } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Stack } from "@mui/material";
 
 import DeleteAccount from "@/components/dashboard/settings/delete";
 import ExportAccount from "@/components/dashboard/settings/export";
 import Logout from "@/components/dashboard/settings/logout";
 import { Section } from "@/components/global/modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faToolbox } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Actions component for conducting account actions
@@ -14,7 +14,14 @@ import { faToolbox } from "@fortawesome/free-solid-svg-icons";
  */
 export default function Actions(): React.ReactNode {
    return (
-      <Section title = { <FontAwesomeIcon icon = { faToolbox } size = "lg" /> }>
+      <Section
+         title = {
+            <FontAwesomeIcon
+               icon = { faToolbox }
+               size = "lg"
+            />
+         }
+      >
          <Stack
             direction = "column"
             spacing = { 1 }

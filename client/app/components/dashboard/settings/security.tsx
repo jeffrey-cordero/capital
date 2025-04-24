@@ -1,7 +1,6 @@
 import { faEye, faEyeSlash, faPenToSquare, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-   Box,
    Collapse,
    FormControl,
    FormHelperText,
@@ -15,12 +14,12 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import { Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import type { RootState } from "@/redux/store";
-import { Section } from "@/components/global/modal";
 
 /**
  * Security component for editing user security information
@@ -136,7 +135,14 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Section title = { <FontAwesomeIcon icon = { faShieldHalved } size = "lg"/> }>
+      <Section
+         title = {
+            <FontAwesomeIcon
+               icon = { faShieldHalved }
+               size = "lg"
+            />
+         }
+      >
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"

@@ -1,5 +1,6 @@
+import { faUserSecret } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-   Box,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -16,6 +17,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import { Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { getDateRange } from "@/lib/dates";
@@ -23,9 +25,6 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import { Section } from "@/components/global/modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faUserSecret } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Details component for editing user personal information and theme preference
@@ -107,7 +106,14 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Section title = { <FontAwesomeIcon icon = { faUserSecret } size = "lg" /> }>
+      <Section
+         title = {
+            <FontAwesomeIcon
+               icon = { faUserSecret }
+               size = "lg"
+            />
+         }
+      >
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"

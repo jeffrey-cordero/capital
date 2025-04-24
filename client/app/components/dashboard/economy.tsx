@@ -189,7 +189,7 @@ export default function Economy(): React.ReactNode {
       >
          <Stack
             direction = "column"
-            sx = { { mb: 2 } }
+            sx = { { mb: 5 } }
          >
             <Box>
                <Typography
