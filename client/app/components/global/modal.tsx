@@ -1,7 +1,8 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
-   Chip,
    css,
    Dialog,
    DialogActions,
@@ -131,11 +132,11 @@ interface ModalProps {
  * The props for the Section component.
  *
  * @interface SectionProps
- * @property {string | React.ReactNode} title - The title component of the modal section
+ * @property {IconDefinition} icon - The icon component of the modal section
  * @property {React.ReactNode} children - The children components to render within the modal section
  */
 interface SectionProps {
-   title: string | React.ReactNode;
+   icon: IconDefinition;
    children: React.ReactNode;
 }
 
@@ -145,14 +146,14 @@ interface SectionProps {
  * @param {SectionProps} props - The props for the Section component
  * @returns {React.ReactNode} The Section component
  */
-export function Section({ title, children }: SectionProps): React.ReactNode {
+export function Section({ icon, children }: SectionProps): React.ReactNode {
    return (
       <Box>
          <Divider>
-            <Chip
-               color = "primary"
-               label = { title }
-               size = "small"
+            <FontAwesomeIcon
+               className = "primary"
+               icon = { icon }
+               style = { { fontSize: "16px" } }
             />
          </Divider>
          { children }

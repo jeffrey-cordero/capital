@@ -1,5 +1,4 @@
 import { faToolbox } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Stack } from "@mui/material";
 
 import DeleteAccount from "@/components/dashboard/settings/delete";
@@ -14,18 +13,11 @@ import { Section } from "@/components/global/modal";
  */
 export default function Actions(): React.ReactNode {
    return (
-      <Section
-         title = {
-            <FontAwesomeIcon
-               icon = { faToolbox }
-               size = "lg"
-            />
-         }
-      >
+      <Section icon = { faToolbox }>
          <Stack
             direction = "column"
             spacing = { 1 }
-            sx = { { mt: 2.5, width: "100%", textAlign: "center", alignItems: "center" } }
+            sx = { { mt: 2, width: "100%", textAlign: "center", alignItems: "center" } }
          >
             <ExportAccount />
             <Logout />

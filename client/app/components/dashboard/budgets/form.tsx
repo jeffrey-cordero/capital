@@ -1,5 +1,4 @@
-import { faCommentsDollar, faListOl, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faListCheck, faMoneyBill1Wave, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -144,14 +143,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             direction = "column"
             spacing = { 3 }
          >
-            <Section
-               title = {
-                  <FontAwesomeIcon
-                     icon = { faCommentsDollar }
-                     size = "lg"
-                  />
-               }
-            >
+            <Section icon = { faMoneyBill1Wave }>
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
@@ -197,27 +189,13 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   </form>
                </Box>
             </Section>
-            <Section
-               title = {
-                  <FontAwesomeIcon
-                     icon = { faListOl }
-                     size = "lg"
-                  />
-               }
-            >
+            <Section icon = { faListCheck }>
                <BudgetCategories
                   type = { type }
                   updateDirtyFields = { updateDirtyFields }
                />
             </Section>
-            <Section
-               title = {
-                  <FontAwesomeIcon
-                     icon = { faMoneyBillTransfer }
-                     size = "lg"
-                  />
-               }
-            >
+            <Section icon = { faMoneyBillTransfer }>
                <Transactions
                   filter = "budget"
                   identifier = { type }

@@ -47,13 +47,13 @@ export interface GraphProps {
  * The heights for graph components across the application based on breakpoints
  */
 export const heights = {
-   xss: 245,
+   xss: 255,
    xs: 285,
    sm: 300,
    md: 315,
-   lg: 345,
-   xl: 375,
-   xxl: 400
+   lg: 330,
+   xl: 345,
+   xxl: 385
 };
 
 /**

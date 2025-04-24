@@ -2,7 +2,7 @@ import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
@@ -31,6 +31,19 @@ export const links: Route.LinksFunction = () => [
       href: "https://fonts.googleapis.com/icon?family=Material+Icons"
    }
 ];
+
+/**
+ * Sets the theme based on user preferences during initial load or error boundary fallback
+ */
+const setTheme = () => {
+   const preferredTheme = localStorage.theme;
+   const prefersDarkMode = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+
+   store.dispatch({
+      type: "theme/setTheme",
+      payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light"
+   });
+};
 
 /**
  * Main layout component that provides the HTML structure
@@ -62,26 +75,34 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
 }
 
 /**
- * Application root component with Redux and React Query providers, which
- * initializes the theme based on user preferences
+ * Wrapper component for the application or error boundary components to render
+ * once the theme has been initialized
+ *
+ * @param {React.ReactNode} children - Child components to render
  */
-export default function App(): React.ReactNode {
-   useEffect(() => {
-      const preferredTheme = localStorage.theme;
-      const prefersDarkMode = window?.matchMedia("(prefers-color-scheme: dark)").matches;
+function ThemeProvider({ children }: { children: React.ReactNode }): React.ReactNode {
+   const [fetchedTheme, setFetchedTheme] = useState<boolean>(false);
 
-      store.dispatch({
-         type: "theme/setTheme",
-         payload: preferredTheme === "dark" || (!preferredTheme && prefersDarkMode) ? "dark" : "light"
-      });
+   useEffect(() => {
+      setTheme();
+      setFetchedTheme(true);
    }, []);
 
+   return fetchedTheme ? children : null;
+}
+
+/**
+ * Application root component with Redux and React Query providers
+ */
+export default function App(): React.ReactNode {
    return (
-      <Provider store = { store }>
-         <QueryClientProvider client = { queryClient }>
-            <Router />
-         </QueryClientProvider>
-      </Provider>
+      <ThemeProvider>
+         <Provider store = { store }>
+            <QueryClientProvider client = { queryClient }>
+               <Router />
+            </QueryClientProvider>
+         </Provider>
+      </ThemeProvider>
    );
 }
 
@@ -92,34 +113,36 @@ export default function App(): React.ReactNode {
  */
 export function ErrorBoundary(): React.ReactNode {
    return (
-      <Container
-         className = "center"
-         sx = { { justifyContent: "center", alignItems: "center" } }
-      >
-         <Box className = "animation-container">
-            <Box
-               alt = "Error"
-               className = "floating"
-               component = "img"
-               src = "/svg/error.svg"
-               sx = { { width: 300, height: "auto", mb: -4 } }
-            />
-         </Box>
-         <Typography
-            align = "center"
-            sx = { { fontWeight: "bold", margin: "0", px: 3, maxWidth: "350px" } }
-            variant = "body1"
+      <ThemeProvider>
+         <Container
+            className = "center"
+            sx = { { justifyContent: "center", alignItems: "center" } }
          >
-            Oops, Something went wrong. If the issue persists, please visit this { " " }
-            <Link
-               color = "primary"
-               fontWeight = "bold"
-               href = "/"
-               underline = "none"
+            <Box className = "animation-container">
+               <Box
+                  alt = "Error"
+                  className = "floating"
+                  component = "img"
+                  src = "/svg/error.svg"
+                  sx = { { width: 300, height: "auto", mb: -4 } }
+               />
+            </Box>
+            <Typography
+               align = "center"
+               sx = { { fontWeight: "bold", margin: "0", px: 3, maxWidth: "350px" } }
+               variant = "body1"
             >
-               page
-            </Link>
-         </Typography>
-      </Container>
+               Oops, Something went wrong. If the issue persists, please visit this { " " }
+               <Link
+                  color = "primary"
+                  fontWeight = "bold"
+                  href = "/"
+                  underline = "none"
+               >
+                  page
+               </Link>
+            </Typography>
+         </Container>
+      </ThemeProvider>
    );
 }

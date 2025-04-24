@@ -1,5 +1,4 @@
 import { faBank, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    FormControl,
@@ -143,14 +142,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             direction = "column"
             spacing = { 3 }
          >
-            <Section
-               title = {
-                  <FontAwesomeIcon
-                     icon = { faBank }
-                     size = "lg"
-                  />
-               }
-            >
+            <Section icon = { faBank }>
                <Box>
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
@@ -286,12 +278,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             {
                updating && account && (
                   <Section
-                     title = {
-                        <FontAwesomeIcon
-                           icon = { faMoneyBillTransfer }
-                           size = "lg"
-                        />
-                     }
+                     icon = { faMoneyBillTransfer }
                   >
                      <Transactions
                         filter = "account"

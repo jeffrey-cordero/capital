@@ -16,7 +16,7 @@ import { Trends } from "@/components/dashboard/trends";
 import ResponsiveChartContainer from "@/components/global/responsive";
 import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
-import { breakpoints } from "@/components/global/graph";
+
 /**
  * Define the props for the StyledText component
  *
@@ -131,9 +131,9 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
       xs: useMediaQuery("(max-width: 335px)"),
       md: useMediaQuery("(max-width: 900px)")
    };
-   const dimensions = xss ? 275 : xs ? 310 : 330;
+   const dimensions = xss ? 275 : xs ? 300 : 315;
    const outerRadius = xss ? 105 : xs ? 110 : 120;
-   const innerRadius = xss ? 80 : xs ? 85 : 95;
+   const innerRadius = xss ? 85 : xs ? 90 : 100;
 
    return (
       <Stack
@@ -216,7 +216,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                         <LinearProgress
                            aria-label = { `${category.label} progress` }
                            color = { type === "Income" ? "success" : "error" }
-                           sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
+                           sx = { { height: "1.55rem", borderRadius: "16px", boxShadow: 0 } }
                            value = { category.percentage }
                            variant = "determinate"
                         />

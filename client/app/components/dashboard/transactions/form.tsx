@@ -1,5 +1,4 @@
 import { faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    FormControl,
@@ -200,14 +199,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          open = { open }
          sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "95%" } }
       >
-         <Section
-            title = {
-               <FontAwesomeIcon
-                  icon = { faMoneyBillTransfer }
-                  size = "lg"
-               />
-            }
-         >
+         <Section icon = { faMoneyBillTransfer }>
             <Box sx = { { mt: 2 } }>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack

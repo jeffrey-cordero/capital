@@ -134,7 +134,7 @@ export default function AccountImage({
             open = { open }
             sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", px: { xs: 2, sm: 3 }, py: 3, maxHeight: "80%" } }
          >
-            <Section title = "Image">
+            <Section icon = { faPhotoFilm }>
                <Stack spacing = { 1 }>
                   <Stack
                      direction = "column"
@@ -162,7 +162,7 @@ export default function AccountImage({
                            <IconButton
                               color = "primary"
                               onClick = { viewPreviousImage }
-                              size = "medium"
+                              size = "small"
                               sx = { { pr: 1 } }
                            >
                               <FontAwesomeIcon
@@ -174,7 +174,7 @@ export default function AccountImage({
                            <IconButton
                               color = "primary"
                               onClick = { viewNextImage }
-                              size = "medium"
+                              size = "small"
                               sx = { { pl: 1 } }
                            >
                               <FontAwesomeIcon

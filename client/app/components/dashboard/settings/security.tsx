@@ -135,14 +135,7 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Section
-         title = {
-            <FontAwesomeIcon
-               icon = { faShieldHalved }
-               size = "lg"
-            />
-         }
-      >
+      <Section icon = { faShieldHalved }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"

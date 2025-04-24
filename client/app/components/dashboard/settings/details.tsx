@@ -1,5 +1,4 @@
-import { faUserSecret } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAddressCard } from "@fortawesome/free-solid-svg-icons";
 import {
    FormControl,
    FormHelperText,
@@ -106,14 +105,7 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Section
-         title = {
-            <FontAwesomeIcon
-               icon = { faUserSecret }
-               size = "lg"
-            />
-         }
-      >
+      <Section icon = { faAddressCard }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"

@@ -91,7 +91,7 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
          </Stack>
          <LinearProgress
             color = { color }
-            sx = { { height: "1.75rem", borderRadius: "16px" } }
+            sx = { { height: "1.55rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
          />
