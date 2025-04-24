@@ -19,6 +19,7 @@ import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
+import { breakpoints, heights } from "@/components/global/graph";
 
 /**
  * The data for the chart
@@ -58,8 +59,14 @@ interface TrendProps {
  */
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
-   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-   const graphHeight = isCard ? (isMobile ? 315 : 330) : (isMobile ? 330 : 445);
+   const { xss, xs, sm, md, lg } = {
+      xss: useMediaQuery(breakpoints.xss),
+      xs: useMediaQuery(breakpoints.xs),
+      sm: useMediaQuery(breakpoints.sm),
+      md: useMediaQuery(breakpoints.md),
+      lg: useMediaQuery(breakpoints.lg)
+   };
+   const graphHeight = xss ? heights.xss : (xs ? heights.xs : (sm ? heights.sm : (md || isCard ? heights.md : (lg ? heights.lg : heights.xl))));
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);

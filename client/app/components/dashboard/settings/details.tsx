@@ -23,6 +23,9 @@ import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
+import { Section } from "@/components/global/modal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faUserSecret } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Details component for editing user personal information and theme preference
@@ -104,19 +107,13 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Box>
+      <Section title = { <FontAwesomeIcon icon = { faUserSecret } size = "lg" /> }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
                spacing = { 1.5 }
-               sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
+               sx = { { mt: 3, textAlign: "center", justifyContent: "center", alignItems: "center" } }
             >
-               <Box
-                  alt = "Details"
-                  component = "img"
-                  src = "/svg/details.svg"
-                  sx = { { width: 300, mb: "20px !important", px: 2 } }
-               />
                <Controller
                   control = { control }
                   name = "name"
@@ -229,6 +226,6 @@ export default function Details(): React.ReactNode {
                />
             </Stack>
          </form>
-      </Box>
+      </Section>
    );
 }

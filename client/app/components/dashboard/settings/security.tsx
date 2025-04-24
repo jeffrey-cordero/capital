@@ -1,4 +1,4 @@
-import { faEye, faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faEyeSlash, faPenToSquare, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
@@ -20,6 +20,7 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import type { RootState } from "@/redux/store";
+import { Section } from "@/components/global/modal";
 
 /**
  * Security component for editing user security information
@@ -135,19 +136,13 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Box>
+      <Section title = { <FontAwesomeIcon icon = { faShieldHalved } size = "lg"/> }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
                spacing = { 1.5 }
-               sx = { { mt: 4, width: "100%", textAlign: "center", alignItems: "center" } }
+               sx = { { mt: 3, width: "100%", textAlign: "center", alignItems: "center" } }
             >
-               <Box
-                  alt = "Security"
-                  component = "img"
-                  src = "/svg/security.svg"
-                  sx = { { width: 350, mb: "-35px !important", px: 2 } }
-               />
                <Controller
                   control = { control }
                   name = "username"
@@ -360,6 +355,6 @@ export default function Security(): React.ReactNode {
                />
             </Stack>
          </form>
-      </Box>
+      </Section>
    );
 }

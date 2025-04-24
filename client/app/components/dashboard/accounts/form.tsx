@@ -17,12 +17,14 @@ import { useNavigate } from "react-router";
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountImage from "@/components/dashboard/accounts/image";
 import Transactions from "@/components/dashboard/transactions/transactions";
-import { Modal, ModalSection } from "@/components/global/modal";
+import { Modal, Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
+import { faBank, faMoneyBillTransfer, faUser } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 /**
  * The AccountForm component to create and update accounts
@@ -141,7 +143,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             direction = "column"
             spacing = { 3 }
          >
-            <ModalSection title = "Details">
+            <Section title = { <FontAwesomeIcon icon = { faBank } size = "lg" /> }>
                <Box>
                   <form onSubmit = { handleSubmit(onSubmit) }>
                      <Stack
@@ -273,15 +275,15 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                      </Stack>
                   </form>
                </Box>
-            </ModalSection>
+            </Section>
             {
                updating && account && (
-                  <ModalSection title = "Transactions">
+                  <Section title = { <FontAwesomeIcon icon = { faMoneyBillTransfer } size = "lg" /> }>
                      <Transactions
                         filter = "account"
                         identifier = { account.account_id }
                      />
-                  </ModalSection>
+                  </Section>
                )
             }
          </Stack>

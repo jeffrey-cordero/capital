@@ -14,7 +14,7 @@ export default function Settings(): React.ReactNode {
       <Box sx = { { width: "100%" } }>
          <Stack
             direction = "column"
-            spacing = { -2 }
+            spacing = { 4 }
             sx = { { py: 2 } }
          >
             <Details />

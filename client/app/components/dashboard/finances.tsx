@@ -15,12 +15,6 @@ export default function Finances(): React.ReactNode {
          id = "finances"
          sx = { { width: "100%" } }
       >
-         <Box
-            alt = "Finances"
-            component = "img"
-            src = "/svg/finances.svg"
-            sx = { { height: 255, mb: 2.1 } }
-         />
          <Stack
             direction = "column"
             sx = { { justifyContent: "center", alignItems: "center", gap: 2.2 } }

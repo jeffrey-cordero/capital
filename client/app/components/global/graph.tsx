@@ -44,6 +44,32 @@ export interface GraphProps {
 }
 
 /**
+ * The heights for graph components across the application based on breakpoints
+ */
+export const heights = {
+   xss: 215,
+   xs: 275,
+   sm: 300,
+   md: 315,
+   lg: 325,
+   xl: 350,
+   xxl: 390
+};
+
+/**
+ * The breakpoints for graph components across the application
+ */
+export const breakpoints = {
+   "xss": "(max-width: 415px)",
+   "xs": "(max-width: 515px)",
+   "sm": "(max-width: 625px)",
+   "md": "(max-width: 750px)",
+   "lg": "(max-width: 850px)",
+   "xl": "(max-width: 1050px)",
+   "xll": "(max-width: 1200px)"
+};
+
+/**
  * The Graph component.
  *
  * @param {GraphProps} props - The props for the Graph component
@@ -51,8 +77,15 @@ export interface GraphProps {
  */
 export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps): React.ReactNode {
    const theme = useTheme();
-   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-   const graphHeight = isMobile ? 315 : 445;
+   const { xss, xs, sm, md, lg, xl } = {
+      xss: useMediaQuery(breakpoints.xss),
+      xs: useMediaQuery(breakpoints.xs),
+      sm: useMediaQuery(breakpoints.sm),
+      md: useMediaQuery(breakpoints.md),
+      lg: useMediaQuery(breakpoints.lg),
+      xl: useMediaQuery(breakpoints.xl)
+   };
+   const graphHeight = xss ? heights.xss : (xs ? heights.xs : (sm ? heights.sm : (md ? heights.md : (lg ? heights.lg : xl ? heights.xl : heights.xxl))));
    const { watch, control } = useForm();
 
    // Form control values with defaults

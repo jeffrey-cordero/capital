@@ -48,7 +48,7 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 2 } }
+         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 1.5 } }
          variant = "elevation"
       >
          <CardContent>
@@ -185,19 +185,13 @@ export default function Economy(): React.ReactNode {
       <Stack
          direction = "column"
          id = "economy"
-         sx = { { justifyContent: "space-between" } }
+         sx = { { justifyContent: "space-between", mt: 4 } }
       >
          <Stack
             direction = "column"
-            sx = { { mb: 3 } }
+            sx = { { mb: 2 } }
          >
-            <Box
-               alt = "Economy"
-               component = "img"
-               src = "/svg/economy.svg"
-               sx = { { height: 315, mx: "auto" } }
-            />
-            <Box sx = { { mt: -5 } }>
+            <Box>
                <Typography
                   fontWeight = "bold"
                   sx = { { px: 2 } }

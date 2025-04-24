@@ -17,6 +17,8 @@ import {
 import { useCallback, useState } from "react";
 
 import { gray } from "@/styles/mui/colors";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * The global ModalContent component to wrap the modal children components.
@@ -128,30 +130,31 @@ interface ModalProps {
 }
 
 /**
- * The props for the ModalSection component.
+ * The props for the Section component.
  *
- * @interface ModalSectionProps
- * @property {string} title - The title of the modal section
+ * @interface SectionProps
+ * @property {string | React.ReactNode} title - The title component of the modal section
  * @property {React.ReactNode} children - The children components to render within the modal section
  */
-interface ModalSectionProps {
-   title: string;
+interface SectionProps {
+   title: string | React.ReactNode;
    children: React.ReactNode;
 }
 
 /**
- * The ModalSection component to render the modal section title and children components.
+ * The Section component to render the modal section title and children components.
  *
- * @param {ModalSectionProps} props - The props for the ModalSection component
- * @returns {React.ReactNode} The ModalSection component
+ * @param {SectionProps} props - The props for the Section component
+ * @returns {React.ReactNode} The Section component
  */
-export function ModalSection({ title, children }: ModalSectionProps): React.ReactNode {
+export function Section({ title, children }: SectionProps): React.ReactNode {
    return (
       <Box>
          <Divider>
             <Chip
-               color = "success"
+               color = "primary"
                label = { title }
+               size = "small"
             />
          </Divider>
          { children }

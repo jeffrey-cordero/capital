@@ -19,13 +19,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
-import { Modal, ModalSection } from "@/components/global/modal";
+import { Modal, Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { getDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Props for the TransactionForm component.
@@ -198,7 +200,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          open = { open }
          sx = { { width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "95%" } }
       >
-         <ModalSection title = "Transaction">
+         <Section title = { <FontAwesomeIcon icon = { faMoneyBillTransfer } size = "lg" /> }>
             <Box sx = { { mt: 2 } }>
                <form onSubmit = { handleSubmit(onSubmit) }>
                   <Stack
@@ -456,7 +458,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                   </Stack>
                </form>
             </Box>
-         </ModalSection>
+         </Section>
       </Modal>
    );
 }

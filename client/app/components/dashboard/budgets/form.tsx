@@ -14,14 +14,15 @@ import { useNavigate } from "react-router";
 
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import Transactions from "@/components/dashboard/transactions/transactions";
-import { Modal, ModalSection } from "@/components/global/modal";
+import { Modal, Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCommentsDollar, faListOl, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 /**
  * The schema for validating budget goal updates
  */
@@ -143,7 +144,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             direction = "column"
             spacing = { 3 }
          >
-            <ModalSection title = { type }>
+            <Section title = { <FontAwesomeIcon icon = { faCommentsDollar } size = "lg" /> }>
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
@@ -188,19 +189,19 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                      </Stack>
                   </form>
                </Box>
-            </ModalSection>
-            <ModalSection title = "Categories">
+            </Section>
+            <Section title = { <FontAwesomeIcon icon = { faListOl } size = "lg" /> }>
                <BudgetCategories
                   type = { type }
                   updateDirtyFields = { updateDirtyFields }
                />
-            </ModalSection>
-            <ModalSection title = "Transactions">
+            </Section>
+            <Section title = { <FontAwesomeIcon icon = { faMoneyBillTransfer } size = "lg" /> }>
                <Transactions
                   filter = "budget"
                   identifier = { type }
                />
-            </ModalSection>
+            </Section>
          </Stack>
       </Modal>
    );

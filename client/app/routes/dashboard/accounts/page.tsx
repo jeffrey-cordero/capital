@@ -1,4 +1,4 @@
-import { Box, Container, Grow } from "@mui/material";
+import { Container, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useSelector } from "react-redux";
 
@@ -18,7 +18,7 @@ export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { textAlign: "center", pt: 6, pb: 4, px: 2 } }
+         sx = { { textAlign: "center", pt: 6, pb: 4, px: 2, mt: 10 } }
       >
          <Grid
             container = { true }
@@ -33,12 +33,6 @@ export default function Page(): React.ReactNode {
                unmountOnExit = { true }
             >
                <Grid size = { { xs: 12 } }>
-                  <Box
-                     alt = "Account"
-                     component = "img"
-                     src = "/svg/account.svg"
-                     sx = { { width: 350, mb: 10 } }
-                  />
                   <Accounts />
                </Grid>
             </Grow>
@@ -63,12 +57,6 @@ export default function Page(): React.ReactNode {
                      unmountOnExit = { true }
                   >
                      <Grid size = { { xs: 12 } }>
-                        <Box
-                           alt = "Accounts"
-                           component = "img"
-                           src = "/svg/accounts.svg"
-                           sx = { { width: 415, mb: 2 } }
-                        />
                         <AccountTrends isCard = { false } />
                      </Grid>
                   </Grow>

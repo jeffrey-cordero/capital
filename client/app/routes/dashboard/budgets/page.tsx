@@ -42,32 +42,13 @@ export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { py: 4, px: 2 } }
+         sx = { { py: 4, px: 2, mt: 6 } }
       >
          <Grid
             container = { true }
             rowSpacing = { 6 }
             sx = { { width: "100%", height: "100%" } }
          >
-            <Grow
-               in = { true }
-               mountOnEnter = { true }
-               style = { { transformOrigin: "center top" } }
-               timeout = { 1000 }
-               unmountOnExit = { true }
-            >
-               <Grid
-                  size = { { xs: 12 } }
-                  sx = { { textAlign: "center" } }
-               >
-                  <Box
-                     alt = "Budgets"
-                     component = "img"
-                     src = "/svg/budgets.svg"
-                     sx = { { width: 335, mb: -5 } }
-                  />
-               </Grid>
-            </Grow>
             <Grow
                in = { true }
                mountOnEnter = { true }

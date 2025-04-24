@@ -176,7 +176,7 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.economy.value.news);
    const items: Article[] = useMemo(() => {
-      return [...news.response.data].reverse().slice(0, 23);
+      return [...news.response.data].reverse().slice(0, 21);
    }, [news]);
 
    return (
@@ -184,12 +184,6 @@ export default function Articles(): React.ReactNode {
          id = "news"
          sx = { { textAlign: "center" } }
       >
-         <Box
-            alt = "News"
-            component = "img"
-            src = "/svg/news.svg"
-            sx = { { height: 240, mb: 2 } }
-         />
          <Stack
             direction = "column"
             sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
@@ -197,7 +191,7 @@ export default function Articles(): React.ReactNode {
             <Grid
                columnSpacing = { 2 }
                container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2.2, mt: 2, textAlign: "left" } }
+               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2.2, textAlign: "left" } }
             >
                {
                   items.map((item: Article, index) => (

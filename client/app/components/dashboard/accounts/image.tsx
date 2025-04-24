@@ -24,7 +24,7 @@ import {
    type UseFormSetValue
 } from "react-hook-form";
 
-import { Modal, ModalSection } from "@/components/global/modal";
+import { Modal, Section } from "@/components/global/modal";
 
 /**
  * The image validation schema from the account schema
@@ -134,7 +134,7 @@ export default function AccountImage({
             open = { open }
             sx = { { width: { xs: "85%", md: "65%", lg: "55%", xl: "40%" }, maxWidth: "85%", px: { xs: 2, sm: 3 }, py: 3, maxHeight: "80%" } }
          >
-            <ModalSection title = "Image">
+            <Section title = "Image">
                <Stack spacing = { 1 }>
                   <Stack
                      direction = "column"
@@ -217,7 +217,7 @@ export default function AccountImage({
                      }
                   />
                </Stack>
-            </ModalSection>
+            </Section>
          </Modal>
       </Box>
    );

@@ -124,7 +124,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
          <Stack
             direction = "column"
             spacing = { 4 }
-            sx = { { mt: 2 } }
+            sx = { { mt: 3 } }
          >
             <Budget
                allocations = { allocations }

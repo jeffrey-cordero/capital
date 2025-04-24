@@ -14,7 +14,7 @@ export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { py: 4, px: 2 } }
+         sx = { { py: 4, px: 2, mt: 6 } }
       >
          <Grid
             columnSpacing = { 4 }

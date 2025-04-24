@@ -3,6 +3,9 @@ import { Box, Stack } from "@mui/material";
 import DeleteAccount from "@/components/dashboard/settings/delete";
 import ExportAccount from "@/components/dashboard/settings/export";
 import Logout from "@/components/dashboard/settings/logout";
+import { Section } from "@/components/global/modal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faToolbox } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Actions component for conducting account actions
@@ -11,22 +14,16 @@ import Logout from "@/components/dashboard/settings/logout";
  */
 export default function Actions(): React.ReactNode {
    return (
-      <Box>
+      <Section title = { <FontAwesomeIcon icon = { faToolbox } size = "lg" /> }>
          <Stack
             direction = "column"
             spacing = { 1 }
-            sx = { { mt: 10, width: "100%", textAlign: "center", alignItems: "center" } }
+            sx = { { mt: 2.5, width: "100%", textAlign: "center", alignItems: "center" } }
          >
-            <Box
-               alt = "Actions"
-               component = "img"
-               src = "/svg/actions.svg"
-               sx = { { width: 305, px: 2, mb: "25px !important" } }
-            />
             <ExportAccount />
             <Logout />
             <DeleteAccount />
          </Stack>
-      </Box>
+      </Section>
    );
 }
