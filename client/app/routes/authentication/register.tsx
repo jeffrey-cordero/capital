@@ -78,7 +78,6 @@ export default function Register(): React.ReactNode {
       <Container className = "center">
          <Callout
             sx = { { width: "100%", my: 10.6 } }
-            type = "primary"
          >
             <Stack
                direction = "column"

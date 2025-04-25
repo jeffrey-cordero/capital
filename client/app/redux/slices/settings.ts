@@ -3,12 +3,12 @@ import { type UserDetails } from "capital/user";
 import { type WritableDraft } from "immer";
 
 /**
- * The state of the settings slice.
+ * Redux state for user settings management
  */
 type SettingsState = { value: UserDetails; }
 
 /**
- * The settings slice for user details state management.
+ * Settings slice for managing user profile details
  */
 const settingsSlice = createSlice({
    name: "settings",
@@ -17,19 +17,19 @@ const settingsSlice = createSlice({
    } as SettingsState,
    reducers: {
       /**
-       * Sets the user details state in the Redux store.
+       * Sets the complete user details
        *
-       * @param {WritableDraft<SettingsState>} state - The current state of the settings
-       * @param {PayloadAction<UserDetails>} action - The dispatched action containing the payload
+       * @param {WritableDraft<SettingsState>} state - Current settings state
+       * @param {PayloadAction<UserDetails>} action - Action containing user details
        */
       setDetails(state: WritableDraft<SettingsState>, action: PayloadAction<UserDetails>) {
          state.value = action.payload;
       },
       /**
-       * Updates user details in the settings state.
+       * Updates partial user details
        *
-       * @param {WritableDraft<SettingsState>} state - The current state of the settings
-       * @param {PayloadAction<Partial<UserDetails>>} action - The dispatched action containing the payload
+       * @param {WritableDraft<SettingsState>} state - Current settings state
+       * @param {PayloadAction<Partial<UserDetails>>} action - Action containing updated user detail fields
        */
       updateDetails(state: WritableDraft<SettingsState>, action: PayloadAction<Partial<UserDetails>>) {
          state.value = { ...state.value, ...action.payload };

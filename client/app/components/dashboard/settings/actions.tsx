@@ -4,7 +4,7 @@ import { Stack } from "@mui/material";
 import DeleteAccount from "@/components/dashboard/settings/delete";
 import ExportAccount from "@/components/dashboard/settings/export";
 import Logout from "@/components/dashboard/settings/logout";
-import { Section } from "@/components/global/modal";
+import Section from "@/components/global/section";
 
 /**
  * Actions component for conducting account actions

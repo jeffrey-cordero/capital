@@ -10,12 +10,12 @@ export interface Notification {
 }
 
 /**
- * The state of the notifications slice
+ * Redux state for notifications management
  */
 type NotificationState = { value: Notification[] };
 
 /**
- * The notifications slice
+ * Notifications slice for managing global notifications
  */
 const notificationsSlice = createSlice({
    name: "notifications",
@@ -24,19 +24,19 @@ const notificationsSlice = createSlice({
    } as NotificationState,
    reducers: {
       /**
-       * Adds a notification to the notifications slice.
+       * Adds a notification message
        *
-       * @param {WritableDraft<NotificationState>} state - The current state of the notifications slice
-       * @param {PayloadAction<Notification>} action - The dispatched action containing the payload
+       * @param {WritableDraft<NotificationState>} state - Current notifications state
+       * @param {PayloadAction<Notification>} action - Action containing the notification to add
        */
       addNotification: (state: WritableDraft<NotificationState>, action: PayloadAction<Notification>) => {
          state.value.push(action.payload);
       },
       /**
-       * Removes a notification from the notifications slice.
+       * Removes a notification by index
        *
-       * @param {WritableDraft<NotificationState>} state - The current state of the notifications slice
-       * @param {PayloadAction<number>} action - The dispatched action containing the payload
+       * @param {WritableDraft<NotificationState>} state - Current notifications state
+       * @param {PayloadAction<number>} action - Action containing the index to remove
        */
       removeNotification: (state: WritableDraft<NotificationState>, action: PayloadAction<number>) => {
          state.value = state.value.filter((_, index) => index !== action.payload);

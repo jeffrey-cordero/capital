@@ -17,7 +17,7 @@ interface ExpandProps extends IconButtonProps {
  * @param {ExpandProps} props - The props for the Expand component
  * @returns {React.ReactNode} The Expand component
  */
-export const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-disable-line
+const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-disable-line
    return <IconButton { ...other } />;
 })(({ theme }) => ({
    margin: "0",
@@ -41,3 +41,5 @@ export const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-
       }
    ]
 }));
+
+export default Expand;

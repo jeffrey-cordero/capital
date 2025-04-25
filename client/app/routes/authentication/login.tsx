@@ -69,7 +69,6 @@ export default function Login(): React.ReactNode {
       <Container className = "center">
          <Callout
             sx = { { width: "100%" } }
-            type = "primary"
          >
             <Stack
                direction = "column"

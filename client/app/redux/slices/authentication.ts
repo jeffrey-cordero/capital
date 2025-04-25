@@ -2,12 +2,12 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { type WritableDraft } from "immer";
 
 /**
- * The state of the authentication slice
+ * Redux state for authentication management
  */
 type AuthenticationState = { value: undefined | boolean; }
 
 /**
- * The authentication slice
+ * Authentication slice for state management
  */
 const authenticationSlice = createSlice({
    name: "authentication",
@@ -16,10 +16,10 @@ const authenticationSlice = createSlice({
    } as AuthenticationState,
    reducers: {
       /**
-       * Sets the authentication state in the Redux store.
+       * Sets the authentication state
        *
-       * @param {WritableDraft<AuthenticationState>} state - The current state of the authentication.
-       * @param {PayloadAction<boolean>} action - The dispatched action containing the payload
+       * @param {WritableDraft<AuthenticationState>} state - Current authentication state
+       * @param {PayloadAction<boolean>} action - Action containing authentication value
        */
       authenticate(state: WritableDraft<AuthenticationState>, action: PayloadAction<boolean>) {
          state.value = action.payload;

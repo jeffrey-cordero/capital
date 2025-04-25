@@ -1,5 +1,3 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
    Button,
@@ -8,7 +6,6 @@ import {
    DialogActions,
    DialogContent,
    DialogContentText,
-   Divider,
    Fade,
    Modal as MuiModal,
    Stack,
@@ -129,45 +126,12 @@ interface ModalProps {
 }
 
 /**
- * The props for the Section component.
- *
- * @interface SectionProps
- * @property {IconDefinition} icon - The icon component of the modal section
- * @property {React.ReactNode} children - The children components to render within the modal section
- */
-interface SectionProps {
-   icon: IconDefinition;
-   children: React.ReactNode;
-}
-
-/**
- * The Section component to render the modal section title and children components.
- *
- * @param {SectionProps} props - The props for the Section component
- * @returns {React.ReactNode} The Section component
- */
-export function Section({ icon, children }: SectionProps): React.ReactNode {
-   return (
-      <Box>
-         <Divider>
-            <FontAwesomeIcon
-               className = "primary"
-               icon = { icon }
-               style = { { fontSize: "16px" } }
-            />
-         </Divider>
-         { children }
-      </Box>
-   );
-}
-
-/**
  * The Modal component to render the modal with the modal content and children components.
  *
  * @param {ModalProps} props - The props for the Modal component
  * @returns {React.ReactNode} The Modal component
  */
-export function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps): React.ReactNode {
+export default function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps): React.ReactNode {
    const [warningOpen, setWarningOpen] = useState<boolean>(false);
 
    const closeModal = useCallback(() => {

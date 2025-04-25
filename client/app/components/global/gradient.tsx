@@ -16,7 +16,7 @@ interface AreaGradientProps {
  * @param {AreaGradientProps} props - The props for the AreaGradient component
  * @returns {React.ReactNode} The AreaGradient component
  */
-export function AreaGradient({ color, id }: AreaGradientProps): React.ReactNode {
+export default function AreaGradient({ color, id }: AreaGradientProps): React.ReactNode {
    return (
       <defs>
          <linearGradient

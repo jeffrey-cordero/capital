@@ -2,14 +2,14 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { type WritableDraft } from "immer";
 
 /**
- * The theme state
+ * Redux state for theme management
  */
 type ThemeState = { value: "light" | "dark" };
 
 /**
- * Helper method to save the theme to local storage and the document body.
+ * Persists theme choice to localStorage and updates the document body dataset attribute
  *
- * @param {"light" | "dark"} theme - The theme to save
+ * @param {"light" | "dark"} theme - Selected theme value
  */
 const saveLocalTheme = (theme: "light" | "dark") => {
    localStorage.theme = theme;
@@ -17,7 +17,7 @@ const saveLocalTheme = (theme: "light" | "dark") => {
 };
 
 /**
- * The theme slice
+ * Theme slice for managing UI appearance preferences
  */
 const themeSlice = createSlice({
    name: "theme",
@@ -26,19 +26,19 @@ const themeSlice = createSlice({
    } as ThemeState,
    reducers: {
       /**
-       * Sets the theme in the Redux store.
+       * Sets the theme directly
        *
-       * @param {WritableDraft<ThemeState>} state - The current state of the theme
-       * @param {PayloadAction<"light" | "dark">} action - The dispatched action containing the payload
+       * @param {WritableDraft<ThemeState>} state - Current theme state
+       * @param {PayloadAction<"light" | "dark">} action - Action containing theme value
        */
       setTheme(state: WritableDraft<ThemeState>, action: PayloadAction<"light" | "dark">) {
          state.value = action.payload;
          saveLocalTheme(action.payload);
       },
       /**
-       * Toggles the theme in the Redux store.
+       * Toggles between light and dark themes
        *
-       * @param {WritableDraft<ThemeState>} state - The current state of the theme
+       * @param {WritableDraft<ThemeState>} state - Current theme state
        */
       toggleTheme(state: WritableDraft<ThemeState>) {
          state.value = state.value === "light" ? "dark" : "light";

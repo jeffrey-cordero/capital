@@ -17,7 +17,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { AreaGradient } from "@/components/global/gradient";
+import AreaGradient from "@/components/global/gradient";
 import ResponsiveChartContainer from "@/components/global/responsive";
 import { calculatePercentageChange, getChipColor, getGraphColor } from "@/lib/charts";
 import { normalizeDate } from "@/lib/dates";

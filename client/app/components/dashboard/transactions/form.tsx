@@ -20,7 +20,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/transactions/render";
-import { Modal, Section } from "@/components/global/modal";
+import Modal from "@/components/global/modal";
+import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { getValidDateRange } from "@/lib/dates";

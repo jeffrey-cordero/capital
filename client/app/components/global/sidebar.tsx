@@ -179,66 +179,6 @@ interface SideBarContentProps {
 }
 
 /**
- * The SideBar component to render the sidebar.
- *
- * @returns {React.ReactNode} The SideBar component
- */
-export function SideBar(): React.ReactNode {
-   const authenticated = useSelector((state: RootState) => state.authentication.value);
-   const theme = useTheme();
-   const [open, setOpen] = useState(false);
-
-   const openSideBar = useCallback(() => {
-      setOpen(true);
-   }, []);
-
-   const closeSideBar = useCallback(() => {
-      setOpen(false);
-   }, []);
-
-   return (
-      <Box>
-         <IconButton
-            color = "primary"
-            onClick = { openSideBar }
-            sx = {
-               {
-                  position: "absolute",
-                  top: 10,
-                  left: 5,
-                  zIndex: 2
-               }
-            }
-         >
-            <FontAwesomeIcon icon = { faBarsStaggered } />
-         </IconButton>
-         <Drawer
-            onClose = { closeSideBar }
-            open = { open }
-            sx = {
-               {
-                  [`& .${drawerClasses.paper}`]: {
-                     pt: 2.5,
-                     pr: 0.75,
-                     overflow: "unset",
-                     width: "250px",
-                     borderColor: alpha(theme.palette.grey[500], 0.08),
-                     backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
-                     zIndex: 3
-                  }
-               }
-            }
-         >
-            <SideBarContent
-               links = { authenticated ? dashboard : landing }
-               onClose = { closeSideBar }
-            />
-         </Drawer>
-      </Box>
-   );
-}
-
-/**
  * The SideBarContent component to render the sidebar content.
  *
  * @param {SideBarContentProps} props - The props for the SideBarContent component
@@ -379,6 +319,66 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                }
             </Box>
          </Box>
+      </Box>
+   );
+}
+
+/**
+ * The SideBar component to render the sidebar.
+ *
+ * @returns {React.ReactNode} The SideBar component
+ */
+export function SideBar(): React.ReactNode {
+   const authenticated = useSelector((state: RootState) => state.authentication.value);
+   const theme = useTheme();
+   const [open, setOpen] = useState(false);
+
+   const openSideBar = useCallback(() => {
+      setOpen(true);
+   }, []);
+
+   const closeSideBar = useCallback(() => {
+      setOpen(false);
+   }, []);
+
+   return (
+      <Box>
+         <IconButton
+            color = "primary"
+            onClick = { openSideBar }
+            sx = {
+               {
+                  position: "absolute",
+                  top: 10,
+                  left: 5,
+                  zIndex: 2
+               }
+            }
+         >
+            <FontAwesomeIcon icon = { faBarsStaggered } />
+         </IconButton>
+         <Drawer
+            onClose = { closeSideBar }
+            open = { open }
+            sx = {
+               {
+                  [`& .${drawerClasses.paper}`]: {
+                     pt: 2.5,
+                     pr: 0.75,
+                     overflow: "unset",
+                     width: "250px",
+                     borderColor: alpha(theme.palette.grey[500], 0.08),
+                     backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
+                     zIndex: 3
+                  }
+               }
+            }
+         >
+            <SideBarContent
+               links = { authenticated ? dashboard : landing }
+               onClose = { closeSideBar }
+            />
+         </Drawer>
       </Box>
    );
 }

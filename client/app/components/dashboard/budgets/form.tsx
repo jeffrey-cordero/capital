@@ -15,7 +15,8 @@ import { useNavigate } from "react-router";
 
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import Transactions from "@/components/dashboard/transactions/transactions";
-import { Modal, Section } from "@/components/global/modal";
+import Modal from "@/components/global/modal";
+import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { compareBudgetPeriods } from "@/lib/dates";

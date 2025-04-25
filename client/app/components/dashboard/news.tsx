@@ -19,7 +19,7 @@ import { type Article, type News } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { Expand } from "@/components/global/expand";
+import Expand from "@/components/global/expand";
 import { horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 

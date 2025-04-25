@@ -14,7 +14,7 @@ import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
-import { Section } from "@/components/global/modal";
+import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";

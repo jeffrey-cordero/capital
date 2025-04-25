@@ -24,7 +24,8 @@ import {
    type UseFormSetValue
 } from "react-hook-form";
 
-import { Modal, Section } from "@/components/global/modal";
+import Modal from "@/components/global/modal";
+import Section from "@/components/global/section";
 
 /**
  * The image validation schema from the account schema
