@@ -22,12 +22,17 @@ const SPECIAL_PATHS = {
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 /**
- * The expected API response structure after parsing the JSON response
+ * Represents the expected API response structure.
+ *
+ * @template T The expected type of the `data` field.
+ * @interface
+ * @property {T} [data] - Optional data returned from the API.
+ * @property {Object<string, string>} [errors] - Optional map of error messages.
  */
-type ApiResponse<T> = {
+interface ApiResponse<T> {
    data?: T;
    errors?: Record<string, string>;
-};
+}
 
 /**
  * Sends an API request to the server.
@@ -48,66 +53,65 @@ export async function sendApiRequest<T>(
    navigate: NavigateFunction,
    setError?: UseFormSetError<any>
 ): Promise<T | number | null> {
-   // Check if this is a special path that needs different handling measures
    const isLogin = path === SPECIAL_PATHS.LOGIN;
-   const isAuthentication = path === SPECIAL_PATHS.AUTHENTICATION;
-   const isUpdatingUser = path === SPECIAL_PATHS.USERS && method !== "POST";
+   const isAuthenticating = path === SPECIAL_PATHS.AUTHENTICATION;
+   const isUpdatingUserInformation = path === SPECIAL_PATHS.USERS && method !== "POST";
 
    try {
       const response = await fetch(`${SERVER_URL}/${path}`, {
          method,
-         headers: {
-            "Content-Type": "application/json"
-         },
+         headers: { "Content-Type": "application/json" },
          body: body ? JSON.stringify(body) : undefined,
          credentials: "include"
       });
 
       // Handle potential redirection cases
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
+         // Update pathname to ensure Redux store is cleared
          window.location.pathname = "/login";
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
+         // Redirect to the dashboard to initialize the Redux store
          navigate("/dashboard");
          return null;
       }
 
-      // Handle server errors with specific error messages
+      // Handle Internal Server Errors
       if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
-         const responseData: ApiResponse<T> = await response.json();
-
-         throw new Error(responseData.errors?.server || "An unknown error occurred");
+         throw new Error((await response.json()).errors?.server || "An unknown error occurred");
       }
 
-      // Re-sync authentication state based on the server response
-      if (!isAuthentication) {
+      // Re-sync authentication state
+      if (!isAuthenticating) {
          const isDashboard = path.startsWith(SPECIAL_PATHS.DASHBOARD);
          const isSuccessfulLogin = isLogin && response.status === HTTP_STATUS.OK;
 
-         dispatch(authenticate(isDashboard || isUpdatingUser || isSuccessfulLogin));
+         dispatch(authenticate(isDashboard || isUpdatingUserInformation || isSuccessfulLogin));
       }
 
-      // Handle different response types
+      // Handle no content responses
       if (response.status === HTTP_STATUS.NO_CONTENT) {
          return response.status;
-      } else if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
-         const responseData: ApiResponse<T> = await response.json();
+      }
 
-         return responseData.data as T;
+      // Handle successful or error responses
+      const json: ApiResponse<T> = await response.json();
+
+      if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
+         return json.data as T;
       } else {
-         // Handle validation errors from the server
-         const responseData: ApiResponse<T> = await response.json();
-
          // Error handling for form validation errors
-         Object.entries(responseData.errors || {}).forEach(([field, message]) => {
+         Object.entries(json.errors || {}).forEach(([field, message]) => {
             setError?.(field, { type: "server", message });
          });
 
          return null;
       }
    } catch (error) {
+      // Log unexpected errors
       console.error("API Request failed:", error);
 
+      // Display error notification
       dispatch(addNotification({
          type: "error",
          message: "Internal Server Error"

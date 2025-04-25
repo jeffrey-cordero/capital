@@ -23,7 +23,7 @@ import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
-import { getDateRange } from "@/lib/dates";
+import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
 import { addNotification } from "@/redux/slices/notifications";
@@ -40,7 +40,7 @@ export default function Register(): React.ReactNode {
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    // Store the birthday date range constraints
-   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
+   const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onSubmit = async(data: any) => {
       const fields = userSchema.safeParse(data);

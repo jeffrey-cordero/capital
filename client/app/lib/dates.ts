@@ -5,7 +5,7 @@ import type { BudgetPeriod } from "capital/budgets";
  *
  * @returns {Date} The current date in UTC
  */
-export const getCurrentDate = (): Date => {
+export function getCurrentDate(): Date {
    return new Date(new Date().setUTCHours(0, 0, 0, 0));
 };
 
@@ -14,7 +14,7 @@ export const getCurrentDate = (): Date => {
  *
  * @returns {string[]} The date range for a valid date input in ISO format
  */
-export const getDateRange = (): [string, string] => {
+export function getValidDateRange(): [string, string] {
    return [
       new Date("1800-01-01").toISOString().split("T")[0],
       new Date(new Date().toLocaleString(
@@ -91,15 +91,21 @@ export function timeSinceLastUpdate(date: string): string {
    const days = Math.floor(hours / 24);
 
    // Return "now" for very recent updates
-   if (minutes === 0) {
-      return "now";
-   }
+   if (minutes === 0) return "now";
 
    // Build parts of the time string
    const parts = [];
-   if (days >= 1) parts.push(`${days} day${days > 1 ? "s" : ""}`);
-   if (hours >= 1 && hours % 24 !== 0) parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
-   if (minutes >= 1 && minutes % 60 !== 0) parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
+   if (days >= 1) {
+      parts.push(`${days} day${days > 1 ? "s" : ""}`);
+   }
+
+   if (hours >= 1 && hours % 24 !== 0) {
+      parts.push(`${hours % 24} hour${hours % 24 > 1 ? "s" : ""}`);
+   }
+
+   if (minutes >= 1 && minutes % 60 !== 0) {
+      parts.push(`${minutes % 60} minute${minutes % 60 > 1 ? "s" : ""}`);
+   }
 
    return parts.join(", ") + " ago";
 }
@@ -126,18 +132,18 @@ export function calculateNewBudgetPeriod({ month, year }: BudgetPeriod, directio
 }
 
 /**
- * Compares two budget periods to determine their order.
+ * Compares two budget periods to determine the relative time period between them
  *
  * @param {BudgetPeriod} p1 - The first period
  * @param {BudgetPeriod} p2 - The second period
- * @returns {-1 | 0 | 1} `-1` if p1 is before p2 (farther from today), `0` if p1 and p2 are the same, `1` if p1 is after p2 (closer to today)
+ * @returns {"before" | "equal" | "after"} `"before"` if p1 is before p2 (farther from today), `"equal"` if p1 and p2 are the same, `"after"` if p1 is after p2 (closer to today)
  */
-export function compareBudgetPeriods(p1: BudgetPeriod, p2: BudgetPeriod): -1 | 0 | 1 {
+export function compareBudgetPeriods(p1: BudgetPeriod, p2: BudgetPeriod): "before" | "equal" | "after" {
    if (p1.year === p2.year && p1.month === p2.month) {
-      return 0;
+      return "equal";
    } else if (p1.year < p2.year || (p1.year === p2.year && p1.month < p2.month)) {
-      return 1;
+      return "before";
    } else {
-      return -1;
+      return "after";
    }
 }

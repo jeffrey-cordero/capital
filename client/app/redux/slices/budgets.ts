@@ -61,17 +61,17 @@ const budgetsSlice = createSlice({
 
          if (!category) return; // Ignore invalid category payloads
 
-         // Calculate the difference in time periods between the current state period and current category goal period
+         // Calculate the difference in time periods between the current budget period and current category goal period
          const currentGoal: BudgetGoal = category.goals[category.goalIndex];
-         const timePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
+         const difference: "before" | "equal" | "after" = compareBudgetPeriods(
             { month, year },
             { month: currentGoal.month, year: currentGoal.year }
          );
 
-         if (timePeriodDifference !== 0) {
-            // Handle new budget periods, which are either closer or farther from the current category goal period
-            const indexIncrement: number = Math.max(0, timePeriodDifference); // Closer periods (difference of -1) remain at the same index (no increment)
-            const indexAdjustment: number = Math.max(0, category.goalIndex + indexIncrement);
+         if (difference !== "equal") {
+            // After (closer to today) implies an insertion at the current index
+            const indexIncrement: number = difference === "after" ? 0 : 1;
+            const indexAdjustment: number = category.goalIndex + indexIncrement;
 
             // Insert the new goal record for the current period
             category.goals.splice(indexAdjustment, 0, { year, month, goal });
@@ -185,29 +185,31 @@ const budgetsSlice = createSlice({
             if (currentIndex === boundaryIndex) return;
 
             // Fetch the potential new budget goal
+            const { month, year } = newPeriod;
             const currentGoal: BudgetGoal = category.goals[currentIndex];
-            const newGoal: BudgetGoal = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
             // Adjust goal index based on direction and period comparison
             if (!isNextDirection) {
-               const currentTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
+               // Handle going back in time
+               const difference: "before" | "equal" | "after" = compareBudgetPeriods(
                   { month: currentGoal.month, year: currentGoal.year },
-                  { month: newPeriod.month, year: newPeriod.year }
+                  { month, year }
                );
 
-               if (currentTimePeriodDifference === -1) {
-                  // Increment to previous goal periods once current goal period exceeds the new period
+               if (difference === "after") {
+                  // After (closer to today) implies an increment to the previous goal period
                   category.goalIndex++;
                }
             } else {
-               // Calculate the difference in time periods between the new goal and the new period
-               const newTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
+               // Handle going forward in time
+               const newGoal: BudgetGoal = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
+               const difference: "before" | "equal" | "after" = compareBudgetPeriods(
                   { month: newGoal.month, year: newGoal.year },
-                  { month: newPeriod.month, year: newPeriod.year }
+                  { month, year }
                );
 
-               if (newTimePeriodDifference === 0) {
-                  // Only decrement to closer goal periods on the exact period match
+               if (difference === "equal") {
+                  // Only update to closer goal period on the exact period match
                   category.goalIndex--;
                }
             }

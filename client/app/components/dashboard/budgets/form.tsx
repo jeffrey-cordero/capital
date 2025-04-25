@@ -105,7 +105,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          const isCurrentPeriod = compareBudgetPeriods(
             { month: currentGoal.month, year: currentGoal.year },
             { month: period.month, year: period.year }
-         ) === 0;
+         ) === "equal";
          const method = isCurrentPeriod ? "PUT" : "POST";
 
          // Submit the API request

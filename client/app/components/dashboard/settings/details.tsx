@@ -19,7 +19,7 @@ import { useNavigate } from "react-router";
 import { Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
-import { getDateRange } from "@/lib/dates";
+import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import { setTheme } from "@/redux/slices/theme";
@@ -52,7 +52,7 @@ export default function Details(): React.ReactNode {
    });
 
    // Setup minimum and maximum dates for birthday input
-   const [minDate, maxDate] = getDateRange();
+   const [minDate, maxDate] = getValidDateRange();
 
    const onReset = useCallback(() => {
       reset({

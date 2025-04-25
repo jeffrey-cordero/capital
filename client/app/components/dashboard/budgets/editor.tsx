@@ -120,7 +120,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          const isCurrentPeriod = compareBudgetPeriods(
             { month: category.goals[category.goalIndex].month, year: category.goals[category.goalIndex].year },
             { month, year }
-         ) === 0;
+         ) === "equal";
          const method: string = isCurrentPeriod ? "PUT" : "POST";
 
          // Send potential updates in parallel requests

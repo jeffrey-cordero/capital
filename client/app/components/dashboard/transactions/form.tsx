@@ -23,7 +23,7 @@ import { RenderAccountChip, RenderCategoryChip } from "@/components/dashboard/tr
 import { Modal, Section } from "@/components/global/modal";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
-import { getDateRange } from "@/lib/dates";
+import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
@@ -96,7 +96,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
    }, [filter, identifier, budgets]);
 
    // Setup minimum and maximum dates for transactions
-   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
+   const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onReset = useCallback(() => {
       if (transaction) {
