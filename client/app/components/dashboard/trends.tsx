@@ -68,19 +68,27 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       xl: useMediaQuery(breakpoints.xl),
       xll: useMediaQuery(breakpoints.xll)
    };
-   const graphHeight = xss ? heights.xss : (
-      xs ? heights.xs : (
-         sm ? heights.sm : (
-            md ? heights.md : (
-               lg ? heights.lg : (
-                  xl ? heights.xl : (
-                     xll ? heights.xxl : isCard ? heights.sm : heights.xxl
-                  )
-               )
-            )
-         )
-      )
-   );
+   const height = useMemo(() => {
+      switch (true) {
+         case xss:
+            return heights.xss;
+         case xs:
+            return heights.xs;
+         case sm:
+            return heights.sm;
+         case md:
+            return heights.md;
+         case lg:
+            return heights.lg;
+         case xl:
+            return heights.xl;
+         case xll:
+            return heights.xxl;
+         default:
+            return isCard ? heights.sm : heights.xxl;
+      }
+   }, [xss, xs, sm, md, lg, xl, xll, isCard]);
+
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
@@ -236,14 +244,14 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       theme.palette.primary.light
    ], [theme.palette.primary]);
    const chart = useMemo(() => (
-      <ResponsiveChartContainer height = { graphHeight }>
+      <ResponsiveChartContainer height = { height }>
          {
             series.length > 0 ? (
                <BarChart
                   borderRadius = { 8 }
                   colors = { colorPalette }
                   grid = { { horizontal: true } }
-                  height = { graphHeight }
+                  height = { height }
                   margin = { { left: isCard ? 50 : 40, right: 20, top: 20, bottom: 20 } }
                   resolveSizeBeforeRender = { true }
                   series = { series }
@@ -265,7 +273,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             )
          }
       </ResponsiveChartContainer>
-   ), [colorPalette, isCard, type, yearAbbreviations, series, graphHeight]);
+   ), [colorPalette, isCard, type, yearAbbreviations, series, height]);
 
    return (
       <Box sx = { { position: "relative" } }>

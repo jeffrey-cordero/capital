@@ -1,9 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-   Box,
-   Divider
-} from "@mui/material";
+import { Box, Divider } from "@mui/material";
 
 /**
  * The props for the Section component.

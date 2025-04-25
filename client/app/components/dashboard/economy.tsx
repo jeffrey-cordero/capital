@@ -214,6 +214,7 @@ export default function Economy(): React.ReactNode {
          >
             <Graph
                data = { indicators as any }
+               defaultValue = "Federal Interest Rate"
                isAverage = { true }
                isCard = { true }
                isIndicators = { true }
