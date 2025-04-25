@@ -268,7 +268,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                alt = "Logo"
                component = "img"
                src = "/svg/logo.svg"
-               sx = { { width: 150, mb: -2, height: "auto" } }
+               sx = { { width: 150, mb: -0.5, height: "auto" } }
             />
          </Stack>
          <Box
@@ -332,7 +332,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                   })
                }
             </Box>
-            <Box sx = { { position: "relative", mb: 18 } }>
+            <Box sx = { { position: "relative", mb: 19 } }>
                {
                   links === dashboard ? (
                      <Box>

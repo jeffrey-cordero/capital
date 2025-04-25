@@ -1,8 +1,8 @@
 import { layout, route, type RouteConfig } from "@react-router/dev/routes";
 
 /**
- * Application routing configuration, which defines authenticated and dashboard
- * routes with their respective layouts
+ * Application routing configuration, which defines the landing and dashboard
+ * routes with their respective layout and page components
  */
 export default [
    layout("routes/authentication/layout.tsx", [

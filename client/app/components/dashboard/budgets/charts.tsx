@@ -126,10 +126,9 @@ interface BudgetProgressChartProps {
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
-   const { xss, xs, md } = {
+   const { xss, xs } = {
       xss: useMediaQuery("(max-width: 310px)"),
-      xs: useMediaQuery("(max-width: 335px)"),
-      md: useMediaQuery("(max-width: 900px)")
+      xs: useMediaQuery("(max-width: 335px)")
    };
    const dimensions = xss ? 275 : xs ? 300 : 315;
    const outerRadius = xss ? 105 : xs ? 110 : 120;

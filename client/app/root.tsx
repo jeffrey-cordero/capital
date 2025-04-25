@@ -35,7 +35,7 @@ export const links: Route.LinksFunction = () => [
 /**
  * Sets the theme based on user preferences during initial load or error boundary fallback
  */
-const setTheme = () => {
+function initializeTheme() {
    const preferredTheme = localStorage.theme;
    const prefersDarkMode = window?.matchMedia("(prefers-color-scheme: dark)").matches;
 
@@ -49,6 +49,7 @@ const setTheme = () => {
  * Main layout component that provides the HTML structure
  *
  * @param {React.ReactNode} children - Child components to render
+ * @returns {React.ReactNode} The application layout component
  */
 export function Layout({ children }: { children: React.ReactNode }): React.ReactNode {
    return (
@@ -72,39 +73,40 @@ export function Layout({ children }: { children: React.ReactNode }): React.React
          </body>
       </html>
    );
-}
+};
 
 /**
  * Wrapper component for the application or error boundary components to render
- * once the theme has been initialized
+ * their children once the preferred theme has been initialized
  *
  * @param {React.ReactNode} children - Child components to render
+ * @returns {React.ReactNode} The theme provider component
  */
 function ThemeProvider({ children }: { children: React.ReactNode }): React.ReactNode {
-   const [fetchedTheme, setFetchedTheme] = useState<boolean>(false);
+   const [initialized, setInitialized] = useState<boolean>(false);
 
    useEffect(() => {
-      setTheme();
-      setFetchedTheme(true);
+      initializeTheme();
+      setInitialized(true);
    }, []);
 
-   return fetchedTheme ? children : null;
-}
+   return initialized ? children : null;
+};
 
 /**
  * Application root component with Redux and React Query providers
+ *
+ * @returns {React.ReactNode} The application root component
  */
-export default function App(): React.ReactNode {
+export function App(): React.ReactNode {
    return (
-      <ThemeProvider>
-         <Provider store = { store }>
-            <QueryClientProvider client = { queryClient }>
+      <Provider store = { store }>
+         <QueryClientProvider client = { queryClient }>
                <Router />
-            </QueryClientProvider>
-         </Provider>
-      </ThemeProvider>
+         </QueryClientProvider>
+      </Provider>
    );
-}
+};
 
 /**
  * Global error boundary component for fallback error display
@@ -145,4 +147,4 @@ export function ErrorBoundary(): React.ReactNode {
          </Container>
       </ThemeProvider>
    );
-}
+};
