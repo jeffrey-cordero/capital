@@ -1,5 +1,5 @@
-import { CssBaseline, type Theme, ThemeProvider } from "@mui/material";
-import { useEffect, useMemo } from "react";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router";
 
@@ -9,35 +9,29 @@ import type { RootState } from "@/redux/store";
 import { constructTheme } from "@/styles/mui/theme";
 
 /**
- * The application router component, handling authentication-based routing and MUI baselines.
+ * Main application router with authentication-based routing and theme handling
  *
- * @returns {React.ReactNode} The application router component
+ * @returns {React.ReactNode} The main application router component
  */
 export default function Router(): React.ReactNode {
    const navigate = useNavigate();
-   const theme: "light" | "dark" = useSelector(
-      (state: RootState) => state.theme.value
-   );
-   const authenticated: boolean | undefined = useSelector(
-      (state: RootState) => state.authentication.value
-   );
-   const providerTheme: Theme = useMemo(() => {
-      return constructTheme(theme);
-   }, [theme]);
+   const theme: "light" | "dark" = useSelector((state: RootState) => state.theme.value);
+   const authenticated: boolean | undefined = useSelector((state: RootState) => state.authentication.value);
 
    useEffect(() => {
-      if (authenticated === undefined) return; // Ignore the initial state
+      // Handle authentication-based redirection
+      if (authenticated === undefined) return;
 
-      const dashboard: boolean = window.location.pathname.startsWith("/dashboard");
-      const autoRedirect: boolean = authenticated && !dashboard || !authenticated && dashboard;
+      const isDashboard = window.location.pathname.startsWith("/dashboard");
+      const requiresRedirection = (authenticated && !isDashboard) || (!authenticated && isDashboard);
 
-      if (autoRedirect) {
+      if (requiresRedirection) {
          navigate(authenticated ? "/dashboard" : "/");
       }
    }, [navigate, authenticated]);
 
    return (
-      <ThemeProvider theme = { providerTheme }>
+      <ThemeProvider theme = { constructTheme(theme) }>
          <CssBaseline />
          <Notifications />
          <SideBar />

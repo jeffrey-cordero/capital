@@ -59,15 +59,28 @@ interface TrendProps {
  */
 export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
-   const { xss, xs, sm, md, lg, xl } = {
+   const { xss, xs, sm, md, lg, xl, xll } = {
       xss: useMediaQuery(breakpoints.xss),
       xs: useMediaQuery(breakpoints.xs),
       sm: useMediaQuery(breakpoints.sm),
       md: useMediaQuery(breakpoints.md),
       lg: useMediaQuery(breakpoints.lg),
-      xl: useMediaQuery(breakpoints.xl)
+      xl: useMediaQuery(breakpoints.xl),
+      xll: useMediaQuery(breakpoints.xll)
    };
-   const graphHeight = xss ? heights.xss : (xs ? heights.xs : (sm || isCard ? heights.sm : (md ? heights.md : (lg ? heights.lg : xl ? heights.xl : heights.xxl))));
+   const graphHeight = xss ? heights.xss : (
+      xs ? heights.xs : (
+         sm ? heights.sm : (
+            md ? heights.md : (
+               lg ? heights.lg : (
+                  xl ? heights.xl : (
+                     xll ? heights.xxl : isCard ? heights.sm : heights.xxl
+                  )
+               )
+            )
+         )
+      )
+   );
    const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);

@@ -1,12 +1,9 @@
-// MUI-related overrides
-input:-webkit-autofill,
-.MuiInputBase-root:has(> input:-webkit-autofill) {
+input:-webkit-autofill, .MuiInputBase-root:has(> input:-webkit-autofill) {
   background-color: $autofill-light !important;
 }
 
 body[data-dark="true"] {
-  input:-webkit-autofill,
-  .MuiInputBase-root:has(> input:-webkit-autofill) {
+  input:-webkit-autofill, .MuiInputBase-root:has(> input:-webkit-autofill) {
     background-color: $autofill-dark !important;
   }
 

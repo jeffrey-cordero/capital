@@ -4,8 +4,7 @@ import { chipClasses } from "@mui/material/Chip";
 import { brand, gray, green, red } from "@/styles/mui/colors";
 
 /**
- * Main MUI component overrides.
- * @see https://mui.com/material-ui/customization/theming/
+ * Main MUI component overrides
  */
 export const components: Components = {
    MuiButton: {

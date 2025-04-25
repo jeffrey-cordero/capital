@@ -6,7 +6,7 @@ import Finances from "@/components/dashboard/finances";
 import Articles from "@/components/dashboard/news";
 
 /**
- * The dashboard page component.
+ * Main dashboard view with financial overview and market data
  *
  * @returns {React.ReactNode} The dashboard page component
  */
@@ -44,12 +44,8 @@ export default function Page(): React.ReactNode {
                         }
                      }
                   >
-                     <Grid size = { { xs: 12 } }>
-                        <Finances />
-                     </Grid>
-                     <Grid size = { { xs: 12 } }>
-                        <Markets />
-                     </Grid>
+                     <Finances />
+                     <Markets />
                   </Stack>
                </Grid>
             </Grow>

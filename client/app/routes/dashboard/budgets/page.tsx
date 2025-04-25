@@ -8,32 +8,32 @@ import { BudgetPieChart, BudgetTrends } from "@/components/dashboard/budgets/cha
 import type { RootState } from "@/redux/store";
 
 /**
- * The budgets page component.
+ * Budgets page with allocation charts and budget management features
  *
  * @returns {React.ReactNode} The budgets page component
  */
 export default function Page(): React.ReactNode {
    const transactions = useSelector((state: RootState) => state.transactions.value);
 
-   // Calculate the total budget allocations for existing transactions
+   // Calculate budget allocations from transaction history
    const allocations = useMemo(() => {
-      return transactions.reduce((acc, transaction) => {
-         const period: string = transaction.date.substring(0, 7);
+      return transactions.reduce((acc, record) => {
+         const period: string = record.date.substring(0, 7);
 
-         // Initialize the period if it doesn't exist
+         // Initialize the period
          if (!acc[period]) {
             acc[period] = { Income: 0, Expenses: 0 };
          }
 
-         // Initialize the category if it doesn't exist
-         if (!acc[period][transaction.budget_category_id || ""]) {
-            acc[period][transaction.budget_category_id || ""] = 0;
+         // Initialize the category
+         if (!acc[period][record.budget_category_id || ""]) {
+            acc[period][record.budget_category_id || ""] = 0;
          }
 
-         // Add the amount to the category and respective type
-         const amount = Math.abs(transaction.amount);
-         acc[period][transaction.budget_category_id || ""] += amount;
-         acc[period][transaction.type] += amount;
+         // Add the absolute amount to the category and respective type allocations
+         const amount = Math.abs(record.amount);
+         acc[period][record.budget_category_id || ""] += amount;
+         acc[period][record.type] += amount;
 
          return acc;
       }, {} as Record<string, Record<string, number>>);

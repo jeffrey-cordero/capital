@@ -1,9 +1,9 @@
 import "@/styles/app.scss";
 
 import { Box, Container, Link, Typography } from "@mui/material";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider as ReactQueryProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Provider } from "react-redux";
+import { Provider as ReduxProvider } from "react-redux";
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 
 import store from "@/redux/store";
@@ -33,7 +33,7 @@ export const links: Route.LinksFunction = () => [
 ];
 
 /**
- * Sets the theme based on user preferences during initial load or error boundary fallback
+ * Sets the theme based on user preferences
  */
 function initializeTheme() {
    const preferredTheme = localStorage.theme;
@@ -98,13 +98,15 @@ function ThemeProvider({ children }: { children: React.ReactNode }): React.React
  *
  * @returns {React.ReactNode} The application root component
  */
-export function App(): React.ReactNode {
+export default function App(): React.ReactNode {
    return (
-      <Provider store = { store }>
-         <QueryClientProvider client = { queryClient }>
+      <ThemeProvider>
+         <ReduxProvider store = { store }>
+            <ReactQueryProvider client = { queryClient }>
                <Router />
-         </QueryClientProvider>
-      </Provider>
+            </ReactQueryProvider>
+         </ReduxProvider>
+      </ThemeProvider>
    );
 };
 

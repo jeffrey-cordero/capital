@@ -3,9 +3,7 @@ import Stack from "@mui/material/Stack";
 import { useNavigate } from "react-router";
 
 /**
- * Returns the meta content for the page.
- *
- * @returns {MetaFunction} The meta content
+ * Returns meta information for the landing page
  */
 export function meta() {
    return [
@@ -15,7 +13,7 @@ export function meta() {
 }
 
 /**
- * The page component for the landing page.
+ * Landing page component with navigation to login/register
  *
  * @returns {React.ReactNode} The landing page component
  */

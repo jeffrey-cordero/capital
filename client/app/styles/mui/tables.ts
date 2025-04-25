@@ -12,7 +12,6 @@ import { gray } from "@/styles/mui/colors";
 
 /**
  * Customizations for the DataGrid component
- * @see https://mui.com/x/api/data-grid/data-grid/
  */
 export const tables = {
    MuiDataGrid: {

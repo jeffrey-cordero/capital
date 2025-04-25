@@ -8,7 +8,7 @@ import Transactions from "@/components/dashboard/transactions/transactions";
 import type { RootState } from "@/redux/store";
 
 /**
- * The accounts page component.
+ * Accounts page displaying financial accounts, transactions, and balance trends
  *
  * @returns {React.ReactNode} The accounts page component
  */
