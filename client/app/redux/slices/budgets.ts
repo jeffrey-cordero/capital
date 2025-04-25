@@ -70,7 +70,7 @@ const budgetsSlice = createSlice({
 
          if (difference !== "equal") {
             // After (closer to today) implies an insertion at the current index
-            const indexIncrement: number = difference === "after" ? 0 : 1;
+            const indexIncrement: number = difference === "before" ? 1 : 0;
             const indexAdjustment: number = category.goalIndex + indexIncrement;
 
             // Insert the new goal record for the current period

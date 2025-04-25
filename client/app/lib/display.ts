@@ -1,7 +1,7 @@
 import type { Theme } from "@mui/material";
 
 /**
- * The CSS properties for a horizontal scrollable container for long text.
+ * CSS for horizontally scrollable text container with styled scrollbar
  */
 export const horizontalScroll = (theme: Theme) => ({
    whiteSpace: "nowrap",
@@ -26,12 +26,12 @@ export const horizontalScroll = (theme: Theme) => ({
 });
 
 /**
- * Helper function for formatting numbers.
+ * Standardizes number formatting with locale and decimal precision
  *
- * @param {number} value - The value to format
- * @param {number} minFraction - Minimum number of fraction digits
- * @param {number} maxFraction - Maximum number of fraction digits
- * @returns {string} The formatted number
+ * @param {number} value - Number to format
+ * @param {number} minFraction - Minimum decimal digits
+ * @param {number} maxFraction - Maximum decimal digits
+ * @returns {string} Formatted number string
  */
 function formatNumber(value: number, minFraction: number = 2, maxFraction: number = 2): string {
    return new Intl.NumberFormat("en-US", {
@@ -41,41 +41,41 @@ function formatNumber(value: number, minFraction: number = 2, maxFraction: numbe
 }
 
 /**
- * Displays a currency value, such as `-$1,234.56` or `$1,234.56`
+ * Formats number as currency with dollar sign
  *
- * @param {number} value - The value to display
- * @returns {string} The formatted currency value
+ * @param {number} value - Monetary value to format
+ * @returns {string} Formatted currency string (e.g., -$1,234.56 or $1,234.56)
  */
 export function displayCurrency(value: number): string {
    return value < 0 ? `-$${formatNumber(value)}` : `$${formatNumber(value)}`;
 }
 
 /**
- * Displays a numeric value, such as `1,234.56`
+ * Formats number with thousands separators
  *
- * @param {number} value - The value to display
- * @param {boolean} [decimals] - Whether to display decimals
- * @returns {string} The formatted numeric value
+ * @param {number} value - Number to format
+ * @param {boolean} [decimals=true] - Whether to include decimal places
+ * @returns {string} Formatted number (e.g., 1,234.56 or 1,234)
  */
 export function displayNumeric(value: number, decimals: boolean = true): string {
    return formatNumber(value, decimals ? 2 : 0);
 }
 
 /**
- * Displays a percentage value, such as `12.34%`
+ * Formats number as percentage
  *
- * @param {number} percentage - The percentage to display
- * @returns {string} The formatted percentage value
+ * @param {number} percentage - Percentage value to format
+ * @returns {string} Formatted percentage with % symbol
  */
 export function displayPercentage(percentage: number): string {
    return formatNumber(percentage, 2) + "%";
 }
 
 /**
- * Displays a volume value, such as `1.2B`, `1.2M`, and `1.2K`
+ * Formats large numbers with metric suffixes
  *
- * @param {number} volume - The volume to display
- * @returns {string} The formatted volume value
+ * @param {number} volume - Number to format
+ * @returns {string} Formatted with K, M, or B suffix as appropriate
  */
 export function displayVolume(volume: number): string {
    let result: string = "";
@@ -95,10 +95,10 @@ export function displayVolume(volume: number): string {
 }
 
 /**
- * Displays a localized date value, such as `01/01/2024`
+ * Formats date as localized string
  *
- * @param {string} date - The date to display
- * @returns {string} The formatted date value
+ * @param {string} date - ISO date string to format
+ * @returns {string} Formatted date (MM/DD/YYYY)
  */
 export function displayDate(date: string): string {
    return new Date(date).toLocaleDateString("en-us", {

@@ -17,17 +17,16 @@ const SPECIAL_PATHS = {
 } as const;
 
 /**
- * The server URL based on the VITE_SERVER_URL environment variable
+ * Server URL from environment variable
  */
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 /**
- * Represents the expected API response structure.
+ * Standard API response structure
  *
- * @template T The expected type of the `data` field.
- * @interface
- * @property {T} [data] - Optional data returned from the API.
- * @property {Object<string, string>} [errors] - Optional map of error messages.
+ * @template T Expected data type
+ * @property {T} [data] - Response data payload
+ * @property {Record<string, string>} [errors] - Error messages by field
  */
 interface ApiResponse<T> {
    data?: T;
@@ -35,15 +34,15 @@ interface ApiResponse<T> {
 }
 
 /**
- * Sends an API request to the server.
+ * Sends API request with authentication and error handling
  *
- * @param {string} path - The path to send the request to
- * @param {string} method - The method to send the request with (`GET`, `POST`, `PUT`, `DELETE`)
- * @param {unknown} body - The body to send with the request
- * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
- * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
- * @param {UseFormSetError<any>} [setError] - The optional `setError` react-hook-form function to automate form error handling
- * @returns {Promise<T | number | null>} The response data or status code
+ * @param {string} path - API endpoint path
+ * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
+ * @param {unknown} body - Request payload
+ * @param {Dispatch<any>} dispatch - Redux dispatch function
+ * @param {NavigateFunction} navigate - Router navigation function
+ * @param {UseFormSetError<any>} [setError] - Optional form error setter
+ * @returns {Promise<T | number | null>} Response data, status code, or null on error
  */
 export async function sendApiRequest<T>(
    path: string,

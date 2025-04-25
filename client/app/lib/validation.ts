@@ -2,10 +2,10 @@ import type { UseFormSetError } from "react-hook-form";
 import type { SafeParseReturnType } from "zod";
 
 /**
- * Helper method to handle Zod schema validation errors
+ * Processes Zod validation errors and applies them to form fields
  *
- * @param {SafeParseReturnType<any, any>} fields - The fields to validate
- * @param {UseFormSetError<any>} setError - The `setError` react-hook-form function to automate form error handling
+ * @param {SafeParseReturnType<any, any>} fields - Zod validation result containing potential errors
+ * @param {UseFormSetError<any>} setError - React Hook Form's setError function for error handling
  */
 export function handleValidationErrors(
    fields: SafeParseReturnType<any, any>,
