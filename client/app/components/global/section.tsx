@@ -2,22 +2,8 @@ import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Box,
-   Button,
-   css,
-   Dialog,
-   DialogActions,
-   DialogContent,
-   DialogContentText,
-   Divider,
-   Fade,
-   Modal as MuiModal,
-   Stack,
-   styled,
-   type SxProps
+   Divider
 } from "@mui/material";
-import { useCallback, useState } from "react";
-
-import { gray } from "@/styles/mui/colors";
 
 /**
  * The props for the Section component.

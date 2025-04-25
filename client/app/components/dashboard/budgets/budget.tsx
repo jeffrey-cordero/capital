@@ -52,48 +52,48 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
    const color = type === "Income" ? "success" : "error";
 
    return (
-      <Box sx={{ px: !isMainCategory ? { xs: 2, sm: 4 } : 0 }}>
+      <Box sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }>
          <Stack
-            direction="column"
-            sx={{ width: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", mb: 1.5, mx: "auto" }}
+            direction = "column"
+            sx = { { width: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", mb: 1.5, mx: "auto" } }
          >
             <Stack
-               direction="row"
-               sx={{ ...horizontalScroll(theme), maxWidth: "90%", justifyContent: "flex-start", alignItems: "center", textAlign: "center" }}
+               direction = "row"
+               sx = { { ...horizontalScroll(theme), maxWidth: "90%", justifyContent: "flex-start", alignItems: "center", textAlign: "center" } }
             >
                <Typography
-                  sx={{ fontWeight: "600" }}
-                  variant="h6"
+                  sx = { { fontWeight: "600" } }
+                  variant = "h6"
                >
-                  {name}
+                  { name }
                </Typography>
                {
                   onEditClick && (
                      <IconButton
-                        color="primary"
-                        onClick={onEditClick}
-                        size="medium"
+                        color = "primary"
+                        onClick = { onEditClick }
+                        size = "medium"
                      >
                         <FontAwesomeIcon
-                           icon={faPenToSquare}
-                           size="xs"
+                           icon = { faPenToSquare }
+                           size = "xs"
                         />
                      </IconButton>
                   )
                }
             </Stack>
             <Typography
-               sx={{ ...horizontalScroll(theme), maxWidth: "90%", fontWeight: "600", textAlign: "center" }}
-               variant="subtitle1"
+               sx = { { ...horizontalScroll(theme), maxWidth: "90%", fontWeight: "600", textAlign: "center" } }
+               variant = "subtitle1"
             >
-               {displayCurrency(current)} / {displayCurrency(goal)}
+               { displayCurrency(current) } / { displayCurrency(goal) }
             </Typography>
          </Stack>
          <LinearProgress
-            color={color}
-            sx={{ height: "1.55rem", borderRadius: "16px" }}
-            value={progress}
-            variant="determinate"
+            color = { color }
+            sx = { { height: "1.55rem", borderRadius: "16px" } }
+            value = { progress }
+            variant = "determinate"
          />
       </Box>
    );
@@ -112,39 +112,39 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
 
    return (
       <Stack
-         direction="column"
+         direction = "column"
       >
          <Box
-            sx={{ position: "relative", width: "100%", mx: "auto", mb: 2.5 }}
+            sx = { { position: "relative", width: "100%", mx: "auto", mb: 2.5 } }
          >
             <CategoryItem
-               allocations={allocations}
-               budget_category_id={budget.budget_category_id}
-               goalIndex={budget.goalIndex}
-               goals={budget.goals}
-               isMainCategory={true}
-               name={type}
-               onEditClick={onEditClick}
-               period={period}
-               type={type}
+               allocations = { allocations }
+               budget_category_id = { budget.budget_category_id }
+               goalIndex = { budget.goalIndex }
+               goals = { budget.goals }
+               isMainCategory = { true }
+               name = { type }
+               onEditClick = { onEditClick }
+               period = { period }
+               type = { type }
             />
          </Box>
          {
             budget.categories.length > 0 && (
-               <AnimatePresence mode="popLayout">
+               <AnimatePresence mode = "popLayout">
                   <Stack
-                     direction="column"
-                     spacing={2}
+                     direction = "column"
+                     spacing = { 2 }
                   >
                      {
                         budget.categories.map((category) => (
                            <motion.div
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              initial={{ opacity: 0, y: -10 }}
-                              key={category.budget_category_id}
-                              layout="position"
-                              transition={
+                              animate = { { opacity: 1, y: 0 } }
+                              exit = { { opacity: 0, y: 10 } }
+                              initial = { { opacity: 0, y: -10 } }
+                              key = { category.budget_category_id }
+                              layout = "position"
+                              transition = {
                                  {
                                     type: "spring",
                                     stiffness: 100,
@@ -155,13 +155,13 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
                               }
                            >
                               <CategoryItem
-                                 allocations={allocations}
-                                 budget_category_id={category.budget_category_id}
-                                 goalIndex={category.goalIndex}
-                                 goals={category.goals}
-                                 name={String(category.name)}
-                                 period={period}
-                                 type={type}
+                                 allocations = { allocations }
+                                 budget_category_id = { category.budget_category_id }
+                                 goalIndex = { category.goalIndex }
+                                 goals = { category.goals }
+                                 name = { String(category.name) }
+                                 period = { period }
+                                 type = { type }
                               />
                            </motion.div>
                         ))
@@ -197,9 +197,9 @@ interface BudgetProps {
 export default function Budget({ type, onEditClick, allocations }: BudgetProps): React.ReactNode {
    return (
       <BudgetCategory
-         allocations={allocations}
-         onEditClick={onEditClick}
-         type={type}
+         allocations = { allocations }
+         onEditClick = { onEditClick }
+         type = { type }
       />
    );
 };

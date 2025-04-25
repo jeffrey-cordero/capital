@@ -7,9 +7,9 @@ import { type WritableDraft } from "immer";
 type ThemeState = { value: "light" | "dark" };
 
 /**
- * Persists theme choice to localStorage and updates the document body dataset attribute
+ * Saves theme preference to localStorage and updates document body
  *
- * @param {"light" | "dark"} theme - Selected theme value
+ * @param {"light" | "dark"} theme - Selected theme
  */
 const saveLocalTheme = (theme: "light" | "dark") => {
    localStorage.theme = theme;

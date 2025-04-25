@@ -28,18 +28,16 @@ import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display"
  *
  * @interface GraphProps
  * @property {string} title - The title of the graph
- * @property {boolean} card - Whether the graph is within a card to handle styling cases
- * @property {boolean} average - Whether the graph should display the average value or the last value within the year view
- * @property {boolean} indicators - Whether the graph should display the indicators (GDP, etc.) or hide the selection input
- * @property {string} defaultOption - The default option for the graph
+ * @property {boolean} isCard - Whether the graph is within a card to handle styling cases
+ * @property {boolean} isAverage - Whether the graph should display the average value or the last value within the year view
+ * @property {boolean} isIndicators - Whether the graph should display the indicators (GDP, etc.) or hide the selection input
  * @property {Record<string, { date: string, value: string }[]>} data - The data for the graph
  */
 export interface GraphProps {
    title: string;
-   card: boolean;
-   average: boolean;
-   indicators: boolean;
-   defaultOption: string;
+   isCard: boolean;
+   isAverage: boolean;
+   isIndicators: boolean;
    data: Record<string, { date: string, value: number }[]>;
 }
 
@@ -75,7 +73,7 @@ export const breakpoints = {
  * @param {GraphProps} props - The props for the Graph component
  * @returns {React.ReactNode} The Graph component
  */
-export default function Graph({ title, card, defaultOption, indicators, average, data }: GraphProps): React.ReactNode {
+export default function Graph({ title, isCard, isIndicators, isAverage, data }: GraphProps): React.ReactNode {
    const theme = useTheme();
    const { xss, xs, sm, md, lg, xl } = {
       xss: useMediaQuery(breakpoints.xss),
@@ -89,10 +87,9 @@ export default function Graph({ title, card, defaultOption, indicators, average,
    const { watch, control } = useForm();
 
    // Form control values with defaults
-   const { option, view, graph, from, to } = {
-      option: watch("option", defaultOption),
+   const { option, view, from, to } = {
+      option: watch("option", "GDP"),
       view: watch("view", "Year"),
-      graph: watch("graph", "Line"),
       from: watch("from", ""),
       to: watch("to", "")
    };
@@ -128,7 +125,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
 
                // Calculate value based on average setting
                const value = yearData.length === 0 ? 0
-                  : average
+                  : isAverage
                      ? yearData.reduce((acc, record) => acc + Number(record.value), 0) / yearData.length // average value
                      : yearData[yearData.length - 1].value; // last value
 
@@ -139,7 +136,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             });
 
             // For line charts with single data point, add a previous year data point to prevent empty graph
-            if (yearlyData.length === 1 && graph === "Line") {
+            if (yearlyData.length === 1) {
                yearlyData.unshift({
                   date: String(Number(yearlyData[0].date) - 1),
                   value: yearlyData[0].value
@@ -167,7 +164,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             }, []);
 
             // For line charts with single data point, add previous month to prevent empty graph
-            if (monthlyData.length === 1 && graph === "Line") {
+            if (monthlyData.length === 1) {
                const monthYear = monthlyData[0].date.split("/");
 
                // Handle month rollover, accounting for year change when month is January
@@ -212,8 +209,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
       <ResponsiveChartContainer height = { graphHeight }>
          {
             filtered.length > 0 ? (
-               graph === "Line" ? (
-                  <LineChart
+               <LineChart
                      colors = { [color] }
                      experimentalMarkRendering = { true }
                      grid = { { horizontal: true } }
@@ -229,7 +225,7 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               curve: "linear",
                               area: true,
                               data: filtered.map(d => Number(d.value)),
-                              valueFormatter: (value) => displayNumeric(value || 0) + (average && view === "Year" ? " (avg)" : "")
+                              valueFormatter: (value) => displayNumeric(value || 0) + (isAverage && view === "Year" ? " (avg)" : "")
                            }
                         ]
                      }
@@ -267,51 +263,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                         id = "value"
                      />
                   </LineChart>
-               ) : (
-                  <BarChart
-                     borderRadius = { 8 }
-                     grid = { { horizontal: true } }
-                     height = { graphHeight }
-                     margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
-                     resolveSizeBeforeRender = { true }
-                     series = {
-                        [
-                           {
-                              id: "value",
-                              label: "Value",
-                              data: filtered.map(d => Number(d.value))
-                           }
-                        ]
-                     }
-                     slotProps = {
-                        {
-                           legend: {
-                              hidden: true
-                           }
-                        }
-                     }
-                     xAxis = {
-                        [
-                           {
-                              scaleType: "band",
-                              data: filtered.map(d => d.date)
-                           }
-                        ]
-                     }
-                     yAxis = {
-                        [{
-                           domainLimit: "nice",
-                           valueFormatter: (value) => displayVolume(value),
-                           colorMap: {
-                              type: "piecewise",
-                              thresholds: [0],
-                              colors: ["hsl(0, 90%, 50%)", "hsl(210, 98%, 50%)"]
-                           }
-                        }]
-                     }
-                  />
-
-               )
             ) : (
                <Stack
                   sx = { { height: "100%", width: "100%", alignItems: "center", justifyContent: "center" } }
@@ -326,11 +277,11 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             )
          }
       </ResponsiveChartContainer>
-   ), [filtered, graphHeight, graph, color, average, view]);
+   ), [filtered, graphHeight, color, isAverage, view]);
 
    return (
       <Card
-         elevation = { card ? 3 : 0 }
+         elevation = { isCard ? 3 : 0 }
          sx = {
             {
                height: "100%",
@@ -338,30 +289,30 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                textAlign: "left",
                borderRadius: 2,
                position: "relative",
-               background: card ? "" : "transparent"
+               background: isCard ? "" : "transparent"
             }
          }
          variant = "elevation"
       >
-         <CardContent sx = { { position: "relative", px: card ? 0.25 : 0, py: card ? 2.5 : 0 } }>
+         <CardContent sx = { { position: "relative", px: isCard ? 0.25 : 0, py: isCard ? 2.5 : 0 } }>
             <Stack sx = { { justifyContent: "space-between" } }>
                <Stack
                   direction = "column"
                   sx = {
                      {
-                        justifyContent: card ? { xs: "center", lg: "flex-start" } : "center",
+                        justifyContent: isCard ? { xs: "center", lg: "flex-start" } : "center",
                         flexWrap: "wrap",
                         columnGap: 1,
                         rowGap: 0,
-                        textAlign: card ? { xs: "center", lg: "left" } : "center",
+                        textAlign: isCard ? { xs: "center", lg: "left" } : "center",
                         mt: { xs: 1.5, sm: 0.5 },
                         mb: -0.25,
-                        px: card ? 2.25 : 0
+                        px: isCard ? 2.25 : 0
                      }
                   }
                >
                   {
-                     indicators && (
+                     isIndicators && (
                         <Typography
                            gutterBottom = { true }
                            sx = { { mb: 0, fontWeight: "600" } }
@@ -372,9 +323,9 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                      )
                   }
                   <Stack
-                     direction = { { xs: "column", lg: card ? "row" : "column" } }
+                     direction = { { xs: "column", lg: isCard ? "row" : "column" } }
                      spacing = { 0.75 }
-                     sx = { { alignItems: "center", justifyContent: { xs: "center", lg: card ? "flex-start" : "center" } } }
+                     sx = { { alignItems: "center", justifyContent: { xs: "center", lg: isCard ? "flex-start" : "center" } } }
                   >
                      {
                         filtered.length > 0 && (
@@ -383,9 +334,9 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                                  sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
                                  variant = "subtitle1"
                               >
-                                 { option === "GDP" || !indicators ? "$" : "" }
+                                 { option === "GDP" || !isIndicators ? "$" : "" }
                                  { displayNumeric(Number(filtered[filtered.length - 1].value)) }
-                                 { indicators ? option === "GDP" ? "B" : "%" : "" }
+                                 { isIndicators ? option === "GDP" ? "B" : "%" : "" }
                               </Typography>
                               <Chip
                                  color = { chip as any }
@@ -404,10 +355,10 @@ export default function Graph({ title, card, defaultOption, indicators, average,
             </ResponsiveChartContainer>
             <Stack
                direction = { { xs: "column", sm: "row" } }
-               sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", mt: 3.5, px: card ? 2.25 : 0 } }
+               sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", mt: 3.5, px: isCard ? 2.25 : 0 } }
             >
                {
-                  indicators && (
+                  isIndicators && (
                      <Controller
                         control = { control }
                         name = "option"
@@ -484,47 +435,6 @@ export default function Graph({ title, card, defaultOption, indicators, average,
                               </MenuItem>
                               <MenuItem value = "Year">
                                  Year
-                              </MenuItem>
-                           </Select>
-                        </FormControl>
-                     )
-                  }
-               />
-               <Controller
-                  control = { control }
-                  defaultValue = "Line"
-                  name = "graph"
-                  render = {
-                     ({ field }) => (
-                        <FormControl
-                           sx = { { width: { xs: "100%", sm: "auto" } } }
-                        >
-                           <InputLabel
-                              htmlFor = "graph"
-                              variant = "outlined"
-                           >
-                              Type
-                           </InputLabel>
-                           <Select
-                              { ...field }
-                              label = "Type"
-                              size = "small"
-                              slotProps = {
-                                 {
-                                    input: {
-                                       id: "graph"
-                                    }
-                                 }
-                              }
-                              sx = { { height: "2.7rem" } }
-                              value = { graph }
-                              variant = "outlined"
-                           >
-                              <MenuItem value = "Line">
-                                 Line
-                              </MenuItem>
-                              <MenuItem value = "Bar">
-                                 Bar
                               </MenuItem>
                            </Select>
                         </FormControl>

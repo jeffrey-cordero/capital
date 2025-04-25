@@ -213,11 +213,10 @@ export default function Economy(): React.ReactNode {
             sx = { { gap: 2.2 } }
          >
             <Graph
-               average = { true }
-               card = { true }
                data = { indicators as any }
-               defaultOption = "GDP"
-               indicators = { true }
+               isAverage = { true }
+               isCard = { true }
+               isIndicators = { true }
                title = "Indicators"
             />
             <Stocks data = { stocks } />

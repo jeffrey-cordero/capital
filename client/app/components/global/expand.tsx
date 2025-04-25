@@ -30,13 +30,13 @@ const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-disable
       {
          props: ({ expand }) => !expand,
          style: {
-            transform: "rotate(0deg)"  // Icon is in the collapsed state.
+            transform: "rotate(0deg)"
          }
       },
       {
          props: ({ expand }) => !!expand,
          style: {
-            transform: "rotate(180deg)"  // Icon is in the expanded state.
+            transform: "rotate(180deg)"
          }
       }
    ]

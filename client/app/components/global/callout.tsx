@@ -25,7 +25,7 @@ export default function Callout({ children, sx }: CalloutProps): React.ReactNode
          container = { true }
          sx = { { justifyContent: "center", ...sx } }
       >
-         <Grid size = {{ xs: 12, sm: 10, md: 8, lg: 6 }}>
+         <Grid size = { { xs: 12, sm: 10, md: 8, lg: 6 } }>
             <Paper
                elevation = { 3 }
                sx = { { px: { xs: 2, sm: 4 }, py: 3, borderTop: 8,  borderTopColor: "primary.main", borderRadius: "6px" } }

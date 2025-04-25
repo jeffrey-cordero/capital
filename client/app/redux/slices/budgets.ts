@@ -44,10 +44,10 @@ const budgetsSlice = createSlice({
          state.value = { ...state.value, ...action.payload };
       },
       /**
-       * Updates or creates a category budget goal record relative to the current period
+       * Updates budget goal for the current period
        *
        * @param {WritableDraft<BudgetsState>} state - Current budgets state
-       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>} action - Action containing budget type, category ID and goal value
+       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>} action - Budget update data
        */
       updateBudget(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>) {
          const { type, budget_category_id, goal } = action.payload;
@@ -109,10 +109,10 @@ const budgetsSlice = createSlice({
          state.value[type].categories.push(category);
       },
       /**
-       * Updates a budget category's properties
+       * Updates a budget category
        *
        * @param {WritableDraft<BudgetsState>} state - Current budgets state
-       * @param {PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>} action - Action containing budget type and category updates with ID
+       * @param {PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>} action - Action containing budget type and category updates with required ID
        */
       updateBudgetCategory(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>) {
          const { type, updates } = action.payload;
@@ -157,7 +157,7 @@ const budgetsSlice = createSlice({
          state.value[type].categories.splice(categoryIndex, 1);
       },
       /**
-       * Navigates between budget periods and updates respective category goal indices
+       * Navigates between budget periods and updates goal indices
        *
        * @param {WritableDraft<BudgetsState>} state - Current budgets state
        * @param {PayloadAction<{ direction: "previous" | "next" }>} action - Action containing navigation direction
@@ -236,5 +236,4 @@ const budgetsSlice = createSlice({
 });
 
 export const { setBudgets, updateBudget, addBudgetCategory, updateBudgetCategory, removeBudgetCategory, selectMonth, updateBudgetCategoryOrder } = budgetsSlice.actions;
-
 export default budgetsSlice.reducer;

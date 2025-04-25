@@ -26,7 +26,7 @@ const transactionsSlice = createSlice({
          state.value = action.payload;
       },
       /**
-       * Adds a transaction in chronological order (newest to oldest)
+       * Adds a transaction in reverse chronological order (newest to oldest)
        *
        * @param {WritableDraft<TransactionState>} state - Current transactions state
        * @param {PayloadAction<Transaction>} action - Action containing the transaction to add
@@ -45,7 +45,7 @@ const transactionsSlice = createSlice({
          state.value.push(transaction);
       },
       /**
-       * Updates a transaction and maintains chronological order
+       * Updates a transaction and maintains reverse chronological order
        *
        * @param {WritableDraft<TransactionState>} state - Current transactions state
        * @param {PayloadAction<{ index: number, transaction: Partial<Transaction> }>} action - Action containing current index and updated transaction fields

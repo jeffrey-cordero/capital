@@ -44,6 +44,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
+   // Dialog handlers
    const openDialog = useCallback(() => {
       setOpen(true);
    }, []);
