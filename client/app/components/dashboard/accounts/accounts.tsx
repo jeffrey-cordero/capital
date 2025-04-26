@@ -144,7 +144,7 @@ export default function Accounts(): React.ReactNode {
                </SortableContext>
             </DndContext>
          </Grid>
-         <Box sx = { { mt: 6 } }>
+         <Box sx = { { mt: 3 } }>
             <AccountCard account = { undefined } />
          </Box>
       </Box>

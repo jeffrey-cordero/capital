@@ -31,13 +31,14 @@ export const horizontalScroll = (theme: Theme) => ({
  * @param {number} value - Number to format
  * @param {number} minFraction - Minimum decimal digits
  * @param {number} maxFraction - Maximum decimal digits
+ * @param {boolean} absolute - Whether to use absolute value
  * @returns {string} Formatted number string
  */
-function formatNumber(value: number, minFraction: number = 2, maxFraction: number = 2): string {
+export function formatNumber(value: number, minFraction: number = 2, maxFraction: number = 2, absolute: boolean = true): string {
    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: minFraction,
       maximumFractionDigits: maxFraction
-   }).format(Math.abs(value));
+   }).format(absolute ? Math.abs(value) : value);
 }
 
 /**

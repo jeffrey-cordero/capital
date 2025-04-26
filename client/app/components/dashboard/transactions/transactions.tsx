@@ -96,7 +96,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                identifier = { identifier }
                onEdit = { openModal }
             />
-            <Box sx = { { mt: 6 } }>
+            <Box sx = { { mt: 3 } }>
                <Button
                   className = "btn-primary"
                   color = "primary"

@@ -20,7 +20,7 @@ import ChartContainer from "@/components/global/chart-container";
 import AreaGradient from "@/components/global/gradient";
 import { calculatePercentageChange, getChipColor, getGraphColor } from "@/lib/charts";
 import { normalizeDate } from "@/lib/dates";
-import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
+import { displayNumeric, displayPercentage, displayVolume, formatNumber } from "@/lib/display";
 
 /**
  * Props for the Graph component
@@ -242,7 +242,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                   experimentalMarkRendering = { true }
                   grid = { { horizontal: true } }
                   height = { height }
-                  margin = { { left: 45, right: 20, top: 20, bottom: 20 } }
+                  margin = { { left: isCard ? 45 : 40, right: 25, top: 20, bottom: 20 } }
                   resolveSizeBeforeRender = { true }
                   series = {
                      [
@@ -253,7 +253,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                            curve: "linear",
                            area: true,
                            data: filtered.map(d => Number(d.value)),
-                           valueFormatter: (value) => displayNumeric(value || 0) + (isAverage && view === "Year" ? " (avg)" : "")
+                           valueFormatter: (value) => formatNumber(value || 0, 2, 2, false) + (isAverage && view === "Year" ? " (avg)" : "")
                         }
                      ]
                   }
@@ -305,7 +305,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
             )
          }
       </ChartContainer>
-   ), [filtered, height, color, isAverage, view]);
+   ), [filtered, height, color, isAverage, view, isCard]);
 
    return (
       <Card

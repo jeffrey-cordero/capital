@@ -1,4 +1,4 @@
-import { faBank, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
+import { faBank, faChartLine, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -10,6 +10,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
+import type { Transaction } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,15 +19,15 @@ import { useNavigate } from "react-router";
 import AccountDeletion from "@/components/dashboard/accounts/delete";
 import AccountImage from "@/components/dashboard/accounts/image";
 import Transactions from "@/components/dashboard/transactions/transactions";
+import Graph from "@/components/global/graph";
 import Modal from "@/components/global/modal";
 import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
+import { getCurrentDate } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
-import type { Transaction } from "capital/transactions";
-import { getCurrentDate } from "@/lib/dates";
 /**
  * The AccountForm component to create and update accounts
  *
@@ -49,9 +50,9 @@ interface AccountFormProps {
  */
 export default function AccountForm({ account, open, onClose }: AccountFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
+   const updating = account !== undefined;
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
-   const updating = account !== undefined;
 
    // Form setup with react-hook-form
    const {
@@ -135,18 +136,40 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    };
 
    const history = useMemo(() => {
-      const today = getCurrentDate();
-      let balance: number = Number(account?.balance);
-      const data: { date: string, value: number }[] = [{ value: balance, date: today.toISOString() }];
+      let balance: number = Number(account?.balance) || 0;
+      const data: { date: string, value: number }[] = [{ value: balance, date: getCurrentDate().toISOString().split("T")[0] }];
 
-      // transactions.forEach
-      // Ensure the oldest balances are first
+      transactions.forEach((transaction) => {
+         // Ignore transactions that don't belong to the current account
+         if (transaction.account_id !== account?.account_id) return;
+
+         const [year, month] = transaction.date.split("-");
+         const [lastYear, lastMonth] = data[data.length - 1].date.split("-");
+
+         if (lastMonth !== month || lastYear !== year) {
+            // New month, thus we push the current rolling balance from the future
+            data.push({ value: balance, date: transaction.date.split("T")[0] });
+         }
+
+         balance -= Number(transaction.amount);
+      });
+
+      // Push an additional data point for the previous month based on the current balance
+      const [lastYear, lastMonth] = data[data.length - 1].date.split("-");
+
+      // Add an additional data point for the previous month based on the current balance
+      data.push({ value: balance, date: new Date(Number(lastYear), Number(lastMonth) - 2, 1).toISOString().split("T")[0] });
+
+      if (lastMonth !== "01") {
+         // Add an additional data point for the previous year
+         data.push({ value: balance, date: new Date(Number(lastYear) - 1, 11, 1).toISOString().split("T")[0] });
+      }
+
+      // Ensure the oldest balances are displayed first
       data.reverse();
 
       return { [account?.account_id || ""]: data };
-   }, [transactions, account]);
-
-   console.log(history);
+   }, [account?.account_id, account?.balance, transactions]);
 
    return (
       <Modal
@@ -292,6 +315,24 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   </form>
                </Box>
             </Section>
+            {
+               updating && account && (
+                  <Section
+                     icon = { faChartLine }
+                  >
+                     <Box sx = { { pt: 0.5 } }>
+                        <Graph
+                           data = { history }
+                           defaultValue = { account?.account_id || "" }
+                           isAverage = { false }
+                           isCard = { false }
+                           isIndicators = { false }
+                           title = { account?.name || "" }
+                        />
+                     </Box>
+                  </Section>
+               )
+            }
             {
                updating && account && (
                   <Section
