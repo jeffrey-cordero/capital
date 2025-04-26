@@ -149,12 +149,15 @@ export default function AccountImage({
                         sx = {
                            {
                               width: "100%",
-                              height: { xs: "auto", sm: 350, md: 400, lg: 450 },
-                              mt: 2,
+                              height: "auto",
+                              maxHeight: 423.52,
+                              mt: 1,
                               mb: 1,
                               cursor: "pointer",
                               border: value === imagesArray[activeStep] ? "3px solid" : "none",
-                              borderColor: "primary.main"
+                              borderColor: "primary.main",
+                              objectFit: "contain",
+                              objectPosition: "center"
                            }
                         }
                         variant = "rounded"
