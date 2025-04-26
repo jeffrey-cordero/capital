@@ -17,9 +17,9 @@ import { useCallback, useState } from "react";
 import { gray } from "@/styles/mui/colors";
 
 /**
- * The global ModalContent component to wrap the modal children components.
+ * Styled container for modal content
  *
- * @returns {React.ReactNode} The ModalContent component
+ * @returns {StyledComponent} The ModalContent component
  */
 const ModalContent = styled("div")(
    ({ theme }) => css`
@@ -45,12 +45,11 @@ const ModalContent = styled("div")(
 );
 
 /**
- * The props for the Warning component.
+ * Props for the Warning component
  *
- * @interface WarningProps
- * @property {boolean} open - Whether the warning is open
- * @property {() => void} onClose - The function to call when the warning is closed
- * @property {() => void} onCancel - The function to call when the warning is cancelled
+ * @property {boolean} open - Dialog open state
+ * @property {() => void} onClose - Confirm close handler
+ * @property {() => void} onCancel - Cancel close handler
  */
 interface WarningProps {
    open: boolean;
@@ -59,9 +58,9 @@ interface WarningProps {
 }
 
 /**
- * The Warning component to confirm the user's action before closing the modal for potential data loss.
+ * Confirmation dialog for unsaved changes within forms
  *
- * @param {WarningProps} props - The props for the Warning component
+ * @param {WarningProps} props - Warning component props
  * @returns {React.ReactNode} The Warning component
  */
 function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
@@ -108,14 +107,13 @@ function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
 }
 
 /**
- * The props for the Modal component.
+ * Props for the Modal component
  *
- * @interface ModalProps
- * @property {boolean} open - Whether the modal is open
- * @property {() => void} onClose - The function to call when the modal is closed with a potential force-close
- * @property {React.ReactNode} children - The children components to render within the modal
- * @property {SxProps<any>} sx - The style props for the modal
- * @property {boolean} displayWarning - Whether to display the warning component
+ * @property {boolean} open - Modal open state
+ * @property {(_force?: boolean) => void} onClose - Close handler
+ * @property {React.ReactNode} children - Modal content
+ * @property {SxProps<any>} [sx] - Optional styles
+ * @property {boolean} [displayWarning] - Whether to show the unsaved changes warning dialog
  */
 interface ModalProps {
    open: boolean;
@@ -126,27 +124,27 @@ interface ModalProps {
 }
 
 /**
- * The Modal component to render the modal with the modal content and children components.
+ * Customizable modal with optional unsaved changes warning dialog
  *
- * @param {ModalProps} props - The props for the Modal component
+ * @param {ModalProps} props - Modal component props
  * @returns {React.ReactNode} The Modal component
  */
 export default function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps): React.ReactNode {
-   const [warningOpen, setWarningOpen] = useState<boolean>(false);
+   const [isWarningOpen, setIsWarningOpen] = useState<boolean>(false);
 
+   // Modal handlers
    const closeModal = useCallback(() => {
       if (displayWarning) {
-         setWarningOpen(true);
+         setIsWarningOpen(true);
       } else {
          onClose();
       }
    }, [displayWarning, onClose]);
 
-   const confirmCloseModal = useCallback((confirmed: boolean) => {
-      setWarningOpen(false);
+   const confirmCloseModal = useCallback((force: boolean) => {
+      setIsWarningOpen(false);
 
-      if (confirmed) {
-         // Force-close the modal, regardless of dirty fields checkpoints
+      if (force) {
          onClose(true);
       }
    }, [onClose]);
@@ -168,7 +166,7 @@ export default function Modal({ open, onClose, children, sx, displayWarning = fa
                   <Warning
                      onCancel = { () => confirmCloseModal(false) }
                      onClose = { () => confirmCloseModal(true) }
-                     open = { warningOpen }
+                     open = { isWarningOpen }
                   />
                </Box>
             </ModalContent>

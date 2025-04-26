@@ -15,8 +15,8 @@ import { type Account, liabilities } from "capital/accounts";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
+import ChartContainer from "@/components/global/chart-container";
 import { breakpoints, heights } from "@/components/global/graph";
-import ResponsiveChartContainer from "@/components/global/responsive";
 import { getCurrentDate, getYearAbbreviations } from "@/lib/dates";
 import { displayCurrency, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
@@ -244,7 +244,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       theme.palette.primary.light
    ], [theme.palette.primary]);
    const chart = useMemo(() => (
-      <ResponsiveChartContainer height = { height }>
+      <ChartContainer height = { height }>
          {
             series.length > 0 ? (
                <BarChart
@@ -272,7 +272,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                </Stack>
             )
          }
-      </ResponsiveChartContainer>
+      </ChartContainer>
    ), [colorPalette, isCard, type, yearAbbreviations, series, height]);
 
    return (

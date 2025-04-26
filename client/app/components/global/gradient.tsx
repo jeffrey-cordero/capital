@@ -1,9 +1,8 @@
 /**
- * The props for the AreaGradient component.
+ * Props for the AreaGradient component
  *
- * @interface AreaGradientProps
- * @property {string} color - The color of the gradient
- * @property {string} id - The id of the gradient
+ * @property {string} color - Gradient color
+ * @property {string} id - Unique gradient identifier
  */
 interface AreaGradientProps {
    color: string;
@@ -11,9 +10,9 @@ interface AreaGradientProps {
 }
 
 /**
- * The AreaGradient component.
+ * SVG gradient definition for area charts
  *
- * @param {AreaGradientProps} props - The props for the AreaGradient component
+ * @param {AreaGradientProps} props - Area gradient props
  * @returns {React.ReactNode} The AreaGradient component
  */
 export default function AreaGradient({ color, id }: AreaGradientProps): React.ReactNode {

@@ -19,41 +19,21 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { type Dispatch, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { type NavigateFunction, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
+import type { CreateStyledComponent } from "@emotion/styled";
 
 /**
- * The function to clear the user's authentication and re-route to the login page.
+ * Navigation link definition
  *
- * @param {Dispatch<any>} dispatch - The dispatch function
- * @param {NavigateFunction} navigate - The navigate function
- */
-export async function clearAuthentication(
-   dispatch: Dispatch<any>,
-   navigate: NavigateFunction
-): Promise<void> {
-   const logout = await sendApiRequest<{ success: boolean }>(
-      "authentication/logout", "POST", null, dispatch as any, navigate
-   );
-
-   if (typeof logout === "object" && logout?.success) {
-      // Navigate to the login page to reset the global state
-      window.location.pathname = "/login";
-   }
-};
-
-/**
- * The type definition for the navigation link.
- *
- * @interface NavigationLink
- * @property {string} path - The path of the navigation link
- * @property {string} title - The title of the navigation link
- * @property {IconDefinition} icon - The icon of the navigation link
+ * @property {string} path - Navigation target path
+ * @property {string} title - Display text
+ * @property {IconDefinition} icon - FontAwesome icon
  */
 interface NavigationLink {
    path: string;
@@ -62,7 +42,7 @@ interface NavigationLink {
 }
 
 /**
- * The landing page navigation links.
+ * Landing page navigation links
  */
 const landing: NavigationLink[] = [{
    path: "/",
@@ -79,7 +59,7 @@ const landing: NavigationLink[] = [{
 }];
 
 /**
- * The dashboard navigation links for authenticated users.
+ * Dashboard navigation links for authenticated users
  */
 const dashboard: NavigationLink[] = [{
    path: "/dashboard",
@@ -108,7 +88,9 @@ const dashboard: NavigationLink[] = [{
 }];
 
 /**
- * The styled MaterialUISwitch component to match the application's theme.
+ * Styled switch component for theme toggling
+ *
+ * @returns {CreateStyledComponent} The MaterialUISwitch component
  */
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    width: 58,
@@ -167,11 +149,10 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
 }));
 
 /**
- * The props for the SideBarContent component.
+ * Props for the SideBarContent component
  *
- * @interface SideBarContentProps
- * @property {NavigationLink[]} links - The navigation links
- * @property {() => void} onClose - The function to call when the sidebar is closed
+ * @property {NavigationLink[]} links - Navigation links to display
+ * @property {() => void} onClose - Sidebar close handler
  */
 interface SideBarContentProps {
    links: NavigationLink[];
@@ -179,25 +160,31 @@ interface SideBarContentProps {
 }
 
 /**
- * The SideBarContent component to render the sidebar content.
+ * Sidebar internal content with navigation links
  *
- * @param {SideBarContentProps} props - The props for the SideBarContent component
+ * @param {SideBarContentProps} props - Sidebar content component props
  * @returns {React.ReactNode} The SideBarContent component
  */
 function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme(), location = useLocation();
 
-   const navigateToPage = useCallback((path: string) => {
+   // Action handlers
+   const visit = useCallback((path: string) => {
       navigate(path);
       onClose();
    }, [navigate, onClose]);
 
    const logout = useCallback(async() => {
-      await clearAuthentication(dispatch, navigate);
-      onClose();
-   }, [dispatch, navigate, onClose]);
+      const response = await sendApiRequest<{ success: boolean }>(
+         "authentication/logout", "POST", null, dispatch, navigate
+      );
 
-   const updateTheme = useCallback(() => {
+      if (typeof response === "object" && response?.success) {
+         window.location.pathname = "/login";
+      }
+   }, [dispatch, navigate]);
+
+   const toggle = useCallback(() => {
       dispatch(toggleTheme());
    }, [dispatch]);
 
@@ -231,7 +218,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                         >
                            <ListItemButton
                               disableGutters = { true }
-                              onClick = { () => navigateToPage(link.path) }
+                              onClick = { () => visit(link.path) }
                               sx = {
                                  {
                                     pl: 1.5,
@@ -311,7 +298,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }
                            id = "theme-switch"
-                           onChange = { updateTheme }
+                           onChange = { toggle }
                            sx = { { m: 1 } }
                         />
                      </Box>
@@ -324,15 +311,17 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
 }
 
 /**
- * The SideBar component to render the sidebar.
+ * Navigation sidebar with navigation links, which displays different
+ * navigation options based on authentication state
  *
  * @returns {React.ReactNode} The SideBar component
  */
 export function SideBar(): React.ReactNode {
-   const authenticated = useSelector((state: RootState) => state.authentication.value);
    const theme = useTheme();
+   const authenticated = useSelector((state: RootState) => state.authentication.value);
    const [open, setOpen] = useState(false);
 
+   // Open/close handlers
    const openSideBar = useCallback(() => {
       setOpen(true);
    }, []);

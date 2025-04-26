@@ -13,7 +13,7 @@ import { memo, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
-import ResponsiveChartContainer from "@/components/global/responsive";
+import ChartContainer from "@/components/global/chart-container";
 import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -144,7 +144,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
          >
             { title }
          </Typography>
-         <ResponsiveChartContainer height = { dimensions }>
+         <ChartContainer height = { dimensions }>
             <Stack
                direction = "column"
                sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
@@ -184,7 +184,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                   />
                </PieChart>
             </Stack>
-         </ResponsiveChartContainer>
+         </ChartContainer>
          {
             data.map((category, index) => (
                <Stack

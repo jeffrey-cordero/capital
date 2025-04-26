@@ -2,11 +2,10 @@ import { Paper, type SxProps } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
 /**
- * The props for the Callout component.
+ * Props for the Callout component
  *
- * @interface CalloutProps
- * @property {React.ReactNode} children - The content to display within the callout
- * @property {SxProps<any>} [sx] - Optional additional MUI styles
+ * @property {React.ReactNode} children - Content to display within the callout
+ * @property {SxProps<any>} [sx] - Optional additional styles
  */
 interface CalloutProps {
    children: React.ReactNode;
@@ -14,9 +13,9 @@ interface CalloutProps {
 }
 
 /**
- * The Callout component within the initial landing pages.
+ * Styled container for highlighting important content within the initial landing pages
  *
- * @param {CalloutProps} props - The props for the Callout component
+ * @param {CalloutProps} props - Callout component props
  * @returns {React.ReactNode} The Callout component
  */
 export default function Callout({ children, sx }: CalloutProps): React.ReactNode {

@@ -3,11 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Divider } from "@mui/material";
 
 /**
- * The props for the Section component.
+ * Props for the Section component
  *
- * @interface SectionProps
- * @property {IconDefinition} icon - The icon component of the modal section
- * @property {React.ReactNode} children - The children components to render within the modal section
+ * @property {IconDefinition} icon - Section header icon
+ * @property {React.ReactNode} children - Section content
  */
 interface SectionProps {
    icon: IconDefinition;
@@ -15,9 +14,9 @@ interface SectionProps {
 }
 
 /**
- * The Section component to render the modal section title and children components.
+ * Divider with icon for sectioning content
  *
- * @param {SectionProps} props - The props for the Section component
+ * @param {SectionProps} props - Section component props
  * @returns {React.ReactNode} The Section component
  */
 export default function Section({ icon, children }: SectionProps): React.ReactNode {

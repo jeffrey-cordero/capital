@@ -16,22 +16,21 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useCallback, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import ChartContainer from "@/components/global/chart-container";
 import AreaGradient from "@/components/global/gradient";
-import ResponsiveChartContainer from "@/components/global/responsive";
 import { calculatePercentageChange, getChipColor, getGraphColor } from "@/lib/charts";
 import { normalizeDate } from "@/lib/dates";
 import { displayNumeric, displayPercentage, displayVolume } from "@/lib/display";
 
 /**
- * The props for the Graph component.
+ * Props for the Graph component
  *
- * @interface GraphProps
- * @property {string} title - The title of the graph
- * @property {boolean} isCard - Whether the graph is within a card to handle styling cases
- * @property {boolean} isAverage - Whether the graph should display the average value or the last value within the year view
- * @property {boolean} isIndicators - Whether the graph should display the indicators (GDP, etc.) or hide the selection input
- * @property {Record<string, { date: string, value: string }[]>} data - The data for the graph
- * @property {string} defaultValue - The default value for the graph option
+ * @property {string} title - Graph title
+ * @property {boolean} isCard - Whether graph is displayed in a card container
+ * @property {boolean} isAverage - Whether to display average value in the year view
+ * @property {boolean} isIndicators - Whether to show indicator selection controls
+ * @property {Record<string, { date: string, value: string }[]>} data - Chart data by category identifier
+ * @property {string} defaultValue - Default selected option
  */
 export interface GraphProps {
    title: string;
@@ -43,7 +42,7 @@ export interface GraphProps {
 }
 
 /**
- * The heights for graph components across the application based on breakpoints
+ * Graph component heights by breakpoint
  */
 export const heights = {
    xss: 265,
@@ -56,7 +55,7 @@ export const heights = {
 };
 
 /**
- * The breakpoints for graph components across the application
+ * Media query breakpoints for responsive graphs
  */
 export const breakpoints = {
    "xss": "(max-width: 375px)",
@@ -69,9 +68,9 @@ export const breakpoints = {
 };
 
 /**
- * The Graph component.
+ * Interactive chart with date filtering and view options
  *
- * @param {GraphProps} props - The props for the Graph component
+ * @param {GraphProps} props - Graph component props
  * @returns {React.ReactNode} The Graph component
  */
 export default function Graph({ title, isCard, isIndicators, isAverage, data, defaultValue }: GraphProps): React.ReactNode {
@@ -235,7 +234,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
    }, [sorted]);
 
    const chart = useMemo(() => (
-      <ResponsiveChartContainer height = { height }>
+      <ChartContainer height = { height }>
          {
             filtered.length > 0 ? (
                <LineChart
@@ -305,7 +304,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                </Stack>
             )
          }
-      </ResponsiveChartContainer>
+      </ChartContainer>
    ), [filtered, height, color, isAverage, view]);
 
    return (
@@ -379,9 +378,9 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                   </Stack>
                </Stack>
             </Stack>
-            <ResponsiveChartContainer height = { height }>
+            <ChartContainer height = { height }>
                { chart }
-            </ResponsiveChartContainer>
+            </ChartContainer>
             <Stack
                direction = { { xs: "column", sm: "row" } }
                sx = { { gap: 2, flexWrap: "wrap", justifyContent: "center", alignContent: "center", mt: 3.5, px: isCard ? 2.25 : 0 } }
