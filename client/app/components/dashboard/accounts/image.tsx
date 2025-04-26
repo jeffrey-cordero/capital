@@ -28,25 +28,24 @@ import Modal from "@/components/global/modal";
 import Section from "@/components/global/section";
 
 /**
- * The image validation schema from the account schema
+ * Image validation schema extracted from account schema
  */
 const imageSchema = accountSchema.shape.image;
 
 /**
- * The images array for the carousel
+ * Predefined images for account selection
  */
 const imagesArray = Array.from(images);
 
 /**
- * The AccountImage component props
+ * Props for the account image selection component
  *
- * @interface AccountImageProps
- * @property {string} value - The value of the image
- * @property {FieldErrors<FieldValues>} errors - The errors for the account form
- * @property {UseFormSetError<FieldValues>} setError - The setError function for the account form
- * @property {UseFormClearErrors<FieldValues>} clearErrors - The clearErrors function for the account form
- * @property {UseFormSetValue<FieldValues>} setValue - The setValue function for the account form
- * @property {Control<FieldValues>} control - The control of the account form
+ * @property {string} value - Current image value
+ * @property {FieldErrors<FieldValues>} errors - Form validation errors
+ * @property {UseFormSetError<FieldValues>} setError - Function to set form errors
+ * @property {UseFormClearErrors<FieldValues>} clearErrors - Function to clear form errors
+ * @property {UseFormSetValue<FieldValues>} setValue - Function to update form values
+ * @property {Control<FieldValues>} control - React Hook Form control instance
  */
 interface AccountImageProps {
    value: string;
@@ -58,10 +57,11 @@ interface AccountImageProps {
 }
 
 /**
- * The AccountImage component to display and select an image for an account
+ * Interactive account image selector with gallery and URL input, which provides
+ * predefined images and custom URL input with validation
  *
- * @param {AccountImageProps} props - The props for the AccountImage component
- * @returns {React.ReactNode} The AccountImage component
+ * @param {AccountImageProps} props - Component props including form controls
+ * @returns {React.ReactNode} Account image selection modal with carousel
  */
 export default function AccountImage({
    control,
@@ -76,14 +76,14 @@ export default function AccountImage({
       Math.max(imagesArray.indexOf(value), 0)
    );
 
-   // Clear the main image selection when the URL input is focused
+   // Reset image selection when custom URL is entered
    const handleUrlFocus = useCallback(() => {
       if (images.has(value)) {
          setValue("image", "", { shouldDirty: true });
       }
    }, [value, setValue]);
 
-   // Modal method handlers
+   // Modal visibility handlers
    const openModal = useCallback(() => {
       setOpen(true);
    }, []);
@@ -91,6 +91,7 @@ export default function AccountImage({
    const closeModal = useCallback(() => {
       const fields = imageSchema.safeParse(value);
 
+      // Validate image URL before closing
       if (!fields.success) {
          setError("image", {
             type: "manual",
@@ -101,6 +102,7 @@ export default function AccountImage({
       }
    }, [value, setError]);
 
+   // Image carousel navigation handlers
    const viewPreviousImage = useCallback(() => {
       setActiveStep(prev => prev === 0 ? imagesArray.length - 1 : prev - 1);
    }, []);
@@ -109,7 +111,7 @@ export default function AccountImage({
       setActiveStep(prev => prev === imagesArray.length - 1 ? 0 : prev + 1);
    }, []);
 
-   const selectImage = useCallback(() => {
+   const selectProvidedImage = useCallback(() => {
       clearErrors("image");
       setValue(
          "image",
@@ -142,7 +144,7 @@ export default function AccountImage({
                      sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
                   >
                      <Avatar
-                        onClick = { selectImage }
+                        onClick = { selectProvidedImage }
                         src = { `/images/${imagesArray[activeStep]}.png` }
                         sx = {
                            {

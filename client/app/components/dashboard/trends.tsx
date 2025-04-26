@@ -214,12 +214,12 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          if (Object.keys(trends).length > 0) {
             // Available transactions for existing accounts
-            return trends[year]?.accounts || (trends[backupIndex]?.accounts || [])?.map((account) => ({
+            return (trends[year]?.accounts) || (trends[backupIndex]?.accounts || [])?.map((account) => ({
                ...account,
                data: [].concat(...new Array(12).fill([account.data[0]]))
             }));
          } else {
-            // No available transactions for existing accounts
+            // No available transactions tied to existing accounts
             return accounts.map((account) => {
                return formatAccounts(account, account.balance, year);
             });

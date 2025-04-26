@@ -46,7 +46,6 @@ export default function Login(): React.ReactNode {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Handle validation errors
          handleValidationErrors(fields, setError);
       } else {
          // Submit authentication request

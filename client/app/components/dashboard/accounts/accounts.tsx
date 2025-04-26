@@ -22,18 +22,18 @@ import { setAccounts } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
 
 /**
- * The Accounts component to display the accounts in the dashboard
+ * Displays accounts in a draggable grid layout with persistence of order changes
  *
- * @returns {React.ReactNode} The Accounts component
+ * @returns {React.ReactNode} The Accounts component with drag-and-drop functionality
  */
 export default function Accounts(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
-   const ids = useMemo(() => {
+   const accountIds = useMemo(() => {
       return accounts.map(account => account.account_id ?? "");
    }, [accounts]);
 
-   // Configure drag and drop attributes
+   // Configure drag and drop sensors with touch, pointer and keyboard support
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -46,6 +46,7 @@ export default function Accounts(): React.ReactNode {
       })
    );
 
+   // Handle account reordering with optimistic updates and server synchronization
    const handleDragEnd = useCallback(async(event: DragEndEvent) => {
       const { active, over } = event;
 
@@ -57,6 +58,7 @@ export default function Accounts(): React.ReactNode {
          // Find the indices of the dragged and target accounts
          for (let i = 0; i < accounts.length; i++) {
             const account = accounts[i];
+
             if (account.account_id === active.id) {
                oldIndex = i;
             }
@@ -65,16 +67,15 @@ export default function Accounts(): React.ReactNode {
             }
          }
 
-         // Update account order if both indices are found
+         // Update account ordering optimistically with potential backup measures
          if (oldIndex !== undefined && newIndex !== undefined) {
-            // Update order optimistically with potential backup measures
             const oldAccounts = accounts.map(account => ({ ...account }));
             const newAccounts = arrayMove(accounts, oldIndex, newIndex).map(
                (account, index) => ({ ...account, account_order: index })
             );
             dispatch(setAccounts(newAccounts));
 
-            // Sync new order with server
+            // Sync new account ordering with server
             try {
                const accountIds: string[] = newAccounts.map(account => account.account_id || "");
                const response = await sendApiRequest<number>(
@@ -82,11 +83,11 @@ export default function Accounts(): React.ReactNode {
                );
 
                if (response !== 204) {
-                  throw new Error("Failed to update account order");
+                  throw new Error("Failed to update account ordering");
                }
             } catch (error) {
                // Revert optimistic update if server request fails
-               console.error("Failed to update account order:", error);
+               console.error("Failed to update account ordering:", error);
                dispatch(setAccounts(oldAccounts));
             }
          }
@@ -107,7 +108,7 @@ export default function Accounts(): React.ReactNode {
                sensors = { sensors }
             >
                <SortableContext
-                  items = { ids }
+                  items = { accountIds }
                   strategy = { rectSortingStrategy }
                >
                   {
@@ -117,7 +118,7 @@ export default function Accounts(): React.ReactNode {
                               in = { true }
                               key = { `grow-${account.account_id}` }
                               mountOnEnter = { true }
-                              timeout = { 200 + index * 200 }
+                              timeout = { 125 + index * 125 }
                               unmountOnExit = { true }
                            >
                               <Grid

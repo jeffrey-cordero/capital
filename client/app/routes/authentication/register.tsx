@@ -46,7 +46,6 @@ export default function Register(): React.ReactNode {
       const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
-         // Handle validation errors
          handleValidationErrors(fields, setError);
       } else {
          // Submit registration fields

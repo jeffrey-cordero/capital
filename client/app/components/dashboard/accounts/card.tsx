@@ -22,34 +22,33 @@ import { displayCurrency, displayDate, horizontalScroll } from "@/lib/display";
 import { addNotification } from "@/redux/slices/notifications";
 
 /**
- * The props for the AccountCard component
+ * Props for the AccountCard component
  *
- * @interface AccountCardProps
- * @property {Account | undefined} account - The account to display, where undefined implies new account creation
+ * @property {Account | undefined} account - The account to display, or undefined for new account creation
  */
 interface AccountCardProps {
    account: Account | undefined;
 }
 
 /**
- * The state of the account card (viewing, creating, updating)
- *
- * @type AccountState
+ * Represents card state: viewing, creating, or updating an account
  */
 type AccountState = "view" | "create" | "update";
 
 /**
- * The AccountCard component to display the account card in the dashboard
+ * Draggable account card displaying account details with image preview, which handles
+ * account creation when account prop is undefined
  *
  * @param {AccountCardProps} props - The props for the AccountCard component
- * @returns {React.ReactNode} The AccountCard component
+ * @returns {React.ReactNode} Account card component with draggable functionality
  */
 export default function AccountCard({ account }: AccountCardProps): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
    const [state, setState] = useState<AccountState>("view");
-   const [isResourceError, setIsResourceError] = useState<boolean>(false);
+   const [isImageResourceError, setIsImageResourceError] = useState<boolean>(false);
    const previousImageRef = useRef(account?.image);
 
+   // Modal visibility handlers
    const openAccountModal = useCallback(() => {
       setState(account?.account_id ? "update" : "create");
    }, [account?.account_id]);
@@ -58,7 +57,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
       setState("view");
    }, []);
 
-   // Configure drag and drop attributes
+   // Configure drag and drop functionality
    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
       id: account?.account_id || "",
       disabled: state !== "view"
@@ -70,34 +69,37 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
    };
 
    useEffect(() => {
+      // Reset image error state when account image changes
       if (previousImageRef.current !== account?.image) {
-         // Retry image fetch for new account images
-         setIsResourceError(false);
+         setIsImageResourceError(false);
          previousImageRef.current = account?.image;
       }
    }, [account?.image]);
 
-   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-      setIsResourceError(true);
+   // Handle image loading errors
+   const setImageResourceError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+      setIsImageResourceError(true);
       dispatch(addNotification({
          type: "error",
-         message: `There was an issue fetching the image for ${account?.name}`
+         message: `There was an issue fetching the account image for ${account?.name}`
       }));
 
+      // Switch to fallback error image
       e.currentTarget.src = "/svg/error.svg";
    }, [dispatch, account?.name]);
 
+   // Determine appropriate image source based on account data and error states
    const getImageSource = useCallback(() => {
       if (!account?.image) {
          return "/svg/logo.svg";
       } else if (images.has(account.image)) {
          return `/images/${account.image}.png`;
-      } else if (!isResourceError) {
+      } else if (!isImageResourceError) {
          return account.image;
       } else {
          return "/svg/error.svg";
       }
-   }, [account?.image, isResourceError]);
+   }, [account?.image, isImageResourceError]);
 
    if (!account) {
       return (
@@ -131,21 +133,21 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                variant = { undefined }
             >
                <Typography
-                  className = { isResourceError ? "error" : "primary" }
+                  className = { isImageResourceError ? "error" : "primary" }
                   component = "a"
                   onClick = { openAccountModal }
                >
                   <Avatar
                      alt = { account.name }
                      id = { account.account_id }
-                     onError = { handleImageError }
+                     onError = { setImageResourceError }
                      src = { getImageSource() }
                      sx = {
                         {
                            height: 200,
                            width: "100%",
                            cursor: "pointer",
-                           background: isResourceError ? theme.palette.error.main : theme.palette.primary.main
+                           background: isImageResourceError ? theme.palette.error.main : theme.palette.primary.main
                         }
                      }
                      variant = "square"

@@ -23,6 +23,7 @@ import { compareBudgetPeriods } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
+
 /**
  * The schema for validating budget goal updates
  */
@@ -80,7 +81,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
       reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
    }, [reset, updateDirtyFields, budget.goals, budget.goalIndex]);
 
-   const onSubmit = async(data: FieldValues) => {
+   const onSubmit = async (data: FieldValues) => {
       try {
          // Check if any changes were made
          if (Object.keys(dirtyFields).length === 0) return;
@@ -135,73 +136,77 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
 
    return (
       <Modal
-         displayWarning = { displayWarning }
-         onClose = { onClose }
-         open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "90%" } }
+         displayWarning={displayWarning}
+         onClose={onClose}
+         open={open}
+         sx={{ position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "90%" }}
       >
          <Stack
-            direction = "column"
-            spacing = { 3 }
+            direction="column"
+            spacing={3}
          >
-            <Section icon = { faMoneyBill1Wave }>
+            <Section icon={faMoneyBill1Wave}>
                <Box>
                   <form
-                     onChange = { () => updateDirtyFields(dirtyFields, "main") }
-                     onSubmit = { handleSubmit(onSubmit) }
+                     onChange={() => updateDirtyFields(dirtyFields, "main")}
+                     onSubmit={handleSubmit(onSubmit)}
                   >
                      <Stack
-                        direction = "column"
-                        spacing = { 1 }
-                        sx = { { mt: 2 } }
+                        direction="column"
+                        spacing={1}
+                        sx={{ mt: 2 }}
                      >
                         <Controller
-                           control = { control }
-                           name = "goal"
-                           render = {
+                           control={control}
+                           name="goal"
+                           render={
                               ({ field }) => (
-                                 <FormControl error = { Boolean(errors.goal) }>
-                                    <InputLabel htmlFor = "goal">
+                                 <FormControl error={Boolean(errors.goal)}>
+                                    <InputLabel htmlFor="goal">
                                        Goal
                                     </InputLabel>
                                     <OutlinedInput
-                                       { ...field }
-                                       aria-label = "Goal"
-                                       id = "goal"
-                                       inputProps = { { step: 0.01, min: 0 } }
-                                       label = "Goal"
-                                       type = "number"
-                                       value = { field.value || "" }
+                                       {...field}
+                                       aria-label="Goal"
+                                       id="goal"
+                                       inputProps={{ step: 0.01, min: 0 }}
+                                       label="Goal"
+                                       type="number"
+                                       value={field.value || ""}
                                     />
                                     <FormHelperText>
-                                       { errors.goal?.message?.toString() }
+                                       {errors.goal?.message?.toString()}
                                     </FormHelperText>
                                  </FormControl>
                               )
                            }
                         />
                         <SubmitButton
-                           isSubmitting = { isSubmitting }
-                           onCancel = { onCancel }
-                           type = "Update"
-                           visible = { Object.keys(dirtyFields).length > 0 }
+                           isSubmitting={isSubmitting}
+                           onCancel={onCancel}
+                           type="Update"
+                           visible={Object.keys(dirtyFields).length > 0}
                         />
                      </Stack>
                   </form>
                </Box>
             </Section>
-            <Section icon = { faListCheck }>
+            <Section icon={faListCheck}>
                <BudgetCategories
-                  type = { type }
-                  updateDirtyFields = { updateDirtyFields }
+                  type={type}
+                  updateDirtyFields={updateDirtyFields}
                />
             </Section>
-            <Section icon = { faMoneyBillTransfer }>
-               <Transactions
-                  filter = "budget"
-                  identifier = { type }
-               />
-            </Section>
+            {
+               open && (
+                  <Section icon={faMoneyBillTransfer}>
+                     <Transactions
+                        filter="budget"
+                        identifier={type}
+                     />
+                  </Section>
+               )
+            }
          </Stack>
       </Modal>
    );

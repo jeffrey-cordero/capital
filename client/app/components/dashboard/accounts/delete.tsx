@@ -11,10 +11,11 @@ const message = "Are you sure you want to delete your account? This action will 
 However, any transactions linked to your account will be detached, but not deleted. Once deleted, this action cannot be undone.";
 
 /**
- * The AccountDeletion component to delete an account
+ * Account deletion component with confirmation dialog, which preserves
+ * linked transactions while removing basic account data
  *
- * @param {Account} account - The account to delete
- * @returns {React.ReactNode} The AccountDeletion component
+ * @param {Account} account - The account to be deleted
+ * @returns {React.ReactNode} Confirmation dialog for account deletion
  */
 export default function AccountDeletion({ account }: { account: Account }): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
