@@ -317,10 +317,10 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             </Section>
             {
                updating && account && (
-                  <Section
-                     icon = { faChartLine }
-                  >
-                     <Box sx = { { pt: 0.5 } }>
+                  <Box sx = { { mb: "-20px !important" } }>
+                     <Section
+                        icon = { faChartLine }
+                     >
                         <Graph
                            data = { history }
                            defaultValue = { account?.account_id || "" }
@@ -329,8 +329,8 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                            isIndicators = { false }
                            title = { account?.name || "" }
                         />
-                     </Box>
-                  </Section>
+                     </Section>
+                  </Box>
                )
             }
             {

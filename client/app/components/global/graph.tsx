@@ -333,8 +333,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                         columnGap: 1,
                         rowGap: 0,
                         textAlign: isCard ? { xs: "center", lg: "left" } : "center",
-                        mt: { xs: 1.5, sm: 0.5 },
-                        mb: -0.25,
+                        mt: isCard ? { xs: 1.5, sm: 0.5 } : 1.5,
+                        mb: 0,
                         px: isCard ? 2.25 : 0
                      }
                   }
