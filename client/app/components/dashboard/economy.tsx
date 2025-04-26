@@ -17,21 +17,19 @@ import { displayVolume } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
- * The props for the Stocks component.
+ * Props for the Stocks component
  *
- * @interface StocksProps
- * @property {StockTrends} data - The data for the stocks component
+ * @property {StockTrends} data - Stock trend data
  */
 interface StocksProps {
    data: StockTrends;
 }
 
 /**
- * The props for the TrendCard component.
+ * Props for the TrendCard component
  *
- * @interface TrendProps
- * @property {string} title - The title for the trend card
- * @property {StockIndicator[]} data - The data for the trend card
+ * @property {string} title - Card title
+ * @property {StockIndicator[]} data - Stock indicators data
  */
 interface TrendProps {
    title: string;
@@ -39,10 +37,10 @@ interface TrendProps {
 }
 
 /**
- * The TrendCard component to render the trend card.
+ * Displays stock trends in a card format
  *
- * @param {TrendProps} props - The props for the TrendCard component
- * @returns {React.ReactNode} The TrendCard component
+ * @param {TrendProps} props - Trend card component props
+ * @returns {React.ReactNode} The StockTrendCard component
  */
 function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
    return (
@@ -117,9 +115,9 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
 }
 
 /**
- * The Stocks component to render the stocks component.
+ * Renders stock information grouped by performance categories
  *
- * @param {StocksProps} props - The props for the Stocks component
+ * @param {StocksProps} props - Stocks component props
  * @returns {React.ReactNode} The Stocks component
  */
 function Stocks({ data }: StocksProps): React.ReactNode {
@@ -161,22 +159,26 @@ function Stocks({ data }: StocksProps): React.ReactNode {
 }
 
 /**
- * The Economy component to render the economy trends, such as indicators and stocks.
+ * Displays economic indicators and stock market trends
  *
  * @returns {React.ReactNode} The Economy component
  */
 export default function Economy(): React.ReactNode {
    const trends: Trends = useSelector((state: RootState) => state.economy.value.trends);
 
-   // Extract and format indicators data
+   // Extract and format indicators data for the graph
    const indicators: Record<string, IndicatorTrends[]> = Object.keys(trends)
-      .filter(key => key !== "Stocks")
       .reduce((acc: { [key: string]: IndicatorTrends[] }, record) => {
+         if (record === "Stocks") {
+            // Skip stocks indicators
+            return acc;
+         }
+
          acc[record] = trends[record] as IndicatorTrends[];
          return acc;
       }, {});
 
-   // Extract stocks data and format last update time
+   // Format stock data and last update timestamp
    const stocks = trends["Stocks"] as StockTrends;
    const [date, time] = stocks.last_updated.split(" ");
    const timeSinceLastUpdated = new Date(date + " " + time).toLocaleString();

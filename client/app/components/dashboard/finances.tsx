@@ -5,7 +5,7 @@ import AccountTrends from "@/components/dashboard/accounts/charts";
 import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
 /**
- * The Finances component to render the user finances, including account and budget trends.
+ * Displays user financial data through account and budget trend visualizations
  *
  * @returns {React.ReactNode} The Finances component
  */

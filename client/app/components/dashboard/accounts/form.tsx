@@ -25,7 +25,8 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 import { addAccount, updateAccount } from "@/redux/slices/accounts";
 import type { RootState } from "@/redux/store";
-
+import type { Transaction } from "capital/transactions";
+import { getCurrentDate } from "@/lib/dates";
 /**
  * The AccountForm component to create and update accounts
  *
@@ -49,6 +50,7 @@ interface AccountFormProps {
 export default function AccountForm({ account, open, onClose }: AccountFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
+   const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
    const updating = account !== undefined;
 
    // Form setup with react-hook-form
@@ -131,6 +133,20 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          console.error("Failed to submit account form:", error);
       }
    };
+
+   const history = useMemo(() => {
+      const today = getCurrentDate();
+      let balance: number = Number(account?.balance);
+      const data: { date: string, value: number }[] = [{ value: balance, date: today.toISOString() }];
+
+      // transactions.forEach
+      // Ensure the oldest balances are first
+      data.reverse();
+
+      return { [account?.account_id || ""]: data };
+   }, [transactions, account]);
+
+   console.log(history);
 
    return (
       <Modal

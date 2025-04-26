@@ -26,7 +26,6 @@ import { useLocation, useNavigate } from "react-router";
 import { sendApiRequest } from "@/lib/api";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
-import type { CreateStyledComponent } from "@emotion/styled";
 
 /**
  * Navigation link definition

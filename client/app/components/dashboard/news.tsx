@@ -33,16 +33,17 @@ const DEFAULT_VALUES = {
 } as const;
 
 /**
- * NewsItem component to display a single news article
+ * Displays a single news article in a collapsible card
  *
- * @param {NewsItemProps} props - The props for the NewsItem component
- * @returns {React.ReactNode} The NewsItem component
+ * @param {{ article: Article }} props - Article card props
+ * @returns {React.ReactNode} The ArticleCard component
  */
-function NewsItem({ article }: { article: Article }): React.ReactNode {
+function ArticleCard({ article }: { article: Article }): React.ReactNode {
    const theme = useTheme();
-   const [expanded, setExpanded] = useState(false);
    const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("lg"));
+   const [expanded, setExpanded] = useState(false);
 
+   // Normalize the article content
    const author = article.author || article.domain || DEFAULT_VALUES.AUTHOR;
    const authorInitial = author.charAt(0).toUpperCase();
    const publishDate = new Date(article.published).toLocaleString() || new Date().toLocaleString();
@@ -50,20 +51,21 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
    const description = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
    const link = article.url || "";
 
+   // Toggle the expanded state of the article description
    const updateExpandedState = useCallback(() => {
       const financesContainer = document.getElementById("finances-container") as HTMLElement;
 
       setExpanded((prev) => {
          if (!isDesktop) return !prev;
 
-         const isExpanding = prev === false;
+         // Align dashboard height based on the number of expanded cards for flushness
+         const isExpanding = !prev;
          const expanded = document.querySelectorAll("[data-expanded=\"true\"]").length + (isExpanding ? 1 : -1);
 
-         // Align dashboard height based on the number of expanded cards
          if (expanded > 0) {
-            financesContainer.setAttribute("style", "justify-content: flex-start !important;"); // not-flush
+            financesContainer.setAttribute("style", "justify-content: flex-start !important;");
          } else {
-            financesContainer.setAttribute("style", "justify-content: space-between !important;"); // flush
+            financesContainer.setAttribute("style", "justify-content: space-between !important;");
          }
 
          return !prev;
@@ -169,7 +171,7 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
 }
 
 /**
- * Articles component to display the news articles
+ * Displays financial news articles in a responsive grid
  *
  * @returns {React.ReactNode} The Articles component
  */
@@ -199,7 +201,7 @@ export default function Articles(): React.ReactNode {
                         key = { `news-${index}` }
                         size = { { xs: 12 } }
                      >
-                        <NewsItem article = { item } />
+                        <ArticleCard article = { item } />
                      </Grid>
                   ))
                }
