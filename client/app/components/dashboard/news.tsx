@@ -178,7 +178,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.economy.value.news);
    const items: Article[] = useMemo(() => {
-      return [...news.response.data].reverse().slice(0, 21);
+      return [...news.response.data].reverse().slice(0, 20);
    }, [news]);
 
    return (

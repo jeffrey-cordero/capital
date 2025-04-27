@@ -46,7 +46,7 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
    return (
       <Card
          elevation = { 3 }
-         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 1.5 } }
+         sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 1.5, pb: 0.5 } }
          variant = "elevation"
       >
          <CardContent>
@@ -56,59 +56,63 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
             >
                { title }
             </Typography>
-            {
-               data.map((stock, index) => (
-                  <Stack
-                     direction = "column"
-                     key = { index }
-                     sx = { { gap: 1, mb: 2 } }
-                  >
-                     <Stack
-                        direction = "row"
-                        sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1 } }
-                     >
-                        <Typography
-                           component = "p"
-                           sx = { { fontWeight: "bold" } }
-                           variant = "h6"
-                        >
-                           <Link
-                              href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
-                              target = "_blank"
-                              underline = "none"
-                           >
-                              { stock.ticker }
-                           </Link>
-                        </Typography>
-                        <Chip
-                           color = { getChipColor(parseFloat(stock.change_percentage)) as any }
-                           label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
-                           size = "small"
-                        />
-                     </Stack>
+            <Stack
+               direction = "column"
+               spacing = { 2 }
+            >
+               {
+                  data.map((stock, index) => (
                      <Stack
                         direction = "column"
-                        sx = { { gap: 1 } }
+                        key = { index }
                      >
-                        <Typography
-                           fontWeight = "600"
-                           variant = "body2"
+                        <Stack
+                           direction = "row"
+                           sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 0.5 } }
                         >
-                           ${ Number(stock.price).toFixed(2) }
-                           { " " }
-                           ({ Number(stock.change_amount) < 0 ? "-" : "+" }
-                           { Math.abs(Number(stock.change_amount)).toFixed(2) })
-                        </Typography>
-                        <Typography
-                           fontWeight = "600"
-                           variant = "body2"
+                           <Typography
+                              component = "p"
+                              sx = { { fontWeight: "bold" } }
+                              variant = "h6"
+                           >
+                              <Link
+                                 href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
+                                 target = "_blank"
+                                 underline = "none"
+                              >
+                                 { stock.ticker }
+                              </Link>
+                           </Typography>
+                           <Chip
+                              color = { getChipColor(parseFloat(stock.change_percentage)) as any }
+                              label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
+                              size = "small"
+                           />
+                        </Stack>
+                        <Stack
+                           direction = "column"
+                           sx = { { gap: 1 } }
                         >
-                           { displayVolume(Number(stock.volume)) } shares
-                        </Typography>
+                           <Typography
+                              fontWeight = "600"
+                              variant = "body2"
+                           >
+                              ${ Number(stock.price).toFixed(2) }
+                              { " " }
+                              ({ Number(stock.change_amount) < 0 ? "-" : "+" }
+                              { Math.abs(Number(stock.change_amount)).toFixed(2) })
+                           </Typography>
+                           <Typography
+                              fontWeight = "600"
+                              variant = "body2"
+                           >
+                              { displayVolume(Number(stock.volume)) } shares
+                           </Typography>
+                        </Stack>
                      </Stack>
-                  </Stack>
-               ))
-            }
+                  ))
+               }
+            </Stack>
          </CardContent>
       </Card>
    );
@@ -127,12 +131,11 @@ function Stocks({ data }: StocksProps): React.ReactNode {
       <Stack
          direction = "column"
          id = "stocks"
-         sx = { { gap: 2, textAlign: "center", justifyContent: "center", alignItems: "center" } }
+         sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
       >
          <Grid
             container = { true }
             direction = "row"
-            spacing = { 2 }
             sx = { { width: "100%" } }
          >
             <Grid size = { { xs: 12, sm: 6, md: 4 } }>

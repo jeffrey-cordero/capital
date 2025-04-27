@@ -26,7 +26,6 @@ import { sendApiRequest } from "@/lib/api";
 import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 
 /**
  * Registration page component with form validation
@@ -63,11 +62,7 @@ export default function Register(): React.ReactNode {
          );
 
          if (typeof result === "object" && result?.success) {
-            // Show success notification and update authentication state
-            dispatch(addNotification({
-               type: "success",
-               message: "Welcome"
-            }));
+            // Update authentication state
             dispatch(authenticate(true));
          }
       }
