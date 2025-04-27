@@ -33,11 +33,12 @@ function getCategoryInfo(
 ): { name: string; type: BudgetType } | null {
    if (!categoryId) return null;
 
+   // Search for the category based on the provided budget type and category ID
    const category: BudgetCategory | null = budgets[type].categories.find((c) => {
       return c.budget_category_id === categoryId;
    }) || null;
 
-   // Missing based on an invalid budget category ID or deletion
+   // Could represent a main, missing, or deleted budget category
    return category ? { name: category.name || "", type: type } : null;
 };
 
@@ -85,21 +86,20 @@ export function filterTransactions(
    }, {} as Record<string, number>);
 
    return transactions.reduce((acc, record, index) => {
-      // Determine the type of the transaction based on the budget category ID or the amount
-      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, record.type);
+      const budgetCategory = getCategoryInfo(budgets, record.budget_category_id, record.type);
       const transaction: TransactionRowModel = {
          ...record,
          index,
          id: record.transaction_id || "",
-         account: accountsMap[record.account_id ?? ""]?.name || "",
-         category: categoryInfo?.name || "",
+         account: accountsMap[record.account_id || ""]?.name || "",
+         category: budgetCategory?.name || "",
          balance: balances[record.account_id || ""] || undefined,
          type: record.type,
          budget_category_id: record.budget_category_id || budgets[record.type]?.budget_category_id
       };
 
       if (record.account_id && balances[record.account_id]) {
-         // Update the propagating account balances
+         // Update the rolling account balance
          balances[record.account_id] -= record.amount;
       }
 
@@ -114,16 +114,17 @@ export function filterTransactions(
          }
          case "budget": {
             // Match transactions based on the current budget period
-            const [year, month] = transaction.date.split("T")[0].split("-");
             const isValidType = identifier === record.type;
+            const [year, month] = transaction.date.split("T")[0].split("-");
 
-            if (isValidType && parseInt(year) === period.year && parseInt(month) === period.month) {
+            if (isValidType && Number(year) === period.year && Number(month) === period.month) {
                acc.push(transaction);
             }
 
             break;
          }
          default: {
+            // Push all transactions for no applicable filter
             acc.push(transaction);
          }
       }

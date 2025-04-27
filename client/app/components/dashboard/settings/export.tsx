@@ -7,9 +7,9 @@ import { useSelector } from "react-redux";
 import { selectExportData } from "@/redux/selector";
 
 /**
- * ExportAccount component for exporting user account details as a JSON file
+ * Exports user data as a downloadable JSON file
  *
- * @returns {React.ReactNode} The ExportAccount component
+ * @returns {React.ReactNode} Export data button component
  */
 export default function ExportAccount(): React.ReactNode {
    const { settings, accounts, budgets, transactions } = useSelector(selectExportData);

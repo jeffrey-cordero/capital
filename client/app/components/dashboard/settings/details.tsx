@@ -26,9 +26,9 @@ import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
 /**
- * Details component for editing user personal information and theme preference
+ * Manages user personal information and theme preferences
  *
- * @returns {React.ReactNode} The Details component
+ * @returns {React.ReactNode} Form for editing name, birthday, and app theme
  */
 export default function Details(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();

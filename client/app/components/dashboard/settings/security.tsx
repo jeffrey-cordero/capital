@@ -22,9 +22,9 @@ import { updateDetails } from "@/redux/slices/settings";
 import type { RootState } from "@/redux/store";
 
 /**
- * Security component for editing user security information
+ * Manages security settings with password update functionality
  *
- * @returns {React.ReactNode} The Security component
+ * @returns {React.ReactNode} Form for updating username, email, and password
  */
 export default function Security(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();

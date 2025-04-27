@@ -8,9 +8,9 @@ import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
 
 /**
- * Logout component for logging out of the application within the settings page
+ * Provides user logout functionality
  *
- * @returns {React.ReactNode} The Logout component
+ * @returns {React.ReactNode} Logout button with confirmation dialog
  */
 export default function Logout(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();

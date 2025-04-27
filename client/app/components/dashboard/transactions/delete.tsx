@@ -41,13 +41,13 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
 
    const onSubmit = useCallback(async() => {
       try {
-         // Submit the delete request to the API
+         // Submit the request to the API for transaction deletion
          const result = await sendApiRequest<number>(
             `dashboard/transactions/${transaction.transaction_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         // Delete the transaction from the Redux store
          if (result === 204) {
+            // Delete the transaction from the Redux store based on the current index
             dispatch(deleteTransaction({ index }));
          }
       } catch (error) {
@@ -89,10 +89,10 @@ export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletio
       const transactionIds: string[] = selectedRows.current as string[];
 
       try {
-         // Submit the delete request to the API
+         // Submit the request to the API for bulk transaction deletion
          const result = await sendApiRequest<number>("dashboard/transactions/bulk", "DELETE", { transactionIds }, dispatch, navigate);
 
-         // Delete the transactions from the Redux store
+         // Delete the transactions from the Redux store based on the provided transaction IDs
          if (result === 204) {
             dispatch(deleteTransactions({ transactionIds }));
          }

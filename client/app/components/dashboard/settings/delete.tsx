@@ -8,9 +8,9 @@ import Confirmation from "@/components/global/confirmation";
 import { sendApiRequest } from "@/lib/api";
 
 /**
- * DeleteAccount component for deleting user account
+ * Handles permanent account deletion with confirmation
  *
- * @returns {React.ReactNode} The DeleteAccount component
+ * @returns {React.ReactNode} Delete account button with warning confirmation
  */
 export default function DeleteAccount(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();

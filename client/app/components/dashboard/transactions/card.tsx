@@ -37,7 +37,7 @@ interface TransactionCardProps {
  */
 export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps): React.ReactNode {
    const theme = useTheme();
-   const amountColor: string = transaction.amount > 0 ? "primary.main" : "";
+   const color: string = transaction.amount > 0 ? "primary.main" : "";
 
    return (
       <Card
@@ -78,7 +78,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                      />
                   </Box>
                   <Typography
-                     color = { amountColor }
+                     color = { color }
                      sx = { { fontWeight: "650", fontSize: "0.9rem" } }
                      variant = "subtitle1"
                   >
@@ -114,9 +114,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                         />
                      </Box>
                   </Stack>
-
                </Stack>
-
             </Stack>
          </CardContent>
          {

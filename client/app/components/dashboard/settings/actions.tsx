@@ -7,9 +7,9 @@ import Logout from "@/components/dashboard/settings/logout";
 import Section from "@/components/global/section";
 
 /**
- * Actions component for conducting account actions
+ * Groups account management actions in the settings panel
  *
- * @returns {React.ReactNode} The Actions component
+ * @returns {React.ReactNode} Component with export, logout, and delete account buttons
  */
 export default function Actions(): React.ReactNode {
    return (
