@@ -46,12 +46,14 @@ interface BudgetsProps {
  */
 export default function Budgets({ allocations }: BudgetsProps): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
+   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
    );
+   // Keep track of dirty fields within the various child forms
    const dirtyFields = useRef<Record<string, boolean>>({});
-   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
+   // Modal open/close handlers
    const openModal = useCallback((type: "Income" | "Expenses") => {
       setEditState({ state: "edit", type, displayWarning: false });
    }, []);
@@ -65,6 +67,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       }
    }, []);
 
+   // Budget period navigation handlers
    const viewPreviousMonth = useCallback(() => {
       dispatch(selectMonth({ direction: "previous" }));
    }, [dispatch]);
@@ -79,7 +82,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period.month, period.year, today]);
 
-   // Update dirty fields within child form's to check during before we close the modal
+   // Update dirty fields within child form's to potentially display warning upon closing the modal
    const updateDirtyFields = useCallback((fields: object, field: string) => {
       if (Object.keys(fields).length > 0) {
          dirtyFields.current[field] = true;
@@ -87,6 +90,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
          delete dirtyFields.current[field];
       }
 
+      // No dirty fields implies no warning should be displayed
       if (Object.keys(dirtyFields.current).length === 0 && editState.displayWarning) {
          setEditState((prev) => ({ ...prev, displayWarning: false }));
       }

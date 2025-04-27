@@ -25,11 +25,14 @@ import { type RootState } from "@/redux/store";
 /**
  * Schema that combines category and budget validations for a single form
  */
-const constructSchema = budgetCategorySchema.omit(
-   { budget_category_id: true, user_id: true, category_order: true, type: true }
-).merge(budgetSchema.innerType().pick(
-   { goal: true })
-);
+const constructSchema = budgetCategorySchema.omit({
+   budget_category_id: true,
+   user_id: true,
+   category_order: true,
+   type: true
+}).merge(budgetSchema.innerType().pick({
+   goal: true
+}));
 
 /**
  * The ConstructCategory component to create a new budget category
@@ -60,32 +63,33 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const parentCategory = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Initialize constructor form with defaults
+   // Form setup with react-hook-form
    const {
       control,
       handleSubmit,
       setError,
       reset,
-      formState: { errors, isSubmitting, dirtyFields }
-   } = useForm({
-      defaultValues: { name: "", goal: "" }
+      formState: { errors, isSubmitting, dirtyFields } } = useForm({
+      defaultValues: {
+         name: "",
+         goal: ""
+      }
    });
 
+   // Close the form and reset the dirty fields
    const closeForm = useCallback(() => {
-      // Clear the form dirty fields and reset the form values
       updateDirtyFields({}, "constructor");
 
       reset({ name: "", goal: "" }, { keepDirty: false });
-
       onClose();
    }, [reset, updateDirtyFields, onClose]);
 
    const onSubmit = async(data: FieldValues) => {
       try {
-         // Validate form data against our combined schema
          const fields = constructSchema.safeParse(data);
 
          if (!fields.success) {
+            // Invalid budget category inputs
             handleValidationErrors(fields, setError);
             return;
          }
@@ -95,7 +99,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
             budget_category_id: parentCategory.budget_category_id,
             name: fields.data.name,
             type,
-            goal: Number(fields.data.goal),
+            goal: fields.data.goal,
             category_order: parentCategory.categories.length,
             month,
             year
@@ -106,20 +110,19 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
             "dashboard/budgets/category", "POST", payload, dispatch, navigate, setError
          );
 
-         // Handle successful category creation
          if (typeof result === "object" && result?.budget_category_id) {
-            // Add the new category to Redux store
+            // Add the new category to Redux store and close the form
             dispatch(addBudgetCategory({
                type,
                category: {
                   ...payload,
-                  budget_category_id: result.budget_category_id,
                   goalIndex: 0,
                   goals: [{
                      month,
                      year,
-                     goal: Number(fields.data.goal)
-                  }]
+                     goal: fields.data.goal
+                  }],
+                  budget_category_id: result.budget_category_id
                }
             }));
 

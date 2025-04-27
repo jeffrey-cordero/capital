@@ -174,13 +174,9 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
    }, [navigate, onClose]);
 
    const logout = useCallback(async() => {
-      const response = await sendApiRequest<{ success: boolean }>(
+      await sendApiRequest<{ success: boolean }>(
          "authentication/logout", "POST", null, dispatch, navigate
       );
-
-      if (typeof response === "object" && response?.success) {
-         window.location.pathname = "/login";
-      }
    }, [dispatch, navigate]);
 
    const toggle = useCallback(() => {

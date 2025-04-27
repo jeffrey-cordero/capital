@@ -28,7 +28,7 @@ import {
    useTheme
 } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -57,13 +57,9 @@ interface BudgetCategoriesProps {
  *
  * @interface CategoryItemProps
  * @property {BudgetCategory} category - The category to display
- * @property {string} editingCategory - The ID of the category being edited
- * @property {Function} setEditingCategory - The function to set the editing category within the categories section
  */
 interface CategoryItemProps extends BudgetCategoriesProps {
    category: BudgetCategory;
-   editingCategory: string | null;
-   setEditingCategory: (_id: string | null) => void;
 }
 
 /**
@@ -72,15 +68,15 @@ interface CategoryItemProps extends BudgetCategoriesProps {
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
  */
-const CategoryItem = memo(function CategoryItem({ category, editingCategory, setEditingCategory, type, updateDirtyFields }: CategoryItemProps) {
+const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }: CategoryItemProps): React.ReactNode {
    const theme = useTheme();
-   const isEditing = editingCategory === category.budget_category_id;
+   const [isEditing, setIsEditing] = useState(false);
    const goal = category.goals[category.goalIndex].goal;
 
-   // Configure drag and drop functionality
+   // Drag and drop configuration
    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
       id: category.budget_category_id || "",
-      disabled: isEditing // Disable dragging when editing
+      disabled: isEditing
    });
 
    const style = {
@@ -88,15 +84,15 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
       transition
    };
 
+   // Edit category handlers
    const editCategory = useCallback(() => {
-      setEditingCategory(category.budget_category_id);
-   }, [category.budget_category_id, setEditingCategory]);
+      setIsEditing(true);
+   }, []);
 
    const cancelEditCategory = useCallback(() => {
-      // Cancel editing the category and clear the form dirty fields
-      setEditingCategory(null);
+      setIsEditing(false);
       updateDirtyFields({}, "editor");
-   }, [setEditingCategory, updateDirtyFields]);
+   }, [updateDirtyFields]);
 
    return (
       <Box
@@ -159,7 +155,7 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
          </Stack>
       </Box>
    );
-});
+};
 
 /**
  * The BudgetCategories component to display the categories section
@@ -169,26 +165,36 @@ const CategoryItem = memo(function CategoryItem({ category, editingCategory, set
  */
 export default function BudgetCategories({ type, updateDirtyFields }: BudgetCategoriesProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
+   const [displayNewCategoryForm, setDisplayNewCategoryForm] = useState(false);
 
-   // Memoize category IDs for drag and drop
-   const categoryIds = useMemo(() => {
-      return budget.categories.map(category => category.budget_category_id ?? "");
-   }, [budget.categories]);
+   // Memoize the category ID's and their corresponding components
+   const [categoryIds, categories] = useMemo(() => {
+      return budget.categories.reduce((acc, record) => {
+         acc[0].push(record.budget_category_id);
+         acc[1].push(
+            <CategoryItem
+               category = { record }
+               key = { record.budget_category_id }
+               type = { type }
+               updateDirtyFields = { updateDirtyFields }
+            />
+         );
+         return acc;
+      }, [[], []] as [string[], React.ReactNode[]]);
+   }, [budget.categories, type, updateDirtyFields]);
 
+   // New category form open/close handlers
    const openCreateNewCategoryForm = useCallback(() => {
-      setShowNewCategoryForm(true);
+      setDisplayNewCategoryForm(true);
    }, []);
 
-   // Handler for when a new category is successfully created
    const closeCreateNewCategoryForm = useCallback(() => {
-      // Close the form and clear the form dirty fields
-      setShowNewCategoryForm(false);
+      setDisplayNewCategoryForm(false);
       updateDirtyFields({}, "constructor");
    }, [updateDirtyFields]);
 
+   // Configure drag and drop sensors with touch, pointer and keyboard support
    const sensors = useSensors(
       useSensor(TouchSensor),
       useSensor(PointerSensor, {
@@ -201,10 +207,10 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
       })
    );
 
+   // Handle category reordering with optimistic updates and server synchronization
    const handleDragEnd = useCallback(async(event: DragEndEvent) => {
       const { active, over } = event;
 
-      // Only proceed if dropping on a different position and over is defined
       if (active.id !== over?.id && over) {
          let oldIndex: number | undefined;
          let newIndex: number | undefined;
@@ -223,12 +229,9 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
             }
          }
 
-         // Update category order if both indices are found
+         // Update category ordering optimistically with potential backup measures
          if (oldIndex !== undefined && newIndex !== undefined) {
-            // Create backup of current order in case of failure on the server
             const oldCategories = categories.map(category => ({ ...category }));
-
-            // Optimistically update category order
             const newCategories = arrayMove(categories, oldIndex, newIndex).map(
                (category, index) => ({ ...category, budget_category_order: index })
             );
@@ -249,7 +252,6 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                   throw new Error("Failed to update category order");
                }
             } catch (error) {
-               // Revert optimistic update if server request fails
                console.error("Failed to update category order:", error);
                dispatch(updateBudgetCategoryOrder({
                   type,
@@ -275,18 +277,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                items = { categoryIds }
                strategy = { verticalListSortingStrategy }
             >
-               {
-                  budget.categories.map((category) => (
-                     <CategoryItem
-                        category = { category }
-                        editingCategory = { editingCategory }
-                        key = { category.budget_category_id }
-                        setEditingCategory = { setEditingCategory }
-                        type = { type }
-                        updateDirtyFields = { updateDirtyFields }
-                     />
-                  ))
-               }
+               { categories }
             </SortableContext>
          </DndContext>
          <ConstructCategory
@@ -294,7 +285,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
             onOpen = { openCreateNewCategoryForm }
             type = { type }
             updateDirtyFields = { updateDirtyFields }
-            visible = { showNewCategoryForm }
+            visible = { displayNewCategoryForm }
          />
       </Stack>
    );

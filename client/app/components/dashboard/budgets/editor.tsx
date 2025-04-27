@@ -39,12 +39,17 @@ interface EditCategoryProps {
 /**
  * The schema for updating a budget category
  */
-const updateCategorySchema = budgetCategorySchema.partial().pick({ name: true, type: true });
+const updateCategorySchema = budgetCategorySchema.partial().pick({
+   name: true,
+   type: true
+});
 
 /**
  * The schema for updating a budget goal
  */
-const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
+const updateBudgetGoalSchema = budgetSchema.innerType().pick({
+   goal: true
+});
 
 /**
  * The EditCategory component to edit an existing budget category
@@ -56,7 +61,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Initialize form with default values from the provided category
+   // Form setup with react-hook-form
    const {
       control,
       handleSubmit,
@@ -72,58 +77,56 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
 
    const onSubmit = async(data: FieldValues) => {
       try {
-         // If no fields changed, just close the form
+         // Ignore requests for empty updates
          if (Object.keys(dirtyFields).length === 0) {
             onCancel();
             return;
          }
 
-         // Prepare payloads for parallel requests
+         // Prepare the respective payloads for parallel requests
          const categoryPayload: Partial<BudgetCategory> = {};
-
-         if (dirtyFields["name"]) categoryPayload.name = data.name;
-         if (dirtyFields["type"]) categoryPayload.type = data.type;
-
-         const categoryUpdates = Object.keys(categoryPayload).length > 0;
-         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
-
-         if (categoryUpdates && !categoryFields.success) {
-            // Invalid category fields
-            handleValidationErrors(categoryFields, setError);
-            return;
-         }
-
-         // Normalize the updated fields via Zod schema parsing
-         if (dirtyFields["name"]) categoryPayload.name = categoryFields.data?.name;
-         if (dirtyFields["type"]) categoryPayload.type = categoryFields.data?.type;
-
          const budgetPayload: Partial<Budget> = {
             budget_category_id: category.budget_category_id,
             month,
             year
          };
-         if (dirtyFields["goal"]) budgetPayload.goal = Number(data.goal);
+
+         // Normalize the dirty fields from the current form
+         Object.keys(dirtyFields).forEach((record: string) => {
+            if (record === "name" || record === "type") {
+               categoryPayload[record] = data[record];
+            } else if (record === "goal") {
+               budgetPayload.goal = Number(data[record]);
+            }
+         });
+
+         // Verify each payload through Zod schema parsing
+         const categoryUpdates = Object.keys(categoryPayload).length > 0;
+         const categoryFields = updateCategorySchema.safeParse(categoryPayload);
+
+         if (categoryUpdates && !categoryFields.success) {
+            // Invalid category inputs
+            handleValidationErrors(categoryFields, setError);
+            return;
+         }
 
          const budgetUpdates = budgetPayload.goal !== undefined;
          const budgetFields = updateBudgetGoalSchema.safeParse(budgetPayload);
 
          if (budgetUpdates && !budgetFields.success) {
-            // Invalid budget fields
+            // Invalid budget goal input
             handleValidationErrors(budgetFields, setError);
             return;
          }
 
-         // Normalize the updated goal via Zod schema parsing
-         if (dirtyFields["goal"]) budgetPayload.goal = Number(budgetFields.data?.goal);
-
-         // Determine if we're updating the current period or creating a new one (PUT vs. POST)
+         // Determine if we're updating the current period or creating a new one (PUT vs POST)
          const isCurrentPeriod = compareBudgetPeriods(
-            { month: category.goals[category.goalIndex].month, year: category.goals[category.goalIndex].year },
-            { month, year }
+            { month, year },
+            { month: category.goals[category.goalIndex].month, year: category.goals[category.goalIndex].year }
          ) === "equal";
          const method: string = isCurrentPeriod ? "PUT" : "POST";
 
-         // Send potential updates in parallel requests
+         // Submit potential updates in parallel
          const [categoryResponse, budgetResponse] = await Promise.all([
             categoryUpdates ? sendApiRequest<number>(
                `dashboard/budgets/category/${category.budget_category_id}`, "PUT", categoryPayload, dispatch, navigate, setError
@@ -133,11 +136,11 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             ) : Promise.resolve(null)
          ]);
 
-         const categorySuccess = !categoryUpdates || categoryResponse === 204;
-         const budgetSuccess = !budgetUpdates || budgetResponse === 204 || (budgetResponse instanceof Object && budgetResponse.success);
+         const categorySuccess = (!categoryUpdates || categoryResponse === 204);
+         const budgetSuccess = (!budgetUpdates || budgetResponse === 204 || (typeof budgetResponse === "object" && budgetResponse?.success));
 
+         // Only update the Redux store for successful requests
          if (categoryUpdates && categorySuccess) {
-            // Update the category in Redux store
             dispatch(updateBudgetCategory({
                type: category.type,
                updates: {
@@ -147,24 +150,23 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             }));
          }
 
-         if (categorySuccess && budgetSuccess) {
-            // Update the budget in Redux store
+         if (budgetUpdates && budgetSuccess) {
             dispatch(updateBudget({
-               goal: Number(data.goal),
-               type: data.type || category.type,
+               goal: Number(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
+               type: categoryFields.data?.type || category.type,
                budget_category_id: category.budget_category_id
             }));
+         }
 
-            // Reset the form with the new default values
+         // Only reset and close the form if both requests were successful
+         if (categorySuccess && budgetSuccess) {
             reset({
-               name: categoryPayload.name || category.name,
-               goal: String(budgetPayload.goal || category.goals[category.goalIndex].goal),
-               type: categoryPayload.type || category.type
+               name: categoryFields.data?.name || category.name,
+               goal: String(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
+               type: categoryFields.data?.type || category.type
             }, { keepDirty: false });
 
-            // Clear the dirty fields before closing
             updateDirtyFields({}, "editor");
-
             onCancel();
          }
       } catch (error) {

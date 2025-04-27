@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import Confirmation from "@/components/global/confirmation";
-import { clearAuthentication } from "@/components/global/sidebar";
+import { sendApiRequest } from "@/lib/api";
 
 /**
  * Logout component for logging out of the application within the settings page
@@ -16,7 +16,9 @@ export default function Logout(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
 
    const onSubmit = useCallback(async() => {
-      await clearAuthentication(dispatch, navigate);
+      await sendApiRequest<{ success: boolean }>(
+         "authentication/logout", "POST", null, dispatch, navigate
+      );
    }, [dispatch, navigate]);
 
    return (

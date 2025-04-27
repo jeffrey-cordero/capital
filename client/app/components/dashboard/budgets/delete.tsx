@@ -38,8 +38,8 @@ export default function DeleteBudget({ budget_category_id, type }: DeleteBudgetP
             `dashboard/budgets/category/${budget_category_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         // Remove the budget category from the Redux store
          if (result === 204) {
+            // Remove the budget category from the Redux store
             dispatch(removeBudgetCategory({
                type,
                budget_category_id

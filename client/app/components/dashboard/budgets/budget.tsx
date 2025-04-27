@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import { type BudgetGoal, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
-import { memo } from "react";
 import { useSelector } from "react-redux";
 
 import { displayCurrency, horizontalScroll } from "@/lib/display";
@@ -44,7 +43,8 @@ interface CategoryItemProps {
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
  */
-const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, period }: CategoryItemProps) {
+const CategoryItem = function CategoryItem(props: CategoryItemProps): React.ReactNode {
+   const { budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, period } = props;
    const theme = useTheme();
    const goal = goals[goalIndex].goal;
    const current = allocations[period]?.[isMainCategory ? type : budget_category_id] || 0;
@@ -68,7 +68,7 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
                   { name }
                </Typography>
                {
-                  onEditClick && (
+                  isMainCategory && (
                      <IconButton
                         color = "primary"
                         onClick = { onEditClick }
@@ -91,13 +91,13 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
          </Stack>
          <LinearProgress
             color = { color }
-            sx = { { height: "1.55rem", borderRadius: "16px" } }
+            sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
          />
       </Box>
    );
-});
+};
 
 /**
  * The BudgetCategory component to display the budget category
@@ -106,8 +106,8 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
  * @returns {React.ReactNode} The BudgetCategory component
  */
 const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations }: BudgetProps): React.ReactNode {
-   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const period: string = `${year}-${month.toString().padStart(2, "0")}`;
 
    return (

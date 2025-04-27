@@ -4,12 +4,11 @@ import {
    Stack,
    styled,
    Typography,
-   useMediaQuery,
    useTheme
 } from "@mui/material";
 import { PieChart, useDrawingArea } from "@mui/x-charts";
 import { type OrganizedBudget } from "capital/budgets";
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
@@ -45,7 +44,7 @@ const StyledText = styled("text", {
             variant: "primary"
          },
          style: {
-            fontSize: theme.typography.h5.fontSize
+            fontSize: theme.typography.h4.fontSize
          }
       },
       {
@@ -87,7 +86,7 @@ interface PieCenterLabelProps {
  * @param {PieCenterLabelProps} props - The props for the PieCenterLabel component
  * @returns {React.ReactNode} The PieCenterLabel component
  */
-const PieCenterLabel = memo(function PieCenterLabel({ primaryText }: PieCenterLabelProps) {
+const PieCenterLabel = function PieCenterLabel({ primaryText }: PieCenterLabelProps): React.ReactNode {
    const { width, height, left, top } = useDrawingArea();
    const primaryY = top + height / 2;
 
@@ -100,7 +99,7 @@ const PieCenterLabel = memo(function PieCenterLabel({ primaryText }: PieCenterLa
          { primaryText }
       </StyledText>
    );
-});
+};
 
 /**
  * Define the props for the BudgetProgressChart component
@@ -126,13 +125,6 @@ interface BudgetProgressChartProps {
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
-   const { xss, xs } = {
-      xss: useMediaQuery("(max-width: 310px)"),
-      xs: useMediaQuery("(max-width: 335px)")
-   };
-   const dimensions = xss ? 275 : xs ? 300 : 315;
-   const outerRadius = xss ? 105 : xs ? 110 : 120;
-   const innerRadius = xss ? 85 : xs ? 90 : 100;
 
    return (
       <Stack
@@ -144,13 +136,13 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
          >
             { title }
          </Typography>
-         <ChartContainer height = { dimensions }>
+         <ChartContainer height = { 265 }>
             <Stack
                direction = "column"
                sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
             >
                <PieChart
-                  height = { dimensions }
+                  height = { 265 }
                   margin = {
                      {
                         left: 80,
@@ -163,8 +155,8 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                      [
                         {
                            data: data,
-                           innerRadius: innerRadius,
-                           outerRadius: outerRadius,
+                           innerRadius: 85,
+                           outerRadius: 105,
                            paddingAngle: 0,
                            highlightScope: { faded: "global", highlighted: "item" }
                         }
@@ -177,7 +169,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                         }
                      }
                   }
-                  width = { dimensions }
+                  width = { 265 }
                >
                   <PieCenterLabel
                      primaryText = { `$${displayVolume(current)}` }
@@ -211,11 +203,11 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                            { displayPercentage(category.percentage) }
                         </Typography>
                      </Stack>
-                     <Box sx = { { px: index === 0 ? 0 : 1 } }>
+                     <Box sx = { { px: 0.5 } }>
                         <LinearProgress
                            aria-label = { `${category.label} progress` }
                            color = { type === "Income" ? "success" : "error" }
-                           sx = { { height: "1.55rem", borderRadius: "16px", boxShadow: 0 } }
+                           sx = { { height: "1.50rem", borderRadius: "16px", boxShadow: 0 } }
                            value = { category.percentage }
                            variant = "determinate"
                         />
@@ -247,26 +239,28 @@ interface BudgetPieChartProps {
  * @returns {React.ReactNode} The BudgetPieChart component
  */
 export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): React.ReactNode {
-   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Construct the period string for the allocations key
+   // Period string representing the current month and year
    const period = useMemo(() => {
       return `${year}-${month.toString().padStart(2, "0")}`;
    }, [month, year]);
 
-   // Calculate total budget allocations
+   // Total budget allocation for the current period
    const total = Math.max(allocations[period]?.[type] || 0);
-   const base = Math.max(total, 1); // Ensure non-zero denominator for total budget sum
+   const base = Math.max(total, 1);
 
-   // Calculate hue and saturation for pie chart categories
+   // Hue and saturation values for the pie chart categories based on budget type
    const hue = type === "Income" ? 120 : 0;
    const saturation = hue === 120 ? 44 : 90;
 
-   // Construct the pie data
+   // Pie data for the budget categories
    const pieData = useMemo(() => {
+      let sum = 0;
       const data = budget.categories.map((category, index) => {
          const value = allocations[period]?.[category.budget_category_id] || 0;
+         sum += value;
 
          return {
             label: category.name || "Unnamed Category",
@@ -276,14 +270,12 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
          };
       });
 
-      // Additional data point for the main type if the sum of the category allocations is less than the total budget allocation
-      const sum: number = data.reduce((acc, record) => acc + record.value, 0);
-
       if (sum === 0 || sum < total) {
+         // Main type data point if the sum of the category allocations is less than the total budget allocation
          data.unshift({
             label: type,
             percentage: 100 * (Math.abs(sum - total) / base),
-            value: Math.max(Math.abs(sum - total), 0.000000000001), // Ensure non-zero value for empty budget periods
+            value: Math.max(Math.abs(sum - total), 0.000000000001),
             color: `hsl(${hue}, ${saturation}%, ${60 - (budget.categories.length * 5)}%)`
          });
       }

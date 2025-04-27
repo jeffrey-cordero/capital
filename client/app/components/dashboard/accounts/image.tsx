@@ -152,7 +152,7 @@ export default function AccountImage({
                               height: "auto",
                               maxHeight: 423.52,
                               mt: 1,
-                              mb: 1,
+                              mb: 0.5,
                               cursor: "pointer",
                               border: value === imagesArray[activeStep] ? "3px solid" : "none",
                               borderColor: "primary.main",
