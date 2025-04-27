@@ -13,11 +13,10 @@ import { displayCurrency, displayDate } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
- * Props for the RenderTextColumn component.
+ * Props for text column rendering
  *
- * @interface RenderTextColumnProps
- * @property {GridRenderCellParams<TransactionRowModel, number>} params - The parameters for the grid render cell.
- * @property {"amount" | "balance" | "date" | "description"} type - The type of the column to render.
+ * @property {GridRenderCellParams<TransactionRowModel, number>} params - DataGrid cell parameters
+ * @property {"amount" | "balance" | "date" | "description"} type - Type of column to render
  */
 interface RenderTextColumnProps {
    params: GridRenderCellParams<TransactionRowModel, number>;
@@ -25,10 +24,10 @@ interface RenderTextColumnProps {
 }
 
 /**
- * Renders a general text column for a given transaction.
+ * Renders formatted text column based on type
  *
- * @param {RenderTextColumnProps} props - The props for the grid render cell.
- * @returns {React.ReactNode} The rendered column.
+ * @param {RenderTextColumnProps} props - The RenderTextColumn component props
+ * @returns {React.ReactNode} Formatted text display
  */
 export function RenderTextColumn({ params, type }: RenderTextColumnProps): React.ReactNode {
    let value: any;
@@ -61,7 +60,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
    return (
       <Typography
          color = { color }
-         sx = { { fontWeight: "650", fontSize: "0.85rem" } }
+         sx = { { fontWeight: "550", fontSize: "0.85rem" } }
          variant = "caption"
       >
          { value }
@@ -70,10 +69,10 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
 }
 
 /**
- * Renders the account chip for a given transaction.
+ * Renders account chip with account name
  *
- * @param {{account_id: string}} params - The account ID for the grid render cell.
- * @returns {React.ReactNode} The rendered account chip.
+ * @param {{account_id: string}} props - Account ID to display
+ * @returns {React.ReactNode} Account chip component
  */
 export function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
@@ -95,10 +94,10 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
 }
 
 /**
- * Renders the category chip for a given transaction.
+ * Renders category chip with appropriate color
  *
- * @param { {budget_category_id: string} } params - The budget category ID for the grid render cell.
- * @returns {React.ReactNode} The rendered category chip.
+ * @param {{budget_category_id: string, type: BudgetType}} props - Budget category ID and type props
+ * @returns {React.ReactNode} Category chip component
  */
 export function RenderCategoryChip({ budget_category_id, type }: { budget_category_id: string, type: BudgetType }): React.ReactNode {
    const budgets = useSelector((state: RootState) => state.budgets.value);
@@ -123,11 +122,10 @@ export function RenderCategoryChip({ budget_category_id, type }: { budget_catego
 }
 
 /**
- * Props for the RenderActionsColumn component.
+ * Props for actions column rendering
  *
- * @interface RenderActionsColumnProps
- * @property {GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>} params - The parameters for the grid render cell.
- * @property {(_index: number) => void} onEdit - The function to call when the edit button is clicked.
+ * @property {GridRenderCellParams<TransactionRowModel>} params - DataGrid cell parameters
+ * @property {(_index: number) => void} onEdit - Callback for edit action
  */
 interface RenderActionsColumnProps {
    params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>;
@@ -135,10 +133,10 @@ interface RenderActionsColumnProps {
 }
 
 /**
- * Renders the actions column for a given transaction.
+ * Renders edit and delete actions for transactions
  *
- * @param {RenderActionsColumnProps} props - The props for the grid render cell.
- * @returns {React.ReactNode} The rendered actions column.
+ * @param {RenderActionsColumnProps} props - The RenderActionsColumn component props
+ * @returns {React.ReactNode} Actions column content
  */
 export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps): React.ReactNode {
    return (

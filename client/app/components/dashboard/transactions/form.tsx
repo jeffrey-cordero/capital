@@ -30,17 +30,16 @@ import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
 
 /**
- * Props for the TransactionForm component.
+ * Props for the TransactionForm component
  *
- * @interface TransactionFormProps
- * @property {Transaction | undefined} transaction - The transaction to edit.
- * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
- * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
- * @property {boolean} open - Whether the modal is open.
- * @property {number} index - The index of the transaction in the transactions array.
- * @property {() => void} onClose - The function to call when the modal is closed.
- * @property {"account" | "budget"} filter - The filter to base the potential default values on.
- * @property {string | undefined} identifier - The identifier used to apply the potential default values.
+ * @property {Transaction | undefined} transaction - Transaction to edit or undefined for creation
+ * @property {Record<string, Account>} accountsMap - Mapping of account IDs to accounts
+ * @property {Record<string, BudgetType>} budgetsMap - Mapping of budget category IDs to budget types
+ * @property {boolean} open - Whether the modal is open
+ * @property {number} index - Index of the transaction in the transactions array
+ * @property {() => void} onClose - Function to call when modal closes
+ * @property {"account" | "budget"} filter - Filter to base potential default values on
+ * @property {string | undefined} identifier - Identifier for applying default values
  */
 interface TransactionFormProps {
    transaction: Transaction | undefined;
@@ -54,10 +53,10 @@ interface TransactionFormProps {
 }
 
 /**
- * The TransactionForm component for creating/editing transactions.
+ * Transaction creation and editing form with validation
  *
- * @param {TransactionFormProps} props - The props for the TransactionForm component
- * @returns {React.ReactNode} The TransactionForm component
+ * @param {TransactionFormProps} props - The TransactionForm component props
+ * @returns {React.ReactNode} Transaction form modal
  */
 export default function TransactionForm({ transaction, accountsMap, budgetsMap, open, index, onClose, filter, identifier }: TransactionFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();

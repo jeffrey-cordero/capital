@@ -11,11 +11,10 @@ import TransactionsTable from "@/components/dashboard/transactions/table";
 import { type RootState } from "@/redux/store";
 
 /**
- * Defines the props for the Transactions component
+ * Props for the Transactions component
  *
- * @interface TransactionProps
- * @property {string} filter - The filter to apply to the transactions
- * @property {string} identifier - The identifier to apply to the transactions
+ * @property {string} filter - Filter to apply to transactions (account or budget)
+ * @property {string} identifier - Identifier for the applied filter
  */
 interface TransactionProps {
    filter?: "account" | "budget";
@@ -23,9 +22,7 @@ interface TransactionProps {
 }
 
 /**
- * Type for managing edit state of the transaction form
- *
- * @type {EditState}
+ * Type for managing transaction form edit state
  */
 type EditState = {
    state: "view" | "create" | "edit";
@@ -33,10 +30,10 @@ type EditState = {
 };
 
 /**
- * The Transactions component to display the transactions table and form.
+ * Displays transactions with filtering capabilities and form for creation/editing
  *
- * @param {TransactionProps} props - The props for the Transactions component
- * @returns {React.ReactNode} The Transactions component
+ * @param {TransactionProps} props - The Transactions component props
+ * @returns {React.ReactNode} Transactions component
  */
 export default function Transactions({ filter, identifier }: TransactionProps): React.ReactNode {
    const [editState, setEditState] = useState<EditState>({ state: "view" });

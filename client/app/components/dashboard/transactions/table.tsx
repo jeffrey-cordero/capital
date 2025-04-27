@@ -39,16 +39,15 @@ import { type BudgetsState } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * The row model type for the DataGrid component.
+ * Row model for transaction data grid
  *
- * @type {TransactionRowModel}
- * @extends {GridValidRowModel & Transaction} - Inherits from GridValidRowModel and Transaction attributes
- * @property {string} id - The ID of the transaction.
- * @property {string} account - The name of the account.
- * @property {string} category - The name of the category.
- * @property {BudgetType} type - The type of the category (Income or Expenses)
- * @property {number} index - The index of the transaction.
- * @property {number} [balance] - The potential account balance of the transaction for the account view.
+ * @extends {GridValidRowModel & Transaction}
+ * @property {string} id - Transaction ID
+ * @property {string} account - Account name
+ * @property {string} category - Category name
+ * @property {BudgetType} type - Budget type (Income or Expenses)
+ * @property {number} index - Transaction index in store
+ * @property {number} [balance] - Optional account balance for account view
  */
 export type TransactionRowModel = GridValidRowModel & Transaction & {
    id: string;
@@ -60,14 +59,13 @@ export type TransactionRowModel = GridValidRowModel & Transaction & {
 };
 
 /**
- * Props for the TransactionsTable component.
+ * Props for the TransactionsTable component
  *
- * @interface TransactionsTableProps
- * @property {string} filter - The filter to apply to the table.
- * @property {string} identifier - The identifier to filter the table by.
- * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
- * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
- * @property {(index: number) => void} onEdit - The callback to edit a transaction based on index.
+ * @property {string} filter - Filter to apply (account or budget)
+ * @property {string} identifier - Identifier for the filter
+ * @property {Record<string, Account>} accountsMap - Account ID to account mappings
+ * @property {Record<string, BudgetType>} budgetsMap - Budget category ID to type mappings
+ * @property {(index: number) => void} onEdit - Callback for editing a transaction
  */
 interface TransactionsTableProps {
    filter: "account" | "budget" | undefined;
@@ -78,10 +76,10 @@ interface TransactionsTableProps {
 }
 
 /**
- * The TransactionsTable component.
+ * Displays transactions in a table with filtering, sorting and pagination
  *
- * @param {TransactionsTableProps} props - The props for the TransactionsTable component.
- * @returns {React.ReactNode} The rendered TransactionsTable component.
+ * @param {TransactionsTableProps} props - The TransactionsTable component props
+ * @returns {React.ReactNode} Transactions table component
  */
 export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
    const theme = useTheme();

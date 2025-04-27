@@ -19,12 +19,12 @@ import { type BudgetsState } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * Gets the category information for a given category ID.
+ * Gets category information for a given category ID
  *
- * @param {OrganizedBudgets} budgets - The organized budgets.
- * @param {string | null | undefined} categoryId - The ID of the category.
- * @param {BudgetType} type - The type of the category (Income or Expenses)
- * @returns {Object | null} The category information.
+ * @param {OrganizedBudgets} budgets - Organized budgets structure
+ * @param {string | null | undefined} categoryId - Category ID to look up
+ * @param {BudgetType} type - Budget type (Income or Expenses)
+ * @returns {Object | null} Category information or null if not found
  */
 function getCategoryInfo(
    budgets: OrganizedBudgets,
@@ -43,11 +43,10 @@ function getCategoryInfo(
 };
 
 /**
- * Gets the apply filter function for a given filter item shared across
- * both account and category filters.
+ * Creates filter function for DataGrid filtering
  *
- * @param {GridFilterItem} filterItem - The filter item to apply.
- * @returns {Function} The apply filter function.
+ * @param {GridFilterItem} filterItem - Filter item to apply
+ * @returns {Function} Filter function that checks if an item is selected
  */
 export function getApplyFilterFn(filterItem: GridFilterItem): (_item: string) => boolean {
    const selected = filterItem.value;
@@ -62,14 +61,14 @@ export function getApplyFilterFn(filterItem: GridFilterItem): (_item: string) =>
 }
 
 /**
- * Filters the transactions based on the current applied filter-identifier combination.
+ * Filters transactions based on account or budget or returns all normalized transactions
  *
- * @param {Transaction[]} transactions - The transactions to filter.
- * @param {Record<string, Account>} accountsMap - The mapping of account IDs to accounts.
- * @param {BudgetsState["value"]} budgets - The organized budgets state.
- * @param {"account" | "budget" | undefined} filter - The filter to apply.
- * @param {string | undefined} identifier - The identifier to filter by.
- * @returns {TransactionRowModel[]} The filtered transactions.
+ * @param {Transaction[]} transactions - Transactions to filter
+ * @param {Record<string, Account>} accountsMap - Account ID to account mappings
+ * @param {BudgetsState["value"]} budgets - Budget state value
+ * @param {"account" | "budget" | undefined} filter - Filter type to apply
+ * @param {string | undefined} identifier - Filter identifier
+ * @returns {TransactionRowModel[]} Filtered transactions with UI metadata
  */
 export function filterTransactions(
    transactions: Transaction[],
@@ -134,13 +133,11 @@ export function filterTransactions(
 }
 
 /**
- * Props for the TransactionFilter component, which is used to filter the transactions
- * based on accounts or categories within the column header menu.
+ * Props for the transaction filter component
  *
- * @interface TransactionFilterProps
- * @property {GridFilterInputMultipleValueProps} props - The props for the grid filter multi-select input.
- * @property {"Account" | "Category"} type - The type of the filter.
- * @property {Record<string, BudgetType>} budgetsMap - The mapping of budget category IDs to budget types.
+ * @property {GridFilterInputMultipleValueProps} props - DataGrid filter input properties
+ * @property {"Account" | "Category"} type - Filter type (Account or Category)
+ * @property {Record<string, BudgetType>} budgetsMap - Budget category ID to type mapping
  */
 interface TransactionFilterProps {
    props: GridFilterInputMultipleValueProps;
@@ -149,10 +146,10 @@ interface TransactionFilterProps {
 }
 
 /**
- * The TransactionFilter component.
+ * Multi-select filter for transaction account or category columns
  *
- * @param {TransactionFilterProps} props - The props for the TransactionFilter component.
- * @returns {React.ReactNode} The TransactionFilter component.
+ * @param {TransactionFilterProps} props - The TransactionFilter component props
+ * @returns {React.ReactNode} Filter component for DataGrid
  */
 export function TransactionFilter({ props, budgetsMap, type }: TransactionFilterProps): React.ReactNode {
    const { item, applyValue } = props; // eslint-disable-line react/prop-types

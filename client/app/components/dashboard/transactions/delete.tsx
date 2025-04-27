@@ -9,11 +9,10 @@ import { sendApiRequest } from "@/lib/api";
 import { deleteTransaction, deleteTransactions } from "@/redux/slices/transactions";
 
 /**
- * Props for the TransactionDeletion component.
+ * Props for the TransactionDeletion component
  *
- * @interface TransactionDeletionProps
- * @property {Transaction} transaction - The transaction to delete.
- * @property {number} index - The index of the transaction.
+ * @property {Transaction} transaction - Transaction to delete
+ * @property {number} index - Index of the transaction in the store
  */
 interface TransactionDeletionProps {
    transaction: Transaction;
@@ -21,20 +20,20 @@ interface TransactionDeletionProps {
 }
 
 /**
- * The message for the TransactionDeletion component.
+ * Confirmation message for single transaction deletion
  */
 const message = "Are you sure you want to delete this transaction? This action cannot be undone.";
 
 /**
- * The message for the BulkTransactionDeletion component.
+ * Confirmation message for bulk transaction deletion
  */
 const bulkMessage = "Are you sure you want to delete these transactions? This action cannot be undone.";
 
 /**
- * The TransactionDeletion component for confirming transaction deletion.
+ * Transaction deletion confirmation component with API integration
  *
- * @param {TransactionDeletionProps} props - The props for the TransactionDeletion component.
- * @returns {React.ReactNode} The TransactionDeletion component.
+ * @param {TransactionDeletionProps} props - The TransactionDeletion component props
+ * @returns {React.ReactNode} Deletion confirmation component
  */
 export function TransactionDeletion({ transaction, index }: TransactionDeletionProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
@@ -66,21 +65,19 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
 }
 
 /**
- * Props for the BulkTransactionDeletion component.
+ * Props for bulk transaction deletion
  *
- * @interface BulkTransactionDeletionProps
- * @extends {TransactionDeletionProps} - Inherits the props from the TransactionDeletion component.
- * @property {RefObject<GridRowSelectionModel>} selectedRows - The selected rows reference.
+ * @property {RefObject<GridRowSelectionModel>} selectedRows - Reference to selected transaction rows
  */
 interface BulkTransactionDeletionProps {
    selectedRows: RefObject<GridRowSelectionModel>;
 }
 
 /**
- * The BulkTransactionDeletion component for confirming bulk transaction deletion.
+ * Bulk transaction deletion confirmation with API integration
  *
- * @param {BulkTransactionDeletionProps} props - The props for the BulkTransactionDeletion component.
- * @returns {React.ReactNode} The BulkTransactionDeletion component.
+ * @param {BulkTransactionDeletionProps} props - The BulkTransactionDeletion component props
+ * @returns {React.ReactNode} Bulk deletion confirmation component
  */
 export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletionProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
