@@ -8,7 +8,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
+import { updateUserSchema, type UserUpdates } from "capital/user";
 import { useCallback, useState } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,8 +29,8 @@ import type { RootState } from "@/redux/store";
 export default function Security(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const settings = useSelector((state: RootState) => state.settings.value);
-   const [disabled, setDisabled] = useState({ username: true, email: true, passwords: true });
    const [visible, setVisible] = useState({ password: false, newPassword: false, verifyPassword: false });
+   const [disabled, setDisabled] = useState({ username: true, email: true, passwords: true });
 
    // Form setup with react-hook-form
    const {
@@ -38,26 +38,17 @@ export default function Security(): React.ReactNode {
       handleSubmit,
       reset,
       setError,
-      formState: { isSubmitting, errors, dirtyFields }
-   } = useForm<UserUpdates>({
-      defaultValues: settings || {}
-   });
-
-   // Reset the visibility of all fields
-   const resetVisibility = useCallback(() => {
-      setDisabled(prev => {
-         const updates = { ...prev };
-
-         Object.keys(updates).forEach(key => {
-            updates[key as keyof typeof disabled] = true;
-         });
-
-         return updates;
+      formState: { isSubmitting, errors, dirtyFields } } = useForm<UserUpdates>({
+         defaultValues: settings || {}
       });
+
+   // Disable all inputs
+   const disableInputs = useCallback(() => {
+      setDisabled({ username: true, email: true, passwords: true });
    }, [setDisabled]);
 
+   // Reset the form and disable all inputs when form updates are cancelled
    const onCancel = useCallback(() => {
-      // Reset the form
       reset({
          username: settings.username,
          email: settings.email,
@@ -65,22 +56,24 @@ export default function Security(): React.ReactNode {
          newPassword: "",
          verifyPassword: ""
       }, { keepDirty: false });
+      disableInputs();
+   }, [reset, disableInputs, settings.username, settings.email]);
 
-      // Reset the visibility of all fields
-      resetVisibility();
-   }, [reset, resetVisibility, settings.username, settings.email]);
-
-   const togglePasswordVisibility = useCallback((field: keyof typeof visible) => {
+   // Visible password and disabled field handlers
+   const toggleVisiblePasswords = useCallback((field: keyof typeof visible) => {
       setVisible(prev => ({ ...prev, [field]: !prev[field] }));
    }, []);
 
-   const toggleFieldEditable = useCallback((field: keyof typeof disabled) => {
+   const toggleEditableFields = useCallback((field: keyof typeof disabled) => {
       setDisabled(prev => ({ ...prev, [field]: !prev[field] }));
    }, []);
 
-   // Handles form submissions
    const onSubmit = async(data: FieldValues) => {
       try {
+         // Ignore empty updates
+         if (Object.keys(dirtyFields).length === 0) return;
+
+         // Normalize the dirty fields from the current form
          const fields = updateUserSchema.safeParse({
             ...data,
             password: data.password || undefined,
@@ -89,35 +82,30 @@ export default function Security(): React.ReactNode {
          });
 
          if (!fields.success) {
+            // Invalid user security inputs
             handleValidationErrors(fields, setError);
             return;
          }
 
-         // Only send fields that were changed
+         // Format the updates for the API request
          const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserUpdates>, key) => {
             acc[key as keyof UserUpdates] = fields.data[key as keyof UserUpdates];
+
             return acc;
          }, {});
-
-         // Skip if no changes were made
-         if (Object.keys(updates).length === 0) return;
 
          const response = await sendApiRequest<number>(
             "users", "PUT", updates, dispatch, navigate, setError
          );
 
          if (response === 204) {
-            // Update Redux store with potential changes
-            const changes: Partial<UserDetails> = {
+            // Update Redux store with the provided changes
+            dispatch(updateDetails({
                username: updates.username || settings.username,
                email: updates.email || settings.email
-            };
+            }));
 
-            if (Object.keys(changes).length > 0) {
-               dispatch(updateDetails(changes));
-            }
-
-            // Update default values
+            // Reset the form and disable all inputs
             reset({
                username: updates.username || settings.username,
                email: updates.email || settings.email,
@@ -125,9 +113,7 @@ export default function Security(): React.ReactNode {
                newPassword: undefined,
                verifyPassword: undefined
             }, { keepDirty: false });
-
-            // Reset visibility of all fields
-            resetVisibility();
+            disableInputs();
          }
       } catch (error) {
          console.error("Failed to update security settings:", error);
@@ -163,7 +149,7 @@ export default function Security(): React.ReactNode {
                                     <FontAwesomeIcon
                                        className = "primary"
                                        icon = { faPenToSquare }
-                                       onClick = { () => toggleFieldEditable("username") }
+                                       onClick = { () => toggleEditableFields("username") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
@@ -200,7 +186,7 @@ export default function Security(): React.ReactNode {
                                     <FontAwesomeIcon
                                        className = "primary"
                                        icon = { faPenToSquare }
-                                       onClick = { () => toggleFieldEditable("email") }
+                                       onClick = { () => toggleEditableFields("email") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : undefined
@@ -238,14 +224,14 @@ export default function Security(): React.ReactNode {
                                     <FontAwesomeIcon
                                        className = "primary"
                                        icon = { disabled.passwords ? faPenToSquare : visible.password ? faEye : faEyeSlash }
-                                       onClick = { () => toggleFieldEditable("passwords") }
+                                       onClick = { () => toggleEditableFields("passwords") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  ) : (
                                     <FontAwesomeIcon
-                                       className = { visible.password ? undefined : "primary" }
+                                       className = { visible.password ? "primary" : undefined }
                                        icon = { visible.password ? faEye : faEyeSlash }
-                                       onClick = { () => togglePasswordVisibility("password") }
+                                       onClick = { () => toggleVisiblePasswords("password") }
                                        style = { { cursor: "pointer" } }
                                     />
                                  )
@@ -291,9 +277,9 @@ export default function Security(): React.ReactNode {
                                     autoComplete = "new-password"
                                     endAdornment = {
                                        <FontAwesomeIcon
-                                          className = { visible.newPassword ? undefined : "primary" }
+                                          className = { visible.newPassword ? "primary" : undefined }
                                           icon = { visible.newPassword ? faEye : faEyeSlash }
-                                          onClick = { () => togglePasswordVisibility("newPassword") }
+                                          onClick = { () => toggleVisiblePasswords("newPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }
@@ -326,9 +312,9 @@ export default function Security(): React.ReactNode {
                                     autoComplete = "new-password"
                                     endAdornment = {
                                        <FontAwesomeIcon
-                                          className = { visible.verifyPassword ? undefined : "primary" }
+                                          className = { visible.verifyPassword ? "primary" : undefined }
                                           icon = { visible.verifyPassword ? faEye : faEyeSlash }
-                                          onClick = { () => togglePasswordVisibility("verifyPassword") }
+                                          onClick = { () => toggleVisiblePasswords("verifyPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }

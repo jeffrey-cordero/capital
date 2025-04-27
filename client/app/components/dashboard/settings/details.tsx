@@ -41,12 +41,12 @@ export default function Details(): React.ReactNode {
       handleSubmit,
       setError,
       reset,
-      formState: { isSubmitting, errors, dirtyFields }} = useForm<UserUpdates>({
-      defaultValues: {
-         name: settings.name,
-         birthday: settings.birthday.split("T")[0]
-      }
-   });
+      formState: { isSubmitting, errors, dirtyFields } } = useForm<UserUpdates>({
+         defaultValues: {
+            name: settings.name,
+            birthday: settings.birthday.split("T")[0]
+         }
+      });
 
    // Setup minimum and maximum dates for birthday input
    const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
@@ -66,7 +66,7 @@ export default function Details(): React.ReactNode {
          const fields = updateUserSchema.safeParse(data);
 
          if (!fields.success) {
-            // Invalid details inputs
+            // Invalid user detail inputs
             handleValidationErrors(fields, setError);
             return;
          }
@@ -97,7 +97,7 @@ export default function Details(): React.ReactNode {
       }
    };
 
-   // Theme update handler, which is not entirely tied to the account details form
+   // Theme update handler, which is not tied to account details
    const updateTheme = useCallback((update: "light" | "dark") => {
       dispatch(setTheme(update));
    }, [dispatch]);
