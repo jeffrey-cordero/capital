@@ -16,14 +16,17 @@ import { displayCurrency, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
- * Define the props for the CategoryItem component
+ * Props for the CategoryItem component
  *
- * @interface CategoryItemProps
- * @property {string} budget_category_id - The id of the category
- * @property {string} name - The name of the category
- * @property {BudgetGoal[]} goals - The goals for the category
- * @property {string} period - The period
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {string} budget_category_id - Category identifier
+ * @property {string} name - Category name
+ * @property {BudgetGoal[]} goals - Budget goals list
+ * @property {number} goalIndex - Current goal index
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {() => void} [onEditClick] - Edit handler function
+ * @property {boolean} [isMainCategory] - Whether this is a main category
+ * @property {string} period - Current budget period
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface CategoryItemProps {
    budget_category_id: string;
@@ -38,7 +41,7 @@ interface CategoryItemProps {
 }
 
 /**
- * The CategoryItem component to display the category item
+ * Displays a budget category with progress bar and details
  *
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
@@ -100,7 +103,7 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
 };
 
 /**
- * The BudgetCategory component to display the budget category
+ * Displays budget categories with animations
  *
  * @param {BudgetProps} props - The props for the BudgetCategory component
  * @returns {React.ReactNode} The BudgetCategory component
@@ -175,12 +178,11 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
 };
 
 /**
- * Define the props for the Budget component
+ * Props for the Budget component
  *
- * @interface BudgetProps
- * @property {string} type - The type of budget
- * @property {() => void} onEditClick - The function to call when the edit button is clicked on main categories
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {() => void} onEditClick - Edit button click handler
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetProps {
    type: "Income" | "Expenses";
@@ -189,7 +191,7 @@ interface BudgetProps {
 }
 
 /**
- * The Budget component to display the budget
+ * Main budget display component
  *
  * @param {BudgetProps} props - The props for the Budget component
  * @returns {React.ReactNode} The Budget component
@@ -202,4 +204,4 @@ export default function Budget({ type, onEditClick, allocations }: BudgetProps):
          type = { type }
       />
    );
-};
+}

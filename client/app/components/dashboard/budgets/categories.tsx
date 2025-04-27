@@ -41,11 +41,10 @@ import { updateBudgetCategoryOrder } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * The props for the BudgetCategories component
+ * Props for the BudgetCategories component
  *
- * @interface BudgetCategoriesProps
- * @property {string} type - The type of budget to display
- * @property {Function} updateDirtyFields - The function to update the dirty fields
+ * @property {"Income" | "Expenses"} type - Budget type to display
+ * @property {Function} updateDirtyFields - Dirty fields tracker function
  */
 interface BudgetCategoriesProps {
    type: "Income" | "Expenses";
@@ -53,17 +52,16 @@ interface BudgetCategoriesProps {
 }
 
 /**
- * The props for the CategoryItem component
+ * Props for the CategoryItem component
  *
- * @interface CategoryItemProps
- * @property {BudgetCategory} category - The category to display
+ * @property {BudgetCategory} category - Budget category to display
  */
 interface CategoryItemProps extends BudgetCategoriesProps {
    category: BudgetCategory;
 }
 
 /**
- * The CategoryItem component to display a category within the categories section
+ * Draggable budget category item with edit/delete controls
  *
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
@@ -158,7 +156,7 @@ const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }
 };
 
 /**
- * The BudgetCategories component to display the categories section
+ * Sortable budget categories container with drag-and-drop functionality
  *
  * @param {BudgetCategoriesProps} props - The props for the BudgetCategories component
  * @returns {React.ReactNode} The BudgetCategories component
@@ -168,7 +166,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const [displayNewCategoryForm, setDisplayNewCategoryForm] = useState(false);
 
-   // Memoize the category ID's and their corresponding components
+   // Memoize category IDs and their respective components
    const [categoryIds, categories] = useMemo(() => {
       return budget.categories.reduce((acc, record) => {
          acc[0].push(record.budget_category_id);
@@ -184,7 +182,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
       }, [[], []] as [string[], React.ReactNode[]]);
    }, [budget.categories, type, updateDirtyFields]);
 
-   // New category form open/close handlers
+   // New category form handlers
    const openCreateNewCategoryForm = useCallback(() => {
       setDisplayNewCategoryForm(true);
    }, []);
@@ -215,7 +213,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
          let oldIndex: number | undefined;
          let newIndex: number | undefined;
 
-         // Find the indices of the dragged and target categories
+         // Find indices of dragged and target categories
          const categories = budget.categories;
          for (let i = 0; i < categories.length; i++) {
             const category = categories[i];

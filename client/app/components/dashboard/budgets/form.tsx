@@ -25,19 +25,18 @@ import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * The schema for validating budget goal updates
+ * Schema for budget goal validation
  */
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 /**
- * The props for the BudgetForm component
+ * Props for the BudgetForm component
  *
- * @interface BudgetFormProps
- * @property {string} type - The type of the budget
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
- * @property {boolean} displayWarning - Whether to display the warning component
- * @property {boolean} open - Whether the modal is open
- * @property {() => void} onClose - The function to call when the modal is closed
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
+ * @property {boolean} displayWarning - Warning display flag
+ * @property {boolean} open - Modal visibility state
+ * @property {() => void} onClose - Modal close handler
  */
 interface BudgetFormProps {
    type: "Income" | "Expenses";
@@ -48,7 +47,7 @@ interface BudgetFormProps {
 }
 
 /**
- * The BudgetForm component to update a budget goal
+ * Budget management modal with main goal and categories construction/editing functionality
  *
  * @param {BudgetFormProps} props - The props for the BudgetForm component
  * @returns {React.ReactNode} The BudgetForm component
@@ -70,13 +69,14 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
       }
    });
 
-   // Reset the form when modal visibility changes or changes are cancelled
+   // Reset form when modal visibility changes
    useEffect(() => {
       if (open) {
          reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
       }
    }, [open, reset, budget.goals, budget.goalIndex]);
 
+   // Reset form when changes are cancelled
    const onCancel = useCallback(() => {
       updateDirtyFields({}, "main");
       reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
@@ -104,20 +104,20 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             year
          };
 
-         // Determine if we need to create or update a budget entry (PUT vs POST)
+         // Determine if creating new or updating existing budget (POST vs PUT)
          const isCurrentPeriod = compareBudgetPeriods(
             { month, year },
             { month: budget.goals[budget.goalIndex].month, year: budget.goals[budget.goalIndex].year }
          ) === "equal";
          const method = isCurrentPeriod ? "PUT" : "POST";
 
-         // Submit the API request
+         // Submit API request
          const result = await sendApiRequest<number | { success: boolean }>(
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
          if (result === 204 || (typeof result === "object" && result?.success)) {
-            // Update Redux store for a successful update or creation and reset the form
+            // Update Redux store and reset form
             dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,

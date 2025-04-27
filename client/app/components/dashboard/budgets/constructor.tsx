@@ -23,7 +23,7 @@ import { addBudgetCategory } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 /**
- * Schema that combines category and budget validations for a single form
+ * Combined schema for category creation with budget goals
  */
 const constructSchema = budgetCategorySchema.omit({
    budget_category_id: true,
@@ -35,14 +35,13 @@ const constructSchema = budgetCategorySchema.omit({
 }));
 
 /**
- * The ConstructCategory component to create a new budget category
+ * Props for the ConstructCategory component
  *
- * @interface ConstructCategoryProps
- * @property {boolean} visible - Whether the form is visible
- * @property {() => void} onClose - The function to close the form
- * @property {() => void} onOpen - The function to open the form
- * @property {"Income" | "Expenses"} type - The type of the budget category
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to update the dirty fields
+ * @property {boolean} visible - Form visibility state
+ * @property {() => void} onClose - Close handler
+ * @property {() => void} onOpen - Open handler
+ * @property {"Income" | "Expenses"} type - Budget category type
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
  */
 interface ConstructCategoryProps {
    visible: boolean;
@@ -53,7 +52,7 @@ interface ConstructCategoryProps {
 }
 
 /**
- * The ConstructCategory component to create a new budget category
+ * Form to create new budget categories
  *
  * @param {ConstructCategoryProps} props - The props for the ConstructCategory component
  * @returns {React.ReactNode} The ConstructCategory component

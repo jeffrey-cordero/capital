@@ -11,7 +11,7 @@ import {
    useTheme
 } from "@mui/material";
 import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -32,10 +32,8 @@ import type { RootState } from "@/redux/store";
  */
 export default function Details(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-
-   // Gather user settings and theme from respective Redux slices
    const settings = useSelector((state: RootState) => state.settings.value);
-   const currentTheme = useSelector((state: RootState) => state.theme.value);
+   const preferredTheme = useSelector((state: RootState) => state.theme.value);
 
    // Form setup with react-hook-form
    const {
@@ -43,8 +41,7 @@ export default function Details(): React.ReactNode {
       handleSubmit,
       setError,
       reset,
-      formState: { isSubmitting, errors, dirtyFields }
-   } = useForm<UserUpdates>({
+      formState: { isSubmitting, errors, dirtyFields }} = useForm<UserUpdates>({
       defaultValues: {
          name: settings.name,
          birthday: settings.birthday.split("T")[0]
@@ -52,7 +49,7 @@ export default function Details(): React.ReactNode {
    });
 
    // Setup minimum and maximum dates for birthday input
-   const [minDate, maxDate] = getValidDateRange();
+   const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onReset = useCallback(() => {
       reset({
@@ -61,32 +58,33 @@ export default function Details(): React.ReactNode {
       }, { keepDirty: false });
    }, [reset, settings.name, settings.birthday]);
 
-   // Handles form submission
    const onSubmit = async(data: FieldValues) => {
       try {
+         // Ignore empty updates
+         if (Object.keys(dirtyFields).length === 0) return;
+
          const fields = updateUserSchema.safeParse(data);
 
          if (!fields.success) {
-            // Handle validation errors
+            // Invalid details inputs
             handleValidationErrors(fields, setError);
             return;
          }
 
-         // Only send fields that were changed
+         // Format the updates for the API request
          const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserUpdates>, key) => {
             acc[key as keyof UserUpdates] = fields.data[key as keyof UserUpdates];
+
             return acc;
          }, {});
 
-         // Skip if no changes were made
-         if (Object.keys(updates).length === 0) return;
-
+         // Submit the API request for user details updates
          const response = await sendApiRequest<number>(
             "users", "PUT", updates, dispatch, navigate, setError
          );
 
          if (response === 204) {
-            // Update Redux store with the changes
+            // Update Redux store on successful updates and reset the form
             dispatch(updateDetails(updates as Partial<UserDetails>));
 
             reset({
@@ -99,8 +97,8 @@ export default function Details(): React.ReactNode {
       }
    };
 
-   // Handle theme change through the select input
-   const changeTheme = useCallback((update: "light" | "dark") => {
+   // Theme update handler, which is not entirely tied to the account details form
+   const updateTheme = useCallback((update: "light" | "dark") => {
       dispatch(setTheme(update));
    }, [dispatch]);
 
@@ -197,7 +195,7 @@ export default function Details(): React.ReactNode {
                   </InputLabel>
                   <Select
                      label = "Theme"
-                     onChange = { (e) => changeTheme(e.target.value as "light" | "dark") }
+                     onChange = { (e) => updateTheme(e.target.value as "light" | "dark") }
                      slotProps = {
                         {
                            input: {
@@ -205,7 +203,7 @@ export default function Details(): React.ReactNode {
                            }
                         }
                      }
-                     value = { currentTheme }
+                     value = { preferredTheme }
                      variant = "outlined"
                   >
                      <MenuItem value = "light">

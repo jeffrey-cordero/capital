@@ -18,9 +18,7 @@ import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 /**
- * Type for managing edit state of budget components
- *
- * @type {EditState}
+ * The edit state management type for budget components
  */
 type EditState = {
    state: "view" | "edit";
@@ -29,17 +27,17 @@ type EditState = {
 };
 
 /**
- * Define the props for the Budgets component
+ * The props for the Budgets component
  *
  * @interface BudgetsProps
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetsProps {
    allocations: Record<string, Record<string, number>>;
 }
 
 /**
- * The Budgets component to display the budgets
+ * Main budgets container with navigation controls
  *
  * @param {BudgetsProps} props - The props for the Budgets component
  * @returns {React.ReactNode} The Budgets component
@@ -50,7 +48,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
    );
-   // Keep track of dirty fields within the various child forms
+   // Track dirty fields within various child forms
    const dirtyFields = useRef<Record<string, boolean>>({});
 
    // Modal open/close handlers
@@ -82,7 +80,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period.month, period.year, today]);
 
-   // Update dirty fields within child form's to potentially display warning upon closing the modal
+   // Update dirty fields for warning display when closing modal
    const updateDirtyFields = useCallback((fields: object, field: string) => {
       if (Object.keys(fields).length > 0) {
          dirtyFields.current[field] = true;
@@ -90,7 +88,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
          delete dirtyFields.current[field];
       }
 
-      // No dirty fields implies no warning should be displayed
+      // Clear warning when no dirty fields remain
       if (Object.keys(dirtyFields.current).length === 0 && editState.displayWarning) {
          setEditState((prev) => ({ ...prev, displayWarning: false }));
       }

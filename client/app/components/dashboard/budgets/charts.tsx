@@ -17,20 +17,16 @@ import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/displa
 import type { RootState } from "@/redux/store";
 
 /**
- * Define the props for the StyledText component
+ * Props for the styled text component
  *
- * @interface StyledTextProps
- * @property {string} variant - The variant of the text
+ * @property {"primary" | "secondary"} variant - Text variant type
  */
 interface StyledTextProps {
    variant: "primary" | "secondary";
 }
 
 /**
- * The StyledText component to display text in the pie chart
- *
- * @param {StyledTextProps} props - The props for the StyledText component
- * @returns {React.ReactNode} The StyledText component
+ * Custom styled text for pie chart labels
  */
 const StyledText = styled("text", {
    shouldForwardProp: (prop) => prop !== "variant"
@@ -71,17 +67,16 @@ const StyledText = styled("text", {
 }));
 
 /**
- * Define the props for the PieCenterLabel component
+ * Props for the pie chart center label
  *
- * @interface PieCenterLabelProps
- * @property {string} primaryText - The primary text to display (amount)
+ * @property {string} primaryText - Amount display text
  */
 interface PieCenterLabelProps {
    primaryText: string;
 }
 
 /**
- * The PieCenterLabel component to display text in the pie chart
+ * Central label for pie charts showing currency amount
  *
  * @param {PieCenterLabelProps} props - The props for the PieCenterLabel component
  * @returns {React.ReactNode} The PieCenterLabel component
@@ -102,13 +97,12 @@ const PieCenterLabel = function PieCenterLabel({ primaryText }: PieCenterLabelPr
 };
 
 /**
- * Define the props for the BudgetProgressChart component
+ * Props for the budget progress chart
  *
- * @interface BudgetProgressChartProps
- * @property {string} title - The title of the chart
- * @property {string} type - The type of the chart
- * @property {{ label: string, percentage: number, value: number, color: string }[]} data - The data for the chart
- * @property {number} current - The current value used for the budget
+ * @property {string} title - Chart title
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {{ label: string, percentage: number, value: number, color: string }[]} data - Chart data
+ * @property {number} current - Current budget value
  */
 interface BudgetProgressChartProps {
    title: string;
@@ -118,7 +112,7 @@ interface BudgetProgressChartProps {
 }
 
 /**
- * The BudgetProgressChart component to display the progress of the budget
+ * Visualizes budget progress with pie chart and progress bars
  *
  * @param {BudgetProgressChartProps} props - The props for the BudgetProgressChart component
  * @returns {React.ReactNode} The BudgetProgressChart component
@@ -221,11 +215,10 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
 }
 
 /**
- * Define the props for the BudgetPieChart component
+ * Props for the budget pie chart
  *
- * @interface BudgetPieChartProps
- * @property {string} type - The type of the budget
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetPieChartProps {
    type: "Income" | "Expenses";
@@ -233,29 +226,29 @@ interface BudgetPieChartProps {
 }
 
 /**
- * The BudgetPieChart component to display the pie chart of the budget
+ * Visualizes budget allocations with pie chart and linear progress bars
  *
- * @param {string} type - The type of the budget
+ * @param {BudgetPieChartProps} props - The props for the BudgetPieChart component
  * @returns {React.ReactNode} The BudgetPieChart component
  */
 export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): React.ReactNode {
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Period string representing the current month and year
+   // Format period string (YYYY-MM)
    const period = useMemo(() => {
       return `${year}-${month.toString().padStart(2, "0")}`;
    }, [month, year]);
 
-   // Total budget allocation for the current period
+   // Calculate budget totals
    const total = Math.max(allocations[period]?.[type] || 0);
    const base = Math.max(total, 1);
 
-   // Hue and saturation values for the pie chart categories based on budget type
+   // Set pie chart color scheme based on budget type
    const hue = type === "Income" ? 120 : 0;
    const saturation = hue === 120 ? 44 : 90;
 
-   // Pie data for the budget categories
+   // Generate pie chart data
    const pieData = useMemo(() => {
       let sum = 0;
       const data = budget.categories.map((category, index) => {
@@ -271,7 +264,7 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
       });
 
       if (sum === 0 || sum < total) {
-         // Main type data point if the sum of the category allocations is less than the total budget allocation
+         // Add main category slice if needed to ensure a complete pie chart
          data.unshift({
             label: type,
             percentage: 100 * (Math.abs(sum - total) / base),
@@ -298,17 +291,16 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
 }
 
 /**
- * Define the props for the BudgetTrends component
+ * Props for the budget trends component
  *
- * @interface BudgetTrendsProps
- * @property {boolean} isCard - Whether the trends are in a card
+ * @property {boolean} isCard - Whether displayed in card format
  */
 interface BudgetTrendsProps {
    isCard: boolean;
 }
 
 /**
- * The BudgetTrends component to display the trends of the budget
+ * Displays budget trends over time
  *
  * @param {BudgetTrendsProps} props - The props for the BudgetTrends component
  * @returns {React.ReactNode} The BudgetTrends component
@@ -322,4 +314,4 @@ export function BudgetTrends({ isCard }: BudgetTrendsProps): React.ReactNode {
          />
       </Box>
    );
-};
+}
