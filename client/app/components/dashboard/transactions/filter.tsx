@@ -156,8 +156,9 @@ interface TransactionFilterProps {
  */
 export function TransactionFilter({ props, budgetsMap, type }: TransactionFilterProps): React.ReactNode {
    const { item, applyValue } = props; // eslint-disable-line react/prop-types
-   const multiSelectRef = useRef<string[]>(["all"]);
+   const selectInputRef = useRef<string[]>(["all"]);
 
+   // Fetch the accounts or budgets based on the type of the filter
    const accounts: Account[] | null = useSelector((state: RootState) => {
       return type === "Account" ? state.accounts.value : null;
    });
@@ -166,18 +167,19 @@ export function TransactionFilter({ props, budgetsMap, type }: TransactionFilter
    });
 
    const updatedSelectedItems = useCallback((event: SelectChangeEvent<string[]>) => {
+      // Normalize the selected items from the event target
       const { value } = event.target;
       const selected: string[] = Array.isArray(value) ? value : [value];
 
       // Toggle between all and selected items
       if (selected.length === 1 && selected[0] === "all") {
-         multiSelectRef.current = ["all"];
+         selectInputRef.current = ["all"];
       } else {
-         multiSelectRef.current = selected.filter((v: string) => v !== "all");
+         selectInputRef.current = selected.filter((v: string) => v !== "all");
       }
 
-      // Update the filter state within the data grid
-      applyValue({ ...item, value: multiSelectRef.current });
+      // Apply the updated filter within the data grid component
+      applyValue({ ...item, value: selectInputRef.current });
    }, [item, applyValue]);
 
    return (
@@ -231,7 +233,7 @@ export function TransactionFilter({ props, budgetsMap, type }: TransactionFilter
                   }
                }
             }
-            value = { multiSelectRef.current }
+            value = { selectInputRef.current }
             variant = "outlined"
          >
             <MenuItem

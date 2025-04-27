@@ -65,38 +65,41 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
 
-   // Setup the react-hook-form instance
+   // Form setup with react-hook-form
    const {
       control,
       handleSubmit,
       reset,
       setError,
       clearErrors,
-      formState: { isSubmitting, errors, dirtyFields }
-   } = useForm({
+      formState: { isSubmitting, errors, dirtyFields } } = useForm({
       defaultValues: {
-         amount: 0, date: "", description: "", account_id: "", budget_category_id: ""
+         amount: 0,
+         date: "",
+         description: "",
+         account_id: "",
+         budget_category_id: ""
       }
    });
 
-   // Memoize the default values based on the filter and identifier
-   const defaultAccountID: string = useMemo(() => {
-      if (filter === "account") {
-         return accounts.find((acc) => acc.account_id === identifier)?.account_id || "";
-      }
+   // Default selection values for new transactions based on the potential filter and identifier
+   const [defaultAccountID, defaultBudgetCategoryID] = useMemo(() => {
+      return [
+         filter === "account" ? accounts.find((a) => a.account_id === identifier)?.account_id || "" : "",
+         filter === "budget" ? budgets[identifier as BudgetType]?.budget_category_id || "" : ""
+      ];
+   }, [filter, identifier, accounts, budgets]);
 
-      return "";
-   }, [filter, identifier, accounts]);
+   // Account and budget category selection options
+   const [accountOptions, incomeCategoryOptions, expenseCategoryOptions] = useMemo(() => {
+      return [
+         Object.values(accountsMap),
+         Object.values(budgets.Income.categories || []),
+         Object.values(budgets.Expenses.categories || [])
+      ];
+   }, [accountsMap, budgets.Income.categories, budgets.Expenses.categories]);
 
-   const defaultBudgetCategoryID: string = useMemo(() => {
-      if (filter === "budget") {
-         return budgets[identifier as BudgetType]?.budget_category_id;
-      }
-
-      return "";
-   }, [filter, identifier, budgets]);
-
-   // Setup minimum and maximum dates for transactions
+   // Minimum and maximum potential dates for valid transactions
    const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onReset = useCallback(() => {
@@ -127,64 +130,61 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       }
    }, [open, onReset, clearErrors]);
 
-   // Memoize the account and budget category options
-   const accountOptions = useMemo(() => {
-      return Object.values(accountsMap);
-   }, [accountsMap]);
-
-   const incomeCategoryOptions = useMemo(() => {
-      return Object.values(budgets.Income.categories || []);
-   }, [budgets.Income]);
-
-   const expenseCategoryOptions = useMemo(() => {
-      return Object.values(budgets.Expenses.categories || []);
-   }, [budgets.Expenses]);
-
    const onSubmit = async(data: FieldValues) => {
       try {
-         // Validate the form data against the transaction schema
+         // Ignore empty updates
+         if (Object.keys(dirtyFields).length === 0) return;
+
+         // Normalize transaction type based on the budget category ID or amount
          const type: BudgetType = data.budget_category_id ? budgetsMap[data.budget_category_id] : (data.amount >= 0 ? "Income" : "Expenses");
-         const fields = transactionSchema.safeParse({ ...data, type: type });
+         const fields = transactionSchema.safeParse({
+            ...data,
+            type: type
+         });
 
          if (!fields.success) {
+            // Invalid transaction inputs
             handleValidationErrors(fields, setError);
             return;
          }
 
          if (updating) {
-            // Format the updated fields payload
+            // Normalize the updated fields payload for the API request
             const updatedFields = Object.keys(dirtyFields).reduce((acc: Record<string, any>, record) => {
                acc[record] = fields?.data?.[record as keyof typeof fields.data];
 
                return acc;
-            }, {} as Partial<Transaction>);
+            }, { type } as Partial<Transaction>);
 
-            if (Object.keys(updatedFields).length > 0) {
-               updatedFields.type = type;
-               const result = await sendApiRequest<number>(
-                  `dashboard/transactions/${transaction.transaction_id}`, "PUT", updatedFields, dispatch, navigate
-               );
+            // Submit the API request for the updated transaction
+            const result = await sendApiRequest<number>(
+               `dashboard/transactions/${transaction.transaction_id}`, "PUT", updatedFields, dispatch, navigate
+            );
 
-               if (result === 204) {
-                  // Update the transaction in the Redux store and close the modal
-                  dispatch(updateTransaction({ index, transaction: updatedFields }));
-                  onClose();
-               }
+            if (result === 204) {
+               // Update the transaction in the Redux store and close the modal
+               dispatch(updateTransaction({ index, transaction: updatedFields }));
+               onClose();
             }
          } else {
+            // Normalize the transaction payload for the API request
             const payload = {
                ...fields.data,
                type: type,
                budget_category_id: fields.data.budget_category_id || null
             } as Transaction;
 
+            // Submit the API request for the new transaction
             const result = await sendApiRequest<{ transaction_id: string }>(
                "dashboard/transactions", "POST", payload, dispatch, navigate, setError
             );
 
             if (result instanceof Object && "transaction_id" in result) {
                // Add the transaction to the Redux store and close the modal
-               dispatch(addTransaction({ ...payload, transaction_id: result.transaction_id }));
+               dispatch(addTransaction({
+                  ...payload,
+                  transaction_id: result.transaction_id
+               }));
                onClose();
             }
          }

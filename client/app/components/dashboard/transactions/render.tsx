@@ -78,7 +78,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
 export function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const account: Account | undefined = useMemo(() => {
-      return accounts.find((account) => account.account_id === account_id);
+      return accounts.find((a) => a.account_id === account_id);
    }, [accounts, account_id]);
 
    return (
@@ -102,14 +102,14 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
  */
 export function RenderCategoryChip({ budget_category_id, type }: { budget_category_id: string, type: BudgetType }): React.ReactNode {
    const budgets = useSelector((state: RootState) => state.budgets.value);
-   const category: BudgetCategory | undefined = useMemo(() => {
+   const budgetCategory: BudgetCategory | undefined = useMemo(() => {
       return budgets[type].categories.find((c) => {
          return c.budget_category_id === budget_category_id;
       });
    }, [budgets, budget_category_id, type]);
 
+   const label: string = budgetCategory?.name || type;
    const color: "success" | "error" = type === "Income" ? "success" : "error";
-   const label: string = category?.name || type;
 
    return (
       <Chip

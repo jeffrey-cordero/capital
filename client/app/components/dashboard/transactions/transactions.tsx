@@ -41,7 +41,7 @@ type EditState = {
 export default function Transactions({ filter, identifier }: TransactionProps): React.ReactNode {
    const [editState, setEditState] = useState<EditState>({ state: "view" });
 
-   // Transaction form modal handlers
+   // Modal open/close handlers
    const openModal = useCallback((index?: number) => {
       setEditState({ state: index === undefined ? "create" : "edit", index });
    }, []);
@@ -50,14 +50,13 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
       setEditState({ state: "view", index: undefined });
    }, []);
 
-   // Fetch the transaction based on the index
+   // Fetch the transaction based on the current edit state index
    const transaction = useSelector((state: RootState) => {
       return editState.index !== undefined ? state.transactions.value[editState.index] : undefined;
    });
 
-   // Memoize the account mappings leveraged by various child components
+   // Memoize the account ID to account mappings for child components
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
-
    const accountsMap: Record<string, Account> = useMemo(() => {
       return accounts.reduce((acc: Record<string, Account>, record) => {
          acc[record.account_id || ""] = record;
@@ -66,17 +65,18 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
       }, {} as Record<string, Account>);
    }, [accounts]);
 
-   // Memoize the budget category mappings leveraged by various child components
+   // Memoize the budget category ID to budget type mappings for child components
    const budgets: OrganizedBudgets = useSelector((state: RootState) => state.budgets.value);
    const budgetsMap: Record<string, BudgetType> = useMemo(() => {
       return Object.values(budgets).reduce((acc: Record<string, BudgetType>, record: OrganizedBudget) => {
          if (!record.budget_category_id) {
-            // Budget period values should be ignored
+            // Ignore the budget period value
             return acc;
          }
 
          const type: BudgetType = record.budget_category_id === budgets.Income.budget_category_id ? "Income" : "Expenses";
 
+         // Map the main and sub budget categories to the respective budget type
          acc[record.budget_category_id || ""] = type;
          record.categories.forEach((category: BudgetCategory) => {
             acc[category.budget_category_id || ""] = type;

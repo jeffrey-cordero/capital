@@ -91,20 +91,20 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
 
    // MUI DataGrid container references
    const dataGridRef: Ref<any> = useRef<any>(null);
-   const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
    const pageSize: Ref<number> = useRef<number>(25);
+   const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
 
-   // Set the initial view and page size based on local storage
+   // Set the initial view and page size based on localStorage
    useEffect(() => {
       setView(window.localStorage.getItem("view") === "table" ? "table" : "list");
       pageSize.current = Number(window.localStorage.getItem("pageSize")) || 25;
    }, []);
 
+   // Selected rows, page size, and view handlers
    const updateSelectedRows = useCallback((rows: GridRowSelectionModel) => {
       selectedRows.current = rows;
    }, []);
 
-   // Update the page size and scroll to the top of the table
    const updatePageSize = useCallback((details: GridPaginationModel) => {
       if (details.pageSize !== pageSize.current) {
          pageSize.current = details.pageSize;
@@ -113,25 +113,22 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
       }
    }, [filter]);
 
-   // Update the local state and storage for preferred transaction view
    const changeView = useCallback((_event: React.MouseEvent<HTMLElement>, value: "table" | "list") => {
       setView((prev) => {
          const update: "table" | "list" = value || prev;
          window.localStorage.setItem("view", update);
-
-         // Reset the DataGrid horizontal virtual scrollbar position as the list view get's cut off unintentionally
+         // Reset the virtual scrollbar position due to MUI data-grid rendering cutoffs
          dataGridRef.current?.scroll({ top: 0, left: 0 });
 
          return update;
       });
    }, []);
 
-   // DataGrid rows
+   // MUI DataGrid rows and columns/card setup based on the view
    const rows: TransactionRowModel[] = useMemo(() => {
       return filterTransactions(transactions, accountsMap, budgets, filter, identifier);
    }, [transactions, accountsMap, budgets, filter, identifier]);
 
-   // DataGrid columns (table view)
    const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => {
       const visible: GridColDef<TransactionRowModel>[] = [{
          field: "date",
@@ -242,7 +239,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
          )
       }];
 
-      // Potential balance column for the account view
+      // Potential balance column for the accounts modal
       if (filter === "account") {
          visible.push({
             field: "balance",
@@ -284,7 +281,6 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
       return visible;
    }, [onEdit, filter, budgetsMap]);
 
-   // DataGrid columns (list view)
    const cards: GridColDef<TransactionRowModel>[] = useMemo(() => [{
       field: "card",
       headerName: "",
@@ -303,7 +299,8 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
       )
    }], [onEdit, transactions.length]);
 
-   const noTransactionsContainer: React.ReactNode = useMemo(() => {
+   // Display no results for missing or non-applicable transactions
+   const missingTransactionsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
             sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
@@ -437,8 +434,8 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
             slots = {
                {
                   columnHeaders: view === "list" ? () => null : undefined,
-                  noRowsOverlay: () => noTransactionsContainer,
-                  noResultsOverlay: () => noTransactionsContainer
+                  noRowsOverlay: () => missingTransactionsContainer,
+                  noResultsOverlay: () => missingTransactionsContainer
                }
             }
             sx = {
