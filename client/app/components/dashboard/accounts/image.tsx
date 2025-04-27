@@ -150,7 +150,6 @@ export default function AccountImage({
                            {
                               width: "100%",
                               height: "auto",
-                              maxHeight: 423.52,
                               mt: 1,
                               mb: 0.5,
                               cursor: "pointer",
