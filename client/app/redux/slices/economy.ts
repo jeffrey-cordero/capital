@@ -3,12 +3,12 @@ import type { Economy, News, Trends } from "capital/economy";
 import { type WritableDraft } from "immer";
 
 /**
- * The state of the economy slice
+ * Redux state for economy data management
  */
 type EconomyState = { value: Economy };
 
 /**
- * The economy slice
+ * Economy slice for managing economic data and trends
  */
 const economySlice = createSlice({
    name: "economy",
@@ -20,10 +20,10 @@ const economySlice = createSlice({
    } as EconomyState,
    reducers: {
       /**
-       * Sets the economy state in the Redux store.
+       * Sets the economy state with news and trends
        *
-       * @param {EconomyState} state - The current state of the economy
-       * @param {PayloadAction<EconomyState>} action - The dispatched action containing the payload
+       * @param {WritableDraft<EconomyState>} state - Current economy state
+       * @param {PayloadAction<Economy>} action - Action containing economy data
        */
       setEconomy: (state: WritableDraft<EconomyState>, action: PayloadAction<typeof state.value>) => {
          state.value = action.payload;

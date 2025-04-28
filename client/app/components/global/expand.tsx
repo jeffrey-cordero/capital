@@ -1,10 +1,8 @@
 import { IconButton, type IconButtonProps, styled } from "@mui/material";
 
 /**
- * The props for the Expand component
+ * Props for the Expand component
  *
- * @interface ExpandProps
- * @extends {IconButtonProps} - Inherits all props from the MUI `IconButton` component
  * @property {boolean} expand - Whether the component is expanded
  */
 interface ExpandProps extends IconButtonProps {
@@ -12,12 +10,12 @@ interface ExpandProps extends IconButtonProps {
 }
 
 /**
- * The Expand component, a styled version of the MUI `IconButton` component.
+ * Styled IconButton that rotates based on the current expanded state
  *
- * @param {ExpandProps} props - The props for the Expand component
- * @returns {React.ReactNode} The Expand component
+ * @param {ExpandProps} props - Expand component props
+ * @returns {StyledComponent} The Expand component
  */
-export const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-disable-line
+const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-disable-line
    return <IconButton { ...other } />;
 })(({ theme }) => ({
    margin: "0",
@@ -30,14 +28,16 @@ export const Expand = styled(({ expand, ...other }: ExpandProps) => { // eslint-
       {
          props: ({ expand }) => !expand,
          style: {
-            transform: "rotate(0deg)"  // Icon is in the collapsed state.
+            transform: "rotate(0deg)"
          }
       },
       {
          props: ({ expand }) => !!expand,
          style: {
-            transform: "rotate(180deg)"  // Icon is in the expanded state.
+            transform: "rotate(180deg)"
          }
       }
    ]
 }));
+
+export default Expand;

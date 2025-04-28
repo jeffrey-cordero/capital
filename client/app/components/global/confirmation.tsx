@@ -13,16 +13,15 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 
 /**
- * The props for the Confirmation component.
+ * Props for the Confirmation component
  *
- * @interface ConfirmationProps
- * @property {string} type - The type of confirmation to display
- * @property {string} message - The message to display within the confirmation dialog
- * @property {() => void} onConfirmation - The function to call when the user confirms the action
- * @property {string} [fontSize] - The font size of the icon
- * @property {string} [title] - The title of the deletion button
- * @property {IconDefinition} [startIcon] - The icon to display for the button
- * @property {string} [color] - The color of the button
+ * @property {string} type - Type of confirmation display ("button" or "icon")
+ * @property {string} message - Message to display in the confirmation dialog
+ * @property {() => void} onConfirmation - Function called when user confirms the action
+ * @property {string} [fontSize] - Icon font size
+ * @property {string} [title] - Button title text
+ * @property {IconDefinition} [startIcon] - Button start icon
+ * @property {string} [color] - MUI Button color variant
  */
 interface ConfirmationProps {
    type: "button" | "icon";
@@ -35,15 +34,16 @@ interface ConfirmationProps {
 }
 
 /**
- * The Confirmation component across the application.
+ * Confirmation dialog component displayed as a button or icon
  *
- * @param {ConfirmationProps} props - The props for the Confirmation component
+ * @param {ConfirmationProps} props - Confirmation component props
  * @returns {React.ReactNode} The Confirmation component
  */
 export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
+   // Dialog handlers
    const openDialog = useCallback(() => {
       setOpen(true);
    }, []);
@@ -88,7 +88,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                }
             }
          >
-            <Box sx = { { p: 1 } }>
+            <Box sx = { { py: 1, px: 0.5 } }>
                <DialogContent sx = { { pb: 0 } }>
                   <DialogContentText>
                      { message }

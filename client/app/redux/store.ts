@@ -10,7 +10,7 @@ import themeReducer from "@/redux/slices/theme";
 import transactionsReducer from "@/redux/slices/transactions";
 
 /**
- * The Redux store for the application.
+ * Redux store configuration with all application reducers
  */
 const store = configureStore({
    reducer: {
@@ -26,12 +26,12 @@ const store = configureStore({
 });
 
 /**
- * Type definition for the entire Redux state.
+ * Type for accessing complete application state
  */
 export type RootState = ReturnType<typeof store.getState>;
 
 /**
- * Type definition for the Redux dispatch function.
+ * Type for dispatching actions to the store
  */
 export type AppDispatch = typeof store.dispatch;
 

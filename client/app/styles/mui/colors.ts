@@ -1,6 +1,6 @@
 
 /**
- * Brand colors.
+ * Brand colors
  */
 export const brand = {
    50: "hsl(210, 100%, 97%)",
@@ -16,7 +16,7 @@ export const brand = {
 };
 
 /**
- * Gray colors.
+ * Gray colors
  */
 export const gray = {
    50: "hsl(220, 35%, 97%)",
@@ -32,7 +32,7 @@ export const gray = {
 };
 
 /**
- * Green colors.
+ * Green colors
  */
 export const green = {
    50: "hsl(120, 80%, 98%)",
@@ -48,7 +48,7 @@ export const green = {
 };
 
 /**
- * Orange colors.
+ * Orange colors
  */
 export const orange = {
    50: "hsl(45, 100%, 97%)",
@@ -64,7 +64,7 @@ export const orange = {
 };
 
 /**
- * Red colors.
+ * Red colors
  */
 export const red = {
    50: "hsl(0, 100%, 97%)",

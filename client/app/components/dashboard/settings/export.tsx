@@ -4,24 +4,20 @@ import { Button } from "@mui/material";
 import { useCallback } from "react";
 import { useSelector } from "react-redux";
 
-import type { RootState } from "@/redux/store";
+import { selectExportData } from "@/redux/selector";
 
 /**
- * ExportAccount component for exporting user account details as a JSON file
+ * Exports user data as a downloadable JSON file
  *
- * @returns {React.ReactNode} The ExportAccount component
+ * @returns {React.ReactNode} Export data button component
  */
 export default function ExportAccount(): React.ReactNode {
-   // Get all user data from Redux store
-   const settings = useSelector((state: RootState) => state.settings.value);
-   const accounts = useSelector((state: RootState) => state.accounts.value);
-   const budgets = useSelector((state: RootState) => state.budgets.value);
-   const transactions = useSelector((state: RootState) => state.transactions.value);
+   const { settings, accounts, budgets, transactions } = useSelector(selectExportData);
 
    const exportAccount = useCallback(() => {
       try {
-         // Create export data object
-         const exportData = {
+         // Normalize the export data
+         const data = {
             timestamp: new Date().toLocaleString(),
             settings,
             accounts: accounts.map((account) => ({
@@ -55,11 +51,11 @@ export default function ExportAccount(): React.ReactNode {
             }))
          };
 
-         // Convert to a valid JSON string
-         const jsonString = JSON.stringify(exportData, null, 3);
+         // Normalize into a human-readable format (JSON)
+         const json = JSON.stringify(data, null, 3);
 
          // Create blob and download link
-         const blob = new Blob([jsonString], { type: "application/json" });
+         const blob = new Blob([json], { type: "application/json" });
          const url = URL.createObjectURL(blob);
 
          // Create a temporary download link

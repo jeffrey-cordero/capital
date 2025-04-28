@@ -25,7 +25,7 @@ import { sendApiRequest } from "@/lib/api";
 import { handleValidationErrors } from "@/lib/validation";
 
 /**
- * The login schema to only include the username and password fields.
+ * Login schema with username and password fields
  */
 const loginSchema = z.object({
    username: userSchema.innerType().shape.username,
@@ -33,28 +33,22 @@ const loginSchema = z.object({
 });
 
 /**
- * The login page component.
+ * Login page component with form validation and authentication
  *
  * @returns {React.ReactNode} The login page component
  */
 export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const {
-      control,
-      handleSubmit,
-      setError,
-      formState: { isSubmitting, errors }
-   } = useForm();
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
 
    const onSubmit = async(data: any) => {
       const fields = loginSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit the credentials for authentication
+         // Submit authentication request
          const credentials = {
             username: fields.data.username,
             password: fields.data.password
@@ -74,7 +68,6 @@ export default function Login(): React.ReactNode {
       <Container className = "center">
          <Callout
             sx = { { width: "100%" } }
-            type = "primary"
          >
             <Stack
                direction = "column"
@@ -180,8 +173,7 @@ export default function Login(): React.ReactNode {
                      >
                         Don&apos;t have an account?{ " " }
                         <Link
-                           className = "success"
-                           color = "success"
+                           color = "primary"
                            fontWeight = "bold"
                            id = "register"
                            onClick = { () => navigate("/register") }

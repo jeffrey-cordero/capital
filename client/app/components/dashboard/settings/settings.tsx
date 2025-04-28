@@ -5,16 +5,16 @@ import Details from "@/components/dashboard/settings/details";
 import Security from "@/components/dashboard/settings/security";
 
 /**
- * Settings component for managing user settings
+ * User settings dashboard with personal, security, and account sections
  *
- * @returns {React.ReactNode} The Settings component
+ * @returns {React.ReactNode} Settings management interface
  */
 export default function Settings(): React.ReactNode {
    return (
       <Box sx = { { width: "100%" } }>
          <Stack
             direction = "column"
-            spacing = { -2 }
+            spacing = { 4 }
             sx = { { py: 2 } }
          >
             <Details />

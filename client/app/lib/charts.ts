@@ -1,11 +1,11 @@
 import type { Theme } from "@mui/material";
 
 /**
- * Calculate the percentage change between current and initial values
+ * Calculates percent change between two values
  *
- * @param {number} current - The current value
- * @param {number} initial - The initial value
- * @returns {number} The percentage change
+ * @param {number} current - Current value
+ * @param {number} initial - Initial reference value
+ * @returns {number} Percentage change (0 if initial is zero)
  */
 export function calculatePercentageChange(current: number, initial: number): number {
    if (initial === 0) return 0;
@@ -14,11 +14,11 @@ export function calculatePercentageChange(current: number, initial: number): num
 }
 
 /**
- * Gets the color of the graph based on the trend direction.
+ * Determines graph color based on value trend
  *
- * @param {Theme} theme - The MUI theme
- * @param {number} value - The value of the graph
- * @returns {string} The color of the graph
+ * @param {Theme} theme - Material UI theme object
+ * @param {number} value - Numeric value to evaluate
+ * @returns {string} Appropriate theme color based on value
  */
 export function getGraphColor(theme: Theme, value: number): string {
    if (value === 0) {
@@ -31,10 +31,10 @@ export function getGraphColor(theme: Theme, value: number): string {
 }
 
 /**
- * Gets the color of the chip based on the trend direction.
+ * Gets semantic chip color for trend indicators
  *
- * @param {number} trend - The trend of the graph
- * @returns {string} The color of the chip
+ * @param {number} trend - Trend value to evaluate
+ * @returns {string} Color variant name (default, success, or error)
  */
 export function getChipColor(trend: number): string {
    if (trend === 0) {

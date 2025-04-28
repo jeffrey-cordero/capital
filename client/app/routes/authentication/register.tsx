@@ -23,38 +23,31 @@ import { useNavigate } from "react-router";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
-import { getDateRange } from "@/lib/dates";
+import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 
 /**
- * The registration page component.
+ * Registration page component with form validation
  *
  * @returns {React.ReactNode} The registration page component
  */
 export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-   const {
-      control,
-      handleSubmit,
-      setError,
-      formState: { isSubmitting, errors }
-   } = useForm();
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
-   // Setup minimum and maximum dates for birthday input
-   const [minDate, maxDate] = useMemo(() => getDateRange(), []);
+   // Store the birthday date range constraints
+   const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onSubmit = async(data: any) => {
       const fields = userSchema.safeParse(data);
 
       if (!fields.success) {
-         // Invalid credential inputs
          handleValidationErrors(fields, setError);
       } else {
-         // Submit the credentials for registration
+         // Submit registration fields
          const registration = {
             username: fields.data.username,
             name: fields.data.name,
@@ -69,13 +62,7 @@ export default function Register(): React.ReactNode {
          );
 
          if (typeof result === "object" && result?.success) {
-            // Display a success notification
-            dispatch(addNotification({
-               type: "success",
-               message: "Welcome"
-            }));
-
-            // Re-sync authentication state for auto-redirection
+            // Update authentication state
             dispatch(authenticate(true));
          }
       }
@@ -84,8 +71,7 @@ export default function Register(): React.ReactNode {
    return (
       <Container className = "center">
          <Callout
-            sx = { { width: "100%", my: 12 } }
-            type = "primary"
+            sx = { { width: "100%", my: 10.6 } }
          >
             <Stack
                direction = "column"

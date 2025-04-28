@@ -10,21 +10,23 @@ import {
 } from "@mui/material";
 import { type BudgetGoal, type OrganizedBudget } from "capital/budgets";
 import { AnimatePresence, motion } from "framer-motion";
-import { memo } from "react";
 import { useSelector } from "react-redux";
 
 import { displayCurrency, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
- * Define the props for the CategoryItem component
+ * Props for the CategoryItem component
  *
- * @interface CategoryItemProps
- * @property {string} budget_category_id - The id of the category
- * @property {string} name - The name of the category
- * @property {BudgetGoal[]} goals - The goals for the category
- * @property {string} period - The period
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {string} budget_category_id - Category identifier
+ * @property {string} name - Category name
+ * @property {BudgetGoal[]} goals - Budget goals list
+ * @property {number} goalIndex - Current goal index
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {() => void} [onEditClick] - Edit handler function
+ * @property {boolean} [isMainCategory] - Whether this is a main category
+ * @property {string} period - Current budget period
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface CategoryItemProps {
    budget_category_id: string;
@@ -39,12 +41,13 @@ interface CategoryItemProps {
 }
 
 /**
- * The CategoryItem component to display the category item
+ * Displays a budget category with progress bar and details
  *
  * @param {CategoryItemProps} props - The props for the CategoryItem component
  * @returns {React.ReactNode} The CategoryItem component
  */
-const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, period }: CategoryItemProps) {
+const CategoryItem = function CategoryItem(props: CategoryItemProps): React.ReactNode {
+   const { budget_category_id, name, goals, goalIndex, type, onEditClick, isMainCategory = false, allocations, period } = props;
    const theme = useTheme();
    const goal = goals[goalIndex].goal;
    const current = allocations[period]?.[isMainCategory ? type : budget_category_id] || 0;
@@ -68,7 +71,7 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
                   { name }
                </Typography>
                {
-                  onEditClick && (
+                  isMainCategory && (
                      <IconButton
                         color = "primary"
                         onClick = { onEditClick }
@@ -91,23 +94,23 @@ const CategoryItem = memo(function CategoryItem({ budget_category_id, name, goal
          </Stack>
          <LinearProgress
             color = { color }
-            sx = { { height: "1.75rem", borderRadius: "16px" } }
+            sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
          />
       </Box>
    );
-});
+};
 
 /**
- * The BudgetCategory component to display the budget category
+ * Displays budget categories with animations
  *
  * @param {BudgetProps} props - The props for the BudgetCategory component
  * @returns {React.ReactNode} The BudgetCategory component
  */
 const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations }: BudgetProps): React.ReactNode {
-   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const period: string = `${year}-${month.toString().padStart(2, "0")}`;
 
    return (
@@ -129,54 +132,57 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
                type = { type }
             />
          </Box>
-         <AnimatePresence mode = "popLayout">
-            <Stack
-               direction = "column"
-               spacing = { 2 }
-            >
-               {
-                  budget.categories.map((category) => (
-                     <motion.div
-                        animate = { { opacity: 1, y: 0 } }
-                        exit = { { opacity: 0, y: 10 } }
-                        initial = { { opacity: 0, y: -10 } }
-                        key = { category.budget_category_id }
-                        layout = "position"
-                        transition = {
-                           {
-                              type: "spring",
-                              stiffness: 100,
-                              damping: 15,
-                              mass: 1,
-                              duration: 0.1
-                           }
-                        }
-                     >
-                        <CategoryItem
-                           allocations = { allocations }
-                           budget_category_id = { category.budget_category_id }
-                           goalIndex = { category.goalIndex }
-                           goals = { category.goals }
-                           name = { String(category.name) }
-                           period = { period }
-                           type = { type }
-                        />
-                     </motion.div>
-                  ))
-               }
-            </Stack>
-         </AnimatePresence>
+         {
+            budget.categories.length > 0 && (
+               <AnimatePresence mode = "popLayout">
+                  <Stack
+                     direction = "column"
+                     spacing = { 2 }
+                  >
+                     {
+                        budget.categories.map((category) => (
+                           <motion.div
+                              animate = { { opacity: 1, y: 0 } }
+                              exit = { { opacity: 0, y: 10 } }
+                              initial = { { opacity: 0, y: -10 } }
+                              key = { category.budget_category_id }
+                              layout = "position"
+                              transition = {
+                                 {
+                                    type: "spring",
+                                    stiffness: 100,
+                                    damping: 15,
+                                    mass: 1,
+                                    duration: 0.1
+                                 }
+                              }
+                           >
+                              <CategoryItem
+                                 allocations = { allocations }
+                                 budget_category_id = { category.budget_category_id }
+                                 goalIndex = { category.goalIndex }
+                                 goals = { category.goals }
+                                 name = { String(category.name) }
+                                 period = { period }
+                                 type = { type }
+                              />
+                           </motion.div>
+                        ))
+                     }
+                  </Stack>
+               </AnimatePresence>
+            )
+         }
       </Stack>
    );
 };
 
 /**
- * Define the props for the Budget component
+ * Props for the Budget component
  *
- * @interface BudgetProps
- * @property {string} type - The type of budget
- * @property {() => void} onEditClick - The function to call when the edit button is clicked on main categories
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {() => void} onEditClick - Edit button click handler
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetProps {
    type: "Income" | "Expenses";
@@ -185,7 +191,7 @@ interface BudgetProps {
 }
 
 /**
- * The Budget component to display the budget
+ * Main budget display component
  *
  * @param {BudgetProps} props - The props for the Budget component
  * @returns {React.ReactNode} The Budget component
@@ -198,4 +204,4 @@ export default function Budget({ type, onEditClick, allocations }: BudgetProps):
          type = { type }
       />
    );
-};
+}

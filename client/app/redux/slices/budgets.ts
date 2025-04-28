@@ -12,17 +12,17 @@ import { type WritableDraft } from "immer";
 import { calculateNewBudgetPeriod, compareBudgetPeriods, getCurrentDate } from "@/lib/dates";
 
 /**
- * The current date
+ * Current date for initializing budget period
  */
 const today: Date = getCurrentDate();
 
 /**
- * The state of the budgets slice
+ * Redux state for budget management
  */
 export type BudgetsState = { value: OrganizedBudgets & { period: BudgetPeriod }; }
 
 /**
- * The budgets slice
+ * Budgets slice for managing income and expense categories
  */
 const budgetsSlice = createSlice({
    name: "budgets",
@@ -35,19 +35,19 @@ const budgetsSlice = createSlice({
    } as BudgetsState,
    reducers: {
       /**
-       * Sets the budgets state in the Redux store.
+       * Sets the budgets state
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<OrganizedBudgets>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<OrganizedBudgets>} action - Action containing budget data
        */
       setBudgets(state: WritableDraft<BudgetsState>, action: PayloadAction<OrganizedBudgets>) {
          state.value = { ...state.value, ...action.payload };
       },
       /**
-       * Updates a category budget in the Redux store for a specific budget type.
+       * Updates budget goal for the current period
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>} action - Budget update data
        */
       updateBudget(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, budget_category_id: string, goal: number }>) {
          const { type, budget_category_id, goal } = action.payload;
@@ -59,19 +59,20 @@ const budgetsSlice = createSlice({
             c => c.budget_category_id === budget_category_id
          );
 
-         if (!category) return; // Ignore invalid category payloads
+         // Ignore invalid category payloads
+         if (!category) return;
 
-         // Calculate the difference in time periods between the current state period and current category goal period
+         // Calculate the difference in time periods between the current period state and category goal period
          const currentGoal: BudgetGoal = category.goals[category.goalIndex];
-         const timePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
+         const difference: "before" | "equal" | "after" = compareBudgetPeriods(
             { month, year },
             { month: currentGoal.month, year: currentGoal.year }
          );
 
-         if (timePeriodDifference !== 0) {
-            // Handle new budget periods, which are either closer or farther from the current category goal period
-            const indexIncrement: number = Math.max(0, timePeriodDifference); // Closer periods (difference of -1) remain at the same index (no increment)
-            const indexAdjustment: number = Math.max(0, category.goalIndex + indexIncrement);
+         if (difference !== "equal") {
+            // Before implies an increment to the goal index as we are moving back in time
+            const indexIncrement: number = difference === "before" ? 1 : 0;
+            const indexAdjustment: number = category.goalIndex + indexIncrement;
 
             // Insert the new goal record for the current period
             category.goals.splice(indexAdjustment, 0, { year, month, goal });
@@ -81,35 +82,37 @@ const budgetsSlice = createSlice({
             return;
          }
 
-         // Update the existing goal record within the current period
+         // Update the existing goal record based on the current period
          category.goals[category.goalIndex].goal = goal;
       },
       /**
-       * Updates the order of categories in the Redux store for a specific budget type.
+       * Reorders budget categories
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ type: BudgetType, categories: BudgetCategory[] }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ type: BudgetType, categories: BudgetCategory[] }>} action - Action containing budget type and reordered categories array
        */
       updateBudgetCategoryOrder(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, categories: BudgetCategory[] }>) {
          const { type, categories } = action.payload;
+
          state.value[type].categories = categories;
       },
 
       /**
-       * Adds a category to the Redux store for a specific budget type.
+       * Adds a new budget category to the respective budget type
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ type: BudgetType, category: BudgetCategory }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ type: BudgetType, category: BudgetCategory }>} action - Action containing budget type and new category
        */
       addBudgetCategory(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, category: BudgetCategory }>) {
          const { type, category } = action.payload;
+
          state.value[type].categories.push(category);
       },
       /**
-       * Updates a category in the Redux store for a specific budget type.
+       * Updates a budget category
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>} action - Action containing budget type and category updates with required ID
        */
       updateBudgetCategory(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, updates: Partial<BudgetCategory> & { budget_category_id: string } }>) {
          const { type, updates } = action.payload;
@@ -118,8 +121,11 @@ const budgetsSlice = createSlice({
          const categoryIndex: number = state.value[type].categories.findIndex(
             c => c.budget_category_id === updates.budget_category_id
          );
-         if (categoryIndex === -1) return; // Ignore invalid category payloads
 
+         // Ignore invalid category payloads
+         if (categoryIndex === -1) return;
+
+         // Fetch and update the category
          const category: BudgetCategory = state.value[type].categories[categoryIndex];
          const updatedCategory: BudgetCategory = { ...category, ...updates };
 
@@ -132,10 +138,10 @@ const budgetsSlice = createSlice({
          }
       },
       /**
-       * Removes a category from the Redux store for a specific budget type.
+       * Removes a budget category
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ type: BudgetType, budget_category_id: string }>} action - Action containing budget type and category ID to remove
        */
       removeBudgetCategory(state: WritableDraft<BudgetsState>, action: PayloadAction<{ type: BudgetType, budget_category_id: string }>) {
          const { type, budget_category_id } = action.payload;
@@ -145,22 +151,23 @@ const budgetsSlice = createSlice({
             c => c.budget_category_id === budget_category_id
          );
 
-         if (categoryIndex === -1) return; // Ignore invalid category payloads
+         // Ignore invalid category payloads
+         if (categoryIndex === -1) return;
 
          state.value[type].categories.splice(categoryIndex, 1);
       },
       /**
-       * Selects a new budget period in the Redux store, updating potential category goal indices.
+       * Navigates between budget periods and updates goal indices
        *
-       * @param {WritableDraft<BudgetsState>} state - The current state of the budgets
-       * @param {PayloadAction<{ direction: "previous" | "next" }>} action - The dispatched action containing the payload
+       * @param {WritableDraft<BudgetsState>} state - Current budgets state
+       * @param {PayloadAction<{ direction: "previous" | "next" }>} action - Action containing navigation direction
        */
       selectMonth(state: WritableDraft<BudgetsState>, action: PayloadAction<{ direction: "previous" | "next" }>) {
          const { direction } = action.payload;
          const today: Date = getCurrentDate();
          const isNextDirection: boolean = direction === "next";
 
-         // Don't allow selecting future months beyond current month
+         // Prevent future budget period selection
          if (isNextDirection
             && state.value.period.month === today.getUTCMonth() + 1
             && state.value.period.year === today.getUTCFullYear()) {
@@ -168,46 +175,49 @@ const budgetsSlice = createSlice({
          }
 
          // Calculate the new period
-         const newPeriod: BudgetPeriod = calculateNewBudgetPeriod(
+         const period: BudgetPeriod = calculateNewBudgetPeriod(
             { month: state.value.period.month, year: state.value.period.year },
             direction
          );
 
          // Update the current period state
-         state.value.period = newPeriod;
+         state.value.period = period;
 
-         // Helper function to update goal indices based on the new period
+         // Helper function to potentially update goal indices based on the new period
          const updateGoalIndex = (category: WritableDraft<OrganizedBudget | BudgetCategory>) => {
+            // Goals are sorted in descending order
             const currentIndex: number = category.goalIndex;
             const boundaryIndex: number = isNextDirection ? 0 : category.goals.length - 1;
 
-            // Skip processing if already at the boundary
+            // Skip boundary goal indices
             if (currentIndex === boundaryIndex) return;
 
             // Fetch the potential new budget goal
+            const { month, year } = period;
             const currentGoal: BudgetGoal = category.goals[currentIndex];
-            const newGoal: BudgetGoal = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
 
             // Adjust goal index based on direction and period comparison
             if (!isNextDirection) {
-               const currentTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
+               // Handle going back in time
+               const difference: "before" | "equal" | "after" = compareBudgetPeriods(
                   { month: currentGoal.month, year: currentGoal.year },
-                  { month: newPeriod.month, year: newPeriod.year }
+                  { month, year }
                );
 
-               if (currentTimePeriodDifference === -1) {
-                  // Increment to previous goal periods once current goal period exceeds the new period
+               if (difference === "after") {
+                  // Once the current goal is after the new period, increment the goal index
                   category.goalIndex++;
                }
             } else {
-               // Calculate the difference in time periods between the new goal and the new period
-               const newTimePeriodDifference: -1 | 0 | 1 = compareBudgetPeriods(
-                  { month: newGoal.month, year: newGoal.year },
-                  { month: newPeriod.month, year: newPeriod.year }
+               // Handle going forward in time
+               const goal: BudgetGoal = category.goals[currentIndex + (isNextDirection ? -1 : 1)];
+               const difference: "before" | "equal" | "after" = compareBudgetPeriods(
+                  { month: goal.month, year: goal.year },
+                  { month, year }
                );
 
-               if (newTimePeriodDifference === 0) {
-                  // Only decrement to closer goal periods on the exact period match
+               if (difference === "equal") {
+                  // Only update to closer goal periods on the exact period match
                   category.goalIndex--;
                }
             }
@@ -226,5 +236,4 @@ const budgetsSlice = createSlice({
 });
 
 export const { setBudgets, updateBudget, addBudgetCategory, updateBudgetCategory, removeBudgetCategory, selectMonth, updateBudgetCategoryOrder } = budgetsSlice.actions;
-
 export default budgetsSlice.reducer;

@@ -13,47 +13,26 @@ import {
    type IconDefinition
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconButton, Stack, Switch, Typography } from "@mui/material";
+import { IconButton, Stack, Switch } from "@mui/material";
 import Box from "@mui/material/Box";
 import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import { alpha, styled, useTheme } from "@mui/material/styles";
-import { type Dispatch, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { type NavigateFunction, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import { sendApiRequest } from "@/lib/api";
 import { toggleTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
 /**
- * The function to clear the user's authentication and re-route to the login page.
+ * Navigation link definition
  *
- * @param {Dispatch<any>} dispatch - The dispatch function
- * @param {NavigateFunction} navigate - The navigate function
- */
-export async function clearAuthentication(
-   dispatch: Dispatch<any>,
-   navigate: NavigateFunction
-): Promise<void> {
-   const logout = await sendApiRequest<{ success: boolean }>(
-      "authentication/logout", "POST", null, dispatch as any, navigate
-   );
-
-   if (typeof logout === "object" && logout?.success) {
-      // Navigate to the login page to reset the global state
-      window.location.pathname = "/login";
-   }
-};
-
-/**
- * The type definition for the navigation link.
- *
- * @interface NavigationLink
- * @property {string} path - The path of the navigation link
- * @property {string} title - The title of the navigation link
- * @property {IconDefinition} icon - The icon of the navigation link
+ * @property {string} path - Navigation target path
+ * @property {string} title - Display text
+ * @property {IconDefinition} icon - FontAwesome icon
  */
 interface NavigationLink {
    path: string;
@@ -62,7 +41,7 @@ interface NavigationLink {
 }
 
 /**
- * The landing page navigation links.
+ * Landing page navigation links
  */
 const landing: NavigationLink[] = [{
    path: "/",
@@ -79,7 +58,7 @@ const landing: NavigationLink[] = [{
 }];
 
 /**
- * The dashboard navigation links for authenticated users.
+ * Dashboard navigation links for authenticated users
  */
 const dashboard: NavigationLink[] = [{
    path: "/dashboard",
@@ -108,7 +87,9 @@ const dashboard: NavigationLink[] = [{
 }];
 
 /**
- * The styled MaterialUISwitch component to match the application's theme.
+ * Styled switch component for theme toggling
+ *
+ * @returns {CreateStyledComponent} The MaterialUISwitch component
  */
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
    width: 58,
@@ -167,11 +148,10 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
 }));
 
 /**
- * The props for the SideBarContent component.
+ * Props for the SideBarContent component
  *
- * @interface SideBarContentProps
- * @property {NavigationLink[]} links - The navigation links
- * @property {() => void} onClose - The function to call when the sidebar is closed
+ * @property {NavigationLink[]} links - Navigation links to display
+ * @property {() => void} onClose - Sidebar close handler
  */
 interface SideBarContentProps {
    links: NavigationLink[];
@@ -179,85 +159,27 @@ interface SideBarContentProps {
 }
 
 /**
- * The SideBar component to render the sidebar.
+ * Sidebar internal content with navigation links
  *
- * @returns {React.ReactNode} The SideBar component
- */
-export function SideBar(): React.ReactNode {
-   const authenticated = useSelector((state: RootState) => state.authentication.value);
-   const theme = useTheme();
-   const [open, setOpen] = useState(false);
-
-   const openSideBar = useCallback(() => {
-      setOpen(true);
-   }, []);
-
-   const closeSideBar = useCallback(() => {
-      setOpen(false);
-   }, []);
-
-   return (
-      <Box>
-         <IconButton
-            color = "primary"
-            onClick = { openSideBar }
-            sx = {
-               {
-                  position: "absolute",
-                  top: 10,
-                  left: 5,
-                  zIndex: 2
-               }
-            }
-         >
-            <FontAwesomeIcon icon = { faBarsStaggered } />
-         </IconButton>
-         <Drawer
-            onClose = { closeSideBar }
-            open = { open }
-            sx = {
-               {
-                  [`& .${drawerClasses.paper}`]: {
-                     pt: 2.5,
-                     pr: 1,
-                     overflow: "unset",
-                     width: "250px",
-                     borderColor: alpha(theme.palette.grey[500], 0.08),
-                     backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
-                     zIndex: 3
-                  }
-               }
-            }
-         >
-            <SideBarContent
-               links = { authenticated ? dashboard : landing }
-               onClose = { closeSideBar }
-            />
-         </Drawer>
-      </Box>
-   );
-}
-
-/**
- * The SideBarContent component to render the sidebar content.
- *
- * @param {SideBarContentProps} props - The props for the SideBarContent component
+ * @param {SideBarContentProps} props - Sidebar content component props
  * @returns {React.ReactNode} The SideBarContent component
  */
 function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme(), location = useLocation();
 
-   const navigateToPage = useCallback((path: string) => {
+   // Action handlers
+   const visit = useCallback((path: string) => {
       navigate(path);
       onClose();
    }, [navigate, onClose]);
 
    const logout = useCallback(async() => {
-      await clearAuthentication(dispatch, navigate);
-      onClose();
-   }, [dispatch, navigate, onClose]);
+      await sendApiRequest<{ success: boolean }>(
+         "authentication/logout", "POST", null, dispatch, navigate
+      );
+   }, [dispatch, navigate]);
 
-   const updateTheme = useCallback(() => {
+   const toggle = useCallback(() => {
       dispatch(toggleTheme());
    }, [dispatch]);
 
@@ -268,14 +190,8 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                alt = "Logo"
                component = "img"
                src = "/svg/logo.svg"
-               sx = { { width: 125, height: "auto" } }
+               sx = { { width: 150, mb: -0.5, height: "auto" } }
             />
-            <Typography
-               sx = { { fontWeight: "fontWeightBold", color: theme.palette.primary.main } }
-               variant = "h4"
-            >
-               Capital
-            </Typography>
          </Stack>
          <Box
             component = "nav"
@@ -283,7 +199,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
          >
             <Box
                component = "ul"
-               sx = { { gap: 0.5, pl: 1 } }
+               sx = { { gap: 0.5, pl: 0.75 } }
             >
                {
                   links.map((link) => {
@@ -297,13 +213,12 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                         >
                            <ListItemButton
                               disableGutters = { true }
-                              onClick = { () => navigateToPage(link.path) }
+                              onClick = { () => visit(link.path) }
                               sx = {
                                  {
                                     pl: 1.5,
                                     py: 1,
                                     gap: 2,
-                                    pr: 1.5,
                                     borderRadius: 0.75,
                                     typography: "body2",
                                     fontWeight: "fontWeightMedium",
@@ -339,7 +254,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                   })
                }
             </Box>
-            <Box sx = { { position: "relative", mb: 22 } }>
+            <Box sx = { { position: "relative", mb: 19 } }>
                {
                   links === dashboard ? (
                      <Box>
@@ -378,7 +293,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }
                            id = "theme-switch"
-                           onChange = { updateTheme }
+                           onChange = { toggle }
                            sx = { { m: 1 } }
                         />
                      </Box>
@@ -386,6 +301,68 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                }
             </Box>
          </Box>
+      </Box>
+   );
+}
+
+/**
+ * Navigation sidebar with navigation links, which displays different
+ * navigation options based on authentication state
+ *
+ * @returns {React.ReactNode} The SideBar component
+ */
+export function SideBar(): React.ReactNode {
+   const theme = useTheme();
+   const authenticated = useSelector((state: RootState) => state.authentication.value);
+   const [open, setOpen] = useState(false);
+
+   // Open/close handlers
+   const openSideBar = useCallback(() => {
+      setOpen(true);
+   }, []);
+
+   const closeSideBar = useCallback(() => {
+      setOpen(false);
+   }, []);
+
+   return (
+      <Box>
+         <IconButton
+            color = "primary"
+            onClick = { openSideBar }
+            sx = {
+               {
+                  position: "absolute",
+                  top: 10,
+                  left: 5,
+                  zIndex: 2
+               }
+            }
+         >
+            <FontAwesomeIcon icon = { faBarsStaggered } />
+         </IconButton>
+         <Drawer
+            onClose = { closeSideBar }
+            open = { open }
+            sx = {
+               {
+                  [`& .${drawerClasses.paper}`]: {
+                     pt: 2.5,
+                     pr: 0.75,
+                     overflow: "unset",
+                     width: "250px",
+                     borderColor: alpha(theme.palette.grey[500], 0.08),
+                     backgroundColor: theme.palette.mode === "dark" ? "black" : theme.palette.background.default,
+                     zIndex: 3
+                  }
+               }
+            }
+         >
+            <SideBarContent
+               links = { authenticated ? dashboard : landing }
+               onClose = { closeSideBar }
+            />
+         </Drawer>
       </Box>
    );
 }

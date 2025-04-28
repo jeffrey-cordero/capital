@@ -6,7 +6,7 @@ import Finances from "@/components/dashboard/finances";
 import Articles from "@/components/dashboard/news";
 
 /**
- * The dashboard page component.
+ * Main dashboard view with financial overview and market data
  *
  * @returns {React.ReactNode} The dashboard page component
  */
@@ -14,7 +14,7 @@ export default function Page(): React.ReactNode {
    return (
       <Container
          maxWidth = "xl"
-         sx = { { py: 4, px: 2 } }
+         sx = { { py: 4, px: 2, mt: 6 } }
       >
          <Grid
             columnSpacing = { 4 }
@@ -35,22 +35,10 @@ export default function Page(): React.ReactNode {
                >
                   <Stack
                      direction = "column"
-                     id = "finances-container"
-                     spacing = { 2 }
-                     style = { { justifyContent: "space-between" } }
-                     sx = {
-                        {
-                           minHeight: "100%",
-                           textAlign: "center"
-                        }
-                     }
+                     sx = { { minHeight: "100%", textAlign: "center" } }
                   >
-                     <Grid size = { { xs: 12 } }>
-                        <Finances />
-                     </Grid>
-                     <Grid size = { { xs: 12 } }>
-                        <Markets />
-                     </Grid>
+                     <Finances />
+                     <Markets />
                   </Stack>
                </Grid>
             </Grow>

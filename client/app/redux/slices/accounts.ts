@@ -3,12 +3,12 @@ import { type Account } from "capital/accounts";
 import { type WritableDraft } from "immer";
 
 /**
- * The state of the accounts slice.
+ * Redux state for accounts management
  */
 type AccountState = { value: Account[]; }
 
 /**
- * The accounts slice for account state management.
+ * Accounts slice for state management
  */
 const accountsSlice = createSlice({
    name: "accounts",
@@ -17,28 +17,28 @@ const accountsSlice = createSlice({
    } as AccountState,
    reducers: {
       /**
-       * Sets the accounts state in the Redux store.
+       * Sets the accounts state
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts
-       * @param {PayloadAction<Account[]>} action - The dispatched action containing the payload
+       * @param {WritableDraft<AccountState>} state - Current accounts state
+       * @param {PayloadAction<Account[]>} action - Action containing accounts array
        */
       setAccounts(state: WritableDraft<AccountState>, action: PayloadAction<Account[]>) {
          state.value = action.payload;
       },
       /**
-       * Adds an account to the accounts state.
+       * Adds a new account
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts
-       * @param {PayloadAction<Account>} action - The dispatched action containing the payload
+       * @param {WritableDraft<AccountState>} state - Current accounts state
+       * @param {PayloadAction<Account>} action - Action containing the account to add
        */
       addAccount(state: WritableDraft<AccountState>, action: PayloadAction<Account>) {
          state.value.push(action.payload);
       },
       /**
-       * Updates an account in the accounts state.
+       * Updates an existing account
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts
-       * @param {PayloadAction<Partial<Account>>} action - The dispatched action containing the payload
+       * @param {WritableDraft<AccountState>} state - Current accounts state
+       * @param {PayloadAction<Partial<Account>>} action - Action containing updated account fields
        */
       updateAccount(state: WritableDraft<AccountState>, action: PayloadAction<Partial<Account>>) {
          const account = action.payload;
@@ -46,10 +46,10 @@ const accountsSlice = createSlice({
          state.value = state.value.map((acc) => account.account_id === acc.account_id ? { ...acc, ...account } : acc);
       },
       /**
-       * Removes an account from the accounts state.
+       * Removes an account by ID
        *
-       * @param {WritableDraft<AccountState>} state - The current state of the accounts
-       * @param {PayloadAction<string>} action - The dispatched action containing the payload
+       * @param {WritableDraft<AccountState>} state - Current accounts state
+       * @param {PayloadAction<string>} action - Action containing the account ID to remove
        */
       removeAccount(state: WritableDraft<AccountState>, action: PayloadAction<string>) {
          state.value = state.value.filter(account => account.account_id !== action.payload);

@@ -7,7 +7,7 @@ import { logger } from "@/lib/logger";
 /**
  * Redis client with no retry strategy
  */
-const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6380", {
+const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
    retryStrategy: () => null
 });
 

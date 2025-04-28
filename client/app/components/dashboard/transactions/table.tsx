@@ -39,16 +39,15 @@ import { type BudgetsState } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * The row model type for the DataGrid component.
+ * Row model for transaction data grid
  *
- * @type {TransactionRowModel}
- * @extends {GridValidRowModel & Transaction} - Inherits from GridValidRowModel and Transaction attributes
- * @property {string} id - The ID of the transaction.
- * @property {string} account - The name of the account.
- * @property {string} category - The name of the category.
- * @property {BudgetType} type - The type of the category (Income or Expenses)
- * @property {number} index - The index of the transaction.
- * @property {number} [balance] - The potential account balance of the transaction for the account view.
+ * @extends {GridValidRowModel & Transaction}
+ * @property {string} id - Transaction ID
+ * @property {string} account - Account name
+ * @property {string} category - Category name
+ * @property {BudgetType} type - Budget type (Income or Expenses)
+ * @property {number} index - Transaction index in store
+ * @property {number} [balance] - Optional account balance for account view
  */
 export type TransactionRowModel = GridValidRowModel & Transaction & {
    id: string;
@@ -60,28 +59,29 @@ export type TransactionRowModel = GridValidRowModel & Transaction & {
 };
 
 /**
- * Props for the TransactionsTable component.
+ * Props for the TransactionsTable component
  *
- * @interface TransactionsTableProps
- * @property {string} filter - The filter to apply to the table.
- * @property {string} identifier - The identifier to filter the table by.
- * @property {Record<string, Account>} accountsMap - The mapping of accounts IDs to accounts.
- * @property {(index: number) => void} onEdit - The callback to edit a transaction based on index.
+ * @property {string} filter - Filter to apply (account or budget)
+ * @property {string} identifier - Identifier for the filter
+ * @property {Record<string, Account>} accountsMap - Account ID to account mappings
+ * @property {Record<string, BudgetType>} budgetsMap - Budget category ID to type mappings
+ * @property {(index: number) => void} onEdit - Callback for editing a transaction
  */
 interface TransactionsTableProps {
    filter: "account" | "budget" | undefined;
    identifier: string | undefined;
    accountsMap: Record<string, Account>;
+   budgetsMap: Record<string, BudgetType>;
    onEdit: (_index: number) => void;
 }
 
 /**
- * The TransactionsTable component.
+ * Displays transactions in a table with filtering, sorting and pagination
  *
- * @param {TransactionsTableProps} props - The props for the TransactionsTable component.
- * @returns {React.ReactNode} The rendered TransactionsTable component.
+ * @param {TransactionsTableProps} props - The TransactionsTable component props
+ * @returns {React.ReactNode} Transactions table component
  */
-export default function TransactionsTable({ accountsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
+export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, filter, identifier }: TransactionsTableProps): React.ReactNode {
    const theme = useTheme();
    const budgets: BudgetsState["value"] = useSelector((state: RootState) => state.budgets.value);
    const transactions: Transaction[] = useSelector((state: RootState) => state.transactions.value);
@@ -89,20 +89,20 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
 
    // MUI DataGrid container references
    const dataGridRef: Ref<any> = useRef<any>(null);
-   const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
    const pageSize: Ref<number> = useRef<number>(25);
+   const selectedRows: Ref<GridRowSelectionModel> = useRef<GridRowSelectionModel>([]);
 
-   // Set the initial view and page size based on local storage
+   // Set the initial view and page size based on localStorage
    useEffect(() => {
       setView(window.localStorage.getItem("view") === "table" ? "table" : "list");
       pageSize.current = Number(window.localStorage.getItem("pageSize")) || 25;
    }, []);
 
+   // Selected rows, page size, and view handlers
    const updateSelectedRows = useCallback((rows: GridRowSelectionModel) => {
       selectedRows.current = rows;
    }, []);
 
-   // Update the page size and scroll to the top of the table
    const updatePageSize = useCallback((details: GridPaginationModel) => {
       if (details.pageSize !== pageSize.current) {
          pageSize.current = details.pageSize;
@@ -111,25 +111,22 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       }
    }, [filter]);
 
-   // Update the local state and storage for preferred transaction view
    const changeView = useCallback((_event: React.MouseEvent<HTMLElement>, value: "table" | "list") => {
       setView((prev) => {
          const update: "table" | "list" = value || prev;
          window.localStorage.setItem("view", update);
-
-         // Reset the DataGrid horizontal virtual scrollbar position as the list view get's cut off unintentionally
+         // Reset the virtual scrollbar position due to MUI data-grid rendering cutoffs
          dataGridRef.current?.scroll({ top: 0, left: 0 });
 
          return update;
       });
    }, []);
 
-   // DataGrid rows
+   // MUI DataGrid rows and columns/card setup based on the view
    const rows: TransactionRowModel[] = useMemo(() => {
       return filterTransactions(transactions, accountsMap, budgets, filter, identifier);
    }, [transactions, accountsMap, budgets, filter, identifier]);
 
-   // DataGrid columns (table view)
    const columns = useMemo<GridColDef<TransactionRowModel>[]>(() => {
       const visible: GridColDef<TransactionRowModel>[] = [{
          field: "date",
@@ -185,6 +182,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             getApplyFilterFn: getApplyFilterFn,
             InputComponent: (props: GridFilterInputMultipleValueProps) => (
                <TransactionFilter
+                  budgetsMap = { budgetsMap }
                   props = { props }
                   type = "Account"
                />
@@ -200,6 +198,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderCategoryChip
                budget_category_id = { params.row.budget_category_id || "" }
+               type = { params.row.type }
             />
          ),
          valueFormatter: (_value: never, row: TransactionRowModel) => row.budget_category_id,
@@ -215,6 +214,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             getApplyFilterFn: getApplyFilterFn,
             InputComponent: (props: GridFilterInputMultipleValueProps) => (
                <TransactionFilter
+                  budgetsMap = { budgetsMap }
                   props = { props }
                   type = "Category"
                />
@@ -237,7 +237,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          )
       }];
 
-      // Potential balance column for the account view
+      // Potential balance column for the accounts modal
       if (filter === "account") {
          visible.push({
             field: "balance",
@@ -265,6 +265,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
          align: "center",
          width: 100,
          minWidth: 100,
+         hideable: false,
          sortable: false,
          flex: 0.2,
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
@@ -276,9 +277,8 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       });
 
       return visible;
-   }, [onEdit, filter]);
+   }, [onEdit, filter, budgetsMap]);
 
-   // DataGrid columns (list view)
    const cards: GridColDef<TransactionRowModel>[] = useMemo(() => [{
       field: "card",
       headerName: "",
@@ -297,7 +297,8 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
       )
    }], [onEdit, transactions.length]);
 
-   const noTransactionsContainer: React.ReactNode = useMemo(() => {
+   // Display no results for missing or non-applicable transactions
+   const missingTransactionsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
             sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
@@ -310,7 +311,7 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
    return (
       <Box
          id = { `transactions-table-${filter}` }
-         sx = { { width: "100%" } }
+         sx = { { width: "100%", mt: 2 } }
       >
          <Box sx = { { display: "flex", justifyContent: "flex-end", mb: 1 } }>
             <ToggleButtonGroup
@@ -431,13 +432,14 @@ export default function TransactionsTable({ accountsMap, onEdit, filter, identif
             slots = {
                {
                   columnHeaders: view === "list" ? () => null : undefined,
-                  noRowsOverlay: () => noTransactionsContainer,
-                  noResultsOverlay: () => noTransactionsContainer
+                  noRowsOverlay: () => missingTransactionsContainer,
+                  noResultsOverlay: () => missingTransactionsContainer
                }
             }
             sx = {
                view === "list" ? {
                   boxShadow: 2,
+                  minHeight: transactions.length === 0 ? "410px" : undefined,
                   "& .MuiDataGrid-row": {
                      minWidth: "100% !important"
                   },

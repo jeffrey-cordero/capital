@@ -16,7 +16,7 @@ export default defineConfig({
    },
    server: {
       host: true,
-      port: 3000
+      port: parseInt(process.env.VITE_SERVER_PORT || "3000")
    },
    plugins: [reactRouter(), tsconfigPaths()],
    define: {

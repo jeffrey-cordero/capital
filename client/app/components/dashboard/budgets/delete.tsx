@@ -9,8 +9,8 @@ import { removeBudgetCategory } from "@/redux/slices/budgets";
  * The props for the DeleteBudget component
  *
  * @interface DeleteBudgetProps
- * @property {string} budget_category_id - The ID of the budget category to delete
- * @property {"Income" | "Expenses"} type - The type of the budget category
+ * @property {string} budget_category_id - The budget category identifier
+ * @property {"Income" | "Expenses"} type - The budget category type
  */
 interface DeleteBudgetProps {
    budget_category_id: string;
@@ -18,12 +18,12 @@ interface DeleteBudgetProps {
 }
 
 /**
- * The message for the dialog to confirm the deletion of a budget category
+ * Confirmation message for category deletion
  */
 const message: string = "Are you sure you want to delete this category? This action will permanently erase this budget category and all its goals. Any transactions linked to this category will be detached, but not deleted. Once deleted, this action cannot be undone.";
 
 /**
- * The DeleteBudget component to delete a budget category with confirmation
+ * Budget category deletion component with confirmation dialog
  *
  * @param {DeleteBudgetProps} props - The props for the DeleteBudget component
  * @returns {React.ReactNode} The DeleteBudget component
@@ -38,8 +38,8 @@ export default function DeleteBudget({ budget_category_id, type }: DeleteBudgetP
             `dashboard/budgets/category/${budget_category_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         // Remove the budget category from the Redux store
          if (result === 204) {
+            // Remove the budget category from the Redux store
             dispatch(removeBudgetCategory({
                type,
                budget_category_id

@@ -8,29 +8,25 @@ import {
 } from "@mui/material";
 import { PieChart, useDrawingArea } from "@mui/x-charts";
 import { type OrganizedBudget } from "capital/budgets";
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { Trends } from "@/components/dashboard/trends";
-import ResponsiveChartContainer from "@/components/global/responsive";
+import ChartContainer from "@/components/global/chart-container";
 import { displayPercentage, displayVolume, horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
 /**
- * Define the props for the StyledText component
+ * Props for the styled text component
  *
- * @interface StyledTextProps
- * @property {string} variant - The variant of the text
+ * @property {"primary" | "secondary"} variant - Text variant type
  */
 interface StyledTextProps {
    variant: "primary" | "secondary";
 }
 
 /**
- * The StyledText component to display text in the pie chart
- *
- * @param {StyledTextProps} props - The props for the StyledText component
- * @returns {React.ReactNode} The StyledText component
+ * Custom styled text for pie chart labels
  */
 const StyledText = styled("text", {
    shouldForwardProp: (prop) => prop !== "variant"
@@ -44,7 +40,7 @@ const StyledText = styled("text", {
             variant: "primary"
          },
          style: {
-            fontSize: theme.typography.h5.fontSize
+            fontSize: theme.typography.h4.fontSize
          }
       },
       {
@@ -71,22 +67,21 @@ const StyledText = styled("text", {
 }));
 
 /**
- * Define the props for the PieCenterLabel component
+ * Props for the pie chart center label
  *
- * @interface PieCenterLabelProps
- * @property {string} primaryText - The primary text to display (amount)
+ * @property {string} primaryText - Amount display text
  */
 interface PieCenterLabelProps {
    primaryText: string;
 }
 
 /**
- * The PieCenterLabel component to display text in the pie chart
+ * Central label for pie charts showing currency amount
  *
  * @param {PieCenterLabelProps} props - The props for the PieCenterLabel component
  * @returns {React.ReactNode} The PieCenterLabel component
  */
-const PieCenterLabel = memo(function PieCenterLabel({ primaryText }: PieCenterLabelProps) {
+const PieCenterLabel = function PieCenterLabel({ primaryText }: PieCenterLabelProps): React.ReactNode {
    const { width, height, left, top } = useDrawingArea();
    const primaryY = top + height / 2;
 
@@ -99,16 +94,15 @@ const PieCenterLabel = memo(function PieCenterLabel({ primaryText }: PieCenterLa
          { primaryText }
       </StyledText>
    );
-});
+};
 
 /**
- * Define the props for the BudgetProgressChart component
+ * Props for the budget progress chart
  *
- * @interface BudgetProgressChartProps
- * @property {string} title - The title of the chart
- * @property {string} type - The type of the chart
- * @property {{ label: string, percentage: number, value: number, color: string }[]} data - The data for the chart
- * @property {number} current - The current value used for the budget
+ * @property {string} title - Chart title
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {{ label: string, percentage: number, value: number, color: string }[]} data - Chart data
+ * @property {number} current - Current budget value
  */
 interface BudgetProgressChartProps {
    title: string;
@@ -118,14 +112,13 @@ interface BudgetProgressChartProps {
 }
 
 /**
- * The BudgetProgressChart component to display the progress of the budget
+ * Visualizes budget progress with pie chart and progress bars
  *
  * @param {BudgetProgressChartProps} props - The props for the BudgetProgressChart component
  * @returns {React.ReactNode} The BudgetProgressChart component
  */
 function BudgetProgressChart({ title, data, type, current }: BudgetProgressChartProps): React.ReactNode {
    const theme = useTheme();
-   const pieChartDimensions = 275;
 
    return (
       <Stack
@@ -137,13 +130,13 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
          >
             { title }
          </Typography>
-         <ResponsiveChartContainer height = { pieChartDimensions }>
+         <ChartContainer height = { 265 }>
             <Stack
                direction = "column"
                sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
             >
                <PieChart
-                  height = { pieChartDimensions }
+                  height = { 265 }
                   margin = {
                      {
                         left: 80,
@@ -156,8 +149,8 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                      [
                         {
                            data: data,
-                           innerRadius: 75,
-                           outerRadius: 100,
+                           innerRadius: 85,
+                           outerRadius: 105,
                            paddingAngle: 0,
                            highlightScope: { faded: "global", highlighted: "item" }
                         }
@@ -170,14 +163,14 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                         }
                      }
                   }
-                  width = { pieChartDimensions }
+                  width = { 265 }
                >
                   <PieCenterLabel
                      primaryText = { `$${displayVolume(current)}` }
                   />
                </PieChart>
             </Stack>
-         </ResponsiveChartContainer>
+         </ChartContainer>
          {
             data.map((category, index) => (
                <Stack
@@ -204,11 +197,11 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                            { displayPercentage(category.percentage) }
                         </Typography>
                      </Stack>
-                     <Box sx = { { px: index === 0 ? 0 : 1 } }>
+                     <Box sx = { { px: 0.5 } }>
                         <LinearProgress
                            aria-label = { `${category.label} progress` }
                            color = { type === "Income" ? "success" : "error" }
-                           sx = { { height: "1.25rem", borderRadius: "16px", boxShadow: 0 } }
+                           sx = { { height: "1.50rem", borderRadius: "16px", boxShadow: 0 } }
                            value = { category.percentage }
                            variant = "determinate"
                         />
@@ -222,11 +215,10 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
 }
 
 /**
- * Define the props for the BudgetPieChart component
+ * Props for the budget pie chart
  *
- * @interface BudgetPieChartProps
- * @property {string} type - The type of the budget
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetPieChartProps {
    type: "Income" | "Expenses";
@@ -234,32 +226,34 @@ interface BudgetPieChartProps {
 }
 
 /**
- * The BudgetPieChart component to display the pie chart of the budget
+ * Visualizes budget allocations with pie chart and linear progress bars
  *
- * @param {string} type - The type of the budget
+ * @param {BudgetPieChartProps} props - The props for the BudgetPieChart component
  * @returns {React.ReactNode} The BudgetPieChart component
  */
 export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): React.ReactNode {
-   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
+   const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
 
-   // Construct the period string for the allocations key
+   // Format period string (YYYY-MM)
    const period = useMemo(() => {
       return `${year}-${month.toString().padStart(2, "0")}`;
    }, [month, year]);
 
-   // Calculate total budget allocations
+   // Calculate budget totals
    const total = Math.max(allocations[period]?.[type] || 0);
-   const base = Math.max(total, 1); // Ensure non-zero denominator for total budget sum
+   const base = Math.max(total, 1);
 
-   // Calculate hue and saturation for pie chart categories
+   // Set pie chart color scheme based on budget type
    const hue = type === "Income" ? 120 : 0;
    const saturation = hue === 120 ? 44 : 90;
 
-   // Construct the pie data
+   // Generate pie chart data
    const pieData = useMemo(() => {
+      let sum = 0;
       const data = budget.categories.map((category, index) => {
          const value = allocations[period]?.[category.budget_category_id] || 0;
+         sum += value;
 
          return {
             label: category.name || "Unnamed Category",
@@ -269,14 +263,12 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
          };
       });
 
-      // Additional data point for the main type if the sum of the category allocations is less than the total budget allocation
-      const sum: number = data.reduce((acc, record) => acc + record.value, 0);
-
       if (sum === 0 || sum < total) {
+         // Add main category slice if needed to ensure a complete pie chart
          data.unshift({
             label: type,
             percentage: 100 * (Math.abs(sum - total) / base),
-            value: Math.max(Math.abs(sum - total), 0.000000000001), // Ensure non-zero value for empty budget periods
+            value: Math.max(Math.abs(sum - total), 0.000000000001),
             color: `hsl(${hue}, ${saturation}%, ${60 - (budget.categories.length * 5)}%)`
          });
       }
@@ -299,17 +291,16 @@ export function BudgetPieChart({ type, allocations }: BudgetPieChartProps): Reac
 }
 
 /**
- * Define the props for the BudgetTrends component
+ * Props for the budget trends component
  *
- * @interface BudgetTrendsProps
- * @property {boolean} isCard - Whether the trends are in a card
+ * @property {boolean} isCard - Whether displayed in card format
  */
 interface BudgetTrendsProps {
    isCard: boolean;
 }
 
 /**
- * The BudgetTrends component to display the trends of the budget
+ * Displays budget trends over time
  *
  * @param {BudgetTrendsProps} props - The props for the BudgetTrends component
  * @returns {React.ReactNode} The BudgetTrends component
@@ -323,4 +314,4 @@ export function BudgetTrends({ isCard }: BudgetTrendsProps): React.ReactNode {
          />
       </Box>
    );
-};
+}

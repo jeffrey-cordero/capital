@@ -19,12 +19,12 @@ import { type BudgetsState } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * Gets the category information for a given category ID.
+ * Gets category information for a given category ID
  *
- * @param {OrganizedBudgets} budgets - The organized budgets.
- * @param {string | null | undefined} categoryId - The ID of the category.
- * @param {BudgetType} type - The type of the category (Income or Expenses)
- * @returns {Object | null} The category information.
+ * @param {OrganizedBudgets} budgets - Organized budgets structure
+ * @param {string | null | undefined} categoryId - Category ID to look up
+ * @param {BudgetType} type - Budget type (Income or Expenses)
+ * @returns {Object | null} Category information or null if not found
  */
 function getCategoryInfo(
    budgets: OrganizedBudgets,
@@ -33,20 +33,20 @@ function getCategoryInfo(
 ): { name: string; type: BudgetType } | null {
    if (!categoryId) return null;
 
+   // Search for the category based on the provided budget type and category ID
    const category: BudgetCategory | null = budgets[type].categories.find((c) => {
       return c.budget_category_id === categoryId;
    }) || null;
 
-   // Missing based on an invalid budget category ID or deletion
+   // Could represent a main, missing, or deleted budget category
    return category ? { name: category.name || "", type: type } : null;
 };
 
 /**
- * Gets the apply filter function for a given filter item shared across
- * both account and category filters.
+ * Creates filter function for DataGrid filtering
  *
- * @param {GridFilterItem} filterItem - The filter item to apply.
- * @returns {Function} The apply filter function.
+ * @param {GridFilterItem} filterItem - Filter item to apply
+ * @returns {Function} Filter function that checks if an item is selected
  */
 export function getApplyFilterFn(filterItem: GridFilterItem): (_item: string) => boolean {
    const selected = filterItem.value;
@@ -61,14 +61,14 @@ export function getApplyFilterFn(filterItem: GridFilterItem): (_item: string) =>
 }
 
 /**
- * Filters the transactions based on the current applied filter-identifier combination.
+ * Filters transactions based on account or budget or returns all normalized transactions
  *
- * @param {Transaction[]} transactions - The transactions to filter.
- * @param {Record<string, Account>} accountsMap - The mapping of account IDs to accounts.
- * @param {BudgetsState["value"]} budgets - The organized budgets state.
- * @param {"account" | "budget" | undefined} filter - The filter to apply.
- * @param {string | undefined} identifier - The identifier to filter by.
- * @returns {TransactionRowModel[]} The filtered transactions.
+ * @param {Transaction[]} transactions - Transactions to filter
+ * @param {Record<string, Account>} accountsMap - Account ID to account mappings
+ * @param {BudgetsState["value"]} budgets - Budget state value
+ * @param {"account" | "budget" | undefined} filter - Filter type to apply
+ * @param {string | undefined} identifier - Filter identifier
+ * @returns {TransactionRowModel[]} Filtered transactions with UI metadata
  */
 export function filterTransactions(
    transactions: Transaction[],
@@ -85,21 +85,20 @@ export function filterTransactions(
    }, {} as Record<string, number>);
 
    return transactions.reduce((acc, record, index) => {
-      const type: BudgetType = record.amount >= 0 ? "Income" : "Expenses";
-      const categoryInfo = getCategoryInfo(budgets, record.budget_category_id, type);
-
+      const budgetCategory = getCategoryInfo(budgets, record.budget_category_id, record.type);
       const transaction: TransactionRowModel = {
          ...record,
          index,
          id: record.transaction_id || "",
-         account: accountsMap[record.account_id ?? ""]?.name || "",
-         category: categoryInfo?.name || "",
+         account: accountsMap[record.account_id || ""]?.name || "",
+         category: budgetCategory?.name || "",
          balance: balances[record.account_id || ""] || undefined,
-         type: categoryInfo?.type || type
+         type: record.type,
+         budget_category_id: record.budget_category_id || budgets[record.type]?.budget_category_id
       };
 
       if (record.account_id && balances[record.account_id]) {
-         // Update the propagating account balances
+         // Update the rolling account balance
          balances[record.account_id] -= record.amount;
       }
 
@@ -114,16 +113,17 @@ export function filterTransactions(
          }
          case "budget": {
             // Match transactions based on the current budget period
+            const isValidType = identifier === record.type;
             const [year, month] = transaction.date.split("T")[0].split("-");
-            const isValidType = identifier === type;
 
-            if (isValidType && parseInt(year) === period.year && parseInt(month) === period.month) {
+            if (isValidType && Number(year) === period.year && Number(month) === period.month) {
                acc.push(transaction);
             }
 
             break;
          }
          default: {
+            // Push all transactions for no applicable filter
             acc.push(transaction);
          }
       }
@@ -133,28 +133,29 @@ export function filterTransactions(
 }
 
 /**
- * Props for the TransactionFilter component, which is used to filter the transactions
- * based on accounts or categories within the column header menu.
+ * Props for the transaction filter component
  *
- * @interface TransactionFilterProps
- * @property {GridFilterInputMultipleValueProps} props - The props for the grid filter multi-select input.
- * @property {"Account" | "Category"} type - The type of the filter.
+ * @property {GridFilterInputMultipleValueProps} props - DataGrid filter input properties
+ * @property {"Account" | "Category"} type - Filter type (Account or Category)
+ * @property {Record<string, BudgetType>} budgetsMap - Budget category ID to type mapping
  */
 interface TransactionFilterProps {
    props: GridFilterInputMultipleValueProps;
    type: "Account" | "Category";
+   budgetsMap: Record<string, BudgetType>;
 }
 
 /**
- * The TransactionFilter component.
+ * Multi-select filter for transaction account or category columns
  *
- * @param {TransactionFilterProps} props - The props for the TransactionFilter component.
- * @returns {React.ReactNode} The TransactionFilter component.
+ * @param {TransactionFilterProps} props - The TransactionFilter component props
+ * @returns {React.ReactNode} Filter component for DataGrid
  */
-export function TransactionFilter({ props, type }: TransactionFilterProps): React.ReactNode {
+export function TransactionFilter({ props, budgetsMap, type }: TransactionFilterProps): React.ReactNode {
    const { item, applyValue } = props; // eslint-disable-line react/prop-types
-   const multiSelectRef = useRef<string[]>(["all"]);
+   const selectInputRef = useRef<string[]>(["all"]);
 
+   // Fetch the accounts or budgets based on the type of the filter
    const accounts: Account[] | null = useSelector((state: RootState) => {
       return type === "Account" ? state.accounts.value : null;
    });
@@ -163,18 +164,19 @@ export function TransactionFilter({ props, type }: TransactionFilterProps): Reac
    });
 
    const updatedSelectedItems = useCallback((event: SelectChangeEvent<string[]>) => {
+      // Normalize the selected items from the event target
       const { value } = event.target;
       const selected: string[] = Array.isArray(value) ? value : [value];
 
       // Toggle between all and selected items
       if (selected.length === 1 && selected[0] === "all") {
-         multiSelectRef.current = ["all"];
+         selectInputRef.current = ["all"];
       } else {
-         multiSelectRef.current = selected.filter((v: string) => v !== "all");
+         selectInputRef.current = selected.filter((v: string) => v !== "all");
       }
 
-      // Update the filter state within the data grid
-      applyValue({ ...item, value: multiSelectRef.current });
+      // Apply the updated filter within the data grid component
+      applyValue({ ...item, value: selectInputRef.current });
    }, [item, applyValue]);
 
    return (
@@ -211,6 +213,7 @@ export function TransactionFilter({ props, type }: TransactionFilterProps): Reac
                                     <RenderCategoryChip
                                        budget_category_id = { value }
                                        key = { `selected-${value}` }
+                                       type = { budgetsMap[value] || "Income" }
                                     />
                                  )
                               );
@@ -227,7 +230,7 @@ export function TransactionFilter({ props, type }: TransactionFilterProps): Reac
                   }
                }
             }
-            value = { multiSelectRef.current }
+            value = { selectInputRef.current }
             variant = "outlined"
          >
             <MenuItem

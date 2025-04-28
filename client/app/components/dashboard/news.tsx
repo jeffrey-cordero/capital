@@ -2,7 +2,6 @@ import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-ic
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
-   Box,
    Card,
    CardActions,
    CardContent,
@@ -11,15 +10,13 @@ import {
    IconButton,
    Stack,
    Typography,
-   useMediaQuery,
    useTheme
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import { type Article, type News } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { Expand } from "@/components/global/expand";
+import Expand from "@/components/global/expand";
 import { horizontalScroll } from "@/lib/display";
 import type { RootState } from "@/redux/store";
 
@@ -33,48 +30,32 @@ const DEFAULT_VALUES = {
 } as const;
 
 /**
- * NewsItem component to display a single news article
+ * Displays a single news article in a collapsible card
  *
- * @param {NewsItemProps} props - The props for the NewsItem component
- * @returns {React.ReactNode} The NewsItem component
+ * @param {{ article: Article }} props - Article card props
+ * @returns {React.ReactNode} The ArticleCard component
  */
-function NewsItem({ article }: { article: Article }): React.ReactNode {
+function ArticleCard({ article }: { article: Article }): React.ReactNode {
    const theme = useTheme();
    const [expanded, setExpanded] = useState(false);
-   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("lg"));
 
+   // Normalize the article content
    const author = article.author || article.domain || DEFAULT_VALUES.AUTHOR;
    const authorInitial = author.charAt(0).toUpperCase();
    const publishDate = new Date(article.published).toLocaleString() || new Date().toLocaleString();
    const title = article.title || DEFAULT_VALUES.TITLE;
-   const description = article.text.replace(/\n/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
+   const description = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
    const link = article.url || "";
 
-   const updateExpandedState = useCallback(() => {
-      const financesContainer = document.getElementById("finances-container") as HTMLElement;
-
-      setExpanded((prev) => {
-         if (!isDesktop) return !prev;
-
-         const isExpanding = prev === false;
-         const expanded = document.querySelectorAll("[data-expanded=\"true\"]").length + (isExpanding ? 1 : -1);
-
-         // Align dashboard height based on the number of expanded cards
-         if (expanded > 0) {
-            financesContainer.setAttribute("style", "justify-content: flex-start !important;"); // not-flush
-         } else {
-            financesContainer.setAttribute("style", "justify-content: space-between !important;"); // flush
-         }
-
-         return !prev;
-      });
-   }, [isDesktop]);
+   const toggleExpandedState = useCallback(() => {
+      setExpanded((prev) => !prev);
+   }, []);
 
    return (
       <Card
          data-expanded = { expanded }
          elevation = { 3 }
-         sx = { { margin: "auto", borderRadius: 2 } }
+         sx = { { margin: "auto", borderRadius: 2, width: "100%", textAlign: "left" } }
       >
          <CardHeader
             avatar = {
@@ -127,7 +108,7 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
             <Expand
                disableRipple = { true }
                expand = { expanded }
-               onClick = { updateExpandedState }
+               onClick = { toggleExpandedState }
             >
                <FontAwesomeIcon
                   icon = { faCaretDown }
@@ -169,49 +150,30 @@ function NewsItem({ article }: { article: Article }): React.ReactNode {
 }
 
 /**
- * Articles component to display the news articles
+ * Displays financial news articles in a responsive grid
  *
  * @returns {React.ReactNode} The Articles component
  */
 export default function Articles(): React.ReactNode {
    const news: News = useSelector((state: RootState) => state.economy.value.news);
    const items: Article[] = useMemo(() => {
-      // Articles based on published date descending
-      return [...news.response.data].reverse().slice(0, 24);
+      return [...news.response.data].reverse().slice(0, 20);
    }, [news]);
 
    return (
-      <Box
+      <Stack
+         direction = "column"
          id = "news"
-         sx = { { textAlign: "center" } }
+         sx = { { height: "100%", textAlign: "center", justifyContent: "space-between", alignItems: "center", gap: 2 } }
       >
-         <Box
-            alt = "News"
-            component = "img"
-            src = "/svg/news.svg"
-            sx = { { height: 240, mb: 2 } }
-         />
-         <Stack
-            direction = "column"
-            sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
-         >
-            <Grid
-               columnSpacing = { 2 }
-               container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2, mt: 2, textAlign: "left" } }
-            >
-               {
-                  items.map((item: Article, index) => (
-                     <Grid
-                        key = { `news-${index}` }
-                        size = { { xs: 12, md: 6, lg: 12 } }
-                     >
-                        <NewsItem article = { item } />
-                     </Grid>
-                  ))
-               }
-            </Grid>
-         </Stack>
-      </Box>
+         {
+            items.map((item: Article, index) => (
+               <ArticleCard
+                  article = { item }
+                  key = { `news-${index}` }
+               />
+            ))
+         }
+      </Stack>
    );
 }

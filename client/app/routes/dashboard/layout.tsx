@@ -13,39 +13,27 @@ import { setDetails } from "@/redux/slices/settings";
 import { setTransactions } from "@/redux/slices/transactions";
 
 /**
- * Fetches the dashboard data.
+ * Fetches dashboard data and initializes application state
  *
- * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
- * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
- * @returns {Promise<Dashboard | null>} The dashboard data
+ * @param {Dispatch<any>} dispatch - Redux dispatch function
+ * @param {NavigateFunction} navigate - Router navigation function
+ * @returns {Promise<Dashboard | null>} Dashboard data or null if request fails
  */
-export async function fetchDashboard(
-   dispatch: Dispatch<any>,
-   navigate: NavigateFunction
-): Promise<Dashboard | null> {
+export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | null> {
    const dashboard = await sendApiRequest<Dashboard>(
       "dashboard", "GET", null, dispatch, navigate
    );
 
    if (typeof dashboard === "object" && dashboard !== null) {
-      const budgets = dashboard.budgets;
-
+      // Initialize Redux store with core dashboard data
       dispatch(setDetails(dashboard.settings));
       dispatch(setEconomy({
          news: dashboard.economy.news,
          trends: dashboard.economy.trends
       }));
       dispatch(setAccounts(dashboard.accounts));
-      dispatch(setBudgets(budgets));
-      dispatch(setTransactions(dashboard.transactions.map((t) => {
-         return {
-            ...t,
-            amount: Number(t.amount),
-            budget_category_id: t.budget_category_id || (
-               t.amount >= 0 ? budgets.Income.budget_category_id : budgets.Expenses.budget_category_id
-            )
-         };
-      })));
+      dispatch(setBudgets(dashboard.budgets));
+      dispatch(setTransactions(dashboard.transactions));
 
       return dashboard;
    } else {
@@ -54,7 +42,7 @@ export async function fetchDashboard(
 }
 
 /**
- * The layout component for the dashboard pages.
+ * Layout wrapper for dashboard pages with data fetching
  *
  * @returns {React.ReactNode} The dashboard layout component
  */

@@ -9,8 +9,7 @@ import {
 } from "@/styles/mui/colors";
 
 /**
- * MUI palette overrides.
- * @see https://mui.com/material-ui/customization/theming/
+ * MUI palette overrides
  */
 export const palette: PaletteOptions = {
    primary: {

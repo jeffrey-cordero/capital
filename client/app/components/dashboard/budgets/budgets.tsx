@@ -18,9 +18,7 @@ import { selectMonth } from "@/redux/slices/budgets";
 import { type RootState } from "@/redux/store";
 
 /**
- * Type for managing edit state of budget components
- *
- * @type {EditState}
+ * The edit state management type for budget components
  */
 type EditState = {
    state: "view" | "edit";
@@ -29,29 +27,31 @@ type EditState = {
 };
 
 /**
- * Define the props for the Budgets component
+ * The props for the Budgets component
  *
  * @interface BudgetsProps
- * @property {Record<string, Record<string, number>>} allocations - Mapping of periods to budget allocations
+ * @property {Record<string, Record<string, number>>} allocations - Period to budget allocation mapping
  */
 interface BudgetsProps {
    allocations: Record<string, Record<string, number>>;
 }
 
 /**
- * The Budgets component to display the budgets
+ * Main budgets container with navigation controls
  *
  * @param {BudgetsProps} props - The props for the Budgets component
  * @returns {React.ReactNode} The Budgets component
  */
 export default function Budgets({ allocations }: BudgetsProps): React.ReactNode {
    const dispatch = useDispatch(), theme = useTheme();
+   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
    const [editState, setEditState] = useState<EditState>(
       { state: "view", type: "Income", displayWarning: false }
    );
+   // Track dirty fields within various child forms
    const dirtyFields = useRef<Record<string, boolean>>({});
-   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
+   // Modal open/close handlers
    const openModal = useCallback((type: "Income" | "Expenses") => {
       setEditState({ state: "edit", type, displayWarning: false });
    }, []);
@@ -65,6 +65,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       }
    }, []);
 
+   // Budget period navigation handlers
    const viewPreviousMonth = useCallback(() => {
       dispatch(selectMonth({ direction: "previous" }));
    }, [dispatch]);
@@ -79,7 +80,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
       return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
    }, [period.month, period.year, today]);
 
-   // Update dirty fields within child form's to check during before we close the modal
+   // Update dirty fields for warning display when closing modal
    const updateDirtyFields = useCallback((fields: object, field: string) => {
       if (Object.keys(fields).length > 0) {
          dirtyFields.current[field] = true;
@@ -87,6 +88,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
          delete dirtyFields.current[field];
       }
 
+      // Clear warning when no dirty fields remain
       if (Object.keys(dirtyFields.current).length === 0 && editState.displayWarning) {
          setEditState((prev) => ({ ...prev, displayWarning: false }));
       }
@@ -124,7 +126,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
          <Stack
             direction = "column"
             spacing = { 4 }
-            sx = { { mt: 2 } }
+            sx = { { mt: 3 } }
          >
             <Budget
                allocations = { allocations }

@@ -2,16 +2,25 @@ require("dotenv").config();
 
 import { Pool, PoolClient } from "pg";
 
+import { logger } from "@/lib/logger";
+
 /**
  * Connection pool for database connections
  */
 const pool = new Pool({
-   host: process.env.DB_HOST || "localhost",
+   host: process.env.DB_HOST || "postgres",
    user: process.env.DB_USER,
    password: process.env.DB_PASSWORD,
    database: process.env.DB_NAME,
-   port: Number(process.env.DB_PORT) || 5433,
+   port: Number(process.env.DB_PORT) || 5432,
    max: 50
+});
+
+/**
+ * Error handler for database errors caught at runtime to prevent application crashes
+ */
+pool.on("error", (error: Error) => {
+   logger.error(`pool.on("error"): ${error.message}\n\n${error.stack}`);
 });
 
 /**

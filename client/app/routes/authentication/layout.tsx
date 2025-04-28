@@ -8,39 +8,35 @@ import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
 
 /**
- * Fetches the authentication status within the landing pages.
+ * Fetches authentication status and handles redirection logic
  *
- * @param {Dispatch<any>} dispatch - The dispatch function to dispatch actions to the Redux store
- * @param {NavigateFunction} navigate - The navigate function for potential authentication-based redirection
- * @returns {Promise<boolean>} The authentication status or null for auto-redirecting user's to the dashboard
+ * @param {Dispatch<any>} dispatch - Redux dispatch function
+ * @param {NavigateFunction} navigate - Router navigation function
+ * @returns {Promise<boolean | null>} Authentication status or null for auto-redirection
  */
-export async function fetchAuthentication(
-   dispatch: Dispatch<any>,
-   navigate: NavigateFunction
-): Promise<boolean| null> {
-   // Fetch authentication status within the landing pages
+export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean| null> {
    const status = await sendApiRequest<{ authenticated: boolean }>(
       "authentication", "GET", null, dispatch, navigate
    );
 
    if (typeof status === "object" && status !== null) {
-      // Set the global authentication state for routing purposes
+      // Update authentication state based on API response
       const authenticated: boolean = Boolean(status.authenticated);
       dispatch(authenticate(authenticated));
 
-      return authenticated ? null : false; // null = auto-redirect handled by routing middleware
+      // Return null for auto-redirection handling
+      return authenticated ? null : false;
    }
 
    return null;
 };
 
 /**
- * The layout component for the landing pages.
+ * Layout wrapper for authentication-related pages
  *
- * @returns {React.ReactNode} The landing pages layout component
+ * @returns {React.ReactNode} The authentication layout component
  */
 export default function Layout(): React.ReactNode {
-   // Fetch the authentication status within the initial landing pages
    const dispatch = useDispatch(), navigate = useNavigate();
    const { data, isError, isLoading } = useQuery({
       queryKey: ["authentication"],

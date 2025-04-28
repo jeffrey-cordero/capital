@@ -1,5 +1,5 @@
+import { faAddressCard } from "@fortawesome/free-solid-svg-icons";
 import {
-   Box,
    FormControl,
    FormHelperText,
    InputLabel,
@@ -11,30 +11,29 @@ import {
    useTheme
 } from "@mui/material";
 import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 
+import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
-import { getDateRange } from "@/lib/dates";
+import { getValidDateRange } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { updateDetails } from "@/redux/slices/settings";
 import { setTheme } from "@/redux/slices/theme";
 import type { RootState } from "@/redux/store";
 
 /**
- * Details component for editing user personal information and theme preference
+ * Manages user personal information and theme preferences
  *
- * @returns {React.ReactNode} The Details component
+ * @returns {React.ReactNode} Form for editing name, birthday, and app theme
  */
 export default function Details(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-
-   // Gather user settings and theme from respective Redux slices
    const settings = useSelector((state: RootState) => state.settings.value);
-   const currentTheme = useSelector((state: RootState) => state.theme.value);
+   const preferredTheme = useSelector((state: RootState) => state.theme.value);
 
    // Form setup with react-hook-form
    const {
@@ -42,16 +41,15 @@ export default function Details(): React.ReactNode {
       handleSubmit,
       setError,
       reset,
-      formState: { isSubmitting, errors, dirtyFields }
-   } = useForm<UserUpdates>({
-      defaultValues: {
-         name: settings.name,
-         birthday: settings.birthday.split("T")[0]
-      }
-   });
+      formState: { isSubmitting, errors, dirtyFields } } = useForm<UserUpdates>({
+         defaultValues: {
+            name: settings.name,
+            birthday: settings.birthday.split("T")[0]
+         }
+      });
 
    // Setup minimum and maximum dates for birthday input
-   const [minDate, maxDate] = getDateRange();
+   const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
    const onReset = useCallback(() => {
       reset({
@@ -60,32 +58,33 @@ export default function Details(): React.ReactNode {
       }, { keepDirty: false });
    }, [reset, settings.name, settings.birthday]);
 
-   // Handles form submission
    const onSubmit = async(data: FieldValues) => {
       try {
+         // Ignore empty updates
+         if (Object.keys(dirtyFields).length === 0) return;
+
          const fields = updateUserSchema.safeParse(data);
 
          if (!fields.success) {
-            // Handle validation errors
+            // Invalid user detail inputs
             handleValidationErrors(fields, setError);
             return;
          }
 
-         // Only send fields that were changed
+         // Format the updates for the API request
          const updates = Object.keys(dirtyFields).reduce((acc: Partial<UserUpdates>, key) => {
             acc[key as keyof UserUpdates] = fields.data[key as keyof UserUpdates];
+
             return acc;
          }, {});
 
-         // Skip if no changes were made
-         if (Object.keys(updates).length === 0) return;
-
+         // Submit the API request for user details updates
          const response = await sendApiRequest<number>(
             "users", "PUT", updates, dispatch, navigate, setError
          );
 
          if (response === 204) {
-            // Update Redux store with the changes
+            // Update Redux store on successful updates and reset the form
             dispatch(updateDetails(updates as Partial<UserDetails>));
 
             reset({
@@ -98,25 +97,19 @@ export default function Details(): React.ReactNode {
       }
    };
 
-   // Handle theme change through the select input
-   const changeTheme = useCallback((update: "light" | "dark") => {
+   // Theme update handler, which is not tied to account details
+   const updateTheme = useCallback((update: "light" | "dark") => {
       dispatch(setTheme(update));
    }, [dispatch]);
 
    return (
-      <Box>
+      <Section icon = { faAddressCard }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
                spacing = { 1.5 }
-               sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
+               sx = { { mt: 3, textAlign: "center", justifyContent: "center", alignItems: "center" } }
             >
-               <Box
-                  alt = "Details"
-                  component = "img"
-                  src = "/svg/details.svg"
-                  sx = { { width: 280, mb: "20px !important", px: 2 } }
-               />
                <Controller
                   control = { control }
                   name = "name"
@@ -202,7 +195,7 @@ export default function Details(): React.ReactNode {
                   </InputLabel>
                   <Select
                      label = "Theme"
-                     onChange = { (e) => changeTheme(e.target.value as "light" | "dark") }
+                     onChange = { (e) => updateTheme(e.target.value as "light" | "dark") }
                      slotProps = {
                         {
                            input: {
@@ -210,7 +203,7 @@ export default function Details(): React.ReactNode {
                            }
                         }
                      }
-                     value = { currentTheme }
+                     value = { preferredTheme }
                      variant = "outlined"
                   >
                      <MenuItem value = "light">
@@ -229,6 +222,6 @@ export default function Details(): React.ReactNode {
                />
             </Stack>
          </form>
-      </Box>
+      </Section>
    );
 }

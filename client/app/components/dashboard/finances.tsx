@@ -5,7 +5,7 @@ import AccountTrends from "@/components/dashboard/accounts/charts";
 import { BudgetTrends } from "@/components/dashboard/budgets/charts";
 
 /**
- * The Finances component to render the user finances, including account and budget trends.
+ * Displays user financial data through account and budget trend visualizations
  *
  * @returns {React.ReactNode} The Finances component
  */
@@ -15,15 +15,9 @@ export default function Finances(): React.ReactNode {
          id = "finances"
          sx = { { width: "100%" } }
       >
-         <Box
-            alt = "Finances"
-            component = "img"
-            src = "/svg/finances.svg"
-            sx = { { height: 255, mb: 2.1 } }
-         />
          <Stack
             direction = "column"
-            sx = { { justifyContent: "center", alignItems: "center", gap: 3.1 } }
+            sx = { { justifyContent: "center", alignItems: "center", gap: 2.2 } }
          >
             <Grid size = { 12 }>
                <AccountTrends isCard = { true } />

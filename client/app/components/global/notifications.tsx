@@ -7,17 +7,17 @@ import { type Notification, removeNotification } from "@/redux/slices/notificati
 import type { RootState } from "@/redux/store";
 
 /**
- * The Notifications component to render the notifications in the top-center of the screen.
+ * Global notification display component, which renders a stack of notification
+ * alerts at the top of the screen
  *
- * @returns {React.ReactNode} The Notifications component
+ * @returns {React.ReactNode} Stack of notification alerts
  */
 export default function Notifications(): React.ReactNode {
    const dispatch = useDispatch();
-   const notifications: Notification[] = useSelector(
-      (state: RootState) => state.notifications.value
-   );
+   const notifications: Notification[] = useSelector((state: RootState) => state.notifications.value);
 
-   const closeNotification = useCallback((index: number) => {
+   // Remove notifications by their index
+   const remove = useCallback((index: number) => {
       dispatch(removeNotification(index));
    }, [dispatch]);
 
@@ -33,7 +33,7 @@ export default function Notifications(): React.ReactNode {
                      sx = { { mt: index * 9 } }
                   >
                      <Alert
-                        onClose = { () => closeNotification(index) }
+                        onClose = { () => remove(index) }
                         severity = { notification.type }
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }
                         variant = "filled"

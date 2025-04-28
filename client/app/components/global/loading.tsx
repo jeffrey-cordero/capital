@@ -1,7 +1,7 @@
 import { CircularProgress } from "@mui/material";
 
 /**
- * The Loading component within the layout pages during data loading.
+ * Loading indicator component for async operations and page loading
  *
  * @returns {React.ReactNode} The Loading component
  */

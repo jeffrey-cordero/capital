@@ -1,3 +1,4 @@
+import { faListCheck, faMoneyBill1Wave, faMoneyBillTransfer } from "@fortawesome/free-solid-svg-icons";
 import {
    Box,
    FormControl,
@@ -6,7 +7,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { type BudgetPeriod, budgetSchema, type OrganizedBudget } from "capital/budgets";
+import { budgetSchema, type OrganizedBudget } from "capital/budgets";
 import { useCallback, useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,7 +15,8 @@ import { useNavigate } from "react-router";
 
 import BudgetCategories from "@/components/dashboard/budgets/categories";
 import Transactions from "@/components/dashboard/transactions/transactions";
-import { Modal, ModalSection } from "@/components/global/modal";
+import Modal from "@/components/global/modal";
+import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
 import { compareBudgetPeriods } from "@/lib/dates";
@@ -23,19 +25,18 @@ import { updateBudget } from "@/redux/slices/budgets";
 import type { RootState } from "@/redux/store";
 
 /**
- * The schema for validating budget goal updates
+ * Schema for budget goal validation
  */
 const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
 
 /**
- * The props for the BudgetForm component
+ * Props for the BudgetForm component
  *
- * @interface BudgetFormProps
- * @property {string} type - The type of the budget
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
- * @property {boolean} displayWarning - Whether to display the warning component
- * @property {boolean} open - Whether the modal is open
- * @property {() => void} onClose - The function to call when the modal is closed
+ * @property {"Income" | "Expenses"} type - Budget type
+ * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
+ * @property {boolean} displayWarning - Warning display flag
+ * @property {boolean} open - Modal visibility state
+ * @property {() => void} onClose - Modal close handler
  */
 interface BudgetFormProps {
    type: "Income" | "Expenses";
@@ -46,34 +47,36 @@ interface BudgetFormProps {
 }
 
 /**
- * The BudgetForm component to update a budget goal
+ * Budget management modal with main goal and categories construction/editing functionality
  *
  * @param {BudgetFormProps} props - The props for the BudgetForm component
  * @returns {React.ReactNode} The BudgetForm component
  */
 export default function BudgetForm({ type, displayWarning, open, onClose, updateDirtyFields }: BudgetFormProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-
+   const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
    const budget: OrganizedBudget = useSelector((state: RootState) => state.budgets.value[type]);
-   const period: BudgetPeriod = useSelector((state: RootState) => state.budgets.value.period);
 
-   // Initialize form with default values from the budget
+   // Form setup with react-hook-form
    const {
       control,
       setError,
       handleSubmit,
       reset,
-      formState: { isSubmitting, errors, dirtyFields }
-   } = useForm({
-      defaultValues: { goal: String(budget.goals[budget.goalIndex].goal) }
+      formState: { isSubmitting, errors, dirtyFields } } = useForm({
+      defaultValues: {
+         goal: String(budget.goals[budget.goalIndex].goal)
+      }
    });
 
+   // Reset form when modal visibility changes
    useEffect(() => {
       if (open) {
          reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
       }
    }, [open, reset, budget.goals, budget.goalIndex]);
 
+   // Reset form when changes are cancelled
    const onCancel = useCallback(() => {
       updateDirtyFields({}, "main");
       reset({ goal: String(budget.goals[budget.goalIndex].goal) }, { keepDirty: false });
@@ -81,50 +84,47 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
 
    const onSubmit = async(data: FieldValues) => {
       try {
-         // Check if any changes were made
+         // Ignore empty updates
          if (Object.keys(dirtyFields).length === 0) return;
 
          const budgetFields = updateBudgetGoalSchema.safeParse({
-            goal: parseFloat(data.goal.toString())
+            goal: Number(data.goal)
          });
 
          if (!budgetFields.success) {
+            // Invalid budget goal input
             handleValidationErrors(budgetFields, setError);
             return;
          }
 
          // Prepare budget payload for API request
          const payload = {
-            goal: Number(budgetFields.data.goal),
-            year: period.year,
-            month: period.month
+            goal: budgetFields.data.goal,
+            month,
+            year
          };
 
-         // Determine if we need to create or update a budget entry (PUT vs. POST)
-         const currentGoal = budget.goals[budget.goalIndex];
+         // Determine if creating new or updating existing budget (POST vs PUT)
          const isCurrentPeriod = compareBudgetPeriods(
-            { month: currentGoal.month, year: currentGoal.year },
-            { month: period.month, year: period.year }
-         ) === 0;
+            { month, year },
+            { month: budget.goals[budget.goalIndex].month, year: budget.goals[budget.goalIndex].year }
+         ) === "equal";
          const method = isCurrentPeriod ? "PUT" : "POST";
 
-         // Submit the API request
+         // Submit API request
          const result = await sendApiRequest<number | { success: boolean }>(
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
-         if (result === 204 || (result instanceof Object && result?.success)) {
-            // Update Redux store for a successful update or creation
+         if (result === 204 || (typeof result === "object" && result?.success)) {
+            // Update Redux store and reset form
             dispatch(updateBudget({
                type,
                budget_category_id: budget.budget_category_id,
                goal: payload.goal
             }));
 
-            // Reset the form default values
             reset({ goal: String(payload.goal) }, { keepDirty: false });
-
-            // Clear the dirty fields
             updateDirtyFields({}, "main");
          }
       } catch (error) {
@@ -137,13 +137,13 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          displayWarning = { displayWarning }
          onClose = { onClose }
          open = { open }
-         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, p: { xs: 2, sm: 3 }, maxWidth: "90%" } }
+         sx = { { position: "relative", width: { xs: "90%", md: "70%", lg: "60%", xl: "45%" }, px: { xs: 2, sm: 3 }, py: 3, maxWidth: "90%" } }
       >
          <Stack
             direction = "column"
             spacing = { 3 }
          >
-            <ModalSection title = { type }>
+            <Section icon = { faMoneyBill1Wave }>
                <Box>
                   <form
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
@@ -188,19 +188,23 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                      </Stack>
                   </form>
                </Box>
-            </ModalSection>
-            <ModalSection title = "Categories">
+            </Section>
+            <Section icon = { faListCheck }>
                <BudgetCategories
                   type = { type }
                   updateDirtyFields = { updateDirtyFields }
                />
-            </ModalSection>
-            <ModalSection title = "Transactions">
-               <Transactions
-                  filter = "budget"
-                  identifier = { type }
-               />
-            </ModalSection>
+            </Section>
+            {
+               open && (
+                  <Section icon = { faMoneyBillTransfer }>
+                     <Transactions
+                        filter = "budget"
+                        identifier = { type }
+                     />
+                  </Section>
+               )
+            }
          </Stack>
       </Modal>
    );

@@ -16,12 +16,11 @@ import type { TransactionRowModel } from "@/components/dashboard/transactions/ta
 import { displayCurrency, displayDate } from "@/lib/display";
 
 /**
- * Props for the TransactionCard component.
+ * Props for the TransactionCard component
  *
- * @interface TransactionCardProps
- * @property {TransactionRowModel} transaction - The transaction to render.
- * @property {(_index: number) => void} onEdit - The callback to edit a transaction based on index.
- * @property {number | null} pageSize - The page size of the table.
+ * @property {TransactionRowModel} transaction - Transaction to display
+ * @property {(_index: number) => void} onEdit - Callback for editing a transaction
+ * @property {number | null} pageSize - Page size of the transactions table
  */
 interface TransactionCardProps {
    transaction: TransactionRowModel;
@@ -30,14 +29,14 @@ interface TransactionCardProps {
 }
 
 /**
- * Renders a transaction card.
+ * Card display for individual transactions in list view
  *
- * @param {TransactionCardProps} props - The props for the TransactionCard component.
- * @returns {React.ReactNode} The rendered TransactionCard component.
+ * @param {TransactionCardProps} props - The TransactionCard component props
+ * @returns {React.ReactNode} Rendered transaction card
  */
 export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCardProps): React.ReactNode {
    const theme = useTheme();
-   const amountColor: string = transaction.amount > 0 ? "primary.main" : "";
+   const color: string = transaction.amount > 0 ? "primary.main" : "";
 
    return (
       <Card
@@ -52,6 +51,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
             >
                <Stack
                   direction = "row"
+                  rowGap = { 1 }
                   sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%" } }
                >
                   <Typography
@@ -63,25 +63,26 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   </Typography>
                   <RenderCategoryChip
                      budget_category_id = { transaction.budget_category_id || "" }
+                     type = { transaction.type }
                   />
                </Stack>
                <Stack
                   direction = "row"
-                  spacing = { 0.5 }
+                  rowGap = { 1 }
                   sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
+                  <Typography
+                     color = { color }
+                     sx = { { fontWeight: "650", fontSize: "0.9rem", pl: 0.25 } }
+                     variant = "subtitle1"
+                  >
+                     { displayCurrency(transaction.amount) }
+                  </Typography>
                   <Box>
                      <RenderAccountChip
                         account_id = { transaction.account_id || "" }
                      />
                   </Box>
-                  <Typography
-                     color = { amountColor }
-                     sx = { { fontWeight: "650", fontSize: "0.9rem" } }
-                     variant = "subtitle1"
-                  >
-                     { displayCurrency(transaction.amount) }
-                  </Typography>
                </Stack>
                <Stack
                   direction = "row"
@@ -89,7 +90,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   sx = { { flexWrap: "nowrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
                   <Typography
-                     sx = { { fontWeight: "650", wordBreak: "break-word", m: "0px !important", maxWidth: "calc(100% - 5rem)", pl: 0.5 } }
+                     sx = { { fontWeight: "550", wordBreak: "break-word", m: "0px !important", maxWidth: "calc(100% - 5rem)", pl: 0.5 } }
                      variant = "body1"
                   >
                      { transaction.description || "No Description" }
@@ -112,9 +113,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                         />
                      </Box>
                   </Stack>
-
                </Stack>
-
             </Stack>
          </CardContent>
          {

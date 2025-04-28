@@ -20,7 +20,7 @@ export const budgetSchema = z.object({
 
    /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
-      message: "Goal must be a valid number"
+      message: "Goal must be a valid currency amount"
    }).min(0, {
       message: "Goal must be $0 or greater"
    }).max(999_999_999_999.99, {
@@ -29,7 +29,7 @@ export const budgetSchema = z.object({
 
    /* Budget month */
    month: zodPreprocessNumber(z.coerce.number({
-      message: "Month must be a valid number"
+      message: "Month must be a valid month"
    }).int({
       message: "Month must be a whole number between 1 and 12"
    }).min(1, {

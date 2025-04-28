@@ -4,7 +4,7 @@ import Grid from "@mui/material/Grid2";
 import Settings from "@/components/dashboard/settings/settings";
 
 /**
- * The settings page component.
+ * Settings page for managing user preferences and security settings
  *
  * @returns {React.ReactNode} The settings page component
  */

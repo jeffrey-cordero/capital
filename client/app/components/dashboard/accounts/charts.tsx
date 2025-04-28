@@ -1,10 +1,10 @@
 import { Trends } from "@/components/dashboard/trends";
 
 /**
- * The AccountTrends component to display the account trends in the dashboard
+ * Displays account balance trends on the dashboard and accounts page
  *
- * @param {boolean} isCard - Whether the component is within a card or standalone
- * @returns {React.ReactNode} The AccountTrends component
+ * @param {boolean} isCard - Whether to render with card styling
+ * @returns {React.ReactNode} Account trends visualization component
  */
 export default function AccountTrends({ isCard }: { isCard: boolean }): React.ReactNode {
    return (

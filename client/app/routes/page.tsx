@@ -3,9 +3,7 @@ import Stack from "@mui/material/Stack";
 import { useNavigate } from "react-router";
 
 /**
- * Returns the meta content for the page.
- *
- * @returns {MetaFunction} The meta content
+ * Returns meta information for the landing page
  */
 export function meta() {
    return [
@@ -15,7 +13,7 @@ export function meta() {
 }
 
 /**
- * The page component for the landing page.
+ * Landing page component with navigation to login/register
  *
  * @returns {React.ReactNode} The landing page component
  */
@@ -50,7 +48,7 @@ export default function Page(): React.ReactNode {
                   sx = { { margin: "0 auto", maxWidth: "400px", px: 2 } }
                   variant = "body2"
                >
-                  A data-driven finance tracker created for the intelligent acquisition of capital
+                  A data-driven finance tracker for the intelligent acquisition of capital
                </Typography>
             </Stack>
             <Stack
