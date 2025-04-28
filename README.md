@@ -2,7 +2,7 @@
 
 Capital is a comprehensive personal finance management application designed to help users track their finances, manage budgets, and gain insights into their spending habits and the broader economic landscape. It features a clean React frontend and a robust Express.js backend connected to a PostgreSQL database, all containerized with Docker for ease of deployment and development.
 
-## ✨ Features
+## Features ✨
 
 * **Dashboard:** A central hub displaying:
    * Current economic news articles.
@@ -20,7 +20,7 @@ Capital is a comprehensive personal finance management application designed to h
    * Delete user account and associated data.
    * Logout functionality.
 
-## 🛠️ Technologies Used
+## Technologies 🛠️
 
 * **Frontend:** React, Redux Toolkit, React Router, Material UI, TanStack Query, Vite
 * **Backend:** Node.js, Express.js, TypeScript
@@ -30,7 +30,7 @@ Capital is a comprehensive personal finance management application designed to h
 * **Authentication:** JWT (JSON Web Tokens), Argon2 (Password Hashing)
 * **Other Libraries:** Zod (Validation), Winston (Logging), Helmet (Security), CORS, Express Rate Limit, etc.
 
-## 📂 Directory Structure
+## Directory Structure 📂
 
 ```bash
 capital/
@@ -78,7 +78,7 @@ capital/
 * **`package.json` (root)**: Manages installation and running of both client and server concurrently.
 * **`server/schema.sql`**: SQL script to initialize the PostgreSQL database structure.
 
-## ⚙️ Installation (Local Development)
+## Installation 🔨
 
 1.  **Prerequisites:**
     * Node.js (check `.nvmrc` or choose a recent LTS version)
@@ -100,12 +100,12 @@ capital/
 5.  **Database Setup:**
     * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
 
-## ▶️ Running the Project
+## Development 💻
 
 There are two main ways to run the application locally:
 
 1.  **Using Docker Compose (Recommended):**
-    * This method starts the React frontend, Express backend, PostgreSQL database, and Redis cache in separate containers.
+    * This method starts the application (React and Express), PostgreSQL database, and Redis cache in separate containers.
     * Ensure Docker Desktop (or Docker Engine + Compose) is running.
     * From the root `capital/` directory:
         ```bash
@@ -134,14 +134,14 @@ There are two main ways to run the application locally:
         npm run start
         ```
 
-## 🚀 Future Roadmap
+## Future Roadmap 🚀
 
 Potential features and improvements for future development:
 
 * **Pagination:** Implement pagination for transaction lists and potentially accounts/budgets.
 * **Testing:** Add comprehensive unit, integration, and end-to-end tests.
 * **Multi-Select Categories:** Allow assigning transactions to multiple budget categories.
-* **JWT Management:** Implement access/refresh token strategy for enhanced security.
+* **JWT Optimizations:** Implement access/refresh token strategy for enhanced security.
 * **Import/Export:** Add functionality to import/export transactions from/to CSV/OFX files, potentially with a helper modal for mapping fields.
 * **Recurring Transactions:** Add support for scheduling recurring income and expenses.
 * **Goal Tracking:** Implement features for setting and tracking specific financial goals (e.g., saving for a down payment).
@@ -149,7 +149,7 @@ Potential features and improvements for future development:
 * **Live Data Feeds:** Integrate real-time stock market and news feeds instead of periodic fetching.
 * **Bank API Syncing:** Connect directly to bank APIs (e.g., Plaid) to automatically import accounts and transactions.
 
-## 🤝 Contributing
+## Contributing 🤝
 
 Contributions are welcome! If you'd like to contribute, please follow these steps:
 
