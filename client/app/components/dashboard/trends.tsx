@@ -257,7 +257,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                   resolveSizeBeforeRender = { true }
                   series = { series }
                   slotProps = { { legend: { hidden: true } } }
-                  xAxis = { [{ scaleType: "band", categoryGapRatio: 0.3, data: yearAbbreviations }] as any }
+                  xAxis = { [{ scaleType: "band", categoryGapRatio: 0.2, data: yearAbbreviations }] as any }
                   yAxis = { [{ domainLimit: "nice", valueFormatter: displayVolume }] }
                />
             ) : (
