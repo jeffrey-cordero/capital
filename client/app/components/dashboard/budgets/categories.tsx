@@ -231,7 +231,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
          if (oldIndex !== undefined && newIndex !== undefined) {
             const oldCategories = categories.map(category => ({ ...category }));
             const newCategories = arrayMove(categories, oldIndex, newIndex).map(
-               (category, index) => ({ ...category, budget_category_order: index })
+               (category, index) => ({ ...category, category_order: index })
             );
 
             dispatch(updateBudgetCategoryOrder({
