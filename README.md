@@ -11,7 +11,7 @@ Capital is a comprehensive personal finance management application designed to h
    * Personalized account balance trends.
    * Yearly budget performance overview.
 * **Accounts:** Manage various financial accounts (Checking, Savings, Credit Card, etc.), track balances, and view associated transactions.
-* **Budgets:** Create and manage monthly budgets for income and expense categories, track spending against goals, and visualize progress.
+* **Budgets:** Create and manage monthly budgets for income and expense categories, track spending against goals and visualize progress.
 * **Transactions:** Add, edit, and delete income and expense transactions, assigning them to specific accounts and budget categories.
 * **Settings:**
    * Update user profile information (name, email, birthday).
@@ -122,10 +122,10 @@ There are two main ways to run the application locally:
         ```
     * Alternatively, start them separately:
         ```bash
-        # In one terminal (from root directory)
+        # In one terminal (from the root directory)
         npm run server:dev
 
-        # In another terminal (from root directory)
+        # In another terminal (from the root directory)
         npm run client:dev
         ```
     * For production builds/starts:
