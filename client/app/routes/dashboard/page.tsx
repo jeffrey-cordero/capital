@@ -35,14 +35,7 @@ export default function Page(): React.ReactNode {
                >
                   <Stack
                      direction = "column"
-                     id = "finances-container"
-                     style = { { justifyContent: "space-between" } }
-                     sx = {
-                        {
-                           minHeight: "100%",
-                           textAlign: "center"
-                        }
-                     }
+                     sx = { { minHeight: "100%", textAlign: "center" } }
                   >
                      <Finances />
                      <Markets />

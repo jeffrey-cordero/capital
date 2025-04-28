@@ -120,6 +120,11 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       }
    }, [transaction, reset, defaultAccountID, defaultBudgetCategoryID, maxDate]);
 
+   const onCancel = useCallback(() => {
+      onReset();
+      setTimeout(() => onClose(), 150);
+   }, [onClose, onReset]);
+
    // Reset the default form values when the modal visibility changes
    useEffect(() => {
       if (open) {
@@ -450,9 +455,9 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                      </Stack>
                      <SubmitButton
                         isSubmitting = { isSubmitting }
-                        onCancel = { onClose }
+                        onCancel = { onCancel }
                         type = { updating ? "Update" : "Create" }
-                        visible = { true }
+                        visible = { Object.keys(dirtyFields).length > 0 }
                      />
                   </Stack>
                </form>

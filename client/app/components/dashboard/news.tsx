@@ -2,7 +2,6 @@ import { faCaretDown, faUpRightFromSquare } from "@fortawesome/free-solid-svg-ic
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
    Avatar,
-   Box,
    Card,
    CardActions,
    CardContent,
@@ -11,10 +10,8 @@ import {
    IconButton,
    Stack,
    Typography,
-   useMediaQuery,
    useTheme
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import { type Article, type News } from "capital/economy";
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
@@ -40,7 +37,6 @@ const DEFAULT_VALUES = {
  */
 function ArticleCard({ article }: { article: Article }): React.ReactNode {
    const theme = useTheme();
-   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("lg"));
    const [expanded, setExpanded] = useState(false);
 
    // Normalize the article content
@@ -51,32 +47,15 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
    const description = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n") || DEFAULT_VALUES.DESCRIPTION;
    const link = article.url || "";
 
-   // Toggle the expanded state of the article description
-   const updateExpandedState = useCallback(() => {
-      const financesContainer = document.getElementById("finances-container") as HTMLElement;
-
-      setExpanded((prev) => {
-         if (!isDesktop) return !prev;
-
-         // Align dashboard height based on the number of expanded cards for flushness
-         const isExpanding = !prev;
-         const expanded = document.querySelectorAll("[data-expanded=\"true\"]").length + (isExpanding ? 1 : -1);
-
-         if (expanded > 0) {
-            financesContainer.setAttribute("style", "justify-content: flex-start !important;");
-         } else {
-            financesContainer.setAttribute("style", "justify-content: space-between !important;");
-         }
-
-         return !prev;
-      });
-   }, [isDesktop]);
+   const toggleExpandedState = useCallback(() => {
+      setExpanded((prev) => !prev);
+   }, []);
 
    return (
       <Card
          data-expanded = { expanded }
          elevation = { 3 }
-         sx = { { margin: "auto", borderRadius: 2 } }
+         sx = { { margin: "auto", borderRadius: 2, width: "100%", textAlign: "left" } }
       >
          <CardHeader
             avatar = {
@@ -129,7 +108,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
             <Expand
                disableRipple = { true }
                expand = { expanded }
-               onClick = { updateExpandedState }
+               onClick = { toggleExpandedState }
             >
                <FontAwesomeIcon
                   icon = { faCaretDown }
@@ -182,31 +161,19 @@ export default function Articles(): React.ReactNode {
    }, [news]);
 
    return (
-      <Box
+      <Stack
+         direction = "column"
          id = "news"
-         sx = { { textAlign: "center" } }
+         sx = { { height: "100%", textAlign: "center", justifyContent: "space-between", alignItems: "center", gap: 2 } }
       >
-         <Stack
-            direction = "column"
-            sx = { { textAlign: "center", justifyContent: "center", alignItems: "center", gap: 2 } }
-         >
-            <Grid
-               columnSpacing = { 2 }
-               container = { true }
-               sx = { { width: "100%", height: "100%", justifyContent: "center", alignItems: "flex-start", gap: 2.2, textAlign: "left" } }
-            >
-               {
-                  items.map((item: Article, index) => (
-                     <Grid
-                        key = { `news-${index}` }
-                        size = { { xs: 12 } }
-                     >
-                        <ArticleCard article = { item } />
-                     </Grid>
-                  ))
-               }
-            </Grid>
-         </Stack>
-      </Box>
+         {
+            items.map((item: Article, index) => (
+               <ArticleCard
+                  article = { item }
+                  key = { `news-${index}` }
+               />
+            ))
+         }
+      </Stack>
    );
 }

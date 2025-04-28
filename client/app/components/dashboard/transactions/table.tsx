@@ -439,6 +439,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
             sx = {
                view === "list" ? {
                   boxShadow: 2,
+                  minHeight: transactions.length === 0 ? "410px" : undefined,
                   "& .MuiDataGrid-row": {
                      minWidth: "100% !important"
                   },

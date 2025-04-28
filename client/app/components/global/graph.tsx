@@ -45,7 +45,7 @@ export interface GraphProps {
  * Graph component heights by breakpoint
  */
 export const heights = {
-   xss: 265,
+   xss: 255,
    xs: 285,
    sm: 300,
    md: 315,
@@ -58,11 +58,11 @@ export const heights = {
  * Media query breakpoints for responsive graphs
  */
 export const breakpoints = {
-   "xss": "(max-width: 375px)",
-   "xs": "(max-width: 475px)",
-   "sm": "(max-width: 600px)",
-   "md": "(max-width: 750px)",
-   "lg": "(max-width: 850px)",
+   "xss": "(max-width: 500px)",
+   "xs": "(max-width: 600px)",
+   "sm": "(max-width: 700px)",
+   "md": "(max-width: 800px)",
+   "lg": "(max-width: 915px)",
    "xl": "(max-width: 1100px)",
    "xll": "(max-width: 1200px)"
 };
@@ -331,7 +331,6 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                         justifyContent: isCard ? { xs: "center", lg: "flex-start" } : "center",
                         flexWrap: "wrap",
                         columnGap: 1,
-                        rowGap: 0,
                         textAlign: isCard ? { xs: "center", lg: "left" } : "center",
                         mt: isCard ? { xs: 1.5, sm: 0.5 } : 1,
                         mb: 0,
@@ -343,7 +342,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                      isIndicators && (
                         <Typography
                            gutterBottom = { true }
-                           sx = { { mb: 0, fontWeight: "600" } }
+                           sx = { { fontWeight: "600", mb: "-3px" } }
                            variant = "subtitle2"
                         >
                            { title }

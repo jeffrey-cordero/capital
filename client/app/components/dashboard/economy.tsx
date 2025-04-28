@@ -134,6 +134,7 @@ function Stocks({ data }: StocksProps): React.ReactNode {
          sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
       >
          <Grid
+            columnSpacing = { 1.5 }
             container = { true }
             direction = "row"
             sx = { { width: "100%" } }
@@ -194,7 +195,7 @@ export default function Economy(): React.ReactNode {
       >
          <Stack
             direction = "column"
-            sx = { { mb: { xs: 4, lg: 5 } } }
+            sx = { { mb: 4 } }
          >
             <Box>
                <Typography

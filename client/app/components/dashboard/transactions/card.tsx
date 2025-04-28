@@ -71,18 +71,18 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   rowGap = { 1 }
                   sx = { { flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
+                  <Typography
+                     color = { color }
+                     sx = { { fontWeight: "650", fontSize: "0.9rem", pl: 0.25 } }
+                     variant = "subtitle1"
+                  >
+                     { displayCurrency(transaction.amount) }
+                  </Typography>
                   <Box>
                      <RenderAccountChip
                         account_id = { transaction.account_id || "" }
                      />
                   </Box>
-                  <Typography
-                     color = { color }
-                     sx = { { fontWeight: "650", fontSize: "0.9rem" } }
-                     variant = "subtitle1"
-                  >
-                     { displayCurrency(transaction.amount) }
-                  </Typography>
                </Stack>
                <Stack
                   direction = "row"
