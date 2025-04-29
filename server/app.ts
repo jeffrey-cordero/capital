@@ -109,6 +109,10 @@ app.use(function(error: any, req: Request, res: Response) {
 });
 
 /**
- * Start the web server
+ * Start or export the web server based on the the provider definition
  */
-app.listen(port);
+if (process.env.PROVIDER === "VERCEL") {
+   module.exports = app;
+} else {
+   app.listen(port);
+}

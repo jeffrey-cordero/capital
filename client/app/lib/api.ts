@@ -109,7 +109,7 @@ export async function sendApiRequest<T>(
    } catch (error: any) {
       // Log unexpected errors
       const message: string = error.message;
-      console.error("API Request failed:", message);
+      console.error("API request failed:", message);
 
       // Display error notification
       dispatch(addNotification({
