@@ -12,7 +12,7 @@ import { authenticate } from "@/redux/slices/authentication";
  *
  * @param {Dispatch<any>} dispatch - Redux dispatch function
  * @param {NavigateFunction} navigate - Router navigation function
- * @returns {Promise<boolean | null>} Authentication status or null for auto-redirection
+ * @returns {Promise<boolean | null>} Authentication status or null for error handling
  */
 export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean| null> {
    const status = await sendApiRequest<{ authenticated: boolean }>(
@@ -20,12 +20,10 @@ export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: Nav
    );
 
    if (typeof status === "object" && status !== null) {
-      // Update authentication state based on API response
       const authenticated: boolean = Boolean(status.authenticated);
       dispatch(authenticate(authenticated));
 
-      // Return null for auto-redirection handling
-      return authenticated ? null : false;
+      return authenticated;
    }
 
    return null;
@@ -44,7 +42,7 @@ export default function Layout(): React.ReactNode {
       staleTime: 5 * 60 * 1000
    });
 
-   if (isLoading || isError || data === null) {
+   if (isLoading || isError || data === true) {
       return <Loading />;
    } else {
       return <Outlet />;

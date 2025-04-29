@@ -17,9 +17,9 @@ import { setTransactions } from "@/redux/slices/transactions";
  *
  * @param {Dispatch<any>} dispatch - Redux dispatch function
  * @param {NavigateFunction} navigate - Router navigation function
- * @returns {Promise<Dashboard | null>} Dashboard data or null if request fails
+ * @returns {Promise<Dashboard | number | null>} Dashboard data, status code, or 0/null for server failures/errors
  */
-export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | null> {
+export async function fetchDashboard(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<Dashboard | number | null> {
    const dashboard = await sendApiRequest<Dashboard>(
       "dashboard", "GET", null, dispatch, navigate
    );
@@ -36,9 +36,9 @@ export async function fetchDashboard(dispatch: Dispatch<any>, navigate: Navigate
       dispatch(setTransactions(dashboard.transactions));
 
       return dashboard;
-   } else {
-      return null;
    }
+
+   return dashboard;
 }
 
 /**
@@ -55,7 +55,12 @@ export default function Layout(): React.ReactNode {
       gcTime: 30 * 60 * 1000
    });
 
-   if (isLoading || isError || data === null) {
+   if (data === 0) {
+      // Navigate back to the landing page for server-side failures
+      window.location.pathname = "/";
+   }
+
+   if (isLoading || isError || typeof data !== "object") {
       return <Loading />;
    } else {
       return <Outlet />;
