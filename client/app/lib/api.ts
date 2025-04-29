@@ -42,7 +42,7 @@ interface ApiResponse<T> {
  * @param {Dispatch<any>} dispatch - Redux dispatch function
  * @param {NavigateFunction} navigate - Router navigation function
  * @param {UseFormSetError<any>} [setError] - Optional form error setter
- * @returns {Promise<T | number | null>} Response data, status code, or null on error
+ * @returns {Promise<T | number | null>} Response data, status code, or 0/null for server failures/errors
  */
 export async function sendApiRequest<T>(
    path: string,
@@ -106,9 +106,10 @@ export async function sendApiRequest<T>(
 
          return null;
       }
-   } catch (error) {
+   } catch (error: any) {
       // Log unexpected errors
-      console.error("API Request failed:", error);
+      const message: string = error.message;
+      console.error("API request failed:", message);
 
       // Display error notification
       dispatch(addNotification({
@@ -116,6 +117,7 @@ export async function sendApiRequest<T>(
          message: "Internal Server Error"
       }));
 
-      return null;
+      // Server-side failure vs. error
+      return error.message === "Failed to fetch" ? 0 : null;
    }
 }

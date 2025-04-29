@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npx tsc",
-    "start": "npm run build && NODE_ENV=production ts-node -r module-alias/register ./app.ts",
-    "dev": "npm run build && nodemon -L -r module-alias/register ./app.ts",
+    "build": "npx tsc && npx tsc-alias",
+    "start": "npm run build && NODE_ENV=production ts-node api/index.ts",
+    "dev": "npm run build && nodemon -L api/index.ts",
     "lint": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'"
   },
   "keywords": [],
@@ -36,7 +36,6 @@
     "redis": "^4.6.12",
     "util": "^0.12.5",
     "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.22.2"
   },
   "devDependencies": {
@@ -65,6 +64,7 @@
     "eslint-plugin-spellcheck": "^0.0.20",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.15",
     "typescript": "^5.7.3"
   },
   "_moduleAliases": {

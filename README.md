@@ -49,7 +49,7 @@ capital/
 │   ├── resources/       # Static resources (e.g., fallback economy data)
 │   ├── routers/         # API route definitions
 │   ├── services/        # Business logic
-│   ├── app.ts           # Express application setup
+│   ├── api/             # Express application
 │   ├── package.json     # Backend dependencies and scripts
 │   ├── schema.sql       # PostgreSQL database schema
 │   └── tsconfig.json    # TypeScript configuration

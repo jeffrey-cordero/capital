@@ -1,4 +1,5 @@
 require("dotenv").config();
+require('module-alias/register');
 
 import compression from "compression";
 import cookieParser from "cookie-parser";
@@ -112,3 +113,5 @@ app.use(function(error: any, req: Request, res: Response) {
  * Start the web server
  */
 app.listen(port);
+
+module.exports = app;

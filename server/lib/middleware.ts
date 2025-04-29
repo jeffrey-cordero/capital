@@ -17,7 +17,7 @@ export function configureToken(res: Response, user_id: string): void {
    // Store token in HTTP-only cookie
    res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
       secure: process.env.NODE_ENV === "production"
    });
