@@ -74,7 +74,11 @@ export async function authenticateUser(res: Response, username: string, password
  */
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
    // Clearing the token cookie effectively forces client to re-authenticate
-   res.clearCookie("token");
+   res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: process.env.NODE_ENV === "production"
+   });
 
    return sendServiceResponse(200, { success: true });
 }
