@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "npx tsc && npx tsc-alias",
-    "start": "npm run build && NODE_ENV=production ts-node -r module-alias/register ./app.ts",
-    "dev": "npm run build && nodemon -L -r module-alias/register ./app.ts",
+    "start": "npm run build && NODE_ENV=production ts-node -r module-alias/register ./index.ts",
+    "dev": "npm run build && nodemon -L -r module-alias/register api/index.ts",
     "lint": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'"
   },
   "keywords": [],
