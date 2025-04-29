@@ -1,4 +1,5 @@
 require("dotenv").config();
+require('module-alias/register');
 
 import compression from "compression";
 import cookieParser from "cookie-parser";
