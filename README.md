@@ -2,7 +2,7 @@
 
 Capital is a comprehensive personal finance management application designed to help users track their finances, manage budgets, and gain insights into their spending habits and the broader economic landscape. It features a clean React frontend and a robust Express.js backend connected to a PostgreSQL database, all containerized with Docker for ease of deployment and development.
 
-## Features ✨
+## Features
 
 * **Dashboard:** A central hub displaying:
    * Current economic news articles.
@@ -20,7 +20,7 @@ Capital is a comprehensive personal finance management application designed to h
    * Delete user account and associated data.
    * Logout functionality.
 
-## Technologies 🛠️
+## Technologies
 
 * **Frontend:** React, Redux Toolkit, React Router, Material UI, TanStack Query, Vite
 * **Backend:** Node.js, Express.js, TypeScript
@@ -30,7 +30,7 @@ Capital is a comprehensive personal finance management application designed to h
 * **Authentication:** JWT (JSON Web Tokens), Argon2 (Password Hashing)
 * **Other Libraries:** Zod (Validation), Winston (Logging), Helmet (Security), CORS, Express Rate Limit, etc.
 
-## Directory Structure 📂
+## Directory Structure
 
 ```bash
 capital/
@@ -78,7 +78,7 @@ capital/
 * **`package.json` (root)**: Manages installation and running of both client and server concurrently.
 * **`server/schema.sql`**: SQL script to initialize the PostgreSQL database structure.
 
-## Installation 🔨
+## Installation
 
 1.  **Prerequisites:**
     * Node.js (check `.nvmrc` or choose a recent LTS version)
@@ -100,7 +100,7 @@ capital/
 5.  **Database Setup:**
     * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
 
-## Development 💻
+## Development
 
 There are two main ways to run the application locally:
 
@@ -134,7 +134,7 @@ There are two main ways to run the application locally:
         npm run start
         ```
 
-## Future Roadmap 🚀
+## Future Roadmap
 
 Potential features and improvements for future development:
 
@@ -149,7 +149,7 @@ Potential features and improvements for future development:
 * **Live Data Feeds:** Integrate real-time stock market and news feeds instead of periodic fetching.
 * **Bank API Syncing:** Connect directly to bank APIs (e.g., Plaid) to automatically import accounts and transactions.
 
-## Contributing 🤝
+## Contributing
 
 Contributions are welcome! If you'd like to contribute, please follow these steps:
 
