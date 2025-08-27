@@ -77,7 +77,7 @@ export async function logoutUser(req: Request, res: Response): Promise<ServerRes
    res.clearCookie("token", {
       httpOnly: true,
       sameSite: "none",
-      secure: process.env.NODE_ENV === "production"
+      secure: true
    });
 
    return sendServiceResponse(200, { success: true });

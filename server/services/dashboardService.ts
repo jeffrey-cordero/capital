@@ -10,6 +10,8 @@ import {
    Trends
 } from "capital/economy";
 import { ServerResponse } from "capital/server";
+import fs from "fs";
+import path from "path";
 
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
@@ -30,14 +32,14 @@ const mutex = new Mutex();
  * Backup economy data for fallback during data fetching failures
  */
 const backupEconomyData = {
-   news: economy.News,
+   news: economy.news,
    trends: {
-      "Stocks": economy.Stocks,
-      "GDP": economy.GDP,
-      "Inflation": economy.Inflation,
-      "Unemployment": economy.Unemployment,
-      "Treasury Yield": economy["Treasury Yield"],
-      "Federal Interest Rate": economy["Federal Interest Rate"]
+      "Stocks": economy.trends.Stocks,
+      "GDP": economy.trends.GDP,
+      "Inflation": economy.trends.Inflation,
+      "Unemployment": economy.trends.Unemployment,
+      "Treasury Yield": economy.trends["Treasury Yield"],
+      "Federal Interest Rate": economy.trends["Federal Interest Rate"]
    }
 };
 
@@ -59,12 +61,12 @@ const getAlphaVantageUrl = (name: string, params: string = ""): string => {
 };
 
 /**
- * Gets the key for the economy data from indicator name
+ * Gets the key for the economy trends data from indicator name
  *
  * @param {string} indicator - The indicator to fetch
- * @returns {keyof typeof economy} Key for the economy data
+ * @returns {keyof typeof economy.trends} Key for the economy trends data
  */
-const getEconomicIndicatorKey = (indicator: string): keyof typeof economy => {
+const getEconomicIndicatorKey = (indicator: string): keyof typeof economy.trends => {
    switch (indicator) {
       case "REAL_GDP":
          return "GDP";
@@ -98,10 +100,10 @@ async function fetchStocks(): Promise<StockTrends> {
 
    if (!fields.success) {
       // Potential rate limit error or unexpected changes in the API structure
-      logger.error("Error fetching stock trends", JSON.stringify(response));
+      logger.error("Error fetching stock trends", response);
 
       // Return backup data from our local storage
-      return stockTrendsSchema.safeParse(economy.Stocks).data as StockTrends;
+      return stockTrendsSchema.safeParse(economy.trends.Stocks).data as StockTrends;
    }
 
    return fields.data;
@@ -125,11 +127,11 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 
    if (!fields.success) {
       // Potential rate limit error or changes in the API structure
-      logger.error("Error fetching economic indicators", JSON.stringify(response));
+      logger.error("Error fetching economic indicators", response);
 
       // Use our local backup data for this specific indicator
       return indicatorTrendsSchema.safeParse(
-         economy[getEconomicIndicatorKey(indicator)]
+         economy.trends[getEconomicIndicatorKey(indicator)]
       ).data as unknown as IndicatorTrends[];
    }
 
@@ -165,7 +167,7 @@ export async function fetchNews(): Promise<News> {
       logger.error("Error fetching news", response);
 
       // Return our local backup news data
-      return newsSchema.safeParse(economy.News).data as News;
+      return newsSchema.safeParse(economy.news).data as News;
    }
 
    return fields.data;
@@ -240,6 +242,12 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
          await dashboardRepository.updateEconomicData(time, data);
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, data);
+
+         // Backup the data to a file
+         if (process.env.NODE_ENV === "development") {
+            const resourcesPath = path.join(__dirname, "..", "resources", "economy.json");
+            fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
+         }
 
          return sendServiceResponse(200, economy);
       } finally {

@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+
 import { sendSuccess } from "@/lib/response";
 
 const indexRouter = express.Router();

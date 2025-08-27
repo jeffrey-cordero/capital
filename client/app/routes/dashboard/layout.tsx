@@ -60,7 +60,7 @@ export default function Layout(): React.ReactNode {
       window.location.pathname = "/";
    }
 
-   if (isLoading || isError || typeof data !== "object") {
+   if (isLoading || isError || typeof data !== "object" || data === null) {
       return <Loading />;
    } else {
       return <Outlet />;
