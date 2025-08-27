@@ -114,4 +114,4 @@ app.use(function(error: any, req: Request, res: Response) {
  */
 app.listen(port);
 
-export default app;
+module.exports = app;
