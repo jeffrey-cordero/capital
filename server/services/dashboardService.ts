@@ -151,8 +151,8 @@ export async function fetchNews(): Promise<News> {
    midnightYesterday.setDate(midnightYesterday.getDate() - 1);
    midnightYesterday.setHours(0, 0, 0, 0);
 
-   // Fetch news for US economy since yesterday
-   const response = await fetch(`https://global-economy-news.p.rapidapi.com/?initial=${midnightYesterday}&category=economy&country=us`, {
+   // Fetch news for US economy since yesterday (convert Date to Unix timestamp)
+   const response = await fetch(`https://global-economy-news.p.rapidapi.com/?initial=${midnightYesterday.getTime()}&category=economy&country=us`, {
       method: "GET",
       headers: {
          "x-rapidapi-host": "global-economy-news.p.rapidapi.com",
