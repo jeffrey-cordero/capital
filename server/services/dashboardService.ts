@@ -100,7 +100,7 @@ async function fetchStocks(): Promise<StockTrends> {
 
    if (!fields.success) {
       // Potential rate limit error or unexpected changes in the API structure
-      console.log(response);
+      console.error(response);
       logger.error("Error fetching stock trends");
 
       // Return backup data from our local storage
@@ -165,7 +165,7 @@ export async function fetchNews(): Promise<News> {
 
    if (!fields.success) {
       // Potential rate limit error or changes in the API structure
-      console.log(response);
+      console.error(response);
       logger.error("Error fetching news");
 
       // Return our local backup news data

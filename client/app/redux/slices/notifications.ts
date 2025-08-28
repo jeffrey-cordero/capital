@@ -5,7 +5,7 @@ import { type WritableDraft } from "immer";
  * The notification type
  */
 export interface Notification {
-   type: "success" | "error";
+   type: "success" | "error" | "warning" | "info";
    message: string;
 }
 
