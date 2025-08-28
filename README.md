@@ -149,15 +149,3 @@ Potential features and improvements for future development:
 * **Live Data Feeds:** Integrate real-time stock market and news feeds instead of periodic fetching.
 * **Bank API Syncing:** Connect directly to bank APIs (e.g., Plaid) to automatically import accounts and transactions.
 
-## Contributing
-
-Contributions are welcome! If you'd like to contribute, please follow these steps:
-
-1.  Fork the repository.
-2.  Create a new branch for your feature or bug fix (`git checkout -b feature/your-feature-name` or `bugfix/issue-description`).
-3.  Make your changes and commit them with clear, descriptive messages.
-4.  Push your changes to your forked repository.
-5.  Create a Pull Request to the main repository's `main` branch.
-6.  Ensure your code adheres to the project's linting standards (`npm run lint`).
-
-Please provide a detailed description of your changes in the Pull Request.
