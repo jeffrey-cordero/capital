@@ -18,7 +18,7 @@ import { addNotification } from "@/redux/slices/notifications";
 export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean| null> {
    const apiTimeout = setTimeout(() => {
       dispatch(addNotification({
-         type: "warning",
+         type: "info",
          message: "Hang tight! The server could be waking up and will be ready shortly."
       }));
    }, 5000);
