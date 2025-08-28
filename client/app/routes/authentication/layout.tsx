@@ -47,13 +47,13 @@ export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: Nav
  */
 export default function Layout(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { data, isError, isLoading } = useQuery({
+   const { isError, isLoading } = useQuery({
       queryKey: ["authentication"],
       queryFn: () => fetchAuthentication(dispatch, navigate),
       staleTime: 5 * 60 * 1000
    });
 
-   if (isLoading || isError || data === true) {
+   if (isLoading || isError) {
       return <Loading />;
    } else {
       return <Outlet />;
