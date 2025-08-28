@@ -100,8 +100,8 @@ async function fetchStocks(): Promise<StockTrends> {
 
    if (!fields.success) {
       // Potential rate limit error or unexpected changes in the API structure
-      console.error(response);
       logger.error("Error fetching stock trends");
+      console.error(response);
 
       // Return backup data from our local storage
       return stockTrendsSchema.safeParse(economy.trends.Stocks).data as StockTrends;
@@ -129,6 +129,7 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
    if (!fields.success) {
       // Potential rate limit error or changes in the API structure
       logger.error("Error fetching economic indicators", response);
+      console.error(response);
 
       // Use our local backup data for this specific indicator
       return indicatorTrendsSchema.safeParse(
@@ -165,8 +166,8 @@ export async function fetchNews(): Promise<News> {
 
    if (!fields.success) {
       // Potential rate limit error or changes in the API structure
-      console.error(response);
       logger.error("Error fetching news");
+      console.error(response);
 
       // Return our local backup news data
       return newsSchema.safeParse(economy.news).data as News;
