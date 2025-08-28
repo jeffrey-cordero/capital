@@ -50,7 +50,27 @@ export default [
          "simple-import-sort/imports": "error",
          "simple-import-sort/exports": "error",
          "jsx-quotes": ["error", "prefer-double"],
-         indent: ["error", 3, { SwitchCase: 1 }],
+         indent: ["error", 3, {
+            SwitchCase: 1,
+            ignoredNodes: [
+               "JSXElement",
+               "JSXElement > *",
+               "JSXAttribute",
+               "JSXIdentifier",
+               "JSXNamespacedName",
+               "JSXMemberExpression",
+               "JSXSpreadAttribute",
+               "JSXExpressionContainer",
+               "JSXOpeningElement",
+               "JSXClosingElement",
+               "JSXFragment",
+               "JSXOpeningFragment",
+               "JSXClosingFragment",
+               "JSXText",
+               "JSXEmptyExpression",
+               "JSXSpreadChild"
+            ]
+         }],
          "space-before-blocks": ["error", "always"],
          "object-curly-spacing": ["error", "always"],
          "keyword-spacing": ["error", { after: true }],

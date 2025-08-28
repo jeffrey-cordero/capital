@@ -19,7 +19,7 @@ export function configureToken(res: Response, user_id: string): void {
       httpOnly: true,
       sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === "production"
+      secure: true
    });
 }
 
