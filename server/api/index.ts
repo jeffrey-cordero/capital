@@ -23,7 +23,7 @@ const port = process.env.PORT || 8000;
  * Rate limiting with logging measures
  */
 app.use(rateLimit({
-   max: 500,
+   max: Boolean(process.env.RATE_LIMITING_ENABLED) ? 500 : Infinity,
    windowMs: 5 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
@@ -112,6 +112,9 @@ app.use(function(error: any, req: Request, res: Response) {
 /**
  * Start the web server
  */
-app.listen(port);
+app.listen(port, () => {
+   logger.info(`Started Capital on port ${port}`);
+});
+
 
 module.exports = app;

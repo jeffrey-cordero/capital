@@ -1,0 +1,182 @@
+name: "Capital CI"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  client-lint:
+    name: "ESLint (Client)"
+    defaults:
+      run:
+        working-directory: client
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: "Cache Node Modules"
+        uses: actions/cache@v4
+        id: node-cache
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Install Node Dependencies"
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: "Run ESLint"
+        run: npm run lint
+
+  client-e2e:
+    name: "Playwright E2E"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: "Cache Node Modules"
+        uses: actions/cache@v4
+        id: node-cache
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Install Node Dependencies"
+        working-directory: client
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: "Setup E2E Test Environment"
+        run: ./.github/scripts/services.sh full-start
+
+      - name: "Cache Playwright Browsers"
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.NODE_VERSION }}-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-${{ env.NODE_VERSION }}-
+            ${{ runner.os }}-playwright-
+
+      - name: "Install Playwright Browsers"
+        working-directory: client
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: "Run Playwright E2E Tests"
+        working-directory: client
+        env:
+          VITE_SERVER_PORT: 3000
+        run: npm run test:e2e
+
+      - name: "Stop Services"
+        if: always()
+        run: ./.github/scripts/services.sh stop
+
+      - name: "Upload Playwright E2E Results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: client/playwright-report/
+          retention-days: 30
+
+  server-lint:
+    name: "ESLint (Server)"
+    defaults:
+      run:
+        working-directory: server
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'server/package-lock.json'
+
+      - name: "Cache Node Modules"
+        uses: actions/cache@v4
+        id: node-cache
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Install Node Dependencies"
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: "Run ESLint"
+        run: npm run lint
+
+  server-unit:
+    name: "Jest Unit Testing"
+    defaults:
+      run:
+        working-directory: server
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'server/package-lock.json'
+
+      - name: "Cache Node Modules"
+        uses: actions/cache@v4
+        id: node-cache
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Install Node Dependencies"
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: "Run Jest Unit Tests"
+        run: npm run test
+
+      - name: "Upload Coverage Reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage-report
+          path: server/coverage/
+          retention-days: 30
