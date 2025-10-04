@@ -1,5 +1,6 @@
 import { faEye, faEyeSlash, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
    Box,
    Button,
@@ -20,11 +21,11 @@ import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
+import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { getValidDateRange } from "@/lib/dates";
-import { handleValidationErrors } from "@/lib/validation";
 import { authenticate } from "@/redux/slices/authentication";
 
 /**
@@ -34,37 +35,32 @@ import { authenticate } from "@/redux/slices/authentication";
  */
 export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm({
+      resolver: zodResolver(userSchema),
+      mode: "onBlur",
+      defaultValues: {
+         name: "",
+         birthday: "" as unknown as Date,
+         username: "",
+         password: "",
+         verifyPassword: "",
+         email: ""
+      }
+   });
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    // Store the birthday date range constraints
    const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
-   const onSubmit = async(data: any) => {
-      const fields = userSchema.safeParse(data);
+   const onSubmit = async(data: z.infer<typeof userSchema>) => {
+      const result = await sendApiRequest<{ success: boolean }>(
+         "users", "POST", data, dispatch, navigate, setError
+      );
 
-      if (!fields.success) {
-         handleValidationErrors(fields, setError);
-      } else {
-         // Submit registration fields
-         const registration = {
-            username: fields.data.username,
-            name: fields.data.name,
-            password: fields.data.password,
-            verifyPassword: fields.data.verifyPassword,
-            email: fields.data.email,
-            birthday: fields.data.birthday
-         };
-
-         const result = await sendApiRequest<{ success: boolean }>(
-            "users", "POST", registration, dispatch, navigate, setError
-         );
-
-         if (typeof result === "object" && result?.success) {
-            // Update authentication state
-            dispatch(authenticate(true));
-         }
+      if (typeof result === "object" && result?.success) {
+         // Update authentication state
+         dispatch(authenticate(true));
       }
    };
 
@@ -96,7 +92,10 @@ export default function Register(): React.ReactNode {
                      Register
                   </Typography>
                </Stack>
-               <form onSubmit = { handleSubmit(onSubmit) }>
+               <form
+                  aria-label = "Register Form"
+                  onSubmit = { handleSubmit(onSubmit) }
+               >
                   <Stack
                      direction = "column"
                      spacing = { 1.5 }
@@ -106,7 +105,9 @@ export default function Register(): React.ReactNode {
                         name = "name"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.name) }>
+                              <FormControl
+                                 error = { Boolean(errors.name) }
+                              >
                                  <InputLabel htmlFor = "name">
                                     Name
                                  </InputLabel>
@@ -115,6 +116,7 @@ export default function Register(): React.ReactNode {
                                     autoComplete = "name"
                                     autoFocus = { true }
                                     id = "name"
+                                    inputProps = { { "data-testid": "name" } }
                                     label = "Name"
                                     type = "text"
                                     value = { field.value || "" }
@@ -131,7 +133,9 @@ export default function Register(): React.ReactNode {
                         name = "birthday"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.birthday) }>
+                              <FormControl
+                                 error = { Boolean(errors.birthday) }
+                              >
                                  <InputLabel
                                     htmlFor = "birthday"
                                     shrink = { true }
@@ -146,8 +150,9 @@ export default function Register(): React.ReactNode {
                                     slotProps = {
                                        {
                                           htmlInput: {
+                                             "data-testid": "birthday",
                                              min: minDate,
-                                             max: maxDate
+                                             max: maxDate,
                                           },
                                           inputLabel: {
                                              shrink: true
@@ -174,7 +179,9 @@ export default function Register(): React.ReactNode {
                         name = "username"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.username) }>
+                              <FormControl
+                                 error = { Boolean(errors.username) }
+                              >
                                  <InputLabel htmlFor = "username">
                                     Username
                                  </InputLabel>
@@ -182,6 +189,7 @@ export default function Register(): React.ReactNode {
                                     { ...field }
                                     autoComplete = "none"
                                     id = "username"
+                                    inputProps = { { "data-testid": "username" } }
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
@@ -198,7 +206,9 @@ export default function Register(): React.ReactNode {
                         name = "password"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.password) }>
+                              <FormControl
+                                 error = { Boolean(errors.password) }
+                              >
                                  <InputLabel htmlFor = "password">
                                     Password
                                  </InputLabel>
@@ -214,6 +224,7 @@ export default function Register(): React.ReactNode {
                                        />
                                     }
                                     id = "password"
+                                    inputProps = { { "data-testid": "password" } }
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
@@ -230,7 +241,9 @@ export default function Register(): React.ReactNode {
                         name = "verifyPassword"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.verifyPassword) }>
+                              <FormControl
+                                 error = { Boolean(errors.verifyPassword) }
+                              >
                                  <InputLabel htmlFor = "verifyPassword">
                                     Verify Password
                                  </InputLabel>
@@ -246,6 +259,7 @@ export default function Register(): React.ReactNode {
                                        />
                                     }
                                     id = "verifyPassword"
+                                    inputProps = { { "data-testid": "verifyPassword" } }
                                     label = "Verify Password"
                                     type = { showVerifyPassword ? "text" : "password" }
                                     value = { field.value || "" }
@@ -262,7 +276,9 @@ export default function Register(): React.ReactNode {
                         name = "email"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.email) }>
+                              <FormControl
+                                 error = { Boolean(errors.email) }
+                              >
                                  <InputLabel htmlFor = "email">
                                     Email
                                  </InputLabel>
@@ -270,6 +286,7 @@ export default function Register(): React.ReactNode {
                                     { ...field }
                                     autoComplete = "email"
                                     id = "email"
+                                    inputProps = { { "data-testid": "email" } }
                                     label = "email"
                                     type = "email"
                                     value = { field.value || "" }
@@ -284,6 +301,7 @@ export default function Register(): React.ReactNode {
                      <Button
                         className = "btn-primary"
                         color = "primary"
+                        data-testid = "submit-button"
                         fullWidth = { true }
                         loading = { isSubmitting }
                         loadingPosition = "start"
@@ -301,8 +319,11 @@ export default function Register(): React.ReactNode {
                         Already have an account?{ " " }
                         <Link
                            color = "primary"
+                           data-testid = "login-link"
                            fontWeight = "bold"
+                           id = "login-link"
                            onClick = { () => navigate("/login") }
+                           role = "link"
                            underline = "none"
                         >
                            Login

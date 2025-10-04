@@ -37,6 +37,7 @@ export default function Page(): React.ReactNode {
                spacing = { 2 }
             >
                <Typography
+                  data-testid = "title"
                   fontWeight = "bold"
                   variant = "h1"
                >
@@ -44,6 +45,7 @@ export default function Page(): React.ReactNode {
                </Typography>
                <Typography
                   color = "textSecondary"
+                  data-testid = "description"
                   fontWeight = "bold"
                   sx = { { margin: "0 auto", maxWidth: "400px", px: 2 } }
                   variant = "body2"
@@ -57,6 +59,7 @@ export default function Page(): React.ReactNode {
                sx = { { mt: 2, flexWrap: "wrap", justifyContent: "center" } }
             >
                <Link
+                  data-testid = "login"
                   fontWeight = "bold"
                   id = "login"
                   onClick = { () => navigate("/login") }
@@ -68,6 +71,7 @@ export default function Page(): React.ReactNode {
                <Link
                   className = "success"
                   color = "success"
+                  data-testid = "register"
                   fontWeight = "bold"
                   id = "register"
                   onClick = { () => navigate("/register") }

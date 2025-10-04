@@ -28,6 +28,8 @@ export default function Logout(): React.ReactNode {
             message = "Are you sure you want to logout?"
             onConfirmation = { onSubmit }
             startIcon = { faRightFromBracket }
+            confirmDataTestId = "settings-logout-confirm"
+            cancelDataTestId = "settings-logout-cancel"
             title = "Logout"
             type = "button"
          />

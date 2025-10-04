@@ -84,10 +84,14 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * Routers for handling requests
  */
-app.use("/", indexRouter);
-app.use("/users", userRouter);
-app.use("/dashboard", dashboardRouter);
-app.use("/authentication", authenticationRouter);
+const v1 = express.Router();
+
+v1.use("/", indexRouter);
+v1.use("/users", userRouter);
+v1.use("/dashboard", dashboardRouter);
+v1.use("/authentication", authenticationRouter);
+
+app.use("/api/v1", v1);
 
 /**
  * 404 error handler

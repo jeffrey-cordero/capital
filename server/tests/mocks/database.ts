@@ -2,7 +2,6 @@
  * Database mocks for server tests
  */
 import { Pool, PoolClient } from 'pg';
-import { ServerResponse, HTTP_STATUS } from 'capital/server';
 
 /**
  * Mock database pool for testing

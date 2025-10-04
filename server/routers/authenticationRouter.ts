@@ -8,7 +8,7 @@ const authenticationRouter = express.Router();
 /**
  * Validates a user session via their JWT token - GET /authentication/
  *
- * @requires {string} req.cookies.token - Authentication token
+ * @requires {string} req.cookies.access_token - Authentication token
  */
 authenticationRouter.get("/", controller.GET);
 
@@ -23,7 +23,7 @@ authenticationRouter.post("/login", authenticateToken(false), controller.LOGIN);
 /**
  * Terminates a user session - POST /authentication/logout
  *
- * @requires {string} req.cookies.token - Authentication token
+ * @requires {string} req.cookies.access_token - Authentication token
  */
 authenticationRouter.post("/logout", authenticateToken(true), controller.LOGOUT);
 

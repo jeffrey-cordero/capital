@@ -275,6 +275,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                            />
                            <IconButton
                               aria-label = "Logout"
+                              data-testid = "sidebar-logout"
                               disableRipple = { true }
                               onClick = { logout }
                               size = "medium"
@@ -329,6 +330,7 @@ export function SideBar(): React.ReactNode {
       <Box>
          <IconButton
             color = "primary"
+            data-testid = "sidebar-toggle"
             onClick = { openSideBar }
             sx = {
                {

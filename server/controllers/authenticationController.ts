@@ -12,7 +12,7 @@ import * as authenticationService from "@/services/authenticationService";
  * @returns {Promise<Response>} Service response with authentication status
  */
 export const GET = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token));
+   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.access_token));
 });
 
 /**

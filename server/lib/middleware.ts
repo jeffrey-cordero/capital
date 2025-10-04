@@ -15,7 +15,7 @@ export function configureToken(res: Response, user_id: string): void {
    const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
    // Store token in HTTP-only cookie
-   res.cookie("token", token, {
+   res.cookie("access_token", token, {
       httpOnly: true,
       sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
@@ -34,7 +34,7 @@ export function authenticateToken(required: boolean) {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
       // Get token from cookies
-      const token = req.cookies.token;
+      const token = req.cookies.access_token;
 
       if (!token && required) {
          return sendErrors(res, 401);
@@ -51,7 +51,7 @@ export function authenticateToken(required: boolean) {
          } catch (error: any) {
             if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
                // Clear invalid token
-               res.clearCookie("token");
+               res.clearCookie("access_token");
             } else {
                // Log unexpected errors
                logger.error(error.stack);

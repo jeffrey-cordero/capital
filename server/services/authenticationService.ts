@@ -26,7 +26,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
       // Handle specific JWT verification errors
       if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
          // For expired or invalid tokens, clear the cookie and return unauthenticated state
-         res.clearCookie("token");
+         res.clearCookie("access_token");
 
          return sendServiceResponse(200, { authenticated: false });
       } else {
@@ -74,7 +74,7 @@ export async function authenticateUser(res: Response, username: string, password
  */
 export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
    // Clearing the token cookie effectively forces client to re-authenticate
-   res.clearCookie("token", {
+   res.clearCookie("access_token", {
       httpOnly: true,
       sameSite: "none",
       secure: true

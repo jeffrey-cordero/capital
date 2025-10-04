@@ -4,9 +4,9 @@ import { z } from "zod";
  * Password validation rules for security compliance
  */
 const passwordSchema = z.string().min(8, {
-  message: "Password must be at least 8 characters long"
+  message: "Password must be at least 8 characters"
 }).max(255, {
-  message: "Password must be at most 255 characters long"
+  message: "Password must be at most 255 characters"
 }).regex(/[A-Z]/, {
   message: "Password must contain at least one uppercase letter"
 }).regex(/[a-z]/, {
@@ -27,8 +27,8 @@ export const userSchema = z.object({
   }).nullable().optional(),
 
   /* Unique username */
-  username: z.string().trim().min(3, {
-    message: "Username must be at least 3 characters"
+  username: z.string().trim().min(2, {
+    message: "Username must be at least 2 characters"
   }).max(30, {
     message: "Username must be at most 30 characters"
   }).regex(/^[a-zA-Z0-9_-]+$/, {
@@ -36,20 +36,32 @@ export const userSchema = z.object({
   }),
 
   /* Full name */
-  name: z.string().trim().min(3, {
-    message: "Name must be at least 3 characters"
+  name: z.string().trim().min(2, {
+    message: "Name must be at least 2 characters"
   }).max(30, {
     message: "Name must be at most 30 characters"
   }),
 
   /* Birthdate */
-  birthday: z.coerce.date({
-    message: "Birthday must be a valid date"
-  }).min(new Date("1800-01-01"), {
-    message: "Birthday must be on or after 1800-01-01"
-  }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-    message: "Birthday cannot be in the future"
-  }).transform((date) => date.toISOString()),
+  birthday: z.preprocess(
+    (val) => {
+      if (typeof val === "string") {
+        // Empty string is considered undefined to ensure the proper error message is displayed
+        return val.trim() === "" ? undefined : new Date(val);
+      } else {
+        return val;
+      }
+    },
+    z.date({
+      required_error: "Birthday is required",
+      invalid_type_error: "Birthday must be a valid date",
+    })
+    .min(new Date("1800-01-01"), { message: "Birthday must be on or after 1800-01-01" })
+    .max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
+      message: "Birthday cannot be in the future"
+    })
+    .transform((date) => date.toISOString())
+  ),
 
   /* Primary password */
   password: passwordSchema,
@@ -59,14 +71,40 @@ export const userSchema = z.object({
 
   /* Unique email address */
   email: z.string().max(255, {
-    message: "Email must be at most 255 characters long"
+    message: "Email must be at most 255 characters"
   }).email({
     message: "Invalid email address"
   }),
 }).strict().refine(data => data.password === data.verifyPassword, {
-  message: "Passwords do not match",
+  message: "Passwords don't match",
   path: ["verifyPassword"]
 });
+
+/**
+ * Login schema with username and password fields
+ * Note: Password validation is minimal for login (only length check)
+ */
+export const loginSchema = z.object({
+  username: userSchema.innerType().shape.username,
+  password: userSchema.innerType().shape.password
+});
+
+/**
+ * Login payload type
+ *
+ * @see {@link userSchema} - Schema defining validation rules
+ */
+export type LoginPayload = {
+  username: z.infer<typeof userSchema>["username"],
+  password: z.infer<typeof userSchema>["password"]
+};
+
+/**
+ * Register payload type
+ *
+ * @see {@link userSchema} - Schema defining validation rules
+ */
+export type RegisterPayload = Omit<z.infer<typeof userSchema>, "user_id">;
 
 /**
  * Core user data without verification fields
@@ -124,7 +162,7 @@ export const updateUserSchema = userSchema.innerType().partial().extend({
     if (newPassword !== verifyPassword) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Passwords do not match",
+        message: "Passwords don't match",
         path: ["verifyPassword"],
       });
     }

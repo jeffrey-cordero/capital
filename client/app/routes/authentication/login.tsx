@@ -1,5 +1,6 @@
 import { faEye, faEyeSlash, faUnlockKeyhole } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
    Box,
    Button,
@@ -12,7 +13,7 @@ import {
    Stack,
    Typography
 } from "@mui/material";
-import { userSchema } from "capital/user";
+import { loginSchema } from "capital/user";
 import clsx from "clsx";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -22,15 +23,6 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
-import { handleValidationErrors } from "@/lib/validation";
-
-/**
- * Login schema with username and password fields
- */
-const loginSchema = z.object({
-   username: userSchema.innerType().shape.username,
-   password: userSchema.innerType().shape.password
-});
 
 /**
  * Login page component with form validation and authentication
@@ -39,33 +31,30 @@ const loginSchema = z.object({
  */
 export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm<z.infer<typeof loginSchema>>({
+      resolver: zodResolver(loginSchema),
+      mode: "onBlur",
+      defaultValues: {
+         username: "",
+         password: ""
+      }
+   });
    const [showPassword, setShowPassword] = useState<boolean>(false);
 
-   const onSubmit = async(data: any) => {
-      const fields = loginSchema.safeParse(data);
+   const onSubmit = async(data: z.infer<typeof loginSchema>) => {
+      const result = await sendApiRequest<{ success: boolean }>(
+         "authentication/login", "POST", data, dispatch, navigate, setError
+      );
 
-      if (!fields.success) {
-         handleValidationErrors(fields, setError);
-      } else {
-         // Submit authentication request
-         const credentials = {
-            username: fields.data.username,
-            password: fields.data.password
-         };
-
-         const result = await sendApiRequest<{ success: boolean }>(
-            "authentication/login", "POST", credentials, dispatch, navigate, setError
-         );
-
-         if (typeof result === "object" && result?.success) {
-            navigate("/dashboard");
-         }
+      if (typeof result === "object" && result?.success) {
+         navigate("/dashboard");
       }
    };
 
    return (
-      <Container className = "center">
+      <Container
+         className = "center"
+      >
          <Callout
             sx = { { width: "100%" } }
          >
@@ -92,7 +81,10 @@ export default function Login(): React.ReactNode {
                      Login
                   </Typography>
                </Stack>
-               <form onSubmit = { handleSubmit(onSubmit) }>
+               <form
+                  aria-label = "Login Form"
+                  onSubmit = { handleSubmit(onSubmit) }
+               >
                   <Stack
                      direction = "column"
                      spacing = { 1.5 }
@@ -102,7 +94,9 @@ export default function Login(): React.ReactNode {
                         name = "username"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.username) }>
+                              <FormControl
+                                 error = { Boolean(errors.username) }
+                              >
                                  <InputLabel htmlFor = "username">
                                     Username
                                  </InputLabel>
@@ -111,6 +105,7 @@ export default function Login(): React.ReactNode {
                                     autoComplete = "username"
                                     autoFocus = { true }
                                     id = "username"
+                                    inputProps = { { "data-testid": "username" } }
                                     label = "Username"
                                     type = "text"
                                     value = { field.value || "" }
@@ -127,7 +122,9 @@ export default function Login(): React.ReactNode {
                         name = "password"
                         render = {
                            ({ field }) => (
-                              <FormControl error = { Boolean(errors.password) }>
+                              <FormControl
+                                 error = { Boolean(errors.password) }
+                              >
                                  <InputLabel htmlFor = "password">
                                     Password
                                  </InputLabel>
@@ -146,6 +143,7 @@ export default function Login(): React.ReactNode {
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
+                                    inputProps = { { "data-testid": "password" } }
                                  />
                                  <FormHelperText>
                                     { errors.password?.message?.toString() }
@@ -157,6 +155,7 @@ export default function Login(): React.ReactNode {
                      <Button
                         className = "btn-primary"
                         color = "primary"
+                        data-testid = "submit-button"
                         fullWidth = { true }
                         loading = { isSubmitting }
                         loadingPosition = "start"
@@ -174,9 +173,11 @@ export default function Login(): React.ReactNode {
                         Don&apos;t have an account?{ " " }
                         <Link
                            color = "primary"
+                           data-testid = "register-link"
                            fontWeight = "bold"
-                           id = "register"
+                           id = "register-link"
                            onClick = { () => navigate("/register") }
+                           role = "link"
                            underline = "none"
                         >
                            Register

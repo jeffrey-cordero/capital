@@ -68,8 +68,7 @@ describe('User Controller', () => {
 
       await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
-      // Since submitServiceRequest is mocked to just call the callback,
-      // the error will be thrown and not caught
+      // Since submitServiceRequest is mocked to just call the callback, the error will be thrown and not caught
       expect(userService.createUser).toHaveBeenCalledWith(mockReq, mockRes, mockUser);
     });
   });
