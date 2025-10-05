@@ -152,7 +152,7 @@ export default function Register(): React.ReactNode {
                                           htmlInput: {
                                              "data-testid": "birthday",
                                              min: minDate,
-                                             max: maxDate,
+                                             max: maxDate
                                           },
                                           inputLabel: {
                                              shrink: true

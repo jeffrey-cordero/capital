@@ -134,14 +134,16 @@ There are two main ways to run the application locally:
         npm run start
         ```
 
+## Testing
+
+- Playwright end-to-end testing requires disabling rate limiting within `server/.env`
+
 ## Future Roadmap
 
 Potential features and improvements for future development:
 
 * **Pagination:** Implement pagination for transaction lists and potentially accounts/budgets.
-* **Testing:** Add comprehensive unit, integration, and end-to-end tests.
 * **Multi-Select Categories:** Allow assigning transactions to multiple budget categories.
-* **JWT Optimizations:** Implement access/refresh token strategy for enhanced security.
 * **Import/Export:** Add functionality to import/export transactions from/to CSV/OFX files, potentially with a helper modal for mapping fields.
 * **Recurring Transactions:** Add support for scheduling recurring income and expenses.
 * **Goal Tracking:** Implement features for setting and tracking specific financial goals (e.g., saving for a down payment).

@@ -6,9 +6,10 @@
  */
 
 import { expect, type Page } from "@playwright/test";
-import { submitForm } from "./forms";
-import { navigateToPath } from "./navigation";
 import type { RegisterPayload } from "capital/user";
+
+import { submitForm, VALID_REGISTRATION } from "./forms";
+import { navigateToPath } from "./navigation";
 
 /**
  * Route constants for unauthenticated (public) pages
@@ -38,25 +39,77 @@ export const isUserAuthenticated = async(page: Page): Promise<boolean> => {
 };
 
 /**
- * Submits registration form and optionally logs in the user via notification
+ * Derives the sidebar link title from a route path
  *
- * This function handles the complete registration flow including form submission,
- * success notification verification, and optional automatic login
+ * Extracts the last segment after "/" and capitalizes it.
+ * Special case: root route "/" returns "Home"
+ *
+ * @param {string} route - The route path (e.g., "/login", "/dashboard/accounts")
+ * @returns {string} The expected sidebar link title (e.g., "Login", "Accounts")
+ */
+export const getRouteLinkTitle = (route: string): string => {
+   if (route === ROOT_ROUTE) return "Home";
+
+   const segments = route.split("/");
+   const lastSegment = segments[segments.length - 1];
+   return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+};
+
+/**
+ * Generates unique test credentials for username and email
+ *
+ * Combines timestamp and random suffix to ensure uniqueness across test runs.
+ * The username is derived from the email prefix for consistency.
+ *
+ * @returns {{ username: string; email: string }} Object containing unique username and email
+ */
+export const generateTestCredentials = (): { username: string; email: string } => {
+   const timestamp = Date.now();
+   const randomSuffix = Math.random().toString(36).substring(2, 8);
+   const identifier = `${timestamp}-${randomSuffix}`;
+
+   // Username limited to 30 characters for validation purposes
+   const username = identifier.substring(0, 30);
+   const email = `${identifier}@example.com`;
+
+   return { username, email };
+};
+
+/**
+ * Creates a test user by registering with unique credentials
+ *
+ * This function handles the complete registration flow including navigation,
+ * form submission, and optional logout for creating mock users
  *
  * @param {Page} page - Playwright page instance
- * @param {RegisterPayload} registrationData - Registration form data containing username, email, password, etc
- * @param {boolean} logOutAfterRegistration - Whether to log out the user after registration
- * @returns {Promise<void>}
+ * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
+ * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to true)
+ * @returns {Promise<{ username: string; email: string }>} The credentials used for registration
  */
-export const submitRegistrationForm = async(page: Page, registrationData: RegisterPayload, logOutAfterRegistration: boolean = false): Promise<void> => {
+export const createUser = async(
+   page: Page,
+   overrides: Partial<RegisterPayload> = {},
+   keepLoggedIn: boolean = true
+): Promise<{ username: string; email: string }> => {
+   const credentials = generateTestCredentials();
+   const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
+
    await navigateToPath(page, REGISTER_ROUTE);
+   // Wait for the form to be ready
+   await page.getByTestId("submit-button").waitFor({ state: "visible" });
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
 
-   if (logOutAfterRegistration) {
-      // Logout the user, typically used to create mock users
+   if (!keepLoggedIn) {
+      // Logout the user, typically used to create mock users for testing
       await page.getByTestId("sidebar-toggle").click();
       await page.getByTestId("sidebar-logout").click();
-      await expect(page).toHaveURL(ROOT_ROUTE);
+      await expect(page).toHaveURL(LOGIN_ROUTE);
    }
+
+   // Return the actual credentials used (including overrides)
+   return {
+      username: registrationData.username,
+      email: registrationData.email
+   };
 };

@@ -1,31 +1,35 @@
 import { expect, test } from "@playwright/test";
 
-import { DASHBOARD_ROUTE, ROOT_ROUTE, submitRegistrationForm, UNVERIFIED_ROUTES } from "../../utils/authentication";
-import { VALID_REGISTRATION } from "../../utils/forms";
+import {
+   createUser,
+   DASHBOARD_ROUTE,
+   getRouteLinkTitle,
+   UNVERIFIED_ROUTES,
+   VERIFIED_ROUTES
+} from "../../utils/authentication";
 import {
    logoutUser,
    navigateToPath,
    testRouteRedirects,
    testUnverifiedRouteRedirects,
-   verifyHomeSidebarHighlight
+   verifySidebarLinkActive
 } from "../../utils/navigation";
-import { createUniqueIdentifier } from "../../utils/utils";
 
 test.describe("Routing and Navigation", () => {
    test.describe("Authenticated User Routing", () => {
       test.beforeEach(async({ page }) => {
          // Register and authenticate user for each test
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
-         // Auto-redirects to the dashboard route on successful registration
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email });
+         await createUser(page);
       });
 
-      test("should highlight Home in sidebar when on /home route", async({ page }) => {
-         await verifyHomeSidebarHighlight(page);
+      test("should highlight correct sidebar link for all authenticated routes", async({ page }) => {
+         for (const route of VERIFIED_ROUTES) {
+            await navigateToPath(page, route);
+            await verifySidebarLinkActive(page, getRouteLinkTitle(route));
+         }
       });
 
-      test("should redirect authenticated user from public routes to /home", async({ page }) => {
+      test("should redirect authenticated user from public routes to dashboard", async({ page }) => {
          await testUnverifiedRouteRedirects(page);
       });
 
@@ -34,14 +38,14 @@ test.describe("Routing and Navigation", () => {
          await logoutUser(page, "sidebar");
 
          // Verify verified routes now redirect to login
-         await testRouteRedirects(page, "verified");
+         await testRouteRedirects(page, "unverified");
       });
 
       test("should logout via settings and redirect to login", async({ page }) => {
          await logoutUser(page, "settings");
 
          // Verify verified routes now redirect to login
-         await testRouteRedirects(page, "verified");
+         await testRouteRedirects(page, "unverified");
       });
 
       test("should handle direct navigation to root route", async({ page }) => {
@@ -53,6 +57,13 @@ test.describe("Routing and Navigation", () => {
    });
 
    test.describe("Unauthenticated User Routing", () => {
+      test("should highlight correct sidebar link for all unauthenticated routes", async({ page }) => {
+         for (const route of UNVERIFIED_ROUTES) {
+            await navigateToPath(page, route);
+            await verifySidebarLinkActive(page, getRouteLinkTitle(route));
+         }
+      });
+
       test("should allow access to public routes when unauthenticated", async({ page }) => {
          // Test root route access
          for (const route of UNVERIFIED_ROUTES) {

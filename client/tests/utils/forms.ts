@@ -63,7 +63,7 @@ export const submitForm = async(page: Page, data: FormData): Promise<void> => {
    }
 
    // Submit the form
-   await page.locator('button[type="submit"]').click();
+   await page.locator("button[type=\"submit\"]").click();
 };
 
 /**

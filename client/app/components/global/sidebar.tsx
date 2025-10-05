@@ -212,6 +212,8 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                            key = { link.title }
                         >
                            <ListItemButton
+                              data-active = { isActivated }
+                              data-testid = { `sidebar-link-${link.title.toLowerCase()}` }
                               disableGutters = { true }
                               onClick = { () => visit(link.path) }
                               sx = {

@@ -140,10 +140,10 @@ export default function Login(): React.ReactNode {
                                        />
                                     }
                                     id = "password"
+                                    inputProps = { { "data-testid": "password" } }
                                     label = "Password"
                                     type = { showPassword ? "text" : "password" }
                                     value = { field.value || "" }
-                                    inputProps = { { "data-testid": "password" } }
                                  />
                                  <FormHelperText>
                                     { errors.password?.message?.toString() }

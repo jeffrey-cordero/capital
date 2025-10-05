@@ -68,16 +68,22 @@ export async function authenticateUser(res: Response, username: string, password
 /**
  * Logs out a user by clearing their authentication token
  *
- * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<ServerResponse>} A server response of `200` with success status
  */
-export async function logoutUser(req: Request, res: Response): Promise<ServerResponse> {
+export async function logoutUser(res: Response): Promise<ServerResponse> {
    // Clearing the token cookie effectively forces client to re-authenticate
    res.clearCookie("access_token", {
       httpOnly: true,
       sameSite: "none",
       secure: true
+   });
+
+   res.clearCookie("refresh_token", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      path: "/api/v1/authentication/refresh"
    });
 
    return sendServiceResponse(200, { success: true });

@@ -36,5 +36,5 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
  * @returns {Promise<Response>} Service response with logout confirmation
  */
 export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => authenticationService.logoutUser(req, res));
+   return submitServiceRequest(res, async() => authenticationService.logoutUser(res));
 });

@@ -29,19 +29,26 @@ export const navigateToPath = async(page: Page, path: string): Promise<void> => 
 };
 
 /**
- * Verifies that the Home sidebar item is highlighted, indicating current page
+ * Verifies that a specific sidebar link is marked as active
  *
- * Checks for the presence of the Home text with primary color styling
+ * Opens the sidebar, checks that the specified link has the active state, then closes the sidebar
  *
  * @param {Page} page - Playwright page instance
+ * @param {string} linkTitle - The title of the link to verify (e.g., "Dashboard", "Login", "Accounts")
  * @returns {Promise<void>}
  */
-export const verifyHomeSidebarHighlight = async(page: Page): Promise<void> => {
-   await expect(page.locator(".text-primary", { hasText: "Home" })).toBeVisible();
+export const verifySidebarLinkActive = async(page: Page, linkTitle: string): Promise<void> => {
+   await page.getByTestId("sidebar-toggle").click();
+   const link = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);
+   await expect(link).toBeVisible();
+   await expect(link).toHaveAttribute("data-active", "true");
+
+   // Close sidebar to clean up state
+   await page.keyboard.press("Escape");
 };
 
 /**
- * Tests that all unverified routes redirect to home when user is authenticated
+ * Tests that all unverified routes redirect to dashboard when user is authenticated
  *
  * Iterates through all public routes and verifies authenticated users
  * are redirected to the dashboard
@@ -60,43 +67,44 @@ export const testUnverifiedRouteRedirects = async(page: Page): Promise<void> => 
  * Performs user logout operation through various interfaces
  *
  * Supports logout via sidebar or settings page, verifying the user
- * is on the dashboard before logout and redirected to login after
+ * is on the dashboard before logout and redirected to root after
  *
  * @param {Page} page - Playwright page instance
  * @param {"sidebar" | "settings"} method - The logout method to use
  * @returns {Promise<void>}
  */
 export const logoutUser = async(page: Page, method: "sidebar" | "settings"): Promise<void> => {
-   // Ensure we are on the home page before logging out
+   // Ensure we are on the dashboard page before logging out
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await verifyHomeSidebarHighlight(page);
+   await verifySidebarLinkActive(page, "Dashboard");
 
    if (method === "sidebar") {
-      // Logout via the sidebar navigation
+      // Logout via the sidebar navigation (need to reopen since verification closed it)
       await page.getByTestId("sidebar-toggle").click();
       await page.getByTestId("sidebar-logout").click();
    } else if (method === "settings") {
       // Logout via the settings page
       await navigateToPath(page, SETTINGS_ROUTE);
-      await page.getByTestId("settings-logout").click();
+      await page.getByRole("button", { name: "Logout" }).click();
       await page.getByTestId("settings-logout-confirm").click();
    }
 
-   // Verify logout was successful by checking redirect to login
+   // Verify logout was successful by checking redirect to the login page
    await expect(page).toHaveURL(LOGIN_ROUTE);
 };
 
 /**
- * Verifies that verified routes redirect to login when user is not authenticated
+ * Verifies route redirects based on authentication state
  *
- * Iterates through all protected routes and verifies unauthenticated users
- * are redirected to the login page
+ * For verified routes: verifies unauthenticated users are redirected to dashboard
+ * For unverified routes: verifies authenticated users are redirected to login page
  *
  * @param {Page} page - Playwright page instance
+ * @param {"verified" | "unverified"} type - The type of routes to test
  * @returns {Promise<void>}
  */
 export const testRouteRedirects = async(page: Page, type: "verified" | "unverified"): Promise<void> => {
-   const routes = type === "verified" ? VERIFIED_ROUTES : UNVERIFIED_ROUTES;
+   const routes = type === "verified" ? UNVERIFIED_ROUTES : VERIFIED_ROUTES;
    const redirectRoute = type === "verified" ? DASHBOARD_ROUTE : LOGIN_ROUTE;
 
    for (const path of routes) {

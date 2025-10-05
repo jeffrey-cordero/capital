@@ -14,13 +14,21 @@ export function configureToken(res: Response, user_id: string): void {
    // Generate JWT token
    const token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "24h" });
 
-   // Store token in HTTP-only cookie
+   // Store access and refresh tokens in HTTP-only cookie
    res.cookie("access_token", token, {
       httpOnly: true,
       sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
       secure: true
    });
+
+   res.cookie("refresh_token", token, {
+      httpOnly: true,
+      sameSite: "none",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      secure: true,
+      path: "/api/v1/authentication/refresh"
+    });
 }
 
 /**

@@ -1,12 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE, submitRegistrationForm } from "../../utils/authentication";
-import {
-   expectValidationError,
-   submitForm,
-   VALID_LOGIN,
-   VALID_REGISTRATION,
-} from "../../utils/forms";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "../../utils/authentication";
+import { expectValidationError, submitForm, VALID_LOGIN } from "../../utils/forms";
 import { navigateToPath } from "../../utils/navigation";
 import { testPasswordVisibilityToggle } from "../../utils/password";
 import { createUniqueIdentifier } from "../../utils/utils";
@@ -70,9 +65,7 @@ test.describe("Login Authentication", () => {
 
       test("should successfully authenticate with valid credentials", async({ page }) => {
          // First register a user
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email }, true);
+         const { username } = await createUser(page, {}, false);
 
          // Then attempt to login
          await navigateToPath(page, LOGIN_ROUTE);
@@ -84,9 +77,7 @@ test.describe("Login Authentication", () => {
 
       test("should maintain session after successful login", async({ page }) => {
          // Register and login
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email }, true);
+         const { username } = await createUser(page, {}, false);
          await navigateToPath(page, LOGIN_ROUTE);
          await submitForm(page, { ...VALID_LOGIN, username });
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
@@ -97,11 +88,8 @@ test.describe("Login Authentication", () => {
       });
 
       test("should handle case-sensitive username login", async({ page }) => {
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
-
          // Register with lowercase username
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username: username.toLowerCase(), email }, true);
+         const { username } = await createUser(page, { username: createUniqueIdentifier("username").toLowerCase() }, false);
 
          // Login with exact username
          await navigateToPath(page, LOGIN_ROUTE);

@@ -1,10 +1,15 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE, submitRegistrationForm } from "../../utils/authentication";
-import { expectValidationError, submitForm, VALID_LOGIN, VALID_REGISTRATION } from "../../utils/forms";
+import {
+   createUser,
+   DASHBOARD_ROUTE,
+   generateTestCredentials,
+   LOGIN_ROUTE,
+   REGISTER_ROUTE
+} from "../../utils/authentication";
+import { expectValidationError, submitForm, VALID_REGISTRATION } from "../../utils/forms";
 import { navigateToPath } from "../../utils/navigation";
 import { getPasswordToggleButton, testPasswordVisibilityToggle } from "../../utils/password";
-import { createUniqueIdentifier } from "../../utils/utils";
 
 /**
  * Helper function to test password validation scenarios
@@ -22,8 +27,7 @@ async function testPasswordValidation(
    expectedError: string,
    testId: string = "password"
 ): Promise<void> {
-   const username = createUniqueIdentifier("username");
-   const email = createUniqueIdentifier("email");
+   const { username, email } = generateTestCredentials();
    await submitForm(page, { ...VALID_REGISTRATION, username, email, password, verifyPassword });
    await expectValidationError(page, testId, expectedError);
 }
@@ -131,9 +135,7 @@ test.describe("User Registration", () => {
 
    test.describe("Registration Flow", () => {
       test("should maintain session after successful registration", async({ page }) => {
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email });
+         await createUser(page);
 
          // Verify session persists across page reload
          await page.reload();
@@ -141,31 +143,40 @@ test.describe("User Registration", () => {
       });
    });
 
-   test.describe("Email Conflict Handling", () => {
-      test("should prevent duplicate email registration", async({ page }) => {
-         const username = createUniqueIdentifier("username");
-         const email = createUniqueIdentifier("email");
+   test.describe("Duplicate Registration Prevention", () => {
+      test("should prevent conflicts with case sensitivity variations", async({ page }) => {
+         // Create initial user
+         const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false);
 
-         // First registration should succeed and log out the user
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email }, true);
-
-         // Second registration with same email should fail
+         // Test 1: Username conflict with case sensitivity
          await navigateToPath(page, REGISTER_ROUTE);
-         await submitForm(page, { ...VALID_REGISTRATION, username, email });
+         const { email: newEmail1 } = generateTestCredentials();
+         await submitForm(page, {
+            ...VALID_REGISTRATION,
+            username: originalUsername.toUpperCase(),
+            email: newEmail1
+         });
+         await expectValidationError(page, "username", "Username already exists");
+
+         // Test 2: Email conflict with case sensitivity and whitespace
+         await navigateToPath(page, REGISTER_ROUTE);
+         const { username: newUsername2 } = generateTestCredentials();
+         const emailWithWhitespace = `  ${originalEmail.toUpperCase()}  `;
+         await submitForm(page, {
+            ...VALID_REGISTRATION,
+            username: newUsername2,
+            email: emailWithWhitespace
+         });
          await expectValidationError(page, "email", "Email already exists");
-      });
 
-      test("should handle email normalization and case sensitivity", async({ page }) => {
-         const username = createUniqueIdentifier("username");
-         const baseEmail = createUniqueIdentifier("email");
-         const emailWithWhitespace = `  ${baseEmail.toUpperCase()}  `;
-
-         // Register with email containing whitespace and different case
-         await submitRegistrationForm(page, { ...VALID_REGISTRATION, username, email: emailWithWhitespace }, true);
-
-         // Attempt to register with normalized version
+         // Test 3: Both username and email conflict with case variations
          await navigateToPath(page, REGISTER_ROUTE);
-         await submitForm(page, { ...VALID_REGISTRATION, username, email: baseEmail.toLowerCase() });
+         await submitForm(page, {
+            ...VALID_REGISTRATION,
+            username: `  ${originalUsername.toLowerCase()}  `,
+            email: originalEmail.toUpperCase()
+         });
+         await expectValidationError(page, "username", "Username already exists");
          await expectValidationError(page, "email", "Email already exists");
       });
    });
