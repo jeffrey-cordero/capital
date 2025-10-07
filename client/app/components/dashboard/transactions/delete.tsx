@@ -1,4 +1,5 @@
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import { HTTP_STATUS } from "capital/server";
 import { type Transaction } from "capital/transactions";
 import { type RefObject, useCallback } from "react";
 import { useDispatch } from "react-redux";
@@ -45,7 +46,7 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
             `dashboard/transactions/${transaction.transaction_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         if (result === 204) {
+         if (result === HTTP_STATUS.NO_CONTENT) {
             // Delete the transaction from the Redux store based on the current index
             dispatch(deleteTransaction({ index }));
          }
@@ -90,7 +91,7 @@ export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletio
          const result = await sendApiRequest<number>("dashboard/transactions/bulk", "DELETE", { transactionIds }, dispatch, navigate);
 
          // Delete the transactions from the Redux store based on the provided transaction IDs
-         if (result === 204) {
+         if (result === HTTP_STATUS.NO_CONTENT) {
             dispatch(deleteTransactions({ transactionIds }));
          }
       } catch (error) {

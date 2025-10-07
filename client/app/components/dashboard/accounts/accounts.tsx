@@ -12,6 +12,7 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { Box, Grow } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type Account } from "capital/accounts";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -82,7 +83,7 @@ export default function Accounts(): React.ReactNode {
                   "dashboard/accounts/ordering", "PUT", { accountsIds: accountIds }, dispatch, navigate
                );
 
-               if (response !== 204) {
+               if (response !== HTTP_STATUS.NO_CONTENT) {
                   throw new Error("Failed to update account ordering");
                }
             } catch (error) {

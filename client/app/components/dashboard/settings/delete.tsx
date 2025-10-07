@@ -1,5 +1,6 @@
 import { faUserXmark } from "@fortawesome/free-solid-svg-icons";
 import { Box } from "@mui/material";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -22,7 +23,7 @@ export default function DeleteAccount(): React.ReactNode {
             "users", "DELETE", undefined, dispatch, navigate
          );
 
-         if (response === 204) {
+         if (response === HTTP_STATUS.NO_CONTENT) {
             // Direct user to the landing page on successful deletion
             window.location.href = "/";
          }

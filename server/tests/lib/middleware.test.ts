@@ -1,19 +1,278 @@
-/*
+import { HTTP_STATUS } from "capital/server";
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYzViNmM4ODYtY2ZkNC00ODM4LWFjMzktMGI3ZmI5NWQzNWQ3IiwiaWF0IjoxNzU5NTMxMzkzLCJleHAiOjE3NTk2MTc3OTN9.fPzCgRpeU8YnoT7rlyBmduF_4WDZKo8ewQPU-5hblII
+import { authenticateRefreshToken, authenticateToken, clearToken, configureToken } from "@/lib/middleware";
+import { createMockNext, createMockRequest, createMockResponse } from "@/tests/utils/api";
 
-{
-   header: {
-      "alg": "HS256",
-      "typ": "JWT"
-   },
-   body: {
-      user_id: "c5b6c886-cfd4-4838-ac39-0b7fb95d35d7",
-      iat: 1759531393,
-      exp: 1759617793
-   }
-   signature: "fPzCgRpeU8YnoT7rlyBmduF_4WDZKo8ewQPU-5hblII"
-   }
-}
+// Test constants
+const TEST_SECRET = "test-secret-key";
+const TEST_USER_ID = "test-user-123";
 
-*/
+// Set test secret before running tests
+beforeAll(() => {
+   process.env.SESSION_SECRET = TEST_SECRET;
+});
+
+describe("Middleware Functions", () => {
+   describe("configureToken", () => {
+      it("should set both access_token and refresh_token cookies", () => {
+         const res = createMockResponse();
+
+         configureToken(res as Response, TEST_USER_ID);
+
+         expect(res.cookieData).toHaveLength(2);
+
+         // Check access_token
+         const accessToken = res.cookieData.find(c => c.name === "access_token");
+         expect(accessToken).toBeDefined();
+         expect(accessToken?.options.httpOnly).toBe(true);
+         expect(accessToken?.options.secure).toBe(true);
+         expect(accessToken?.options.sameSite).toBe("none");
+
+         // Verify access token contains user_id
+         const decodedAccess = jwt.verify(accessToken!.value, TEST_SECRET) as any;
+         expect(decodedAccess.user_id).toBe(TEST_USER_ID);
+
+         // Check refresh_token
+         const refreshToken = res.cookieData.find(c => c.name === "refresh_token");
+         expect(refreshToken).toBeDefined();
+         expect(refreshToken?.options.httpOnly).toBe(true);
+         expect(refreshToken?.options.secure).toBe(true);
+         expect(refreshToken?.options.path).toBe("/api/v1/authentication/refresh");
+
+         // Verify refresh token contains user_id
+         const decodedRefresh = jwt.verify(refreshToken!.value, TEST_SECRET) as any;
+         expect(decodedRefresh.user_id).toBe(TEST_USER_ID);
+      });
+   });
+
+   describe("clearToken", () => {
+      it("should clear both access_token and refresh_token cookies", () => {
+         const res = createMockResponse();
+
+         clearToken(res as Response);
+
+         expect(res.clearCookieData).toHaveLength(2);
+
+         // Check access_token cleared
+         const accessClear = res.clearCookieData.find(c => c.name === "access_token");
+         expect(accessClear).toBeDefined();
+         expect(accessClear?.options.httpOnly).toBe(true);
+
+         // Check refresh_token cleared
+         const refreshClear = res.clearCookieData.find(c => c.name === "refresh_token");
+         expect(refreshClear).toBeDefined();
+         expect(refreshClear?.options.path).toBe("/api/v1/authentication/refresh");
+      });
+   });
+
+   describe("authenticateToken", () => {
+      it("should authenticate valid access token and attach user_id", () => {
+         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "1h" });
+         const req = createMockRequest({ access_token: validToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.locals.user_id).toBe(TEST_USER_ID);
+         expect(next).toHaveBeenCalled();
+         expect(res.status).not.toHaveBeenCalled();
+      });
+
+      it("should return unauthorized when token is missing and authentication required", () => {
+         const req = createMockRequest({});
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return unauthorized with refreshable flag for expired token", () => {
+         const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1h" });
+         const req = createMockRequest({ access_token: expiredToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(res.json).toHaveBeenCalledWith({ code: HTTP_STATUS.UNAUTHORIZED, data: { refreshable: true } });
+         // Not clearing cookie on expired token as it's handled by the client refresh flow
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return forbidden for invalid JWT signature", () => {
+         const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
+         const req = createMockRequest({ access_token: invalidToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
+         expect(res.clearCookie).toHaveBeenCalledWith("access_token");
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return forbidden for malformed JWT", () => {
+         const req = createMockRequest({ access_token: "not-a-valid-jwt" });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
+         expect(res.clearCookie).toHaveBeenCalledWith("access_token");
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return forbidden when user_id is missing from JWT payload", () => {
+         const tokenWithoutUserId = jwt.sign({ some_field: "value" }, TEST_SECRET);
+         const req = createMockRequest({ access_token: tokenWithoutUserId });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(true);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should call next when token not required and not present", () => {
+         const req = createMockRequest({});
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(false);
+         middleware(req as Request, res as Response, next);
+
+         expect(next).toHaveBeenCalled();
+         expect(res.status).not.toHaveBeenCalled();
+      });
+
+      it("should return redirect when token present but not required", () => {
+         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
+         const req = createMockRequest({ access_token: validToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateToken(false);
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.REDIRECT);
+         expect(next).not.toHaveBeenCalled();
+      });
+   });
+
+   describe("authenticateRefreshToken", () => {
+      it("should authenticate valid refresh token and attach user_id", () => {
+         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "7d" });
+         const req = createMockRequest({ refresh_token: validToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.locals.user_id).toBe(TEST_USER_ID);
+         expect(next).toHaveBeenCalled();
+         expect(res.status).not.toHaveBeenCalled();
+      });
+
+      it("should return unauthorized when refresh token is missing", () => {
+         const req = createMockRequest({});
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return unauthorized and clear tokens for expired refresh token", () => {
+         const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1d" });
+         const req = createMockRequest({ refresh_token: expiredToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(res.clearCookieData).toHaveLength(2);
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return unauthorized and clear tokens for invalid refresh token", () => {
+         const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
+         const req = createMockRequest({ refresh_token: invalidToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(res.clearCookieData).toHaveLength(2);
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should return forbidden when user_id is missing from refresh token payload", () => {
+         const tokenWithoutUserId = jwt.sign({ some_field: "value" }, TEST_SECRET);
+         const req = createMockRequest({ refresh_token: tokenWithoutUserId });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
+         expect(next).not.toHaveBeenCalled();
+      });
+   });
+
+   describe("Token Rotation on Refresh", () => {
+      it("should issue new tokens with same user_id when refreshing", async() => {
+         const res = createMockResponse();
+
+         // First, configure initial tokens
+         configureToken(res as Response, TEST_USER_ID);
+         const firstAccessToken = res.cookieData.find(c => c.name === "access_token")!.value;
+         const firstRefreshToken = res.cookieData.find(c => c.name === "refresh_token")!.value;
+
+         // Clear the mock data
+         res.cookieData = [];
+
+         // Wait a small amount to ensure different iat timestamp
+         await new Promise(resolve => setTimeout(resolve, 1100));
+
+         // Simulate refresh by configuring tokens again
+         configureToken(res as Response, TEST_USER_ID);
+         const secondAccessToken = res.cookieData.find(c => c.name === "access_token")!.value;
+         const secondRefreshToken = res.cookieData.find(c => c.name === "refresh_token")!.value;
+
+         // Tokens should be different (rotated) due to different iat
+         expect(firstAccessToken).not.toBe(secondAccessToken);
+         expect(firstRefreshToken).not.toBe(secondRefreshToken);
+
+         // But they should contain the same user_id
+         const decoded1 = jwt.verify(secondAccessToken, TEST_SECRET) as any;
+         const decoded2 = jwt.verify(secondRefreshToken, TEST_SECRET) as any;
+         expect(decoded1.user_id).toBe(TEST_USER_ID);
+         expect(decoded2.user_id).toBe(TEST_USER_ID);
+      });
+   });
+});

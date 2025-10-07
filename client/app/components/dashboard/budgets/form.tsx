@@ -8,6 +8,7 @@ import {
    Stack
 } from "@mui/material";
 import { budgetSchema, type OrganizedBudget } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback, useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -116,7 +117,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
-         if (result === 204 || (typeof result === "object" && result?.success)) {
+         if (result === HTTP_STATUS.NO_CONTENT || (typeof result === "object" && result?.success)) {
             // Update Redux store and reset form
             dispatch(updateBudget({
                type,

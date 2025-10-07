@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
-
-import { LOGIN_ROUTE, REGISTER_ROUTE } from "../../utils/authentication";
-import { navigateToPath } from "../../utils/navigation";
+import { LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
+import { navigateToPath } from "@tests/utils/navigation";
 
 test.describe("Landing Page", () => {
    test("should display landing page with navigation", async({ page }) => {

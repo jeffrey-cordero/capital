@@ -1,6 +1,7 @@
 require("dotenv").config();
 require("module-alias/register");
 
+import { HTTP_STATUS } from "capital/server";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -23,13 +24,13 @@ const port = process.env.PORT || 8000;
  * Rate limiting with logging measures
  */
 app.use(rateLimit({
-   max: Boolean(process.env.RATE_LIMITING_ENABLED) ? 500 : Infinity,
+   max: process.env.RATE_LIMITING_ENABLED ? HTTP_STATUS.TOO_MANY_REQUESTS : Infinity,
    windowMs: 5 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
       logger.info(`Rate limited request from IP: ${req.ip}`);
 
-      return sendErrors(res, 429, {
+      return sendErrors(res, HTTP_STATUS.TOO_MANY_REQUESTS, {
          server: "Too many requests. Please try again later."
       });
    }
@@ -94,21 +95,21 @@ v1.use("/authentication", authenticationRouter);
 app.use("/api/v1", v1);
 
 /**
- * 404 error handler
+ * Resource Not Found Error Handler
  */
 app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, {
+   return sendErrors(res, HTTP_STATUS.NOT_FOUND, {
       server: "The requested resource could not be found"
    });
 });
 
 /**
- * 500 error handler
+ * Global Error Handler
  */
 app.use(function(error: any, req: Request, res: Response) {
    logger.error(error.stack || "An unknown error occurred");
 
-   return sendErrors(res, error.status || 500, {
+   return sendErrors(res, error.status || HTTP_STATUS.INTERNAL_SERVER_ERROR, {
       server: "Internal Server Error"
    });
 });
@@ -119,6 +120,5 @@ app.use(function(error: any, req: Request, res: Response) {
 app.listen(port, () => {
    logger.info(`Started Capital on port ${port}`);
 });
-
 
 module.exports = app;

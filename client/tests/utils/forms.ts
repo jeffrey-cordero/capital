@@ -45,25 +45,119 @@ export const VALID_LOGIN: LoginPayload = {
 type FormData = Record<string, string>;
 
 /**
+ * Form submission options
+ */
+export interface FormSubmitOptions {
+  /** Whether to wait for navigation after form submission */
+  waitForNavigation?: boolean;
+
+  /** CSS selector for the submit button */
+  submitButtonSelector?: string;
+
+  /** Whether to wait for network requests to complete */
+  waitForLoadState?: boolean;
+
+  /** Custom timeout for form submission in milliseconds */
+  timeout?: number;
+
+  /** Whether to handle validation errors automatically */
+  handleValidationErrors?: boolean;
+}
+
+/**
+ * Default form submission options
+ */
+const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
+   waitForNavigation: false,
+   submitButtonSelector: "button[type=\"submit\"]",
+   waitForLoadState: true,
+   timeout: 30000,
+   handleValidationErrors: false
+};
+
+/**
  * Fills form fields with provided data and submits the form
  *
  * This function iterates through the provided data object and fills each field
- * that has a non-null/undefined value, then triggers form submission
+ * that has a non-null/undefined value, then triggers form submission with
+ * configurable options for navigation and error handling
  *
  * @param {Page} page - Playwright page instance
  * @param {FormData} data - Object containing test ids as keys and values to fill in the form
+ * @param {FormSubmitOptions} options - Options for form submission behavior
  * @returns {Promise<void>}
  */
-export const submitForm = async(page: Page, data: FormData): Promise<void> => {
+export const submitForm = async(
+   page: Page,
+   data: FormData,
+   options: FormSubmitOptions = DEFAULT_FORM_OPTIONS
+): Promise<void> => {
+   // Merge with default options
+   const opts = { ...DEFAULT_FORM_OPTIONS, ...options };
+
    // Fill all form fields with provided data
    for (const [testId, value] of Object.entries(data)) {
       if (value !== undefined && value !== null) {
-         await page.getByTestId(testId).fill(value);
+      // Handle different input types
+         const element = page.getByTestId(testId);
+         const tagName = await element.evaluate(el => el.tagName.toLowerCase());
+
+         if (tagName === "select") {
+            await element.selectOption(value);
+         } else if (tagName === "input") {
+            const inputType = await element.evaluate(el => (el as HTMLInputElement).type);
+
+            if (inputType === "checkbox") {
+               if (value === "true" || value.toLowerCase() === "true") {
+                  await element.check();
+               } else {
+                  await element.uncheck();
+               }
+            } else if (inputType === "radio") {
+               await element.check();
+            } else if (inputType === "date") {
+               // Ensure date format is YYYY-MM-DD
+               await element.fill(value.toString());
+            } else {
+               await element.fill(value.toString());
+            }
+         } else {
+            await element.fill(value.toString());
+         }
       }
    }
 
-   // Submit the form
-   await page.locator("button[type=\"submit\"]").click();
+   // Create a promise for form submission
+   const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
+   const submitPromise = page.locator(submitButtonSelector).click({
+      timeout: opts.timeout
+   });
+
+   // Handle different waiting strategies
+   if (opts.waitForNavigation) {
+      // Use the modern approach with waitForURL instead of deprecated waitForNavigation
+      await submitPromise;
+      await page.waitForLoadState("networkidle", { timeout: opts.timeout });
+   } else {
+      // Just wait for the click
+      await submitPromise;
+
+      // Optionally wait for network requests to complete
+      if (opts.waitForLoadState) {
+         await page.waitForLoadState("networkidle", { timeout: opts.timeout });
+      }
+   }
+
+   // Optionally handle validation errors
+   if (opts.handleValidationErrors) {
+      const hasErrors = await page.locator(ERROR_INDICATOR_SELECTOR).count() > 0;
+
+      if (hasErrors) {
+      // Collect all validation errors
+         const errors = await page.locator(ERROR_INDICATOR_SELECTOR).allInnerTexts();
+         console.warn("Form validation errors:", errors);
+      }
+   }
 };
 
 /**

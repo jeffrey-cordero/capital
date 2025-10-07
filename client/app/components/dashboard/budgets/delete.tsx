@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "capital/server";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
@@ -38,7 +39,7 @@ export default function DeleteBudget({ budget_category_id, type }: DeleteBudgetP
             `dashboard/budgets/category/${budget_category_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         if (result === 204) {
+         if (result === HTTP_STATUS.NO_CONTENT) {
             // Remove the budget category from the Redux store
             dispatch(removeBudgetCategory({
                type,

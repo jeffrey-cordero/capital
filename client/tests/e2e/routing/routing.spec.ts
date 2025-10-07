@@ -1,19 +1,18 @@
 import { expect, test } from "@playwright/test";
-
 import {
    createUser,
    DASHBOARD_ROUTE,
    getRouteLinkTitle,
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
-} from "../../utils/authentication";
+} from "@tests/utils/authentication";
 import {
    logoutUser,
    navigateToPath,
    testRouteRedirects,
    testUnverifiedRouteRedirects,
    verifySidebarLinkActive
-} from "../../utils/navigation";
+} from "@tests/utils/navigation";
 
 test.describe("Routing and Navigation", () => {
    test.describe("Authenticated User Routing", () => {

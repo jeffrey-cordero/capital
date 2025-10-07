@@ -19,7 +19,7 @@ services:
       retries: 5
     restart: "on-failure"
     command: sh -c "npm install --legacy-peer-deps && npm run dev"
-    container_name: client
+    container_name: capital_client
 
   server:
     image: node:alpine
@@ -43,7 +43,7 @@ services:
       retries: 5
     restart: "on-failure"
     command: sh -c "npm install --legacy-peer-deps && npm run dev"
-    container_name: server
+    container_name: capital_server
 
   postgres:
     image: postgres
@@ -64,7 +64,7 @@ services:
       timeout: 5s
       retries: 5
     restart: "on-failure"
-    container_name: postgres
+    container_name: capital_postgres
 
   redis:
     image: redis
@@ -80,7 +80,7 @@ services:
       timeout: 5s
       retries: 5
     restart: "on-failure"
-    container_name: redis
+    container_name: capital_redis
 
 networks:
   capital_network:

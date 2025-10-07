@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Transaction, transactionSchema } from "capital/transactions";
 
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
@@ -22,7 +22,7 @@ const getTransactionCacheKey = (user_id: string): string => `transactions:${user
  * Fetches user transactions ordered by date descending
  *
  * @param {string} user_id - User identifier
- * @returns {Promise<ServerResponse>} A server response of `200` with transaction array
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with transaction array
  */
 export async function fetchTransactions(user_id: string): Promise<ServerResponse> {
    // Try to get the transactions from the cache
@@ -30,14 +30,14 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, JSON.parse(cache));
+      return sendServiceResponse(HTTP_STATUS.OK, JSON.parse(cache));
    }
 
    // Cache miss - fetch from the database and store in the cache
    const result: Transaction[] = await transactionsRepository.findByUserId(user_id);
    setCacheValue(key, TRANSACTION_CACHE_DURATION, JSON.stringify(result));
 
-   return sendServiceResponse(200, result);
+   return sendServiceResponse(HTTP_STATUS.OK, result);
 }
 
 /**
@@ -45,7 +45,7 @@ export async function fetchTransactions(user_id: string): Promise<ServerResponse
  *
  * @param {string} user_id - User identifier
  * @param {Transaction} transaction - Transaction object to create
- * @returns {Promise<ServerResponse>} A server response of `201` with the inserted transaction ID or `400` with validation errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.CREATED` with the inserted transaction ID or `HTTP_STATUS.BAD_REQUEST` with validation errors
  */
 export async function createTransaction(user_id: string, transaction: Transaction): Promise<ServerResponse> {
    // Validate input against the transaction schema
@@ -60,7 +60,7 @@ export async function createTransaction(user_id: string, transaction: Transactio
    // Invalidate the cache to ensure fresh data for the next request
    removeCacheValue(getTransactionCacheKey(user_id));
 
-   return sendServiceResponse(201, { transaction_id: result });
+   return sendServiceResponse(HTTP_STATUS.CREATED, { transaction_id: result });
 }
 
 /**
@@ -68,7 +68,7 @@ export async function createTransaction(user_id: string, transaction: Transactio
  *
  * @param {string} user_id - User identifier
  * @param {Partial<Transaction>} transaction - Transaction object with updates
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.NOT_FOUND` with respective errors
  */
 export async function updateTransaction(user_id: string, transaction: Partial<Transaction>): Promise<ServerResponse> {
    // Ensure the transaction ID is provided to identify which record to update
@@ -89,7 +89,7 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
    const result = await transactionsRepository.update(user_id, transaction.transaction_id, fields.data);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          transaction_id: "Transaction does not exist or does not belong to the user based on the provided ID"
       });
    }
@@ -102,7 +102,7 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
  *
  * @param {string} user_id - User identifier
  * @param {string[]} transactionIds - Transaction IDs to delete
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.NOT_FOUND` with respective errors
  */
 export async function deleteTransactions(user_id: string, transactionIds: string[]): Promise<ServerResponse> {
    // Verify that transaction IDs are provided as a non-empty array
@@ -116,7 +116,7 @@ export async function deleteTransactions(user_id: string, transactionIds: string
    const result = await transactionsRepository.deleteTransactions(user_id, transactionIds);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          transactionIds: "Transaction(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }

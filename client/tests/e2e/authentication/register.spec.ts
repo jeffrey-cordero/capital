@@ -1,15 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
-
 import {
    createUser,
    DASHBOARD_ROUTE,
    generateTestCredentials,
    LOGIN_ROUTE,
    REGISTER_ROUTE
-} from "../../utils/authentication";
-import { expectValidationError, submitForm, VALID_REGISTRATION } from "../../utils/forms";
-import { navigateToPath } from "../../utils/navigation";
-import { getPasswordToggleButton, testPasswordVisibilityToggle } from "../../utils/password";
+} from "@tests/utils/authentication";
+import { expectValidationError, submitForm, VALID_REGISTRATION } from "@tests/utils/forms";
+import { navigateToPath } from "@tests/utils/navigation";
+import { getPasswordToggleButton, testPasswordVisibilityToggle } from "@tests/utils/password";
 
 /**
  * Helper function to test password validation scenarios

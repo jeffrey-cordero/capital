@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-
-import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "../../utils/authentication";
-import { expectValidationError, submitForm, VALID_LOGIN } from "../../utils/forms";
-import { navigateToPath } from "../../utils/navigation";
-import { testPasswordVisibilityToggle } from "../../utils/password";
-import { createUniqueIdentifier } from "../../utils/utils";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
+import { expectValidationError, submitForm, VALID_LOGIN } from "@tests/utils/forms";
+import { navigateToPath } from "@tests/utils/navigation";
+import { testPasswordVisibilityToggle } from "@tests/utils/password";
+import { UserFactory } from "@tests/utils/testDataFactory";
 
 test.describe("Login Authentication", () => {
    test.beforeEach(async({ page }) => {
@@ -44,8 +43,9 @@ test.describe("Login Authentication", () => {
       });
 
       test("should validate password length requirement", async({ page }) => {
+         const { username } = UserFactory.validRegistration();
          await submitForm(page, {
-            username: createUniqueIdentifier("username"),
+            username,
             password: "short"
          });
          await expectValidationError(page, "password", "Password must be at least 8 characters");
@@ -54,8 +54,9 @@ test.describe("Login Authentication", () => {
 
    test.describe("Authentication Flow", () => {
       test("should reject invalid credentials with clear error message", async({ page }) => {
+         const { username } = UserFactory.validRegistration();
          await submitForm(page, {
-            username: createUniqueIdentifier("username"),
+            username,
             password: "WrongPassword123!"
          });
 
@@ -89,7 +90,9 @@ test.describe("Login Authentication", () => {
 
       test("should handle case-sensitive username login", async({ page }) => {
          // Register with lowercase username
-         const { username } = await createUser(page, { username: createUniqueIdentifier("username").toLowerCase() }, false);
+         const { username: generatedUsername } = UserFactory.validLogin();
+         const lowercaseUsername = generatedUsername.toLowerCase();
+         const { username } = await createUser(page, { username: lowercaseUsername }, false);
 
          // Login with exact username
          await navigateToPath(page, LOGIN_ROUTE);

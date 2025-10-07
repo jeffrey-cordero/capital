@@ -1,5 +1,5 @@
 import { Account, accountSchema } from "capital/accounts";
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { z } from "zod";
 
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
@@ -23,7 +23,7 @@ const getAccountCacheKey = (user_id: string): string => `accounts:${user_id}`;
  * Fetches user financial accounts
  *
  * @param {string} user_id - User identifier
- * @returns {Promise<ServerResponse>} A server response of `200` with user accounts array
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with user accounts array
  */
 export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    // Try to get financial accounts from cache first
@@ -31,14 +31,14 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, JSON.parse(cache));
+      return sendServiceResponse(HTTP_STATUS.OK, JSON.parse(cache));
    }
 
    // Cache miss - fetch from database and store in cache
    const result: Account[] = await accountsRepository.findByUserId(user_id);
    setCacheValue(key, ACCOUNT_CACHE_DURATION, JSON.stringify(result));
 
-   return sendServiceResponse(200, result);
+   return sendServiceResponse(HTTP_STATUS.OK, result);
 }
 
 /**
@@ -46,7 +46,7 @@ export async function fetchAccounts(user_id: string): Promise<ServerResponse> {
  *
  * @param {string} user_id - User identifier
  * @param {Account} account - Account details to create
- * @returns {Promise<ServerResponse>} A server response of `201` with the inserted account ID or `400` with validation errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.CREATED` with the inserted account ID or `HTTP_STATUS.BAD_REQUEST` with validation errors
  */
 export async function createAccount(user_id: string, account: Account): Promise<ServerResponse> {
    // Validate input against account schema
@@ -62,7 +62,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
    // Invalidate cache to ensure fresh data for the next request
    removeCacheValue(getAccountCacheKey(user_id));
 
-   return sendServiceResponse(201, { account_id });
+   return sendServiceResponse(HTTP_STATUS.CREATED, { account_id });
 }
 
 /**
@@ -70,7 +70,7 @@ export async function createAccount(user_id: string, account: Account): Promise<
  *
  * @param {string} user_id - User identifier
  * @param {Partial<Account>} account - Account object to update
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.NOT_FOUND` with errors
  */
 export async function updateAccount(
    user_id: string,
@@ -94,7 +94,7 @@ export async function updateAccount(
    const result = await accountsRepository.updateDetails(user_id, account.account_id, fields.data);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          account_id: "Account does not exist based on the provided ID"
       });
    }
@@ -107,7 +107,7 @@ export async function updateAccount(
  *
  * @param {string} user_id - User identifier
  * @param {string[]} accounts - Array of account IDs
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.NOT_FOUND` with errors
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate the array of account IDs is not empty
@@ -137,7 +137,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    const result = await accountsRepository.updateOrdering(user_id, updates);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs"
       });
    }
@@ -150,7 +150,7 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
  *
  * @param {string} user_id - User identifier
  * @param {string} account_id - Account identifier
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404` with errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.NOT_FOUND` with errors
  */
 export async function deleteAccount(user_id: string, account_id: string): Promise<ServerResponse> {
    // Validate the account ID input exists
@@ -164,7 +164,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
    const result = await accountsRepository.deleteAccount(user_id, account_id);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          account_id: "Account does not exist based on the provided ID or does not belong to the user"
       });
    }

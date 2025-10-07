@@ -11,7 +11,7 @@ TIMEOUT="${2:-180}"
 
 start_services() {
    echo "Starting Docker services..."
-   docker compose up -d postgres redis server
+   docker compose up -d capital_postgres capital_redis capital_server
    echo "Services started successfully"
 }
 
@@ -28,7 +28,7 @@ wait_for_services() {
    local elapsed=0
 
    while [[ "$elapsed" -lt "$timeout" ]]; do
-      if docker compose logs server | grep -q "Started Capital"; then
+      if docker compose logs capital_server | grep -q "Started Capital"; then
          echo "Server is ready after ${elapsed} seconds!"
          return 0
       fi
@@ -38,7 +38,7 @@ wait_for_services() {
       # Show logs every 30 seconds for debugging
       if [[ $((elapsed % 30)) -eq 0 ]] && [[ "$elapsed" -gt 0 ]]; then
          echo "Recent server logs:"
-         docker compose logs --tail=5 server
+         docker compose logs --tail=5 capital_server
       fi
 
       sleep 5
@@ -48,7 +48,7 @@ wait_for_services() {
    # Timeout reached
    echo "ERROR: Server failed to start within ${timeout} seconds"
    echo "Final server logs:"
-   docker compose logs server
+   docker compose logs capital_server
    echo "Service status:"
    docker compose ps
    return 1

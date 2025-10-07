@@ -1,11 +1,11 @@
 import argon2 from "argon2";
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { User } from "capital/user";
-import { Request, Response } from "express";
+import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { logger } from "@/lib/logger";
-import { configureToken } from "@/lib/middleware";
+import { clearToken, configureToken } from "@/lib/middleware";
 import { sendServiceResponse } from "@/lib/services";
 import { findByUsername } from "@/repository/userRepository";
 
@@ -14,26 +14,29 @@ import { findByUsername } from "@/repository/userRepository";
  *
  * @param {Response} res - Express response object
  * @param {string} token - JWT token for authentication
- * @returns {Promise<ServerResponse>} A server response of `200` with authentication status
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with authentication status
  */
 export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
    try {
       // Verify the JWT token where errors are potentially thrown
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
-      return sendServiceResponse(200, { authenticated: true });
+      return sendServiceResponse(HTTP_STATUS.OK, { authenticated: true });
    } catch (error: any) {
       // Handle specific JWT verification errors
-      if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-         // For expired or invalid tokens, clear the cookie and return unauthenticated state
+      if (error instanceof jwt.TokenExpiredError) {
+         // Signal to the client that refresh is needed
+         return sendServiceResponse(HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
+      }
+      else if (error instanceof jwt.JsonWebTokenError) {
+         // Clear invalid token
          res.clearCookie("access_token");
-
-         return sendServiceResponse(200, { authenticated: false });
-      } else {
+         return sendServiceResponse(HTTP_STATUS.OK, { authenticated: false });
+      }
+      else {
          // For unexpected errors, log them and return server error status
          logger.error(error.stack);
-
-         return sendServiceResponse(500, undefined, { server: "Internal Server Error" });
+         return sendServiceResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, undefined, { server: "Internal Server Error" });
       }
    }
 }
@@ -44,7 +47,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
  * @param {Response} res - Express response object
  * @param {string} username - User's username
  * @param {string} password - User's password
- * @returns {Promise<ServerResponse>} A server response of `200` with success status or `401` with error details
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status or `HTTP_STATUS.UNAUTHORIZED` with error details
  */
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
    // Look up the user by username
@@ -53,7 +56,7 @@ export async function authenticateUser(res: Response, username: string, password
    // Check if user exists and password matches using argon2 verification
    if (!user || !(await argon2.verify(user.password, password))) {
       // Return the same error message regardless of whether username or password was incorrect
-      return sendServiceResponse(401, undefined, {
+      return sendServiceResponse(HTTP_STATUS.UNAUTHORIZED, undefined, {
          username: "Invalid credentials",
          password: "Invalid credentials"
       });
@@ -61,30 +64,36 @@ export async function authenticateUser(res: Response, username: string, password
       // On successful authentication, configure a JWT token as a cookie
       configureToken(res, user.user_id as string);
 
-      return sendServiceResponse(200, { success: true });
+      return sendServiceResponse(HTTP_STATUS.OK, { success: true });
    }
 }
 
 /**
- * Logs out a user by clearing their authentication token
+ * Refreshes authentication tokens using a valid refresh token
+ *
+ * Issues new access and refresh tokens, rotating both for security.
+ * The user_id is extracted from the refresh token by middleware.
  *
  * @param {Response} res - Express response object
- * @returns {Promise<ServerResponse>} A server response of `200` with success status
+ * @param {string} user_id - User ID from validated refresh token
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status
+ */
+export async function refreshToken(res: Response, user_id: string): Promise<ServerResponse> {
+   // Rotate both tokens for security
+   configureToken(res, user_id);
+
+   return sendServiceResponse(HTTP_STATUS.OK, { success: true });
+}
+
+/**
+ * Logs out a user by clearing their authentication tokens
+ *
+ * @param {Response} res - Express response object
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status
  */
 export async function logoutUser(res: Response): Promise<ServerResponse> {
-   // Clearing the token cookie effectively forces client to re-authenticate
-   res.clearCookie("access_token", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true
-   });
+   // Clear both access and refresh tokens
+   clearToken(res);
 
-   res.clearCookie("refresh_token", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      path: "/api/v1/authentication/refresh"
-   });
-
-   return sendServiceResponse(200, { success: true });
+   return sendServiceResponse(HTTP_STATUS.OK, { success: true });
 }

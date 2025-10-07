@@ -9,6 +9,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Budget, type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -136,8 +137,8 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             ) : Promise.resolve(null)
          ]);
 
-         const categorySuccess = (!categoryUpdates || categoryResponse === 204);
-         const budgetSuccess = (!budgetUpdates || budgetResponse === 204 || (typeof budgetResponse === "object" && budgetResponse?.success));
+         const categorySuccess = (!categoryUpdates || categoryResponse === HTTP_STATUS.NO_CONTENT);
+         const budgetSuccess = (!budgetUpdates || budgetResponse === HTTP_STATUS.NO_CONTENT || (typeof budgetResponse === "object" && budgetResponse?.success));
 
          // Only update the Redux store for successful requests
          if (categoryUpdates && categorySuccess) {

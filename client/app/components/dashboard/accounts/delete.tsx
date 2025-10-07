@@ -1,4 +1,5 @@
 import { type Account } from "capital/accounts";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -26,7 +27,7 @@ export default function AccountDeletion({ account }: { account: Account }): Reac
             `dashboard/accounts/${account.account_id}`, "DELETE", undefined, dispatch, navigate
          );
 
-         if (result === 204) {
+         if (result === HTTP_STATUS.NO_CONTENT) {
             dispatch(removeAccount(account.account_id ?? ""));
          }
       } catch (error) {

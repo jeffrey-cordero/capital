@@ -10,6 +10,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
+import { HTTP_STATUS } from "capital/server";
 import type { Transaction } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
@@ -110,7 +111,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
                );
 
-               if (result === 204) {
+               if (result === HTTP_STATUS.NO_CONTENT) {
                   // Update local state after successful API call
                   dispatch(updateAccount({
                      ...updatedFields,

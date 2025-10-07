@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "capital/server";
 import { Response } from "express";
 
 /**
@@ -19,7 +20,7 @@ export function sendErrors(res: Response, code: number, errors?: Record<string, 
  * @param {any} [data] - Optional response data
  */
 export function sendSuccess(res: Response, code: number, data?: any): void {
-   if (code === 204) {
+   if (code === HTTP_STATUS.NO_CONTENT) {
       // No content required (updates, deletes, etc.) for the response
       res.status(code).end();
    } else {

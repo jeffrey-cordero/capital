@@ -9,7 +9,7 @@ import {
    stockTrendsSchema,
    Trends
 } from "capital/economy";
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import fs from "fs";
 import path from "path";
 
@@ -180,7 +180,7 @@ export async function fetchNews(): Promise<News> {
  * Fetches economy data from cache, database, or external APIs
  *
  * @requires {process.env.XRapidAPIKey} - RapidAPI key for Alpha Vantage API
- * @returns {Promise<ServerResponse>} A server response of `200` with economy data
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with economy data
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
@@ -188,7 +188,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       const cache = await getCacheValue("economy");
 
       if (cache) {
-         return sendServiceResponse(200, JSON.parse(cache));
+         return sendServiceResponse(HTTP_STATUS.OK, JSON.parse(cache));
       }
 
       // No cache hit - check if we have fresh data in the database
@@ -200,7 +200,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       if (!isStale) {
          // We have fresh data in the database - cache it and return
          setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, JSON.stringify(stored.data));
-         return sendServiceResponse(200, stored.data);
+         return sendServiceResponse(HTTP_STATUS.OK, stored.data);
       }
 
       // Need to fetch from external APIs - acquire mutex to avoid duplicate calls
@@ -212,7 +212,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          const updates = await dashboardRepository.getEconomicData();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
-            return sendServiceResponse(200, updates.data);
+            return sendServiceResponse(HTTP_STATUS.OK, updates.data);
          }
 
          // Define all the API data we need to fetch
@@ -252,7 +252,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
             fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
          }
 
-         return sendServiceResponse(200, economy);
+         return sendServiceResponse(HTTP_STATUS.OK, economy);
       } finally {
          // Always release the mutex regardless of success or failure
          release();
@@ -264,7 +264,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
       // Use backup data with a shorter cache duration to eventually retry the API call
       setCacheValue("economy", BACKUP_ECONOMY_DATA_CACHE_DURATION, JSON.stringify(backupEconomyData));
 
-      return sendServiceResponse(200, backupEconomyData);
+      return sendServiceResponse(HTTP_STATUS.OK, backupEconomyData);
    }
 }
 
@@ -272,7 +272,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
  * Fetches the dashboard data for the user
  *
  * @param {string} user_id - User identifier
- * @returns {Promise<ServerResponse>} A server response of `200` with dashboard data
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with dashboard data
  */
 export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    // Fetch all the essential dashboard components in parallel
@@ -285,7 +285,7 @@ export async function fetchDashboard(user_id: string): Promise<ServerResponse> {
    ]);
 
    // Combine all the components into a single dashboard response
-   return sendServiceResponse(200, {
+   return sendServiceResponse(HTTP_STATUS.OK, {
       accounts: accounts.data,
       budgets: budgets.data,
       economy: economy.data,

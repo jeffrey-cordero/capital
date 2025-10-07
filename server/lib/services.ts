@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Response } from "express";
 import { SafeParseReturnType } from "zod";
 
@@ -7,7 +7,7 @@ import { removeCacheValue } from "@/lib/redis";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
- * Formats validation errors with a 400 status code based on Zod schema results.
+ * Formats validation errors with HTTP_STATUS.BAD_REQUEST based on Zod schema results.
  *
  * @param {SafeParseReturnType<any, any> | null} fields - Zod validation results or null
  * @param {Record<string, string>} [errors] - Optional prepared error messages (used when fields is null)
@@ -22,7 +22,7 @@ export function sendValidationErrors(
       const errors = fields.error?.flatten().fieldErrors || {};
 
       return {
-         code: 400,
+         code: HTTP_STATUS.BAD_REQUEST,
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
                field, errors?.at(0) || "Unknown error"
@@ -32,7 +32,7 @@ export function sendValidationErrors(
    } else {
       // Use predefined validation errors
       return {
-         code: 400,
+         code: HTTP_STATUS.BAD_REQUEST,
          errors: errors || {}
       };
    }
@@ -67,7 +67,7 @@ export const submitServiceRequest = async(
    try {
       const result: ServerResponse = await serviceMethod();
 
-      if (result.code === 200 || result.code === 201 || result.code === 204) {
+      if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT) {
          // Success response
          return sendSuccess(res, result.code, result.data ?? undefined);
       } else {
@@ -78,7 +78,7 @@ export const submitServiceRequest = async(
       // Log unexpected errors
       logger.error(error.stack);
 
-      return sendErrors(res, 500, { server: "Internal Server Error" });
+      return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
    }
 };
 
@@ -86,9 +86,9 @@ export const submitServiceRequest = async(
  * Helper function to send a successful update response after clearing a cache key for strong consistency.
  *
  * @param {string} key - Cache key
- * @returns {Promise<ServerResponse>} A server response of `204` with no content
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content
  */
 export const clearCacheAndSendSuccess = (key: string): ServerResponse => {
    removeCacheValue(key);
-   return sendServiceResponse(204);
+   return sendServiceResponse(HTTP_STATUS.NO_CONTENT);
 };
