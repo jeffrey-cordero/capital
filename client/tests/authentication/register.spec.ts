@@ -1,35 +1,15 @@
-import { expect, type Page, test } from "@playwright/test";
-import {
-   createUser,
-   DASHBOARD_ROUTE,
-   generateTestCredentials,
-   LOGIN_ROUTE,
-   REGISTER_ROUTE
-} from "@tests/utils/authentication";
-import { expectValidationError, submitForm, VALID_REGISTRATION } from "@tests/utils/forms";
+import { expect, test } from "@playwright/test";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
+import { expectValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { getPasswordToggleButton, testPasswordVisibilityToggle } from "@tests/utils/password";
-
-/**
- * Helper function to test password validation scenarios
- *
- * @param page - Playwright page instance
- * @param password - Password to test
- * @param verifyPassword - Verify password to test
- * @param expectedError - Expected validation error message
- * @param testId - Test ID of the field that should show the error (defaults to "password")
- */
-async function testPasswordValidation(
-   page: Page,
-   password: string,
-   verifyPassword: string,
-   expectedError: string,
-   testId: string = "password"
-): Promise<void> {
-   const { username, email } = generateTestCredentials();
-   await submitForm(page, { ...VALID_REGISTRATION, username, email, password, verifyPassword });
-   await expectValidationError(page, testId, expectedError);
-}
+import {
+   createUserWithInvalidEmail,
+   createUserWithMismatchedPasswords,
+   createUserWithWeakPassword,
+   generateTestCredentials,
+   VALID_REGISTRATION
+} from "capital/user";
 
 test.describe("User Registration", () => {
    test.beforeEach(async({ page }) => {
@@ -108,27 +88,36 @@ test.describe("User Registration", () => {
       });
 
       test("should validate email format", async({ page }) => {
-         const invalidEmails = ["notanemail", "@example.com", "user@", "user.example.com"];
+         const invalidEmailTypes: Array<"noAtSymbol" | "noDomain" | "noUsername"> = ["noAtSymbol", "noDomain", "noUsername"];
 
-         for (const invalidEmail of invalidEmails) {
-            await submitForm(page, { ...VALID_REGISTRATION, email: invalidEmail });
+         for (const invalidType of invalidEmailTypes) {
+            const invalidUserData = createUserWithInvalidEmail(invalidType);
+            await submitForm(page, invalidUserData);
             await expectValidationError(page, "email", "Invalid email address");
          }
       });
 
       test("should enforce password complexity requirements", async({ page }) => {
          // Test missing uppercase
-         await testPasswordValidation(page, "password", "password", "Password must contain at least one uppercase letter");
+         const noUppercaseData = createUserWithWeakPassword("noUppercase");
+         await submitForm(page, noUppercaseData);
+         await expectValidationError(page, "password", "Password must contain at least one uppercase letter");
 
          // Test missing lowercase
-         await testPasswordValidation(page, "PASSWORD", "PASSWORD", "Password must contain at least one lowercase letter");
+         const noLowercaseData = createUserWithWeakPassword("noLowercase");
+         await submitForm(page, noLowercaseData);
+         await expectValidationError(page, "password", "Password must contain at least one lowercase letter");
 
          // Test missing number
-         await testPasswordValidation(page, "Password", "Password", "Password must contain at least one number");
+         const noNumberData = createUserWithWeakPassword("noNumber");
+         await submitForm(page, noNumberData);
+         await expectValidationError(page, "password", "Password must contain at least one number");
       });
 
       test("should validate password confirmation matching", async({ page }) => {
-         await testPasswordValidation(page, "Password1!", "Password2!", "Passwords don't match", "verifyPassword");
+         const mismatchedPasswordData = createUserWithMismatchedPasswords();
+         await submitForm(page, mismatchedPasswordData);
+         await expectValidationError(page, "verifyPassword", "Passwords don't match");
       });
    });
 

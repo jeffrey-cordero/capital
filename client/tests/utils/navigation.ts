@@ -6,14 +6,13 @@
  */
 
 import { expect, type Page } from "@playwright/test";
-
 import {
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
    SETTINGS_ROUTE,
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
-} from "./authentication";
+} from "@tests/utils/authentication";
 
 /**
  * Navigates to the specified path and waits for navigation to complete

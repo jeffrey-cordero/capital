@@ -2,10 +2,11 @@
   "name": "capital-server",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "npx tsc && npx tsc-alias",
-    "start": "npm run build && NODE_ENV=production ts-node api/index.ts",
-    "dev": "npm run build && nodemon -L api/index.ts",
+    "build": "npx tsc && npx tsc-alias --resolve-full-paths",
+    "start": "npm run build && NODE_ENV=production node --no-warnings=ExperimentalWarning build/api/index.js",
+    "dev": "npm run build && node --no-warnings=ExperimentalWarning build/api/index.js",
     "lint": "npx eslint '**/*.ts' --ignore-pattern '**/build/'",
     "lint:fix": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'",
     "test": "npx jest tests/* --collect-coverage --detectOpenHandles --verbose"
@@ -50,6 +51,7 @@
     "@types/express-rate-limit": "^5.1.3",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/module-alias": "^2.0.4",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.4",
     "@types/pg": "^8.11.11",
@@ -75,6 +77,6 @@
     "typescript": "^5.8.3"
   },
   "_moduleAliases": {
-    "@": "./"
+    "@": "./build"
   }
 }

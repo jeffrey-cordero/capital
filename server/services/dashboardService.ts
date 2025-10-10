@@ -12,12 +12,13 @@ import {
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
 import { sendServiceResponse } from "@/lib/services";
 import * as dashboardRepository from "@/repository/dashboardRepository";
-import economy from "@/resources/economy.json";
+import economy from "@/resources/economy.json" with { type: "json" };
 import { fetchAccounts } from "@/services/accountsService";
 import { fetchBudgets } from "@/services/budgetsService";
 import { fetchTransactions } from "@/services/transactionsService";
@@ -184,6 +185,10 @@ export async function fetchNews(): Promise<News> {
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
+      // For end-to-end testing, skip the external API calls
+      if (process.env.CI === "true") {
+         return sendServiceResponse(HTTP_STATUS.OK, backupEconomyData);
+      }
       // First check if we have fresh data in Redis cache
       const cache = await getCacheValue("economy");
 
@@ -248,7 +253,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
          // Backup the data to a file
          if (process.env.NODE_ENV === "development") {
-            const resourcesPath = path.join(__dirname, "..", "resources", "economy.json");
+            const resourcesPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "resources", "economy.json");
             fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
          }
 

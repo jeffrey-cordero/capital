@@ -2,29 +2,6 @@
  * Test utilities and constants for server tests
  */
 
-import { HTTP_STATUS, ServerResponse } from "capital/server";
-
-export const TEST_CONSTANTS = {
-   API_BASE_URL: "",
-   TEST_USER_ID: "test-user-id-123",
-   TEST_EMAIL: "test@example.com",
-   TEST_USERNAME: "testuser",
-   TEST_PASSWORD: "testpassword123",
-   TEST_NAME: "Test User",
-   TEST_BIRTHDAY: "1990-01-01"
-} as const;
-
-export const MOCK_RESPONSES = {
-   SUCCESS: {
-      code: HTTP_STATUS.OK,
-      data: { success: true, message: "Operation successful" }
-   } as ServerResponse,
-   ERROR: {
-      code: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      errors: { server: "Operation failed" }
-   } as ServerResponse
-} as const;
-
 /**
  * Creates a mock Express request object
  */
@@ -48,16 +25,3 @@ export const createMockResponse = () => {
    res.locals = {};
    return res;
 };
-
-/**
- * Creates a mock user object for testing
- */
-export const createMockUser = (overrides: Partial<any> = {}) => ({
-   user_id: TEST_CONSTANTS.TEST_USER_ID,
-   username: TEST_CONSTANTS.TEST_USERNAME,
-   email: TEST_CONSTANTS.TEST_EMAIL,
-   name: TEST_CONSTANTS.TEST_NAME,
-   birthday: TEST_CONSTANTS.TEST_BIRTHDAY,
-   password: TEST_CONSTANTS.TEST_PASSWORD,
-   ...overrides
-});

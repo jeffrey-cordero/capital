@@ -25,7 +25,7 @@ const HTTP_STATUS = {
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { UserFactory } from "@tests/utils/testDataFactory";
+import { createValidLogin, createValidRegistration } from "capital/user";
 
 test.describe("API Error Handling", () => {
    test.describe("Authentication Errors", () => {
@@ -45,7 +45,7 @@ test.describe("API Error Handling", () => {
          });
 
          // Action: Submit login form
-         await submitForm(page, UserFactory.validLogin());
+         await submitForm(page, createValidLogin());
 
          // Assertion: Verify error notification is displayed
          await expect(page.getByTestId("notification")).toBeVisible();
@@ -73,7 +73,7 @@ test.describe("API Error Handling", () => {
 
          // Action: Submit registration form with valid data
          // (Server-side validation should still fail due to our mock)
-         await submitForm(page, UserFactory.validRegistration());
+         await submitForm(page, createValidRegistration());
 
          // Assertion: Verify field-specific errors are displayed
          await expect(page.locator(".MuiFormControl-root:has([data-testid=\"username\"]) p.Mui-error"))
@@ -84,7 +84,7 @@ test.describe("API Error Handling", () => {
       });
 
       test("should handle conflict errors during registration", async({ page }) => {
-      // Setup: Navigate to registration page
+         // Setup: Navigate to registration page
          await navigateToPath(page, REGISTER_ROUTE);
 
          // Mock API to return conflict error
@@ -102,7 +102,7 @@ test.describe("API Error Handling", () => {
          });
 
          // Action: Submit registration form
-         await submitForm(page, UserFactory.validRegistration());
+         await submitForm(page, createValidRegistration());
 
          // Assertion: Verify conflict errors are displayed
          await expect(page.locator(".MuiFormControl-root:has([data-testid=\"username\"]) p.Mui-error"))
@@ -115,14 +115,14 @@ test.describe("API Error Handling", () => {
 
    test.describe("Network Error Handling", () => {
       test("should handle offline state gracefully", async({ page }) => {
-       // Setup: Navigate to login page
+         // Setup: Navigate to login page
          await navigateToPath(page, LOGIN_ROUTE);
 
          // Set browser to offline mode
          await page.context().setOffline(true);
 
          // Action: Submit login form
-         await submitForm(page, UserFactory.validLogin());
+         await submitForm(page, createValidLogin());
 
          // Assertion: Verify network error is displayed
          await expect(page.getByTestId("notification")).toBeVisible();
@@ -130,6 +130,27 @@ test.describe("API Error Handling", () => {
 
          // Cleanup: Set browser back to online mode
          await page.context().setOffline(false);
+      });
+
+      test("should handle too many requests gracefully", async({ page }) => {
+         const message = "Too many requests. Please try again later.";
+         // Mock API to return too many requests error
+         await page.route("**/api/v1/authentication/login", route => {
+            route.fulfill({
+               status: HTTP_STATUS.TOO_MANY_REQUESTS,
+               body: JSON.stringify({ code: HTTP_STATUS.TOO_MANY_REQUESTS, errors: { server: message } })
+            });
+         });
+
+         // Setup: Navigate to login page
+         await navigateToPath(page, LOGIN_ROUTE);
+
+         // Action: Submit login form
+         await submitForm(page, createValidLogin());
+
+         // Assertion: Verify too many requests error is displayed
+         await expect(page.getByTestId("notification")).toBeVisible();
+         await expect(page.getByTestId("notification")).toContainText(message);
       });
    });
 
@@ -142,7 +163,7 @@ test.describe("API Error Handling", () => {
          // Mock the refresh endpoint
          let refreshCalled = false;
          let refreshAttempted = false;
-         await page.route("**/api/v1/authentication/refresh", async (route) => {
+         await page.route("**/api/v1/authentication/refresh", async(route) => {
             refreshCalled = true;
             await route.fulfill({
                status: HTTP_STATUS.OK,
@@ -151,7 +172,7 @@ test.describe("API Error Handling", () => {
          });
 
          // Mock the authentication endpoint
-         await page.route("**/api/v1/authentication", async (route) => {
+         await page.route("**/api/v1/authentication", async(route) => {
             if (!refreshAttempted) {
                refreshAttempted = true;
                await route.fulfill({
@@ -176,6 +197,7 @@ test.describe("API Error Handling", () => {
 
          // Navigate to dashboard should work as intended
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
+         await expect(page.getByTestId("empty-accounts-trends-overview")).toHaveText("No available accounts");
       });
    });
 });

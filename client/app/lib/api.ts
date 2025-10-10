@@ -97,8 +97,7 @@ export async function sendApiRequest<T>(
       }
 
       // Handle server errors (rate limiting or internal errors)
-      if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS ||
-          response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+      if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS || response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
          throw new Error((await response.json()).errors?.server || "An error occurred");
       }
 
@@ -130,19 +129,22 @@ export async function sendApiRequest<T>(
       }
    } catch (error: any) {
       // Log unexpected errors
-      const message: string = error.message;
-      console.error("API request failed:", message);
+      const consoleMessage: string = error.message;
+      console.error("API request failed:", consoleMessage);
+
+      const isRatedLimited = consoleMessage.includes("Too many requests");
+      const alertMessage: string = !navigator.onLine ?
+         "You are offline. Check your internet connection."
+         :
+         isRatedLimited ?
+            "Too many requests. Please try again later."
+            :
+            "Internal Server Error";
 
       // Display error notification
-      dispatch(addNotification({
-         type: "error",
-         message: !navigator.onLine ?
-            "You are offline. Check your internet connection."
-            :
-            "Internal Server Error"
-      }));
+      dispatch(addNotification({ type: "error", message: alertMessage }));
 
       // Server-side failure vs. error
-      return error.message === "Failed to fetch" ? 0 : null;
+      return error.message === "Failed to fetch" || isRatedLimited ? 0 : null;
    }
 }

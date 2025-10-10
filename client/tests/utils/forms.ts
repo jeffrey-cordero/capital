@@ -6,37 +6,8 @@
  */
 
 import { expect, type Page } from "@playwright/test";
-import { type LoginPayload, type RegisterPayload } from "capital/user";
 
 const ERROR_INDICATOR_SELECTOR = "p.Mui-error";
-
-/**
- * Valid registration test data with secure password that meets all requirements
- *
- * Note: username and email fields should be set dynamically in tests to ensure uniqueness
- */
-export const VALID_REGISTRATION: RegisterPayload = {
-   // Will be set dynamically for each test
-   username: "",
-   email: "",
-   // Static test data
-   birthday: "1990-01-01",
-   name: "Test User",
-   password: "Password1!",
-   verifyPassword: "Password1!"
-};
-
-/**
- * Valid login test data matching registration password
- *
- * Note: username field should be set dynamically in tests to match registered user
- */
-export const VALID_LOGIN: LoginPayload = {
-   // Will be set dynamically for each test
-   username: "",
-   // Static test data
-   password: "Password1!"
-};
 
 /**
  * Form data type for dynamic form filling

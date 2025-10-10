@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
-import { expectValidationError, submitForm, VALID_LOGIN } from "@tests/utils/forms";
+import { expectValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { testPasswordVisibilityToggle } from "@tests/utils/password";
-import { UserFactory } from "@tests/utils/testDataFactory";
+import { createValidLogin, VALID_LOGIN } from "capital/user";
 
 test.describe("Login Authentication", () => {
    test.beforeEach(async({ page }) => {
@@ -43,7 +43,7 @@ test.describe("Login Authentication", () => {
       });
 
       test("should validate password length requirement", async({ page }) => {
-         const { username } = UserFactory.validRegistration();
+         const { username } = createValidLogin();
          await submitForm(page, {
             username,
             password: "short"
@@ -54,7 +54,7 @@ test.describe("Login Authentication", () => {
 
    test.describe("Authentication Flow", () => {
       test("should reject invalid credentials with clear error message", async({ page }) => {
-         const { username } = UserFactory.validRegistration();
+         const { username } = createValidLogin();
          await submitForm(page, {
             username,
             password: "WrongPassword123!"
@@ -90,7 +90,7 @@ test.describe("Login Authentication", () => {
 
       test("should handle case-sensitive username login", async({ page }) => {
          // Register with lowercase username
-         const { username: generatedUsername } = UserFactory.validLogin();
+         const { username: generatedUsername } = createValidLogin();
          const lowercaseUsername = generatedUsername.toLowerCase();
          const { username } = await createUser(page, { username: lowercaseUsername }, false);
 

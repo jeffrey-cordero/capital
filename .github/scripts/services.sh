@@ -83,10 +83,14 @@ setup_environment() {
       return 1
    fi
 
-   cp .env.example .env
+   cp client/.env.example client/.env
+   cp server/.env.example server/.env
 
    # Disable rate limiting for tests
-   sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED=false/' .env
+   sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED=false/' server/.env
+
+   # Note the testing environment is explicitly set to test in the .env file
+   sed -i 's/^CI=.*/CI=true/' server/.env
 
    echo "Environment configured for testing"
 }

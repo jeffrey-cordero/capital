@@ -265,6 +265,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                   sx = { { height: "100%", width: "100%", alignItems: "center", justifyContent: "center" } }
                >
                   <Typography
+                     data-testid = { `empty-${type}-trends-overview` }
                      sx = { { fontWeight: "600" } }
                      variant = "subtitle2"
                   >

@@ -6,10 +6,9 @@
  */
 
 import { expect, type Page } from "@playwright/test";
-import type { RegisterPayload } from "capital/user";
-
-import { submitForm, VALID_REGISTRATION } from "./forms";
-import { navigateToPath } from "./navigation";
+import { submitForm } from "@tests/utils/forms";
+import { navigateToPath } from "@tests/utils/navigation";
+import { generateTestCredentials, type RegisterPayload, VALID_REGISTRATION } from "capital/user";
 
 /**
  * Route constants for unauthenticated (public) pages
@@ -53,26 +52,6 @@ export const getRouteLinkTitle = (route: string): string => {
    const segments = route.split("/");
    const lastSegment = segments[segments.length - 1];
    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
-};
-
-/**
- * Generates unique test credentials for username and email
- *
- * Combines timestamp and random suffix to ensure uniqueness across test runs.
- * The username is derived from the email prefix for consistency.
- *
- * @returns {{ username: string; email: string }} Object containing unique username and email
- */
-export const generateTestCredentials = (): { username: string; email: string } => {
-   const timestamp = Date.now();
-   const randomSuffix = Math.random().toString(36).substring(2, 8);
-   const identifier = `${timestamp}-${randomSuffix}`;
-
-   // Username limited to 30 characters for validation purposes
-   const username = identifier.substring(0, 30);
-   const email = `${identifier}@example.com`;
-
-   return { username, email };
 };
 
 /**

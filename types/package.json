@@ -2,7 +2,28 @@
   "name": "capital-types",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./server": "./dist/server.js",
+    "./accounts": "./dist/accounts.js",
+    "./budgets": "./dist/budgets.js",
+    "./transactions": "./dist/transactions.js",
+    "./user": "./dist/user.js",
+    "./economy": "./dist/economy.js",
+    "./dashboard": "./dist/dashboard.js",
+    "./numerics": "./dist/numerics.js"
+  },
+  "scripts": {
+    "build": "npx tsc && npx tsc-alias --resolve-full-paths"
+  },
   "dependencies": {
+    "typescript": "^5.9.3",
     "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "tsc-alias": "^1.8.15"
   }
 }

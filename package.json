@@ -12,6 +12,7 @@
     "start": "concurrently \"npm run server:start\" \"npm run client:start\"",
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "lint": "concurrently \"npm --prefix client run lint\" \"npm --prefix server run lint\"",
+    "lint:fix": "concurrently \"npm --prefix client run lint:fix\" \"npm --prefix server run lint:fix\"",
     "test": "concurrently \"npm --prefix server run test\" \"npm --prefix client run test:e2e\"",
     "test:server": "npm --prefix server run test",
     "test:client": "npm --prefix client run test:e2e"

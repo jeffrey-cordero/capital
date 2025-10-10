@@ -1,5 +1,4 @@
-require("dotenv").config();
-require("module-alias/register");
+import "dotenv/config";
 
 import { HTTP_STATUS } from "capital/server";
 import compression from "compression";
@@ -121,4 +120,4 @@ app.listen(port, () => {
    logger.info(`Started Capital on port ${port}`);
 });
 
-module.exports = app;
+export default app;
