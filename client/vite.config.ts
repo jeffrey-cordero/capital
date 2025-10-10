@@ -1,12 +1,14 @@
 import { reactRouter } from "@react-router/dev/vite";
 import autoprefixer from "autoprefixer";
+import path from "path";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
    resolve: {
       alias: {
-         "@": "/app"
+         "@": "/app",
+         capital: path.resolve(__dirname, "../types")
       }
    },
    css: {
@@ -24,6 +26,11 @@ export default defineConfig({
    },
    optimizeDeps: {
       exclude: ["chunk-HR3LP2OW"]
+   },
+   build: {
+      rollupOptions: {
+         preserveSymlinks: true
+      }
    },
    ssr: {
       noExternal:
