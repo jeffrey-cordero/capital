@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "install": "npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install --legacy-peer-deps",
-    "build": "concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
+    "build": "npm --prefix types run build && concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
     "server:start": "npm --prefix server run start",
     "client:start": "npm --prefix client run start",
     "server:dev": "npm --prefix server run dev",
