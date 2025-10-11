@@ -2,7 +2,8 @@
  * Tests for userController with mocked database
  */
 
-import { createMockUser, HTTP_STATUS, ServerResponse, TEST_CONSTANTS } from "capital/server";
+import { createMockUser, TEST_CONSTANTS } from "capital/mocks/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 
 import * as userController from "@/controllers/userController";

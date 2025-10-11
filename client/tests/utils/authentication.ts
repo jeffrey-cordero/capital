@@ -8,7 +8,8 @@
 import { expect, type Page } from "@playwright/test";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { generateTestCredentials, type RegisterPayload, VALID_REGISTRATION } from "capital/user";
+import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
+import type { RegisterPayload } from "capital/user";
 
 /**
  * Route constants for unauthenticated (public) pages

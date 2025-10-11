@@ -79,8 +79,12 @@ export async function authenticateUser(res: Response, username: string, password
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status
  */
 export async function refreshToken(res: Response, user_id: string): Promise<ServerResponse> {
+   // Determine the expiration time of the refresh token
+   const refreshTokenExpiration: number = new Date(res.locals.refresh_token_expiration).getTime();
+   const secondsUntilExpire: number = Math.floor((refreshTokenExpiration - Date.now()) / 1000);
+
    // Rotate both tokens for security
-   configureToken(res, user_id);
+   configureToken(res, user_id, secondsUntilExpire);
 
    return sendServiceResponse(HTTP_STATUS.OK, { success: true });
 }

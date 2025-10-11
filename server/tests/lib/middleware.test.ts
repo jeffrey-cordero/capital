@@ -274,5 +274,125 @@ describe("Middleware Functions", () => {
          expect(decoded1.user_id).toBe(TEST_USER_ID);
          expect(decoded2.user_id).toBe(TEST_USER_ID);
       });
+
+      it("should preserve original refresh token expiration time across multiple refreshes", async() => {
+         const res = createMockResponse();
+
+         // Create initial refresh token with short expiration (2 minutes)
+         const shortExpirationSeconds = 120; // 2 minutes
+         configureToken(res as Response, TEST_USER_ID, shortExpirationSeconds);
+
+         // Get the original refresh token and its expiration
+         const originalRefreshToken = res.cookieData.find(c => c.name === "refresh_token")!.value;
+         const originalDecoded = jwt.verify(originalRefreshToken, TEST_SECRET) as any;
+         const originalExpiration = originalDecoded.exp;
+
+         // Simulate middleware setting the expiration in locals
+         res.locals.refresh_token_expiration = new Date(originalExpiration * 1000);
+
+         // Clear the mock data
+         res.cookieData = [];
+
+         // Wait a small amount
+         await new Promise(resolve => setTimeout(resolve, 100));
+
+         // Simulate refresh by configuring tokens again with preserved expiration
+         const secondsUntilExpire = Math.floor((originalExpiration * 1000 - Date.now()) / 1000);
+         configureToken(res as Response, TEST_USER_ID, secondsUntilExpire);
+
+         const newRefreshToken = res.cookieData.find(c => c.name === "refresh_token")!.value;
+         const newDecoded = jwt.verify(newRefreshToken, TEST_SECRET) as any;
+
+         // The new refresh token should have the same expiration time as the original
+         // Allow for 1 second difference due to timing of token creation
+         expect(Math.abs(newDecoded.exp - originalExpiration)).toBeLessThanOrEqual(1);
+      });
+   });
+
+   describe("Refresh Token Expiration Handling", () => {
+      it("should set refresh_token_expiration in res.locals when authenticating refresh token", () => {
+         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "7d" });
+         const req = createMockRequest({ refresh_token: validToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.locals.user_id).toBe(TEST_USER_ID);
+         expect(res.locals.refresh_token_expiration).toBeDefined();
+         expect(res.locals.refresh_token_expiration).toBeInstanceOf(Date);
+         expect(next).toHaveBeenCalled();
+      });
+
+      it("should call clearToken when refresh token is expired", () => {
+         const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1d" });
+         const req = createMockRequest({ refresh_token: expiredToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(res.clearCookieData).toHaveLength(2); // Both tokens cleared
+         expect(res.clearCookieData.find(c => c.name === "access_token")).toBeDefined();
+         expect(res.clearCookieData.find(c => c.name === "refresh_token")).toBeDefined();
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should call clearToken when refresh token is invalid", () => {
+         const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
+         const req = createMockRequest({ refresh_token: invalidToken });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+         expect(res.clearCookieData).toHaveLength(2); // Both tokens cleared
+         expect(next).not.toHaveBeenCalled();
+      });
+
+      it("should handle refresh token very close to expiration", () => {
+         // Create token expiring in 1 second
+         const tokenExpiringSoon = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "1s" });
+         const req = createMockRequest({ refresh_token: tokenExpiringSoon });
+         const res = createMockResponse();
+         const next = createMockNext();
+
+         const middleware = authenticateRefreshToken();
+         middleware(req as Request, res as Response, next);
+
+         // Should still work if token is valid (not expired yet)
+         expect(res.locals.user_id).toBe(TEST_USER_ID);
+         expect(res.locals.refresh_token_expiration).toBeDefined();
+         expect(next).toHaveBeenCalled();
+      });
+
+      it("should eventually have access token expiration greater than refresh token expiration", async() => {
+         const res = createMockResponse();
+
+         // Create refresh token with very short expiration (5 seconds)
+         const shortExpirationSeconds = 5;
+         configureToken(res as Response, TEST_USER_ID, shortExpirationSeconds);
+
+         const refreshToken = res.cookieData.find(c => c.name === "refresh_token")!.value;
+         const accessToken = res.cookieData.find(c => c.name === "access_token")!.value;
+
+         const refreshDecoded = jwt.verify(refreshToken, TEST_SECRET) as any;
+         const accessDecoded = jwt.verify(accessToken, TEST_SECRET) as any;
+
+         // Initially, access token should expire before refresh token (access: 1 hour, refresh: 5 seconds)
+         expect(accessDecoded.exp).toBeGreaterThan(refreshDecoded.exp);
+
+         // Wait for refresh token to expire
+         await new Promise(resolve => setTimeout(resolve, 6000));
+
+         // Now refresh token should be expired
+         const currentTime = Math.floor(Date.now() / 1000);
+         expect(currentTime).toBeGreaterThan(refreshDecoded.exp);
+      });
    });
 });

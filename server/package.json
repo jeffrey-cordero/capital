@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc && npx tsc-alias --resolve-full-paths",
     "start": "npm run build && NODE_ENV=production node --no-warnings=ExperimentalWarning build/api/index.js",
-    "dev": "npm run build && node --no-warnings=ExperimentalWarning build/api/index.js",
+    "dev": "nodemon -L --watch '**/*.ts' --ext ts --exec 'npm run build && node build/api/index.js'",
     "lint": "npx eslint '**/*.ts' --ignore-pattern '**/build/'",
     "lint:fix": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'",
     "test": "npx jest tests/* --collect-coverage --detectOpenHandles --verbose"

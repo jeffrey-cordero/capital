@@ -3,7 +3,7 @@ import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests
 import { expectValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { testPasswordVisibilityToggle } from "@tests/utils/password";
-import { createValidLogin, VALID_LOGIN } from "capital/user";
+import { createValidLogin, VALID_LOGIN } from "capital/mocks/user";
 
 test.describe("Login Authentication", () => {
    test.beforeEach(async({ page }) => {

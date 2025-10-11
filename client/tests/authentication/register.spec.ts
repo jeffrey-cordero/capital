@@ -9,7 +9,7 @@ import {
    createUserWithWeakPassword,
    generateTestCredentials,
    VALID_REGISTRATION
-} from "capital/user";
+} from "capital/mocks/user";
 
 test.describe("User Registration", () => {
    test.beforeEach(async({ page }) => {

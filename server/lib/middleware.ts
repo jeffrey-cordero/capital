@@ -13,8 +13,9 @@ import { sendErrors, sendSuccess } from "@/lib/response";
  *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID to include in token
+ * @param {number} secondsUntilExpire - Seconds until refresh token expires
  */
-export function configureToken(res: Response, user_id: string): void {
+export function configureToken(res: Response, user_id: string, secondsUntilExpire?: number): void {
    // Store access and refresh tokens in HTTP-only cookies
    const access_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "60min" });
 
@@ -25,7 +26,7 @@ export function configureToken(res: Response, user_id: string): void {
       secure: true
    });
 
-   const refresh_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "7d" });
+   const refresh_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: secondsUntilExpire || "7d" });
    res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       sameSite: "none",
@@ -140,6 +141,10 @@ export function authenticateRefreshToken() {
 
          // Make user ID available to refresh handler
          res.locals.user_id = user.user_id;
+
+         // Make token available to refresh handler to limit the expiration time of the refresh token
+         res.locals.refresh_token_expiration = new Date(user.exp * 1000);
+
          next();
       } catch (error: any) {
          if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {

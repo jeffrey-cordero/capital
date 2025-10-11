@@ -25,7 +25,7 @@ const HTTP_STATUS = {
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { createValidLogin, createValidRegistration } from "capital/user";
+import { createValidLogin, createValidRegistration } from "capital/mocks/user";
 
 test.describe("API Error Handling", () => {
    test.describe("Authentication Errors", () => {
