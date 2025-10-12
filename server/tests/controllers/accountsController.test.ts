@@ -9,14 +9,20 @@ import { Request, Response } from "express";
 
 import * as accountsController from "@/controllers/accountsController";
 import { TEST_USER_ID } from "@/tests/constants/tokens";
-import { createMockControllerRequest, createMockControllerResponse, createSubmitServiceRequestMock, testServiceSuccess } from "@/tests/utils/controllers";
+import { createMockRequest, createMockResponse } from "@/tests/utils/api";
+import { assertControllerErrorResponse, testServiceErrorResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
 
-// Mock the services module
-jest.mock("@/lib/services", () => ({
-   submitServiceRequest: jest.fn(createSubmitServiceRequestMock())
-}));
+/**
+ * Mock the services module
+ */
+jest.mock("@/lib/services", () => {
+   const { createMockSubmitServiceRequest } = require("@/tests/utils/controllers");
+   return { submitServiceRequest: createMockSubmitServiceRequest() };
+});
 
-// Mock the accountsService module
+/**
+ * Mock the accountsService module
+ */
 jest.mock("@/services/accountsService", () => ({
    fetchAccounts: jest.fn(),
    createAccount: jest.fn(),
@@ -31,8 +37,9 @@ describe("Accounts Controller", () => {
    let mockNext: jest.Mock;
 
    beforeEach(() => {
-      mockReq = createMockControllerRequest();
-      mockRes = createMockControllerResponse({ user_id: TEST_USER_ID });
+      mockReq = createMockRequest();
+      mockRes = createMockResponse();
+      mockRes.locals = { user_id: TEST_USER_ID };
       mockNext = jest.fn();
       jest.clearAllMocks();
    });
@@ -77,25 +84,30 @@ describe("Accounts Controller", () => {
       });
 
       it("should handle service errors", async() => {
+         const expectedError = new Error("Database connection failed");
+
          const accountsService = await import("@/services/accountsService");
-         (accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>)
-            .mockRejectedValue(new Error("Database connection failed"));
+         const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
+         testServiceThrownError(mockFetchAccounts, expectedError);
 
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.fetchAccounts).toHaveBeenCalledWith(TEST_USER_ID);
+         expect(mockFetchAccounts).toHaveBeenCalledWith(TEST_USER_ID);
+         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts);
       });
 
       it("should handle missing user_id", async() => {
          mockRes.locals = {};
+         const expectedError = new Error("Missing user_id");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>)
-            .mockRejectedValue(new Error("Missing user_id"));
+         const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
+         testServiceThrownError(mockFetchAccounts, expectedError);
 
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.fetchAccounts).toHaveBeenCalledWith(undefined);
+         expect(mockFetchAccounts).toHaveBeenCalledWith(undefined);
+         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts);
       });
    });
 
@@ -139,37 +151,41 @@ describe("Accounts Controller", () => {
          };
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>)
-            .mockResolvedValue(mockResponse);
+         const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
+         testServiceErrorResponse(mockCreateAccount, mockResponse);
 
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.createAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccount);
+         expect(mockCreateAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccount);
       });
 
       it("should handle missing account data", async() => {
          mockReq.body = {};
+         const expectedError = new Error("Missing account data");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>)
-            .mockRejectedValue(new Error("Missing account data"));
+         const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
+         testServiceThrownError(mockCreateAccount, expectedError);
 
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.createAccount).toHaveBeenCalledWith(TEST_USER_ID, {});
+         expect(mockCreateAccount).toHaveBeenCalledWith(TEST_USER_ID, {});
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount);
       });
 
       it("should handle service errors", async() => {
          const newAccount = createMockAccount("Savings");
          mockReq.body = newAccount;
+         const expectedError = new Error("Database insert failed");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>)
-            .mockRejectedValue(new Error("Database insert failed"));
+         const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
+         testServiceThrownError(mockCreateAccount, expectedError);
 
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.createAccount).toHaveBeenCalledWith(TEST_USER_ID, newAccount);
+         expect(mockCreateAccount).toHaveBeenCalledWith(TEST_USER_ID, newAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount);
       });
    });
 
@@ -238,13 +254,13 @@ describe("Accounts Controller", () => {
          };
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>)
-            .mockResolvedValue(mockResponse);
+         const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
+         testServiceErrorResponse(mockUpdateAccount, mockResponse);
 
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
          const expectedData = { ...updateData, account_id: accountId };
-         expect(accountsService.updateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
       });
 
       it("should handle validation errors", async() => {
@@ -265,26 +281,28 @@ describe("Accounts Controller", () => {
          };
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>)
-            .mockResolvedValue(mockResponse);
+         const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
+         testServiceErrorResponse(mockUpdateAccount, mockResponse);
 
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
          const expectedData = { ...invalidUpdateData, account_id: accountId };
-         expect(accountsService.updateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
       });
 
       it("should handle missing account ID", async() => {
          mockReq.params = {};
          mockReq.body = { name: "Updated Account" };
+         const expectedError = new Error("Missing account ID");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>)
-            .mockRejectedValue(new Error("Missing account ID"));
+         const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
+         testServiceThrownError(mockUpdateAccount, expectedError);
 
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.updateAccount).toHaveBeenCalledWith(TEST_USER_ID, { name: "Updated Account" });
+         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, { name: "Updated Account" });
+         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount);
       });
 
       it("should handle service errors", async() => {
@@ -296,15 +314,17 @@ describe("Accounts Controller", () => {
          };
          mockReq.params = { id: accountId };
          mockReq.body = updateData;
+         const expectedError = new Error("Database update failed");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>)
-            .mockRejectedValue(new Error("Database update failed"));
+         const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
+         testServiceThrownError(mockUpdateAccount, expectedError);
 
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
          const expectedData = { ...updateData, account_id: accountId };
-         expect(accountsService.updateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount);
       });
    });
 
@@ -339,37 +359,41 @@ describe("Accounts Controller", () => {
          };
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>)
-            .mockResolvedValue(mockResponse);
+         const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
+         testServiceErrorResponse(mockDeleteAccount, mockResponse);
 
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.deleteAccount).toHaveBeenCalledWith(TEST_USER_ID, accountId);
+         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, accountId);
       });
 
       it("should handle missing account ID", async() => {
          mockReq.params = {};
+         const expectedError = new Error("Missing account ID");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>)
-            .mockRejectedValue(new Error("Missing account ID"));
+         const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
+         testServiceThrownError(mockDeleteAccount, expectedError);
 
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.deleteAccount).toHaveBeenCalledWith(TEST_USER_ID, undefined);
+         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, undefined);
+         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount);
       });
 
       it("should handle service errors", async() => {
          const accountId = "account-123";
          mockReq.params = { id: accountId };
+         const expectedError = new Error("Database delete failed");
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>)
-            .mockRejectedValue(new Error("Database delete failed"));
+         const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
+         testServiceThrownError(mockDeleteAccount, expectedError);
 
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.deleteAccount).toHaveBeenCalledWith(TEST_USER_ID, accountId);
+         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, accountId);
+         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount);
       });
 
       it("should handle invalid account ID format", async() => {
@@ -384,12 +408,12 @@ describe("Accounts Controller", () => {
          };
 
          const accountsService = await import("@/services/accountsService");
-         (accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>)
-            .mockResolvedValue(mockResponse);
+         const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
+         testServiceErrorResponse(mockDeleteAccount, mockResponse);
 
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
-         expect(accountsService.deleteAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccountId);
+         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccountId);
       });
    });
 });

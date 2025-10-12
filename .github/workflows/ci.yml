@@ -44,7 +44,7 @@ jobs:
         run: npm run lint
 
   client-e2e:
-    name: "Playwright E2E"
+    name: "Playwright (E2E)"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -92,8 +92,9 @@ jobs:
       - name: "Run Playwright E2E Tests"
         working-directory: client
         env:
-          VITE_SERVER_PORT: 3000
-        run: npm run test:e2e
+          VITE_CLIENT_PORT: 3000
+          VITE_API_URL: http://localhost:8000/api/v1/
+        run: npm run test
 
       - name: "Stop Services"
         if: always()
@@ -141,7 +142,7 @@ jobs:
         run: npm run lint
 
   server-unit:
-    name: "Jest Unit Testing"
+    name: "Jest (Unit)"
     defaults:
       run:
         working-directory: server

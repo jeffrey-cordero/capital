@@ -1,10 +1,3 @@
-/**
- * Mock utilities for Express API testing
- *
- * Provides factory functions for creating mock Express Request, Response, and Next objects
- * Used across server unit tests for consistent test setup
- */
-
 import { NextFunction, Request, Response } from "express";
 
 /**
@@ -19,16 +12,16 @@ export const createMockRequest = (cookies: Record<string, string> = {}): Partial
  * Mock Response interface with test tracking capabilities
  */
 export interface MockResponse extends Partial<Response> {
-   locals: Record<string, any>;
-   clearCookieData: Array<{ name: string; options?: any }>;
-   cookieData: Array<{ name: string; value: string; options: any }>;
    statusCode?: number;
    jsonData?: any;
-   clearCookie: jest.Mock;
-   cookie: jest.Mock;
    status: jest.Mock;
    json: jest.Mock;
    end: jest.Mock;
+   cookie: jest.Mock;
+   clearCookie: jest.Mock;
+   locals: Record<string, any>;
+   clearCookieData: Array<{ name: string; options?: any }>;
+   cookieData: Array<{ name: string; value: string; options: any }>;
 }
 
 /**
@@ -41,10 +34,7 @@ export interface MockMiddleware extends jest.Mock {
 /**
  * Creates a mock Express Response object with tracking capabilities
  *
- * Tracks all cookie operations, status codes, and JSON responses for testing.
- * All methods return the mock response object to support chaining.
- *
- * @returns {MockResponse} Mock response object with test helpers
+ * @returns {MockResponse} Mock response object
  */
 export const createMockResponse = (): MockResponse => {
    const res: MockResponse = {

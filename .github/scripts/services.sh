@@ -11,7 +11,7 @@ TIMEOUT="${2:-180}"
 
 start_services() {
    echo "Starting Docker services..."
-   docker compose up -d capital_postgres capital_redis capital_server
+   docker compose up -d postgres redis server
    echo "Services started successfully"
 }
 
@@ -28,7 +28,7 @@ wait_for_services() {
    local elapsed=0
 
    while [[ "$elapsed" -lt "$timeout" ]]; do
-      if docker compose logs capital_server | grep -q "Started Capital"; then
+      if docker compose logs server | grep -q "Started Capital"; then
          echo "Server is ready after ${elapsed} seconds!"
          return 0
       fi
@@ -78,8 +78,8 @@ health_check() {
 setup_environment() {
    echo "Setting up environment variables..."
 
-   if [[ ! -f .env.example ]]; then
-      echo "ERROR: .env.example not found"
+   if [[ ! -f client/.env.example || ! -f server/.env.example ]]; then
+      echo "ERROR: .env.example must be in both client and server folders"
       return 1
    fi
 
@@ -87,10 +87,10 @@ setup_environment() {
    cp server/.env.example server/.env
 
    # Disable rate limiting for tests
-   sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED=false/' server/.env
+   sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED="false"/' server/.env
 
    # Note the testing environment is explicitly set to test in the .env file
-   sed -i 's/^CI=.*/CI=true/' server/.env
+   sed -i 's/^CI=.*/CI="true"/' server/.env
 
    echo "Environment configured for testing"
 }

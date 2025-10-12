@@ -4,22 +4,20 @@ import { Request, Response } from "express";
 
 import * as authenticationController from "@/controllers/authenticationController";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/constants/tokens";
-import {
-   assertControllerErrorResponse,
-   createMockControllerRequest,
-   createMockControllerResponse,
-   createSubmitServiceRequestMock,
-   testServiceErrorResponse,
-   testServiceSuccess,
-   testServiceThrownError
-} from "@/tests/utils/controllers";
+import { createMockRequest, createMockResponse } from "@/tests/utils/api";
+import { assertControllerErrorResponse, testServiceErrorResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
 
-// Mock the services module
-jest.mock("@/lib/services", () => ({
-   submitServiceRequest: createSubmitServiceRequestMock()
-}));
+/**
+ * Mock the services module
+ */
+jest.mock("@/lib/services", () => {
+   const { createMockSubmitServiceRequest } = require("@/tests/utils/controllers");
+   return { submitServiceRequest: createMockSubmitServiceRequest() };
+});
 
-// Mock the authenticationService module
+/**
+ * Mock the authenticationService module
+ */
 jest.mock("@/services/authenticationService", () => ({
    getAuthentication: jest.fn(),
    authenticateUser: jest.fn(),
@@ -33,8 +31,8 @@ describe("Authentication Controller", () => {
    let mockNext: jest.Mock;
 
    beforeEach(() => {
-      mockReq = createMockControllerRequest() as Request;
-      mockRes = createMockControllerResponse() as Response;
+      mockReq = createMockRequest() as Request;
+      mockRes = createMockResponse() as Response;
       mockNext = jest.fn();
       jest.clearAllMocks();
    });
@@ -123,17 +121,18 @@ describe("Authentication Controller", () => {
       it("should handle service errors", async() => {
          // Arrange
          mockReq.cookies = { access_token: TEST_TOKENS.VALID_ACCESS };
+         const expectedError = new Error("Service error");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceThrownError(mockGetAuthentication, new Error("Service error"));
+         testServiceThrownError(mockGetAuthentication, expectedError);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, mockReq.cookies.access_token);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication);
       });
    });
 
@@ -184,49 +183,52 @@ describe("Authentication Controller", () => {
       it("should handle missing username", async() => {
          // Arrange
          mockReq.body = { password: VALID_LOGIN.password };
+         const expectedError = new Error("Missing username");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, new Error("Missing username"));
+         testServiceThrownError(mockAuthenticateUser, expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, undefined, mockReq.body.password);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
 
       it("should handle missing password", async() => {
          // Arrange
          mockReq.body = { username: VALID_LOGIN.username };
+         const expectedError = new Error("Missing password");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, new Error("Missing password"));
+         testServiceThrownError(mockAuthenticateUser, expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, undefined);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
 
       it("should handle service errors", async() => {
          // Arrange
          mockReq.body = createLoginCredentials("TestUser");
+         const expectedError = new Error("Database connection failed");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, new Error("Database connection failed"));
+         testServiceThrownError(mockAuthenticateUser, expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, mockReq.body.password);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
    });
 
@@ -254,33 +256,35 @@ describe("Authentication Controller", () => {
       it("should handle missing user_id in locals", async() => {
          // Arrange
          mockRes.locals = {};
+         const expectedError = new Error("Missing user_id");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         testServiceThrownError(mockRefreshToken, new Error("Missing user_id"));
+         testServiceThrownError(mockRefreshToken, expectedError);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockRefreshToken).toHaveBeenCalledWith(mockRes, undefined);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
       });
 
       it("should handle service errors", async() => {
          // Arrange
          mockRes.locals = { user_id: TEST_USER_ID };
+         const expectedError = new Error("Token refresh failed");
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         testServiceThrownError(mockRefreshToken, new Error("Token refresh failed"));
+         testServiceThrownError(mockRefreshToken, expectedError);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockRefreshToken).toHaveBeenCalledWith(mockRes, mockRes.locals.user_id);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
       });
    });
 
@@ -305,16 +309,18 @@ describe("Authentication Controller", () => {
 
       it("should handle service errors", async() => {
          // Arrange
+         const expectedError = new Error("Logout failed");
+
          const authenticationService = await import("@/services/authenticationService");
          const mockLogoutUser = authenticationService.logoutUser as jest.MockedFunction<typeof authenticationService.logoutUser>;
-         testServiceThrownError(mockLogoutUser, new Error("Logout failed"));
+         testServiceThrownError(mockLogoutUser, expectedError);
 
          // Act
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
 
          // Assert
          expect(mockLogoutUser).toHaveBeenCalledWith(mockRes);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser);
       });
 
       it("should handle multiple logout calls", async() => {

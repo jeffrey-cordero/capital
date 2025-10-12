@@ -19,9 +19,11 @@ export const createMockRequest = (overrides: Partial<any> = {}) => ({
  */
 export const createMockResponse = () => {
    const res: any = {};
+
    res.status = jest.fn().mockReturnValue(res);
    res.json = jest.fn().mockReturnValue(res);
    res.send = jest.fn().mockReturnValue(res);
    res.locals = {};
+
    return res;
 };

@@ -3,9 +3,7 @@
 */
 
 import { HTTP_STATUS, ServerResponse } from "capital/server";
-import { Request, Response } from "express";
-
-import { createMockRequest, createMockResponse } from "@/tests/utils/api";
+import { Response } from "express";
 
 /**
  * Test service success responses
@@ -77,39 +75,25 @@ export function createMockRepositoryResponse<T>(data: T[]): T[] {
 }
 
 /**
- * Create mock request with specific parameters
- *
- * @param {Partial<Request>} overrides - Request parameter overrides
- * @returns {Partial<Request>} Mock request object
- */
-export function createMockControllerRequest(overrides: Partial<Request> = {}): Partial<Request> {
-   return { ...createMockRequest(), ...overrides };
-}
-
-/**
- * Create mock response with locals
- *
- * @param {Record<string, any>} locals - Response locals
- * @returns {Partial<Response>} Mock response object
- */
-export function createMockControllerResponse(locals: Record<string, any> = {}): Partial<Response> {
-   const mockRes = createMockResponse();
-   mockRes.locals = locals;
-   return mockRes;
-}
-
-/**
- * Assert that a controller properly handled a service error by verifying the error response
+ * Assert that a controller properly handled a service error by verifying both the error was thrown and the error response
  *
  * @param {Partial<Response>} mockRes - Mock response object
+ * @param {Error} expectedError - Expected error that should be thrown by the service
+ * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
  * @param {number} [statusCode] - Expected HTTP status code (defaults to INTERNAL_SERVER_ERROR)
  * @param {Record<string, string>} [errors] - Expected error object (defaults to server error)
  */
 export function assertControllerErrorResponse(
    mockRes: Partial<Response>,
+   expectedError: Error,
+   mockServiceFunction: jest.MockedFunction<any>,
    statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
    errors: Record<string, string> = { server: "Internal Server Error" }
 ): void {
+   // Verify the service function throws the expected error
+   expect(mockServiceFunction()).rejects.toThrow(expectedError);
+
+   // Verify the controller handled the error response properly
    expect(mockRes.status).toHaveBeenCalledWith(statusCode);
    expect(mockRes.json).toHaveBeenCalledWith({
       code: statusCode,
@@ -119,19 +103,19 @@ export function assertControllerErrorResponse(
 }
 
 /**
- * Creates a mock for submitServiceRequest that properly handles both success and error cases
- * This function returns the mock implementation that can be used in Jest mock declarations
+ * Create a mock submit service request function
  *
- * @returns {Function} Mock implementation function
+ * @returns {jest.Mock} Mock submit service request function
  */
-export function createSubmitServiceRequestMock(): (res: Response, callback: () => Promise<ServerResponse>) => Promise<ServerResponse> {
-   return async(res: Response, callback: () => Promise<ServerResponse>) => {
+export function createMockSubmitServiceRequest(): jest.Mock {
+   return jest.fn(async(res, callback) => {
       try {
          return await callback();
-      } catch (error: any) {
-         // Simulate the real submitServiceRequest error handling
+      } catch {
          const { sendErrors } = require("@/lib/response");
-         return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" }) as ServerResponse;
+         return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, {
+            server: "Internal Server Error"
+         });
       }
-   };
+   });
 }

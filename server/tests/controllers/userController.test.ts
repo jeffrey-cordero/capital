@@ -8,22 +8,30 @@ import { Request, Response } from "express";
 
 import * as userController from "@/controllers/userController";
 import { mockDatabaseError, mockSuccessfulQuery, resetDatabaseMocks } from "@/tests/mocks/database";
-import { assertControllerErrorResponse, createSubmitServiceRequestMock, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
-import { createMockRequest, createMockResponse } from "@/tests/utils/utils";
+import { createMockRequest, createMockResponse } from "@/tests/utils/api";
+import { assertControllerErrorResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
 
-// Mock the database module
+/**
+ * Mock the database module
+ */
 jest.mock("@/lib/database", () => ({
    pool: {
       query: jest.fn()
    }
 }));
 
-// Mock the services module
-jest.mock("@/lib/services", () => ({
-   submitServiceRequest: createSubmitServiceRequestMock()
-}));
+/**
+ * Mock the services module
+ */
+jest.mock("@/lib/services", () => {
+   const { createMockSubmitServiceRequest } = require("@/tests/utils/controllers");
 
-// Mock the userService module
+   return { submitServiceRequest: createMockSubmitServiceRequest() };
+});
+
+/**
+ * Mock the userService module
+ */
 jest.mock("@/services/userService", () => ({
    createUser: jest.fn(),
    fetchUserDetails: jest.fn(),
@@ -68,17 +76,18 @@ describe("User Controller", () => {
          const mockUser = createMockUser();
          mockReq.body = mockUser;
          mockDatabaseError("User already exists");
+         const expectedError = new Error("User already exists");
 
          const userService = await import("@/services/userService");
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
-         testServiceThrownError(mockCreateUser, new Error("User already exists"));
+         testServiceThrownError(mockCreateUser, expectedError);
 
          // Act
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
          expect(mockCreateUser).toHaveBeenCalledWith(mockReq, mockRes, mockUser);
-         assertControllerErrorResponse(mockRes);
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateUser);
       });
    });
 

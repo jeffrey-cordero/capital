@@ -1,21 +1,19 @@
 import { HTTP_STATUS } from "capital/server";
-import { Request, Response } from "express";
+import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { authenticateRefreshToken, authenticateToken, clearToken, configureToken } from "@/lib/middleware";
-import {
-   createMockMiddleware,
-   createMockNext,
-   createMockRequest,
-   createMockResponse,
-   MockResponse
-} from "@/tests/utils/api";
+import { createMockMiddleware, createMockResponse, MockResponse } from "@/tests/utils/api";
 
-// Test constants
+/**
+ * Test constants
+ */
 const TEST_SECRET = "test-secret-key";
 const TEST_USER_ID = "test-user-123";
 
-// Set test secret before running tests
+/**
+ * Set test secret before running tests
+ */
 beforeAll(() => {
    process.env.SESSION_SECRET = TEST_SECRET;
 });
@@ -27,7 +25,7 @@ beforeAll(() => {
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
  */
-function testUnexpectedErrorHandling(middlewareFunction: Function, expectedStatus: number, cookieName: string = "access_token") {
+function testUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    const mockError = new Error("Unexpected error");
    mockError.stack = "Error: Unexpected error\n    at someFunction";
 
@@ -46,8 +44,14 @@ function testUnexpectedErrorHandling(middlewareFunction: Function, expectedStatu
    verifySpy.mockRestore();
 }
 
-// Helper function to test missing SESSION_SECRET
-function testMissingSessionSecret(middlewareFunction: Function, expectedStatus: number, cookieName: string = "access_token") {
+/**
+ * Helper function to test missing SESSION_SECRET
+ *
+ * @param {Function} middlewareFunction - The middleware function to test
+ * @param {number} expectedStatus - The expected status code
+ * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
+ */
+function testMissingSessionSecret(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    delete process.env.SESSION_SECRET;
 
    const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
