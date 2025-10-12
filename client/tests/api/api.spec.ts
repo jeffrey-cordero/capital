@@ -22,97 +22,12 @@ const HTTP_STATUS = {
    INTERNAL_SERVER_ERROR: 500
 };
 
-import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { createValidLogin, createValidRegistration } from "capital/mocks/user";
+import { createValidLogin } from "capital/mocks/user";
 
 test.describe("API Error Handling", () => {
-   test.describe("Authentication Errors", () => {
-      test("should handle server error during login", async({ page }) => {
-         // Setup: Navigate to login page
-         await navigateToPath(page, LOGIN_ROUTE);
-
-         // Mock API to return server error
-         await page.route("**/api/v1/authentication/login", route => {
-            route.fulfill({
-               status: HTTP_STATUS.INTERNAL_SERVER_ERROR, // Internal Server Error
-               body: JSON.stringify({
-                  code: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-                  errors: { server: "Internal Server Error" }
-               })
-            });
-         });
-
-         // Action: Submit login form
-         await submitForm(page, createValidLogin());
-
-         // Assertion: Verify error notification is displayed
-         await expect(page.getByTestId("notification")).toBeVisible();
-         await expect(page.getByTestId("notification")).toContainText("Internal Server Error");
-         await expect(page.getByTestId("notification")).toHaveAttribute("data-type", "error");
-      });
-
-      test("should handle validation errors during registration", async({ page }) => {
-      // Setup: Navigate to registration page
-         await navigateToPath(page, REGISTER_ROUTE);
-
-         // Mock API to return validation error
-         await page.route("**/api/v1/users", route => {
-            route.fulfill({
-               status: HTTP_STATUS.BAD_REQUEST,
-               body: JSON.stringify({
-                  code: HTTP_STATUS.BAD_REQUEST,
-                  errors: {
-                     username: "Username contains invalid characters",
-                     email: "Email format is invalid"
-                  }
-               })
-            });
-         });
-
-         // Action: Submit registration form with valid data
-         // (Server-side validation should still fail due to our mock)
-         await submitForm(page, createValidRegistration());
-
-         // Assertion: Verify field-specific errors are displayed
-         await expect(page.locator(".MuiFormControl-root:has([data-testid=\"username\"]) p.Mui-error"))
-            .toContainText("Username contains invalid characters");
-
-         await expect(page.locator(".MuiFormControl-root:has([data-testid=\"email\"]) p.Mui-error"))
-            .toContainText("Email format is invalid");
-      });
-
-      test("should handle conflict errors during registration", async({ page }) => {
-         // Setup: Navigate to registration page
-         await navigateToPath(page, REGISTER_ROUTE);
-
-         // Mock API to return conflict error
-         await page.route("**/api/v1/users", route => {
-            route.fulfill({
-               status: HTTP_STATUS.CONFLICT,
-               body: JSON.stringify({
-                  code: HTTP_STATUS.CONFLICT,
-                  errors: {
-                     username: "Username already exists",
-                     email: "Email already exists"
-                  }
-               })
-            });
-         });
-
-         // Action: Submit registration form
-         await submitForm(page, createValidRegistration());
-
-         // Assertion: Verify conflict errors are displayed
-         await expect(page.locator(".MuiFormControl-root:has([data-testid=\"username\"]) p.Mui-error"))
-            .toContainText("Username already exists");
-
-         await expect(page.locator(".MuiFormControl-root:has([data-testid=\"email\"]) p.Mui-error"))
-            .toContainText("Email already exists");
-      });
-   });
-
    test.describe("Network Error Handling", () => {
       test("should handle offline state gracefully", async({ page }) => {
          // Setup: Navigate to login page

@@ -5,7 +5,7 @@
  * Used across server unit tests for consistent test setup
  */
 
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 /**
  * Creates a mock Express Request object
@@ -13,9 +13,7 @@ import { Request, Response } from "express";
  * @param {Record<string, string>} cookies - Optional cookies to include in request
  * @returns {Partial<Request>} Mock request object with cookies
  */
-export const createMockRequest = (cookies: Record<string, string> = {}): Partial<Request> => ({
-   cookies
-});
+export const createMockRequest = (cookies: Record<string, string> = {}): Partial<Request> => ({ cookies });
 
 /**
  * Mock Response interface with test tracking capabilities
@@ -31,6 +29,13 @@ export interface MockResponse extends Partial<Response> {
    status: jest.Mock;
    json: jest.Mock;
    end: jest.Mock;
+}
+
+/**
+ * Mock middleware function
+ */
+export interface MockMiddleware extends jest.Mock {
+   (req: Request, res: Response, next: NextFunction): void;
 }
 
 /**
@@ -75,3 +80,15 @@ export const createMockResponse = (): MockResponse => {
  * @returns {jest.Mock} Mock next function for middleware testing
  */
 export const createMockNext = (): jest.Mock => jest.fn();
+
+/**
+ * Creates a mock Express middleware function.
+ *
+ * @param {Record<string, string>} cookies - Optional cookies to include in request
+ * @returns {Request, res: Response, next: NextFunction } Mock middleware function with request, response, and next functions
+ */
+export const createMockMiddleware = (cookies: Record<string, string> = {}): { req: Request, res: Response, next: NextFunction } => ({
+   req: createMockRequest(cookies) as Request,
+   res: createMockResponse() as Response,
+   next: createMockNext() as NextFunction
+});

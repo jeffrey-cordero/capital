@@ -14,10 +14,12 @@ app.use("/", indexRouter);
 describe("Index Router", () => {
    describe("GET /", () => {
       it("should return healthy status", async() => {
+         // Act
          const response = await request(app)
             .get("/")
             .expect(HTTP_STATUS.OK);
 
+         // Assert
          expect(response.body).toEqual({
             code: HTTP_STATUS.OK,
             data: "Healthy REST API"
@@ -25,10 +27,12 @@ describe("Index Router", () => {
       });
 
       it("should return JSON response", async() => {
+         // Act
          const response = await request(app)
             .get("/")
             .expect("Content-Type", /json/);
 
+         // Assert
          expect(response.body).toHaveProperty("code");
          expect(response.body).toHaveProperty("data");
       });

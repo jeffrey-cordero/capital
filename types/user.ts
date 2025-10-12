@@ -182,4 +182,3 @@ export type UserDetails = Omit<User, "user_id" | "password">;
  * @see {@link updateUserSchema} - Schema defining validation rules
  */
 export type UserUpdates = Omit<z.infer<typeof updateUserSchema>, "user_id">;
-

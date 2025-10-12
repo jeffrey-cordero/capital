@@ -18,7 +18,6 @@ import { sendErrors, sendSuccess } from "@/lib/response";
 export function configureToken(res: Response, user_id: string, secondsUntilExpire?: number): void {
    // Store access and refresh tokens in HTTP-only cookies
    const access_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "60min" });
-
    res.cookie("access_token", access_token, {
       httpOnly: true,
       sameSite: "none",
