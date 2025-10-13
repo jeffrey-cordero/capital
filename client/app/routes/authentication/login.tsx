@@ -33,7 +33,7 @@ export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm<z.infer<typeof loginSchema>>({
       resolver: zodResolver(loginSchema),
-      mode: "onBlur",
+      mode: "onSubmit",
       defaultValues: {
          username: "",
          password: ""

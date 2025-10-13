@@ -37,7 +37,7 @@ export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
    const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm({
       resolver: zodResolver(userSchema),
-      mode: "onBlur",
+      mode: "onSubmit",
       defaultValues: {
          name: "",
          birthday: "" as unknown as Date,

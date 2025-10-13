@@ -3,13 +3,8 @@ import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { authenticateRefreshToken, authenticateToken, clearToken, configureToken } from "@/lib/middleware";
+import { TEST_SECRET, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockMiddleware, createMockResponse, MockResponse } from "@/tests/utils/api";
-
-/**
- * Test constants
- */
-const TEST_SECRET = "test-secret-key";
-const TEST_USER_ID = "test-user-123";
 
 /**
  * Set test secret before running tests
@@ -17,6 +12,15 @@ const TEST_USER_ID = "test-user-123";
 beforeAll(() => {
    process.env.SESSION_SECRET = TEST_SECRET;
 });
+
+/**
+ * Mock the error logger to minimize the output
+ */
+jest.mock("@/lib/logger", () => ({
+   logger: {
+      error: jest.fn()
+   }
+}));
 
 /**
  * Helper function to test unexpected error handling
@@ -102,10 +106,13 @@ describe("Middleware Functions", () => {
       });
 
       it("should use default refresh token expiration when secondsUntilExpire is not provided", () => {
+         // Arrange
          const res = createMockResponse();
 
+         // Act
          configureToken(res as Response, TEST_USER_ID);
 
+         // Assert
          const refreshToken = res.cookieData.find(c => c.name === "refresh_token");
          expect(refreshToken).toBeDefined();
 
@@ -116,10 +123,11 @@ describe("Middleware Functions", () => {
       });
 
       it("should handle missing SESSION_SECRET environment variable", () => {
+         // Arrange
          delete process.env.SESSION_SECRET;
-
          const res = createMockResponse();
 
+         // Act & Assert
          // This should throw an error since JWT requires a secret
          expect(() => configureToken(res as Response, TEST_USER_ID)).toThrow("secretOrPrivateKey must have a value");
 
@@ -130,10 +138,13 @@ describe("Middleware Functions", () => {
 
    describe("clearToken", () => {
       it("should clear both access_token and refresh_token cookies", () => {
+         // Arrange
          const res = createMockResponse();
 
+         // Act
          clearToken(res as Response);
 
+         // Assert
          expect(res.clearCookieData).toHaveLength(2);
 
          // Check access_token cleared
@@ -150,70 +161,94 @@ describe("Middleware Functions", () => {
 
    describe("authenticateToken", () => {
       it("should authenticate valid access token and attach user_id", () => {
+         // Arrange
          const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "1h" });
          const { req, res, next } = createMockMiddleware({ access_token: validToken });
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.locals.user_id).toBe(TEST_USER_ID);
          expect(next).toHaveBeenCalled();
          expect(res.status).not.toHaveBeenCalled();
       });
 
       it("should return unauthorized when token is missing and authentication required", () => {
+         // Arrange
          const { req, res, next } = createMockMiddleware();
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
          expect(next).not.toHaveBeenCalled();
       });
 
       it("should return unauthorized with refreshable flag for expired token", () => {
+         // Arrange
          const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1h" });
          const { req, res, next } = createMockMiddleware({ access_token: expiredToken });
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         expect(res.json).toHaveBeenCalledWith({ code: HTTP_STATUS.UNAUTHORIZED, data: { refreshable: true } });
+         expect(res.json).toHaveBeenCalledWith({ data: { refreshable: true } });
          // Not clearing cookie on expired token as it's handled by the client refresh flow
          expect(next).not.toHaveBeenCalled();
       });
 
       it("should return forbidden for invalid JWT signature", () => {
+         // Arrange
          const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
          const { req, res, next } = createMockMiddleware({ access_token: invalidToken });
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
          expect(res.clearCookie).toHaveBeenCalledWith("access_token");
          expect(next).not.toHaveBeenCalled();
       });
 
       it("should return forbidden for malformed JWT", () => {
+         // Arrange
          const { req, res, next } = createMockMiddleware({ access_token: "not-a-valid-jwt" });
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
          expect(res.clearCookie).toHaveBeenCalledWith("access_token");
          expect(next).not.toHaveBeenCalled();
       });
 
       it("should return forbidden when user_id is missing from JWT payload", () => {
+         // Arrange
          const tokenWithoutUserId = jwt.sign({ some_field: "value" }, TEST_SECRET);
          const { req, res, next } = createMockMiddleware({ access_token: tokenWithoutUserId });
 
          const middleware = authenticateToken(true);
+
+         // Act
          middleware(req, res, next);
 
+         // Assert
          expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
          expect(next).not.toHaveBeenCalled();
       });

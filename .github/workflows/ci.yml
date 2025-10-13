@@ -89,6 +89,10 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
+      - name: "Build Shared Types"
+        working-directory: types
+        run: npm ci && npm run build
+
       - name: "Run Playwright E2E Tests"
         working-directory: client
         env:

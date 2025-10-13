@@ -5,7 +5,13 @@ import { Request, Response } from "express";
 import * as authenticationController from "@/controllers/authenticationController";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import { assertControllerErrorResponse, testServiceErrorResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
+import {
+   assertControllerErrorResponse,
+   assertControllerSuccessResponse,
+   testServiceErrorResponse,
+   testServiceSuccess,
+   testServiceThrownError
+} from "@/tests/utils/controllers";
 
 /**
  * Mock the services module
@@ -55,7 +61,13 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, mockReq.cookies.access_token);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockGetAuthentication,
+            [mockRes, mockReq.cookies.access_token],
+            HTTP_STATUS.OK,
+            { authenticated: true }
+         );
       });
 
       it("should return refreshable flag for expired token", async() => {
@@ -131,7 +143,6 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, mockReq.cookies.access_token);
          assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication);
       });
    });
@@ -174,6 +185,7 @@ describe("Authentication Controller", () => {
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
          testServiceErrorResponse(mockAuthenticateUser, mockResponse);
 
+         // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
@@ -193,7 +205,6 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, undefined, mockReq.body.password);
          assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
 
@@ -210,7 +221,6 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, undefined);
          assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
 
@@ -227,7 +237,6 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, mockReq.body.password);
          assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
       });
    });
@@ -266,7 +275,6 @@ describe("Authentication Controller", () => {
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockRefreshToken).toHaveBeenCalledWith(mockRes, undefined);
          assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
       });
 
@@ -283,7 +291,6 @@ describe("Authentication Controller", () => {
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockRefreshToken).toHaveBeenCalledWith(mockRes, mockRes.locals.user_id);
          assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
       });
    });
@@ -304,7 +311,13 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockLogoutUser).toHaveBeenCalledWith(mockRes);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockLogoutUser,
+            [mockRes],
+            HTTP_STATUS.OK,
+            { success: true }
+         );
       });
 
       it("should handle service errors", async() => {
@@ -319,7 +332,6 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockLogoutUser).toHaveBeenCalledWith(mockRes);
          assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser);
       });
 

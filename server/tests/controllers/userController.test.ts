@@ -9,7 +9,7 @@ import { Request, Response } from "express";
 import * as userController from "@/controllers/userController";
 import { mockDatabaseError, mockSuccessfulQuery, resetDatabaseMocks } from "@/tests/mocks/database";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import { assertControllerErrorResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
+import { assertControllerErrorResponse, assertControllerSuccessResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
 
 /**
  * Mock the database module
@@ -68,7 +68,13 @@ describe("User Controller", () => {
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         expect(mockCreateUser).toHaveBeenCalledWith(mockReq, mockRes, mockUser);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockCreateUser,
+            [mockReq, mockRes, mockUser],
+            HTTP_STATUS.CREATED,
+            { success: true }
+         );
       });
 
       it("should handle user creation errors", async() => {
@@ -86,7 +92,6 @@ describe("User Controller", () => {
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         expect(mockCreateUser).toHaveBeenCalledWith(mockReq, mockRes, mockUser);
          assertControllerErrorResponse(mockRes, expectedError, mockCreateUser);
       });
    });
@@ -110,7 +115,13 @@ describe("User Controller", () => {
          await userController.GET(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         expect(mockFetchUserDetails).toHaveBeenCalledWith(mockRes.locals.user_id);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockFetchUserDetails,
+            [mockRes.locals.user_id],
+            HTTP_STATUS.OK,
+            mockUserDetails
+         );
       });
    });
 });

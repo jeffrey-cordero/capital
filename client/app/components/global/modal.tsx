@@ -157,7 +157,7 @@ export default function Modal({ open, onClose, children, sx, displayWarning = fa
          <Fade
             in = { open }
             mountOnEnter = { true }
-            timeout = { 0 }
+            timeout = { 250 }
             unmountOnExit = { true }
          >
             <ModalContent sx = { sx }>

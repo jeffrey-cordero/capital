@@ -75,6 +75,40 @@ export function createMockRepositoryResponse<T>(data: T[]): T[] {
 }
 
 /**
+ * Assert that a controller properly handled a service success by verifying both the service call and the success response
+ *
+ * @param {Partial<Response>} mockRes - Mock response object
+ * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
+ * @param {any[]} expectedServiceArgs - Expected arguments passed to the service function
+ * @param {number} expectedStatusCode - Expected HTTP status code (200, 201, or 204)
+ * @param {any} expectedData - Expected data to be sent in the response body
+ */
+export function assertControllerSuccessResponse(
+   mockRes: Partial<Response>,
+   mockServiceFunction: jest.MockedFunction<any>,
+   expectedServiceArgs: any[],
+   expectedStatusCode: number,
+   expectedData: any
+): void {
+   // Verify the service function was called with the expected arguments
+   expect(mockServiceFunction).toHaveBeenCalledWith(...expectedServiceArgs);
+
+   // Verify the HTTP status code was set correctly
+   expect(mockRes.status).toHaveBeenCalledWith(expectedStatusCode);
+
+   if (expectedStatusCode === HTTP_STATUS.NO_CONTENT) {
+      // For 204 responses, verify no JSON was sent
+      expect(mockRes.json).not.toHaveBeenCalled();
+   } else {
+      // For 200/201 responses, verify JSON was sent with correct data
+      expect(mockRes.json).toHaveBeenCalledWith({ data: expectedData });
+   }
+
+   // Always verify the response ends
+   expect(mockRes.end).toHaveBeenCalled();
+}
+
+/**
  * Assert that a controller properly handled a service error by verifying both the error was thrown and the error response
  *
  * @param {Partial<Response>} mockRes - Mock response object
@@ -90,15 +124,17 @@ export function assertControllerErrorResponse(
    statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
    errors: Record<string, string> = { server: "Internal Server Error" }
 ): void {
+   const { logger } = require("@/lib/logger");
+
    // Verify the service function throws the expected error
    expect(mockServiceFunction()).rejects.toThrow(expectedError);
 
+   // Verify the error stack is being logged
+   expect(logger.error).toHaveBeenCalledWith(expectedError.stack);
+
    // Verify the controller handled the error response properly
    expect(mockRes.status).toHaveBeenCalledWith(statusCode);
-   expect(mockRes.json).toHaveBeenCalledWith({
-      code: statusCode,
-      errors: errors
-   });
+   expect(mockRes.json).toHaveBeenCalledWith({ errors: errors });
    expect(mockRes.end).toHaveBeenCalled();
 }
 
@@ -109,13 +145,27 @@ export function assertControllerErrorResponse(
  */
 export function createMockSubmitServiceRequest(): jest.Mock {
    return jest.fn(async(res, callback) => {
+      const { logger } = require("@/lib/logger");
+      const { sendSuccess, sendErrors } = require("@/lib/response");
+
+      // Make sure error logging is mocked
+      logger.error = jest.fn();
+
       try {
-         return await callback();
-      } catch {
-         const { sendErrors } = require("@/lib/response");
-         return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, {
-            server: "Internal Server Error"
-         });
+         const result: ServerResponse = await callback();
+
+         if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT) {
+            // Success response
+            return sendSuccess(res, result.code, result.data ?? undefined);
+         } else {
+            // Error response
+            return sendErrors(res, result.code, result.errors);
+         }
+      } catch (error: any) {
+         // Log unexpected errors
+         logger.error(error.stack);
+
+         return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       }
    });
 }
