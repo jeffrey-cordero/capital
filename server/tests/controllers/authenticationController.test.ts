@@ -7,10 +7,7 @@ import { TEST_TOKENS, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
 import {
    assertControllerErrorResponse,
-   assertControllerSuccessResponse,
-   testServiceErrorResponse,
-   testServiceSuccess,
-   testServiceThrownError
+   assertControllerSuccessResponse
 } from "@/tests/utils/controllers";
 
 /**
@@ -55,7 +52,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceSuccess(mockGetAuthentication, mockResponse);
+         mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
@@ -81,7 +78,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceErrorResponse(mockGetAuthentication, mockResponse);
+         mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
@@ -101,7 +98,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceSuccess(mockGetAuthentication, mockResponse);
+         mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
@@ -121,7 +118,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceSuccess(mockGetAuthentication, mockResponse);
+         mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
@@ -137,7 +134,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockGetAuthentication = authenticationService.getAuthentication as jest.MockedFunction<typeof authenticationService.getAuthentication>;
-         testServiceThrownError(mockGetAuthentication, expectedError);
+         mockGetAuthentication.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.GET(mockReq, mockRes, mockNext);
@@ -159,7 +156,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceSuccess(mockAuthenticateUser, mockResponse);
+         mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
@@ -183,7 +180,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceErrorResponse(mockAuthenticateUser, mockResponse);
+         mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
@@ -199,7 +196,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, expectedError);
+         mockAuthenticateUser.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
@@ -215,7 +212,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, expectedError);
+         mockAuthenticateUser.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
@@ -231,7 +228,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         testServiceThrownError(mockAuthenticateUser, expectedError);
+         mockAuthenticateUser.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
@@ -253,7 +250,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         testServiceSuccess(mockRefreshToken, mockResponse);
+         mockRefreshToken.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
@@ -269,7 +266,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         testServiceThrownError(mockRefreshToken, expectedError);
+         mockRefreshToken.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
@@ -285,7 +282,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         testServiceThrownError(mockRefreshToken, expectedError);
+         mockRefreshToken.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
@@ -305,7 +302,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockLogoutUser = authenticationService.logoutUser as jest.MockedFunction<typeof authenticationService.logoutUser>;
-         testServiceSuccess(mockLogoutUser, mockResponse);
+         mockLogoutUser.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
@@ -326,7 +323,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockLogoutUser = authenticationService.logoutUser as jest.MockedFunction<typeof authenticationService.logoutUser>;
-         testServiceThrownError(mockLogoutUser, expectedError);
+         mockLogoutUser.mockRejectedValue(expectedError);
 
          // Act
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
@@ -344,7 +341,7 @@ describe("Authentication Controller", () => {
 
          const authenticationService = await import("@/services/authenticationService");
          const mockLogoutUser = authenticationService.logoutUser as jest.MockedFunction<typeof authenticationService.logoutUser>;
-         testServiceSuccess(mockLogoutUser, mockResponse);
+         mockLogoutUser.mockResolvedValue(mockResponse);
 
          // Act & Assert - First logout call
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);

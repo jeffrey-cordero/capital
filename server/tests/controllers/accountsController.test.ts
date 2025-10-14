@@ -13,10 +13,7 @@ import { createMockRequest, createMockResponse } from "@/tests/utils/api";
 import {
    assertControllerErrorResponse,
    assertControllerSuccessResponse,
-   assertControllerValidationErrorResponse,
-   testServiceErrorResponse,
-   testServiceSuccess,
-   testServiceThrownError
+   assertControllerValidationErrorResponse
 } from "@/tests/utils/controllers";
 
 /**
@@ -66,7 +63,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
-         testServiceSuccess(mockFetchAccounts, mockResponse);
+         mockFetchAccounts.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
@@ -90,7 +87,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
-         testServiceSuccess(mockFetchAccounts, mockResponse);
+         mockFetchAccounts.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
@@ -111,7 +108,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
-         testServiceThrownError(mockFetchAccounts, expectedError);
+         mockFetchAccounts.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
@@ -127,7 +124,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
-         testServiceThrownError(mockFetchAccounts, expectedError);
+         mockFetchAccounts.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
@@ -150,7 +147,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
-         testServiceSuccess(mockCreateAccount, mockResponse);
+         mockCreateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
@@ -185,7 +182,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
-         testServiceErrorResponse(mockCreateAccount, mockResponse);
+         mockCreateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
@@ -211,7 +208,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
-         testServiceThrownError(mockCreateAccount, expectedError);
+         mockCreateAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
@@ -229,7 +226,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
-         testServiceThrownError(mockCreateAccount, expectedError);
+         mockCreateAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
@@ -258,7 +255,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         testServiceSuccess(mockUpdateAccount, mockResponse);
+         mockUpdateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -289,7 +286,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccountsOrdering = accountsService.updateAccountsOrdering as jest.MockedFunction<typeof accountsService.updateAccountsOrdering>;
-         testServiceSuccess(mockUpdateAccountsOrdering, mockResponse);
+         mockUpdateAccountsOrdering.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -324,7 +321,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         testServiceErrorResponse(mockUpdateAccount, mockResponse);
+         mockUpdateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -362,7 +359,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         testServiceErrorResponse(mockUpdateAccount, mockResponse);
+         mockUpdateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -389,7 +386,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         testServiceThrownError(mockUpdateAccount, expectedError);
+         mockUpdateAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -412,7 +409,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         testServiceThrownError(mockUpdateAccount, expectedError);
+         mockUpdateAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
@@ -436,7 +433,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         testServiceSuccess(mockDeleteAccount, mockResponse);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
@@ -465,7 +462,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         testServiceErrorResponse(mockDeleteAccount, mockResponse);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
@@ -489,7 +486,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         testServiceThrownError(mockDeleteAccount, expectedError);
+         mockDeleteAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
@@ -507,7 +504,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         testServiceThrownError(mockDeleteAccount, expectedError);
+         mockDeleteAccount.mockRejectedValue(expectedError);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
@@ -530,7 +527,7 @@ describe("Accounts Controller", () => {
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         testServiceErrorResponse(mockDeleteAccount, mockResponse);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);

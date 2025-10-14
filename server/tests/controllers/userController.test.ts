@@ -9,7 +9,7 @@ import { Request, Response } from "express";
 import * as userController from "@/controllers/userController";
 import { mockDatabaseError, mockSuccessfulQuery, resetDatabaseMocks } from "@/tests/mocks/database";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import { assertControllerErrorResponse, assertControllerSuccessResponse, testServiceSuccess, testServiceThrownError } from "@/tests/utils/controllers";
+import { assertControllerErrorResponse, assertControllerSuccessResponse } from "@/tests/utils/controllers";
 
 /**
  * Mock the database module
@@ -62,7 +62,7 @@ describe("User Controller", () => {
             data: { success: true }
          };
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
-         testServiceSuccess(mockCreateUser, mockResponse);
+         mockCreateUser.mockResolvedValue(mockResponse);
 
          // Act
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
@@ -86,7 +86,7 @@ describe("User Controller", () => {
 
          const userService = await import("@/services/userService");
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
-         testServiceThrownError(mockCreateUser, expectedError);
+         mockCreateUser.mockRejectedValue(expectedError);
 
          // Act
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
@@ -109,7 +109,7 @@ describe("User Controller", () => {
             data: mockUserDetails
          };
          const mockFetchUserDetails = userService.fetchUserDetails as jest.MockedFunction<typeof userService.fetchUserDetails>;
-         testServiceSuccess(mockFetchUserDetails, mockResponse);
+         mockFetchUserDetails.mockResolvedValue(mockResponse);
 
          // Act
          await userController.GET(mockReq as Request, mockRes as Response, jest.fn());
@@ -139,7 +139,7 @@ describe("User Controller", () => {
             data: { success: true }
          };
          const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
-         testServiceSuccess(mockUpdateAccountDetails, mockResponse);
+         mockUpdateAccountDetails.mockResolvedValue(mockResponse);
 
          // Act
          await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
@@ -164,7 +164,7 @@ describe("User Controller", () => {
 
          const userService = await import("@/services/userService");
          const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
-         testServiceThrownError(mockUpdateAccountDetails, expectedError);
+         mockUpdateAccountDetails.mockRejectedValue(expectedError);
 
          // Act
          await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
@@ -186,7 +186,7 @@ describe("User Controller", () => {
             data: { success: true }
          };
          const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
-         testServiceSuccess(mockDeleteAccount, mockResponse);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
@@ -209,7 +209,7 @@ describe("User Controller", () => {
 
          const userService = await import("@/services/userService");
          const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
-         testServiceThrownError(mockDeleteAccount, expectedError);
+         mockDeleteAccount.mockRejectedValue(expectedError);
 
          // Act
          await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());

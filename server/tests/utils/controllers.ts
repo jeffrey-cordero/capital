@@ -5,44 +5,6 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Response } from "express";
 
-/**
- * Test service success responses
- *
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
- * @param {ServerResponse} expectedResponse - Expected service response
- */
-export function testServiceSuccess(
-   mockServiceFunction: jest.MockedFunction<any>,
-   expectedResponse: ServerResponse
-): void {
-   mockServiceFunction.mockResolvedValue(expectedResponse);
-}
-
-/**
- * Test service error responses
- *
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
- * @param {ServerResponse} errorResponse - Error service response
- */
-export function testServiceErrorResponse(
-   mockServiceFunction: jest.MockedFunction<any>,
-   errorResponse: ServerResponse
-): void {
-   mockServiceFunction.mockResolvedValue(errorResponse);
-}
-
-/**
- * Test service thrown errors
- *
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
- * @param {Error} expectedError - Expected error to be thrown
- */
-export function testServiceThrownError(
-   mockServiceFunction: jest.MockedFunction<any>,
-   expectedError: Error
-): void {
-   mockServiceFunction.mockRejectedValue(expectedError);
-}
 
 /**
  * Test Redis error scenarios with logging
