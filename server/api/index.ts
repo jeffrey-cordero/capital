@@ -23,7 +23,7 @@ const port = process.env.PORT || 8000;
  * Rate limiting with logging measures
  */
 app.use(rateLimit({
-   max: process.env.RATE_LIMITING_ENABLED ? 500 : Infinity,
+   max: process.env.RATE_LIMITING_ENABLED == "true" ? 500 : Infinity,
    windowMs: 5 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
@@ -54,7 +54,7 @@ app.use(compression());
  * CORS middleware for cross-origin resource sharing configuration
  */
 app.use(cors({
-   origin: [process.env.CLIENT_URL || "http://localhost:3000"],
+   origin: (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000").split(","),
    methods: ["GET", "POST", "PUT", "DELETE"],
    allowedHeaders: ["Content-Type", "Authorization"],
    credentials: true

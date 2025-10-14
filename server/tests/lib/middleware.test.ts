@@ -7,14 +7,14 @@ import { TEST_SECRET, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockMiddleware, createMockResponse, MockResponse } from "@/tests/utils/api";
 
 /**
- * Set test secret before running tests
+ * Set the JWT test secret before running middleware tests
  */
 beforeAll(() => {
    process.env.SESSION_SECRET = TEST_SECRET;
 });
 
 /**
- * Mock the error logger to minimize the output
+ * Mock the error logger to minimize the output during middleware tests
  */
 jest.mock("@/lib/logger", () => ({
    logger: {

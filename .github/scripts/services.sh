@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Usage: ./manage-services.sh <action> [timeout]
-# Actions: start, stop, wait, health-check
-# Options: timeout (default: 180 seconds)
-
 set -euo pipefail
 
 ACTION="$1"
@@ -27,28 +23,20 @@ wait_for_services() {
 
    local elapsed=0
 
-   while [[ "$elapsed" -lt "$timeout" ]]; do
-      if docker compose logs server | grep -q "Started Capital"; then
-         echo "Server is ready after ${elapsed} seconds!"
-         return 0
+   start_time=$(date +%s)
+   while (( $(date +%s) - start_time < timeout )); do
+      if docker compose logs server | grep -qE "Started Capital on port [0-9]+"; then
+         echo "Server is ready!"
+         exit 0
       fi
-
-      echo "Waiting for server... (${elapsed}s/${timeout}s)"
-
-      # Show logs every 30 seconds for debugging
-      if [[ $((elapsed % 30)) -eq 0 ]] && [[ "$elapsed" -gt 0 ]]; then
-         echo "Recent server logs:"
-         docker compose logs --tail=5 capital_server
-      fi
-
+      echo "Waiting for server..."
       sleep 5
-      elapsed=$((elapsed + 5))
    done
 
    # Timeout reached
    echo "ERROR: Server failed to start within ${timeout} seconds"
    echo "Final server logs:"
-   docker compose logs capital_server
+   docker compose logs server
    echo "Service status:"
    docker compose ps
    return 1
@@ -96,42 +84,29 @@ setup_environment() {
 }
 
 main() {
-    case "$ACTION" in
-        "start")
-            setup_environment
-            start_services
-            ;;
-        "stop")
-            stop_services
-            ;;
-        "wait")
-            wait_for_services "$TIMEOUT"
-            ;;
-        "health-check")
-            health_check
-            ;;
-        "full-start")
-            setup_environment
-            start_services
-            wait_for_services "$TIMEOUT"
-            health_check
-            ;;
-        *)
-            echo "ERROR: Invalid action '$ACTION'"
-            echo ""
-            echo "Usage: $0 <action> [timeout]"
-            echo ""
-            echo "Actions:"
-            echo "  start        - Start Docker services"
-            echo "  stop         - Stop and cleanup Docker services"
-            echo "  wait         - Wait for services to be ready"
-            echo "  health-check - Check service health"
-            echo "  full-start   - Complete startup sequence (setup + start + wait + health-check)"
-            echo ""
-            echo "Options:"
-            echo "  timeout      - Timeout in seconds for all actions (default: 180)"
-            exit 1
-            ;;
+   case "$ACTION" in
+      "start")
+         setup_environment
+         start_services
+         wait_for_services "$TIMEOUT"
+         health_check
+         ;;
+      "stop")
+         stop_services
+         ;;
+      *)
+         echo "ERROR: Invalid action '$ACTION'"
+         echo ""
+         echo "Usage: $0 <action> [timeout]"
+         echo ""
+         echo "Actions:"
+         echo "  start        - Start Docker services (setup + start + wait + health-check)"
+         echo "  stop         - Stop and cleanup Docker services"
+         echo ""
+         echo "Options:"
+         echo "  timeout      - Timeout in seconds for all actions (default: 180)"
+         exit 1
+         ;;
     esac
 }
 

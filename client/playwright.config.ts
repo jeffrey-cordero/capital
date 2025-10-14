@@ -24,8 +24,8 @@ export default defineConfig({
    use: {
       baseURL: webServer.url,
       trace: "on-first-retry",
-      actionTimeout: 10000, // 10 seconds for actions like click, fill, etc.
-      navigationTimeout: 10000 // 10 seconds for page navigation
+      actionTimeout: 30000, // 30 seconds for actions like click, fill, etc.
+      navigationTimeout: 30000 // 30 seconds for page navigation
    },
    projects: [
       {

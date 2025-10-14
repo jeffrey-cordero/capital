@@ -19,6 +19,7 @@ test.describe("Login Authentication", () => {
 
          // Verify navigation link to the registration page
          await expect(page.getByTestId("register-link")).toBeVisible();
+
          // Un-blur the auto-focused input to ensure proper navigation
          await page.evaluate(() => (document.activeElement as HTMLInputElement)?.blur());
          await page.getByTestId("register-link").click();

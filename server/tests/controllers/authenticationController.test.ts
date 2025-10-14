@@ -143,7 +143,7 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication);
+         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication, [mockRes, mockReq.cookies.access_token]);
       });
    });
 
@@ -205,7 +205,7 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
       });
 
       it("should handle missing password", async() => {
@@ -221,7 +221,7 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
       });
 
       it("should handle service errors", async() => {
@@ -237,7 +237,7 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
       });
    });
 
@@ -275,7 +275,7 @@ describe("Authentication Controller", () => {
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
+         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id]);
       });
 
       it("should handle service errors", async() => {
@@ -291,7 +291,7 @@ describe("Authentication Controller", () => {
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken);
+         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id]);
       });
    });
 
@@ -332,7 +332,7 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser);
+         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser, [mockRes]);
       });
 
       it("should handle multiple logout calls", async() => {

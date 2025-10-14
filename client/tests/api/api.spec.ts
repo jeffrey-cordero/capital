@@ -53,7 +53,7 @@ test.describe("API Error Handling", () => {
          await page.route("**/api/v1/authentication/login", route => {
             route.fulfill({
                status: HTTP_STATUS.TOO_MANY_REQUESTS,
-               body: JSON.stringify({ code: HTTP_STATUS.TOO_MANY_REQUESTS, errors: { server: message } })
+               body: JSON.stringify({ errors: { server: message } })
             });
          });
 
@@ -82,7 +82,7 @@ test.describe("API Error Handling", () => {
             refreshCalled = true;
             await route.fulfill({
                status: HTTP_STATUS.OK,
-               body: JSON.stringify({ code: HTTP_STATUS.OK, data: { success: refreshAttempted } })
+               body: JSON.stringify({ data: { success: refreshAttempted } })
             });
          });
 
@@ -92,12 +92,12 @@ test.describe("API Error Handling", () => {
                refreshAttempted = true;
                await route.fulfill({
                   status: HTTP_STATUS.UNAUTHORIZED,
-                  body: JSON.stringify({ code: HTTP_STATUS.UNAUTHORIZED, data: { refreshable: true } })
+                  body: JSON.stringify({ data: { refreshable: true } })
                });
             } else {
                await route.fulfill({
                   status: HTTP_STATUS.OK,
-                  body: JSON.stringify({ code: HTTP_STATUS.OK, data: { authenticated: refreshCalled } })
+                  body: JSON.stringify({ data: { authenticated: refreshCalled } })
                });
             }
          });

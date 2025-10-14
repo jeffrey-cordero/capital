@@ -72,7 +72,7 @@ jobs:
         run: npm ci
 
       - name: "Setup E2E Test Environment"
-        run: ./.github/scripts/services.sh full-start
+        run: ./.github/scripts/services.sh start
 
       - name: "Cache Playwright Browsers"
         uses: actions/cache@v4

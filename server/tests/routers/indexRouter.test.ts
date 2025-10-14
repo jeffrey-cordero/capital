@@ -21,7 +21,6 @@ describe("Index Router", () => {
 
          // Assert
          expect(response.body).toEqual({
-            code: HTTP_STATUS.OK,
             data: "Healthy REST API"
          });
       });
@@ -33,7 +32,6 @@ describe("Index Router", () => {
             .expect("Content-Type", /json/);
 
          // Assert
-         expect(response.body).toHaveProperty("code");
          expect(response.body).toHaveProperty("data");
       });
    });

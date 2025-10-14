@@ -13,6 +13,7 @@ import { createMockRequest, createMockResponse } from "@/tests/utils/api";
 import {
    assertControllerErrorResponse,
    assertControllerSuccessResponse,
+   assertControllerValidationErrorResponse,
    testServiceErrorResponse,
    testServiceSuccess,
    testServiceThrownError
@@ -116,7 +117,7 @@ describe("Accounts Controller", () => {
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts);
+         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts, [TEST_USER_ID]);
       });
 
       it("should handle missing user_id", async() => {
@@ -132,7 +133,7 @@ describe("Accounts Controller", () => {
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts);
+         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts, [undefined]);
       });
    });
 
@@ -190,7 +191,17 @@ describe("Accounts Controller", () => {
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         expect(mockCreateAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccount);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockCreateAccount,
+            [TEST_USER_ID, invalidAccount],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               name: "Name must be at least 1 character",
+               type: "Invalid account type",
+               balance: "Balance must be a valid currency amount"
+            }
+         );
       });
 
       it("should handle missing account data", async() => {
@@ -205,8 +216,9 @@ describe("Accounts Controller", () => {
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
+         // TODO: this should be all errors...
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount, [TEST_USER_ID, {}]);
       });
 
       it("should handle service errors", async() => {
@@ -223,7 +235,7 @@ describe("Accounts Controller", () => {
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount, [TEST_USER_ID, newAccount]);
       });
    });
 
@@ -319,7 +331,15 @@ describe("Accounts Controller", () => {
 
          // Assert
          const expectedData = { ...updateData, account_id: accountId };
-         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockUpdateAccount,
+            [TEST_USER_ID, expectedData],
+            HTTP_STATUS.NOT_FOUND,
+            {
+               account_id: "Account does not exist based on the provided ID"
+            }
+         );
       });
 
       it("should handle validation errors", async() => {
@@ -349,7 +369,16 @@ describe("Accounts Controller", () => {
 
          // Assert
          const expectedData = { ...invalidUpdateData, account_id: accountId };
-         expect(mockUpdateAccount).toHaveBeenCalledWith(TEST_USER_ID, expectedData);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockUpdateAccount,
+            [TEST_USER_ID, expectedData],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               name: "Name must be at least 1 character",
+               balance: "Balance must be a valid currency amount"
+            }
+         );
       });
 
       it("should handle missing account ID", async() => {
@@ -366,7 +395,7 @@ describe("Accounts Controller", () => {
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount, [TEST_USER_ID, { name: "Updated Account", account_id: undefined }]);
       });
 
       it("should handle service errors", async() => {
@@ -390,7 +419,7 @@ describe("Accounts Controller", () => {
 
          // Assert
          const expectedData = { ...updateData, account_id: accountId };
-         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount, [TEST_USER_ID, expectedData]);
       });
    });
 
@@ -442,7 +471,15 @@ describe("Accounts Controller", () => {
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, accountId);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockDeleteAccount,
+            [TEST_USER_ID, accountId],
+            HTTP_STATUS.NOT_FOUND,
+            {
+               account_id: "Account does not exist based on the provided ID or does not belong to the user"
+            }
+         );
       });
 
       it("should handle missing account ID", async() => {
@@ -457,8 +494,9 @@ describe("Accounts Controller", () => {
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
+         // TODO: this should not be a thrown error
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount, [TEST_USER_ID, undefined]);
       });
 
       it("should handle service errors", async() => {
@@ -475,7 +513,7 @@ describe("Accounts Controller", () => {
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount);
+         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount, [TEST_USER_ID, accountId]);
       });
 
       it("should handle invalid account ID format", async() => {
@@ -498,7 +536,15 @@ describe("Accounts Controller", () => {
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         expect(mockDeleteAccount).toHaveBeenCalledWith(TEST_USER_ID, invalidAccountId);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockDeleteAccount,
+            [TEST_USER_ID, invalidAccountId],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               account_id: "Missing account ID"
+            }
+         );
       });
    });
 });

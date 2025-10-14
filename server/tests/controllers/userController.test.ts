@@ -92,7 +92,7 @@ describe("User Controller", () => {
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockCreateUser);
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateUser, [mockReq, mockRes, mockUser]);
       });
    });
 
@@ -122,6 +122,100 @@ describe("User Controller", () => {
             HTTP_STATUS.OK,
             mockUserDetails
          );
+      });
+   });
+
+   describe("PUT /users", () => {
+      it("should update user account details successfully", async() => {
+         // Arrange
+         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         const mockUpdates = { username: "newusername", email: "newemail@example.com" };
+         mockReq.body = mockUpdates;
+         mockSuccessfulQuery();
+
+         const userService = await import("@/services/userService");
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.OK,
+            data: { success: true }
+         };
+         const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
+         testServiceSuccess(mockUpdateAccountDetails, mockResponse);
+
+         // Act
+         await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
+
+         // Assert
+         assertControllerSuccessResponse(
+            mockRes,
+            mockUpdateAccountDetails,
+            [TEST_CONSTANTS.TEST_USER_ID, mockUpdates],
+            HTTP_STATUS.OK,
+            { success: true }
+         );
+      });
+
+      it("should handle user update errors", async() => {
+         // Arrange
+         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         const mockUpdates = { username: "newusername" };
+         mockReq.body = mockUpdates;
+         mockDatabaseError("Update failed");
+         const expectedError = new Error("Update failed");
+
+         const userService = await import("@/services/userService");
+         const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
+         testServiceThrownError(mockUpdateAccountDetails, expectedError);
+
+         // Act
+         await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
+
+         // Assert
+         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccountDetails, [TEST_CONSTANTS.TEST_USER_ID, mockUpdates]);
+      });
+   });
+
+   describe("DELETE /users", () => {
+      it("should delete user account successfully", async() => {
+         // Arrange
+         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockSuccessfulQuery();
+
+         const userService = await import("@/services/userService");
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.OK,
+            data: { success: true }
+         };
+         const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
+         testServiceSuccess(mockDeleteAccount, mockResponse);
+
+         // Act
+         await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
+
+         // Assert
+         assertControllerSuccessResponse(
+            mockRes,
+            mockDeleteAccount,
+            [mockReq, mockRes],
+            HTTP_STATUS.OK,
+            { success: true }
+         );
+      });
+
+      it("should handle user deletion errors", async() => {
+         // Arrange
+         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockDatabaseError("Deletion failed");
+         const expectedError = new Error("Deletion failed");
+
+         const userService = await import("@/services/userService");
+         const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
+         testServiceThrownError(mockDeleteAccount, expectedError);
+
+         // Act
+         await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
+
+         // Assert
+         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount, [mockReq, mockRes]);
       });
    });
 });
