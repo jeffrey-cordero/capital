@@ -3,7 +3,7 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 
 import * as authenticationController from "@/controllers/authenticationController";
-import { createMockRequest, createMockResponse } from "@/tests/utils/api";
+import { createMockRequest, createMockResponse, MockRequest, MockResponse } from "@/tests/utils/api";
 import { assertControllerErrorResponse, assertControllerSuccessResponse, assertControllerValidationErrorResponse } from "@/tests/utils/controllers";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
 
@@ -26,13 +26,13 @@ jest.mock("@/services/authenticationService", () => ({
 }));
 
 describe("Authentication Controller", () => {
-   let mockReq: Request;
-   let mockRes: Response;
+   let mockReq: MockRequest;
+   let mockRes: MockResponse;
    let mockNext: jest.Mock;
 
    beforeEach(() => {
-      mockReq = createMockRequest() as Request;
-      mockRes = createMockResponse() as Response;
+      mockReq = createMockRequest();
+      mockRes = createMockResponse();
       mockNext = jest.fn();
       jest.clearAllMocks();
    });

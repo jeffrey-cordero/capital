@@ -1,16 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 
-/**
- * Creates a mock Express Request object
- *
- * @param {Record<string, string>} cookies - Optional cookies to include in request
- * @returns {Partial<Request>} Mock request object with cookies
- */
-export const createMockRequest = (cookies: Record<string, string> = {}): Partial<Request> => ({ cookies });
 
 /**
- * Mock Response interface with test tracking capabilities
+ * Mock Request/Response interfaces for unit testing purposes
  */
+export interface MockRequest extends Partial<Request> {
+   ip?: string;
+   body?: any;
+   params?: Record<string, string>;
+   query?: Record<string, string>;
+   headers?: Record<string, string>;
+   cookies?: Record<string, string>;
+}
+
 export interface MockResponse extends Partial<Response> {
    statusCode?: number;
    jsonData?: any;
@@ -19,17 +21,37 @@ export interface MockResponse extends Partial<Response> {
    end: jest.Mock;
    cookie: jest.Mock;
    clearCookie: jest.Mock;
+   cookies: Record<string, { value: string; options: Record<string, any> }>;
    locals: Record<string, any>;
-   clearCookieData: Array<{ name: string; options?: any }>;
-   cookieData: Array<{ name: string; value: string; options: any }>;
+}
+
+type MockRequestOptions = {
+   cookies?: Record<string, string>;
+   body?: any;
+   params?: Record<string, string>;
+   query?: Record<string, string>;
+   headers?: Record<string, string>;
+}
+
+type MockMiddleware = {
+   req: MockRequest,
+   res: MockResponse,
+   next: jest.MockableFunction
 }
 
 /**
- * Mock middleware function
+ * Creates a mock Express Request object
+ *
+ * @param {MockRequestOptions} options - Mock request options
+ * @returns {MockRequest} Mock request object
  */
-export interface MockMiddleware extends jest.Mock {
-   (req: Request, res: Response, next: NextFunction): void;
-}
+export const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
+   cookies: options.cookies ?? {},
+   body: options.body ?? {},
+   params: options.params ?? {},
+   query: options.query ?? {},
+   headers: options.headers ?? {},
+});
 
 /**
  * Creates a mock Express Response object with tracking capabilities
@@ -39,16 +61,15 @@ export interface MockMiddleware extends jest.Mock {
 export const createMockResponse = (): MockResponse => {
    const res: MockResponse = {
       locals: {},
-      clearCookieData: [],
-      cookieData: [],
-      statusCode: undefined,
+      cookies: {},
+      statusCode: 0,
       jsonData: undefined,
-      clearCookie: jest.fn((name: string, options?: any) => {
-         res.clearCookieData.push({ name, options });
+      clearCookie: jest.fn((name: string, _options?: Record<string, any>) => {
+         delete res.cookies[name];
          return res;
       }),
-      cookie: jest.fn((name: string, value: string, options: any) => {
-         res.cookieData.push({ name, value, options });
+      cookie: jest.fn((name: string, value: string, options: Record<string, any>) => {
+         res.cookies[name] = { value, options };
          return res;
       }),
       status: jest.fn((code: number) => {
@@ -61,24 +82,18 @@ export const createMockResponse = (): MockResponse => {
       }),
       end: jest.fn(() => res)
    };
+
    return res;
 };
 
 /**
- * Creates a mock Express Next function
+ * Creates a mock Express middleware function
  *
- * @returns {jest.Mock} Mock next function for middleware testing
+ * @param {MockRequestOptions} options - Mock request options
+ * @returns {MockMiddleware} Mock middleware function with mock request, response, and next functions
  */
-export const createMockNext = (): jest.Mock => jest.fn();
-
-/**
- * Creates a mock Express middleware function.
- *
- * @param {Record<string, string>} cookies - Optional cookies to include in request
- * @returns {Request, res: Response, next: NextFunction } Mock middleware function with request, response, and next functions
- */
-export const createMockMiddleware = (cookies: Record<string, string> = {}): { req: Request, res: Response, next: NextFunction } => ({
-   req: createMockRequest(cookies) as Request,
-   res: createMockResponse() as Response,
-   next: createMockNext() as NextFunction
+export const createMockMiddleware = (options: MockRequestOptions = {}): MockMiddleware => ({
+   req: createMockRequest(options),
+   res: createMockResponse(),
+   next: jest.fn()
 });
