@@ -8,13 +8,9 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 
 import * as accountsController from "@/controllers/accountsController";
-import { TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import {
-   assertControllerErrorResponse,
-   assertControllerSuccessResponse,
-   assertControllerValidationErrorResponse
-} from "@/tests/utils/controllers";
+import { assertControllerErrorResponse, assertControllerSuccessResponse, assertControllerValidationErrorResponse } from "@/tests/utils/controllers";
+import { TEST_USER_ID } from "@/tests/utils/tokens";
 
 /**
  * Mock the services module
@@ -120,17 +116,31 @@ describe("Accounts Controller", () => {
       it("should handle missing user_id", async() => {
          // Arrange
          mockRes.locals = {};
-         const expectedError = new Error("Missing user_id");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               user_id: "Missing user_id"
+            }
+         };
 
          const accountsService = await import("@/services/accountsService");
          const mockFetchAccounts = accountsService.fetchAccounts as jest.MockedFunction<typeof accountsService.fetchAccounts>;
-         mockFetchAccounts.mockRejectedValue(expectedError);
+         mockFetchAccounts.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockFetchAccounts, [undefined]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockFetchAccounts,
+            [undefined],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               user_id: "Missing user_id"
+            }
+         );
       });
    });
 
@@ -204,18 +214,35 @@ describe("Accounts Controller", () => {
       it("should handle missing account data", async() => {
          // Arrange
          mockReq.body = {};
-         const expectedError = new Error("Missing account data");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               name: "Required",
+               type: "Required",
+               balance: "Required"
+            }
+         };
 
          const accountsService = await import("@/services/accountsService");
          const mockCreateAccount = accountsService.createAccount as jest.MockedFunction<typeof accountsService.createAccount>;
-         mockCreateAccount.mockRejectedValue(expectedError);
+         mockCreateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.POST(mockReq as Request, mockRes as Response, mockNext);
 
-         // TODO: this should be all errors...
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockCreateAccount, [TEST_USER_ID, {}]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockCreateAccount,
+            [TEST_USER_ID, {}],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               name: "Required",
+               type: "Required",
+               balance: "Required"
+            }
+         );
       });
 
       it("should handle service errors", async() => {
@@ -382,17 +409,31 @@ describe("Accounts Controller", () => {
          // Arrange
          mockReq.params = {};
          mockReq.body = { name: "Updated Account" };
-         const expectedError = new Error("Missing account ID");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               account_id: "Missing account ID"
+            }
+         };
 
          const accountsService = await import("@/services/accountsService");
          const mockUpdateAccount = accountsService.updateAccount as jest.MockedFunction<typeof accountsService.updateAccount>;
-         mockUpdateAccount.mockRejectedValue(expectedError);
+         mockUpdateAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.PUT(mockReq as Request, mockRes as Response, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccount, [TEST_USER_ID, { name: "Updated Account", account_id: undefined }]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockUpdateAccount,
+            [TEST_USER_ID, { name: "Updated Account", account_id: undefined }],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               account_id: "Missing account ID"
+            }
+         );
       });
 
       it("should handle service errors", async() => {
@@ -482,18 +523,31 @@ describe("Accounts Controller", () => {
       it("should handle missing account ID", async() => {
          // Arrange
          mockReq.params = {};
-         const expectedError = new Error("Missing account ID");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               account_id: "Missing account ID"
+            }
+         };
 
          const accountsService = await import("@/services/accountsService");
          const mockDeleteAccount = accountsService.deleteAccount as jest.MockedFunction<typeof accountsService.deleteAccount>;
-         mockDeleteAccount.mockRejectedValue(expectedError);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await accountsController.DELETE(mockReq as Request, mockRes as Response, mockNext);
 
-         // TODO: this should not be a thrown error
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount, [TEST_USER_ID, undefined]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockDeleteAccount,
+            [TEST_USER_ID, undefined],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               account_id: "Missing account ID"
+            }
+         );
       });
 
       it("should handle service errors", async() => {

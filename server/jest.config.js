@@ -31,6 +31,5 @@ export default {
     '^@/(.*)$': '<rootDir>/$1',
     '^capital/(.*)$': '<rootDir>/../types/$1.ts',
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
 };

@@ -6,11 +6,11 @@
  * Creates a mock Express request object
  */
 export const createMockRequest = (overrides: Partial<any> = {}) => ({
-   body: {},
-   params: {},
-   query: {},
-   headers: {},
    ip: "127.0.0.1",
+   headers: {},
+   params: {},
+   body: {},
+   query: {},
    ...overrides
 });
 
@@ -19,11 +19,9 @@ export const createMockRequest = (overrides: Partial<any> = {}) => ({
  */
 export const createMockResponse = () => {
    const res: any = {};
-
    res.status = jest.fn().mockReturnValue(res);
    res.json = jest.fn().mockReturnValue(res);
    res.send = jest.fn().mockReturnValue(res);
    res.locals = {};
-
    return res;
 };

@@ -2,7 +2,6 @@
  * Test token constants for authentication testing, used across middleware and controller
  * tests for consistent token testing
  */
-
 export const TEST_TOKENS = {
    VALID_ACCESS: "valid.access.token",
    INVALID_ACCESS: "invalid.access.token",

@@ -7,9 +7,8 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 
 import * as userController from "@/controllers/userController";
-import { mockDatabaseError, mockSuccessfulQuery, resetDatabaseMocks } from "@/tests/mocks/database";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import { assertControllerErrorResponse, assertControllerSuccessResponse } from "@/tests/utils/controllers";
+import { assertControllerSuccessResponse, assertControllerValidationErrorResponse } from "@/tests/utils/controllers";
 
 /**
  * Mock the database module
@@ -46,7 +45,6 @@ describe("User Controller", () => {
    beforeEach(() => {
       mockReq = createMockRequest();
       mockRes = createMockResponse();
-      resetDatabaseMocks();
    });
 
    describe("POST /users", () => {
@@ -54,7 +52,6 @@ describe("User Controller", () => {
          // Arrange
          const mockUser = createMockUser();
          mockReq.body = mockUser;
-         mockSuccessfulQuery();
 
          const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
@@ -77,22 +74,37 @@ describe("User Controller", () => {
          );
       });
 
-      it("should handle user creation errors", async() => {
+      it("should handle user creation conflicts", async() => {
          // Arrange
          const mockUser = createMockUser();
          mockReq.body = mockUser;
-         mockDatabaseError("User already exists");
-         const expectedError = new Error("User already exists");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.CONFLICT,
+            errors: {
+               username: "Username already exists",
+               email: "Email already exists"
+            }
+         };
 
          const userService = await import("@/services/userService");
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
-         mockCreateUser.mockRejectedValue(expectedError);
+         mockCreateUser.mockResolvedValue(mockResponse);
 
          // Act
          await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockCreateUser, [mockReq, mockRes, mockUser]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockCreateUser,
+            [mockReq, mockRes, mockUser],
+            HTTP_STATUS.CONFLICT,
+            {
+               username: "Username already exists",
+               email: "Email already exists"
+            }
+         );
       });
    });
 
@@ -100,7 +112,6 @@ describe("User Controller", () => {
       it("should fetch user details successfully", async() => {
          // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
-         mockSuccessfulQuery();
 
          const userService = await import("@/services/userService");
          const mockUserDetails = createMockUser();
@@ -131,7 +142,6 @@ describe("User Controller", () => {
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockUpdates = { username: "newusername", email: "newemail@example.com" };
          mockReq.body = mockUpdates;
-         mockSuccessfulQuery();
 
          const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
@@ -154,23 +164,36 @@ describe("User Controller", () => {
          );
       });
 
-      it("should handle user update errors", async() => {
+      it("should handle user update conflicts", async() => {
          // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockUpdates = { username: "newusername" };
          mockReq.body = mockUpdates;
-         mockDatabaseError("Update failed");
-         const expectedError = new Error("Update failed");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.CONFLICT,
+            errors: {
+               username: "Username already exists"
+            }
+         };
 
          const userService = await import("@/services/userService");
          const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
-         mockUpdateAccountDetails.mockRejectedValue(expectedError);
+         mockUpdateAccountDetails.mockResolvedValue(mockResponse);
 
          // Act
          await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockUpdateAccountDetails, [TEST_CONSTANTS.TEST_USER_ID, mockUpdates]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockUpdateAccountDetails,
+            [TEST_CONSTANTS.TEST_USER_ID, mockUpdates],
+            HTTP_STATUS.CONFLICT,
+            {
+               username: "Username already exists"
+            }
+         );
       });
    });
 
@@ -178,7 +201,6 @@ describe("User Controller", () => {
       it("should delete user account successfully", async() => {
          // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
-         mockSuccessfulQuery();
 
          const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
@@ -201,21 +223,34 @@ describe("User Controller", () => {
          );
       });
 
-      it("should handle user deletion errors", async() => {
+      it("should handle user not found during deletion", async() => {
          // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
-         mockDatabaseError("Deletion failed");
-         const expectedError = new Error("Deletion failed");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.NOT_FOUND,
+            errors: {
+               user_id: "User not found"
+            }
+         };
 
          const userService = await import("@/services/userService");
          const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
-         mockDeleteAccount.mockRejectedValue(expectedError);
+         mockDeleteAccount.mockResolvedValue(mockResponse);
 
          // Act
          await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockDeleteAccount, [mockReq, mockRes]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockDeleteAccount,
+            [mockReq, mockRes],
+            HTTP_STATUS.NOT_FOUND,
+            {
+               user_id: "User not found"
+            }
+         );
       });
    });
 });

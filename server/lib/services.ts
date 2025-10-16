@@ -67,7 +67,7 @@ export const submitServiceRequest = async(
    try {
       const result: ServerResponse = await serviceMethod();
 
-      if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT) {
+      if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
          // Success response
          return sendSuccess(res, result.code, result.data ?? undefined);
       } else {

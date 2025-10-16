@@ -5,7 +5,6 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Response } from "express";
 
-
 /**
  * Test Redis error scenarios with logging
  *
@@ -75,27 +74,29 @@ export function assertControllerSuccessResponse(
  * handles both thrown errors and validation errors
  *
  * @param {Partial<Response>} mockRes - Mock response object
- * @param {Error} expectedError - Expected error that should be thrown by the service
+ * @param {Error | undefined} expectedError - Expected error that should be thrown by the service
  * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
  * @param {any[]} [expectedServiceArgs] - Expected arguments passed to the service function
  * @param {number} [expectedStatusCode] - Expected HTTP status code (defaults to INTERNAL_SERVER_ERROR)
- * @param {Record<string, string>} [expectedErrors] - Expected error object (defaults to server error)
+ * @param {Record<string, any>} [expectedErrors] - Expected error object (defaults to server error)
  */
 export function assertControllerErrorResponse(
    mockRes: Partial<Response>,
-   expectedError: Error,
+   expectedError: Error | undefined,
    mockServiceFunction: jest.MockedFunction<any>,
    expectedServiceArgs?: any[],
    expectedStatusCode?: number,
-   expectedErrors?: Record<string, string>
+   expectedErrors?: Record<string, any>
 ): void {
    const { logger } = require("@/lib/logger");
 
    // Verify the service function throws the expected error
-   expect(mockServiceFunction()).rejects.toThrow(expectedError);
+   if (expectedError) {
+      expect(mockServiceFunction()).rejects.toThrow(expectedError);
 
-   // Verify the error stack is being logged
-   expect(logger.error).toHaveBeenCalledWith(expectedError.stack);
+      // Verify the error stack is being logged
+      expect(logger.error).toHaveBeenCalledWith(expectedError.stack);
+   }
 
    // If service args are provided, verify the service function was called with them
    if (expectedServiceArgs) {
@@ -153,7 +154,7 @@ export function createMockSubmitServiceRequest(): jest.Mock {
       try {
          const result: ServerResponse = await callback();
 
-         if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT) {
+         if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
             // Success response
             return sendSuccess(res, result.code, result.data ?? undefined);
          } else {

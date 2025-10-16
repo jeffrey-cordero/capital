@@ -3,8 +3,8 @@ import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { authenticateRefreshToken, authenticateToken, clearToken, configureToken } from "@/lib/middleware";
-import { TEST_SECRET, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockMiddleware, createMockResponse, MockResponse } from "@/tests/utils/api";
+import { TEST_SECRET, TEST_USER_ID } from "@/tests/utils/tokens";
 
 /**
  * Set the JWT test secret before running middleware tests

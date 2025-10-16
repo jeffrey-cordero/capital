@@ -3,12 +3,9 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Request, Response } from "express";
 
 import * as authenticationController from "@/controllers/authenticationController";
-import { TEST_TOKENS, TEST_USER_ID } from "@/tests/constants/tokens";
 import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import {
-   assertControllerErrorResponse,
-   assertControllerSuccessResponse
-} from "@/tests/utils/controllers";
+import { assertControllerErrorResponse, assertControllerSuccessResponse, assertControllerValidationErrorResponse } from "@/tests/utils/controllers";
+import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
 
 /**
  * Mock the services module
@@ -84,7 +81,13 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, mockReq.cookies.access_token);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockGetAuthentication,
+            [mockRes, mockReq.cookies.access_token],
+            HTTP_STATUS.UNAUTHORIZED,
+            { refreshable: true }
+         );
       });
 
       it("should return unauthenticated for invalid token", async() => {
@@ -104,7 +107,13 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, mockReq.cookies.access_token);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockGetAuthentication,
+            [mockRes, mockReq.cookies.access_token],
+            HTTP_STATUS.OK,
+            { authenticated: false }
+         );
       });
 
       it("should handle missing access token", async() => {
@@ -124,7 +133,13 @@ describe("Authentication Controller", () => {
          await authenticationController.GET(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockGetAuthentication).toHaveBeenCalledWith(mockRes, undefined);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockGetAuthentication,
+            [mockRes, undefined],
+            HTTP_STATUS.OK,
+            { authenticated: false }
+         );
       });
 
       it("should handle service errors", async() => {
@@ -162,7 +177,13 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, mockReq.body.password);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockAuthenticateUser,
+            [mockRes, mockReq.body.username, mockReq.body.password],
+            HTTP_STATUS.OK,
+            { success: true }
+         );
       });
 
       it("should return error for invalid credentials", async() => {
@@ -186,39 +207,76 @@ describe("Authentication Controller", () => {
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockAuthenticateUser).toHaveBeenCalledWith(mockRes, mockReq.body.username, mockReq.body.password);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockAuthenticateUser,
+            [mockRes, mockReq.body.username, mockReq.body.password],
+            HTTP_STATUS.UNAUTHORIZED,
+            {
+               username: "Invalid credentials",
+               password: "Invalid credentials"
+            }
+         );
       });
 
       it("should handle missing username", async() => {
          // Arrange
          mockReq.body = { password: VALID_LOGIN.password };
-         const expectedError = new Error("Missing username");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               username: "Required"
+            }
+         };
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         mockAuthenticateUser.mockRejectedValue(expectedError);
+         mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockAuthenticateUser,
+            [mockRes, undefined, mockReq.body.password],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               username: "Required"
+            }
+         );
       });
 
       it("should handle missing password", async() => {
          // Arrange
          mockReq.body = { username: VALID_LOGIN.username };
-         const expectedError = new Error("Missing password");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               password: "Required"
+            }
+         };
 
          const authenticationService = await import("@/services/authenticationService");
          const mockAuthenticateUser = authenticationService.authenticateUser as jest.MockedFunction<typeof authenticationService.authenticateUser>;
-         mockAuthenticateUser.mockRejectedValue(expectedError);
+         mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.LOGIN(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockAuthenticateUser,
+            [mockRes, mockReq.body.username, undefined],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               password: "Required"
+            }
+         );
       });
 
       it("should handle service errors", async() => {
@@ -256,23 +314,43 @@ describe("Authentication Controller", () => {
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         expect(mockRefreshToken).toHaveBeenCalledWith(mockRes, mockRes.locals.user_id);
+         assertControllerSuccessResponse(
+            mockRes,
+            mockRefreshToken,
+            [mockRes, mockRes.locals.user_id],
+            HTTP_STATUS.OK,
+            { success: true }
+         );
       });
 
       it("should handle missing user_id in locals", async() => {
          // Arrange
          mockRes.locals = {};
-         const expectedError = new Error("Missing user_id");
+
+         const mockResponse: ServerResponse = {
+            code: HTTP_STATUS.BAD_REQUEST,
+            errors: {
+               user_id: "Missing user_id"
+            }
+         };
 
          const authenticationService = await import("@/services/authenticationService");
          const mockRefreshToken = authenticationService.refreshToken as jest.MockedFunction<typeof authenticationService.refreshToken>;
-         mockRefreshToken.mockRejectedValue(expectedError);
+         mockRefreshToken.mockResolvedValue(mockResponse);
 
          // Act
          await authenticationController.REFRESH(mockReq, mockRes, mockNext);
 
          // Assert
-         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id]);
+         assertControllerValidationErrorResponse(
+            mockRes,
+            mockRefreshToken,
+            [mockRes, undefined],
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               user_id: "Missing user_id"
+            }
+         );
       });
 
       it("should handle service errors", async() => {
