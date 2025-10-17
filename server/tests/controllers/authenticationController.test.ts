@@ -1,6 +1,5 @@
 import { createLoginCredentials, VALID_LOGIN } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
-import { Request, Response } from "express";
 
 import * as authenticationController from "@/controllers/authenticationController";
 import { createMockRequest, createMockResponse, MockRequest, MockResponse } from "@/tests/utils/api";
@@ -52,7 +51,7 @@ describe("Authentication Controller", () => {
          mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.GET(mockReq, mockRes, mockNext);
+         await authenticationController.GET(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -78,7 +77,7 @@ describe("Authentication Controller", () => {
          mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.GET(mockReq, mockRes, mockNext);
+         await authenticationController.GET(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -104,7 +103,7 @@ describe("Authentication Controller", () => {
          mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.GET(mockReq, mockRes, mockNext);
+         await authenticationController.GET(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -130,7 +129,7 @@ describe("Authentication Controller", () => {
          mockGetAuthentication.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.GET(mockReq, mockRes, mockNext);
+         await authenticationController.GET(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -152,7 +151,7 @@ describe("Authentication Controller", () => {
          mockGetAuthentication.mockRejectedValue(expectedError);
 
          // Act
-         await authenticationController.GET(mockReq, mockRes, mockNext);
+         await authenticationController.GET(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication, [mockRes, mockReq.cookies.access_token]);
@@ -174,7 +173,7 @@ describe("Authentication Controller", () => {
          mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.LOGIN(mockReq, mockRes, mockNext);
+         await authenticationController.LOGIN(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -204,7 +203,7 @@ describe("Authentication Controller", () => {
          mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.LOGIN(mockReq, mockRes, mockNext);
+         await authenticationController.LOGIN(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerValidationErrorResponse(
@@ -235,7 +234,7 @@ describe("Authentication Controller", () => {
          mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.LOGIN(mockReq, mockRes, mockNext);
+         await authenticationController.LOGIN(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerValidationErrorResponse(
@@ -265,7 +264,7 @@ describe("Authentication Controller", () => {
          mockAuthenticateUser.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.LOGIN(mockReq, mockRes, mockNext);
+         await authenticationController.LOGIN(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerValidationErrorResponse(
@@ -289,7 +288,7 @@ describe("Authentication Controller", () => {
          mockAuthenticateUser.mockRejectedValue(expectedError);
 
          // Act
-         await authenticationController.LOGIN(mockReq, mockRes, mockNext);
+         await authenticationController.LOGIN(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
@@ -311,7 +310,7 @@ describe("Authentication Controller", () => {
          mockRefreshToken.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.REFRESH(mockReq, mockRes, mockNext);
+         await authenticationController.REFRESH(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -339,7 +338,7 @@ describe("Authentication Controller", () => {
          mockRefreshToken.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.REFRESH(mockReq, mockRes, mockNext);
+         await authenticationController.REFRESH(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerValidationErrorResponse(
@@ -363,7 +362,7 @@ describe("Authentication Controller", () => {
          mockRefreshToken.mockRejectedValue(expectedError);
 
          // Act
-         await authenticationController.REFRESH(mockReq, mockRes, mockNext);
+         await authenticationController.REFRESH(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id]);
@@ -383,7 +382,7 @@ describe("Authentication Controller", () => {
          mockLogoutUser.mockResolvedValue(mockResponse);
 
          // Act
-         await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
+         await authenticationController.LOGOUT(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(
@@ -404,7 +403,7 @@ describe("Authentication Controller", () => {
          mockLogoutUser.mockRejectedValue(expectedError);
 
          // Act
-         await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
+         await authenticationController.LOGOUT(mockReq as any, mockRes as any, mockNext as any);
 
          // Assert
          assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser, [mockRes]);
@@ -422,11 +421,11 @@ describe("Authentication Controller", () => {
          mockLogoutUser.mockResolvedValue(mockResponse);
 
          // Act & Assert - First logout call
-         await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
+         await authenticationController.LOGOUT(mockReq as any, mockRes as any, mockNext as any);
          expect(mockLogoutUser).toHaveBeenCalledTimes(1);
 
          // Act & Assert - Second logout call
-         await authenticationController.LOGOUT(mockReq, mockRes, mockNext);
+         await authenticationController.LOGOUT(mockReq as any, mockRes as any, mockNext as any);
          expect(mockLogoutUser).toHaveBeenCalledTimes(2);
       });
    });

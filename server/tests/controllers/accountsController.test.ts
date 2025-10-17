@@ -62,7 +62,7 @@ describe("Accounts Controller", () => {
          mockFetchAccounts.mockResolvedValue(mockResponse);
 
          // Act
-         await accountsController.GET(mockReq as Request, mockRes as Response, mockNext);
+         await accountsController.GET(mockReq as Request, mockRes as Response, mockNext as any);
 
          // Assert
          assertControllerSuccessResponse(

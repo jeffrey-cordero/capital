@@ -1,5 +1,4 @@
-import { NextFunction, Request, Response } from "express";
-
+import { Request, Response } from "express";
 
 /**
  * Mock Request/Response interfaces for unit testing purposes
@@ -36,7 +35,7 @@ type MockRequestOptions = {
 type MockMiddleware = {
    req: MockRequest,
    res: MockResponse,
-   next: jest.MockableFunction
+   next: jest.Mock
 }
 
 /**
@@ -50,7 +49,7 @@ export const createMockRequest = (options: MockRequestOptions = {}): MockRequest
    body: options.body ?? {},
    params: options.params ?? {},
    query: options.query ?? {},
-   headers: options.headers ?? {},
+   headers: options.headers ?? {}
 });
 
 /**

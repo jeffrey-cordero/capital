@@ -11,6 +11,7 @@
   "rules": {
     "@typescript-eslint/no-require-imports": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
     "no-var": "error",
     "prefer-const": "error",
     "comma-spacing": "error",
@@ -34,7 +35,14 @@
     "keyword-spacing": ["error", { "after": true }],
     "no-multiple-empty-lines": ["error", { "max": 1 }],
     "space-before-function-paren": ["error", "never"],
-    "no-console": ["error", { "allow": ["error"] }]
+    "no-console": ["error", { "allow": ["error"] }],
+    "no-unused-vars": ["error",{
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_",
+      "destructuredArrayIgnorePattern": "^_"
+      }
+    ]
   },
   "overrides": [
     {
