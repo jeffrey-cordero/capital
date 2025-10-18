@@ -30,6 +30,11 @@ export const TEST_USER_ID = "test-user-123";
 export const TEST_SECRET = "test-secret-key";
 
 /**
+ * Test user payload constant for JWT tokens
+ */
+export const TEST_USER_PAYLOAD = { user_id: TEST_USER_ID };
+
+/**
  * Tests unexpected error handling
  *
  * @param {any} middlewareFunction - The middleware function to test
@@ -122,14 +127,13 @@ export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_to
  *
  * @param {string} tokenValue - The JWT token value
  * @param {"access_token" | "refresh_token"} tokenType - The type of token to verify
- * @param {string} expectedUserId - The expected user ID
  * @param {number} customExpirationSeconds - Optional custom expiration time in seconds
  */
-export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_token" | "refresh_token", expectedUserId: string = TEST_USER_ID, customExpirationSeconds?: number): jwt.JwtPayload {
+export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_token" | "refresh_token", customExpirationSeconds?: number): jwt.JwtPayload {
    const decoded = jwt.verify(tokenValue, TEST_SECRET) as jwt.JwtPayload;
 
    // Verify user_id is present
-   expect(decoded).toMatchObject({ user_id: expectedUserId });
+   expect(decoded).toMatchObject({ user_id: TEST_USER_ID });
 
    // Verify expiration is present
    expect(decoded.exp).toBeDefined();
@@ -158,9 +162,8 @@ export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_toke
  * Helper function to verify both access and refresh tokens are properly configured
  *
  * @param {MockResponse} mockRes - The mock response object
- * @param {string} expectedUserId - The expected user ID
  */
-export function verifyTokenConfiguration(mockRes: MockResponse, expectedUserId: string = TEST_USER_ID) {
+export function verifyTokenConfiguration(mockRes: MockResponse) {
    // Validate cookie structure
    expect(Object.keys(mockRes.cookies)).toHaveLength(2);
    validateTokenCookie(mockRes, "refresh_token", true);
@@ -170,8 +173,8 @@ export function verifyTokenConfiguration(mockRes: MockResponse, expectedUserId: 
    const accessToken = mockRes.cookies["access_token"];
    const refreshToken = mockRes.cookies["refresh_token"];
 
-   verifyAndDecodeToken(accessToken!.value, "access_token", expectedUserId);
-   verifyAndDecodeToken(refreshToken!.value, "refresh_token", expectedUserId);
+   verifyAndDecodeToken(accessToken!.value, "access_token");
+   verifyAndDecodeToken(refreshToken!.value, "refresh_token");
 }
 
 /**
@@ -242,11 +245,10 @@ export function verifyUnauthorizedWithRefreshable(mockRes: MockResponse, mockNex
  * Verifies successful authentication with user_id
  *
  * @param {MockResponse} mockRes - The mock response object
- * @param {string} expectedUserId - The expected user ID
  * @param {jest.Mock} mockNext - The mock next function
  */
-export function verifySuccessfulAuthentication(mockRes: MockResponse, expectedUserId: string, mockNext: jest.Mock): void {
-   expect(mockRes.locals.user_id).toBe(expectedUserId);
+export function verifySuccessfulAuthentication(mockRes: MockResponse, mockNext: jest.Mock): void {
+   expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
    expect(mockRes.status).not.toHaveBeenCalled();
    expect(mockNext).toHaveBeenCalled();
 }
@@ -255,12 +257,11 @@ export function verifySuccessfulAuthentication(mockRes: MockResponse, expectedUs
  * Verifies successful authentication with refresh token expiration
  *
  * @param {MockResponse} mockRes - The mock response object
- * @param {string} expectedUserId - The expected user ID
  * @param {jest.Mock} mockNext - The mock next function
  */
-export function verifySuccessfulRefreshAuthentication(mockRes: MockResponse, expectedUserId: string, mockNext: jest.Mock): void {
+export function verifySuccessfulRefreshAuthentication(mockRes: MockResponse, mockNext: jest.Mock): void {
    // Verify successful authentication is attached to res.locals as the user_id and next method is called
-   verifySuccessfulAuthentication(mockRes, expectedUserId, mockNext);
+   verifySuccessfulAuthentication(mockRes, mockNext);
 
    // Verify refresh token expiration is attached to res.locals as a Date object
    expect(mockRes.locals.refresh_token_expiration).toBeDefined();
