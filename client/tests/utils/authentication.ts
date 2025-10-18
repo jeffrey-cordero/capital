@@ -1,10 +1,3 @@
-/**
- * Authentication test utilities for managing user registration, login, and route verification
- *
- * This module provides constants and helper functions for testing authentication flows
- * including registration, login, route protection, and session management
- */
-
 import { expect, type Page } from "@playwright/test";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -39,10 +32,8 @@ export const isUserAuthenticated = async(page: Page): Promise<boolean> => {
 };
 
 /**
- * Derives the sidebar link title from a route path
- *
- * Extracts the last segment after "/" and capitalizes it.
- * Special case: root route "/" returns "Home"
+ * Derives the sidebar link title from a route path, extracts the last segment
+ * after "/" and capitalizes it, special case: root route "/" returns "Home"
  *
  * @param {string} route - The route path (e.g., "/login", "/dashboard/accounts")
  * @returns {string} The expected sidebar link title (e.g., "Login", "Accounts")
@@ -56,10 +47,9 @@ export const getRouteLinkTitle = (route: string): string => {
 };
 
 /**
- * Creates a test user by registering with unique credentials
- *
- * This function handles the complete registration flow including navigation,
- * form submission, and optional logout for creating mock users
+ * Creates a test user by registering with unique credentials, handles the
+ * complete registration flow including navigation, form submission, and optional
+ * logout for creating mock users
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data

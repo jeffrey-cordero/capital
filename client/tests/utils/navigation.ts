@@ -1,10 +1,3 @@
-/**
- * Navigation test utilities for routing and page transition testing
- *
- * This module provides helper functions for testing navigation flows,
- * route protection, sidebar interactions, and user logout functionality
- */
-
 import { expect, type Page } from "@playwright/test";
 import {
    DASHBOARD_ROUTE,
@@ -15,9 +8,8 @@ import {
 } from "@tests/utils/authentication";
 
 /**
- * Navigates to the specified path and waits for navigation to complete
- *
- * Waits until network is idle to ensure all resources are loaded before proceeding
+ * Navigates to the specified path and waits for navigation to complete, waits
+ * until network is idle to ensure all resources are loaded before proceeding
  *
  * @param {Page} page - Playwright page instance
  * @param {string} path - The route path to navigate to
@@ -28,9 +20,8 @@ export const navigateToPath = async(page: Page, path: string): Promise<void> => 
 };
 
 /**
- * Verifies that a specific sidebar link is marked as active
- *
- * Opens the sidebar, checks that the specified link has the active state, then closes the sidebar
+ * Verifies that a specific sidebar link is marked as active, opens the sidebar,
+ * checks that the specified link has the active state, then closes the sidebar
  *
  * @param {Page} page - Playwright page instance
  * @param {string} linkTitle - The title of the link to verify (e.g., "Dashboard", "Login", "Accounts")
@@ -47,10 +38,9 @@ export const verifySidebarLinkActive = async(page: Page, linkTitle: string): Pro
 };
 
 /**
- * Tests that all unverified routes redirect to dashboard when user is authenticated
- *
- * Iterates through all public routes and verifies authenticated users
- * are redirected to the dashboard
+ * Tests that all unverified routes redirect to dashboard when user is
+ * authenticated, iterates through all public routes and verifies authenticated
+ * users are redirected to the dashboard
  *
  * @param {Page} page - Playwright page instance
  * @returns {Promise<void>}
@@ -63,10 +53,9 @@ export const testUnverifiedRouteRedirects = async(page: Page): Promise<void> => 
 };
 
 /**
- * Performs user logout operation through various interfaces
- *
- * Supports logout via sidebar or settings page, verifying the user
- * is on the dashboard before logout and redirected to root after
+ * Performs user logout operation through various interfaces, supports logout via
+ * sidebar or settings page, verifying the user is on the dashboard before logout
+ * and redirected to root after
  *
  * @param {Page} page - Playwright page instance
  * @param {"sidebar" | "settings"} method - The logout method to use
@@ -93,10 +82,9 @@ export const logoutUser = async(page: Page, method: "sidebar" | "settings"): Pro
 };
 
 /**
- * Verifies route redirects based on authentication state
- *
- * For verified routes: verifies unauthenticated users are redirected to dashboard
- * For unverified routes: verifies authenticated users are redirected to login page
+ * Verifies route redirects based on authentication state, for verified routes:
+ * verifies unauthenticated users are redirected to dashboard, for unverified
+ * routes: verifies authenticated users are redirected to login page
  *
  * @param {Page} page - Playwright page instance
  * @param {"verified" | "unverified"} type - The type of routes to test

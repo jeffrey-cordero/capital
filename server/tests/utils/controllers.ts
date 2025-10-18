@@ -1,14 +1,10 @@
-/**
- * Controller test utilities, providing helper functions for testing controller success/error scenarios
-*/
-
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { RequestHandler, Response } from "express";
 
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
- * Test Redis error scenarios with logging
+ * Tests Redis error scenarios with logging
  *
  * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
  * @param {string} errorMessage - Expected error message
@@ -28,7 +24,7 @@ export function testRedisErrorScenario(
 }
 
 /**
- * Create mock repository response with exact types
+ * Creates mock repository response with exact types
  *
  * @param {T[]} data - Array of data to return
  * @returns {T[]} Mock repository response
@@ -38,7 +34,8 @@ export function createMockRepositoryResponse<T>(data: T[]): T[] {
 }
 
 /**
- * Assert that a controller properly handled a service success by verifying both the service call and the success response
+ * Asserts that a controller properly handled a service success by verifying both
+ * the service call and the success response
  *
  * @param {Partial<Response>} mockRes - Mock response object
  * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
@@ -72,8 +69,8 @@ export function assertControllerSuccessResponse(
 }
 
 /**
- * Assert that a controller properly handled an error by verifying both the service call and the error response, which
- * handles both thrown errors and validation errors
+ * Asserts that a controller properly handled an error by verifying both the
+ * service call and the error response, handles both thrown errors and validation errors
  *
  * @param {Partial<Response>} mockRes - Mock response object
  * @param {Error | undefined} expectedError - Expected error that should be thrown by the service
@@ -116,7 +113,7 @@ export function assertControllerErrorResponse(
 }
 
 /**
- * Assert that a controller properly handled a validation error by verifying both the service call and the error response
+ * Asserts that a controller properly handled a validation error by verifying both the service call and the error response
  *
  * @param {Partial<Response>} mockRes - Mock response object
  * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
@@ -159,7 +156,7 @@ export async function callServiceMethod(
 }
 
 /**
- * Create a mock submit service request function
+ * Creates a mock submit service request function
  *
  * @returns {jest.Mock} Mock submit service request function
  */

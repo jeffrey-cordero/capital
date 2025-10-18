@@ -1,16 +1,8 @@
-/**
- * Common test utilities for notifications, identifiers, and general test helpers
- *
- * This module provides shared utility functions for testing
- * including unique identifier generation and notification handling
- */
-
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Gets the notification locator for notifications
- *
- * Targets the data-testid="notification" attribute on notification elements
+ * Gets the notification locator for notifications, targets the
+ * data-testid="notification" attribute on notification elements
  *
  * @param {Page} page - Playwright page instance
  * @returns {Locator} Locator for the notification container
@@ -20,10 +12,9 @@ export const getNotificationLocator = (page: Page): Locator => {
 };
 
 /**
- * Verifies that a success notification appears with the expected message and type
- *
- * Checks that the notification is visible, contains the expected message,
- * and has the correct type attribute
+ * Verifies that a success notification appears with the expected message and type,
+ * checks that the notification is visible, contains the expected message, and has
+ * the correct type attribute
  *
  * @param {Page} page - Playwright page instance
  * @param {string} expectedMessage - The expected notification message text
@@ -38,9 +29,8 @@ export const verifySuccessNotification = async(page: Page, expectedMessage: stri
 };
 
 /**
- * Dismisses any visible notification notifications
- *
- * Clicks the close icon on the notification and verifies it is no longer visible
+ * Dismisses any visible notification notifications, clicks the close icon on the
+ * notification and verifies it is no longer visible
  *
  * @param {Page} page - Playwright page instance
  * @returns {Promise<void>}
@@ -52,10 +42,9 @@ export const dismissNotification = async(page: Page): Promise<void> => {
 };
 
 /**
- * Generates a truly unique identifier for testing purposes.
- *
- * Combines timestamp and random suffix to ensure uniqueness across test runs.
- * Returns a username or email format based on the type parameter.
+ * Generates a truly unique identifier for testing purposes, combines timestamp
+ * and random suffix to ensure uniqueness across test runs, returns a username
+ * or email format based on the type parameter
  *
  * @param {"username" | "email"} type - The type of identifier to generate
  * @returns {string} Unique identifier string in format "timestamp-random" or "timestamp-random@example.com"

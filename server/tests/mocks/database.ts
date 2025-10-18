@@ -1,6 +1,3 @@
-/**
- * Database mocks for server tests
- */
 import { Pool, PoolClient } from "pg";
 
 /**

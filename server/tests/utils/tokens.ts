@@ -5,8 +5,7 @@ import { TOKEN_EXPIRATIONS } from "@/lib/middleware";
 import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
- * Test token constants for authentication testing, used across middleware and controller
- * tests for consistent token testing
+ * Test token constants for authentication testing, used across middleware and controller tests for consistent token testing
  */
 export const TEST_TOKENS = {
    VALID_ACCESS: "valid.access.token",

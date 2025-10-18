@@ -14,17 +14,17 @@ import { logger } from "@/lib/logger";
 describe("Logger", () => {
    describe("logger configuration", () => {
       it("should have all proper configurations", () => {
-         // Assert - default log level
+         // Default log level
          expect(logger.level).toBe("info");
 
-         // Assert - console transport configuration
+         // Console transport configuration
          expect(logger.transports).toHaveLength(1);
          expect(logger.transports[0].constructor.name).toBe("Console");
 
-         // Assert - format configuration
+         // Format configuration
          expect(logger.format).toBeDefined();
 
-         // Assert - transport level matches logger level
+         // Transport level matches logger level
          expect((logger.transports[0] as any).level).toBe("info");
       });
    });
@@ -50,10 +50,10 @@ describe("Logger", () => {
          const testLevel = "info";
          const testMessage = "Test format verification";
 
-         // Act - Log the message
+         // Log the message
          expect(() => logger.info(testMessage)).not.toThrow();
 
-         // Assert - Verify the format components exist in the expected structure
+         // Verify the format components exist in the expected structure
          expect(logger.format).toBeDefined();
          expect(logger.level).toBe(testLevel);
 
@@ -85,25 +85,23 @@ describe("Logger", () => {
 
       testCases.forEach(({ level, message }) => {
          it(`should format ${level} messages with proper structure`, () => {
-            // Act & Assert - Verify the logger doesn't throw and has expected structure
+            // Verify the logger doesn't throw and has expected structure
             expect(() => (logger as any)[level](message)).not.toThrow();
          });
       });
 
       it("should not output debug messages when level is info", () => {
-         // Act & Assert - Debug messages should not be logged at info level
+         // Debug messages should not be logged at info level
          expect(() => logger.debug("Test debug message")).not.toThrow();
       });
 
       it("should handle multi-line messages correctly", () => {
          const multiLineMessage = "Line 1\nLine 2\nLine 3";
 
-         // Act & Assert
          expect(() => logger.info(multiLineMessage)).not.toThrow();
       });
 
       it("should handle empty messages correctly", () => {
-         // Act & Assert
          expect(() => logger.info("")).not.toThrow();
       });
    });

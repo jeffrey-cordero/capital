@@ -5,16 +5,10 @@ import * as userController from "@/controllers/userController";
 import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 import { assertControllerSuccessResponse, assertControllerValidationErrorResponse, callServiceMethod } from "@/tests/utils/controllers";
 
-/**
- * Mock the services module
- */
 jest.mock("@/lib/services", () => ({
    submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
 }));
 
-/**
- * Mock user service methods
- */
 jest.mock("@/services/userService", () => ({
    createUser: jest.fn(),
    fetchUserDetails: jest.fn(),
@@ -35,8 +29,7 @@ describe("User Controller", () => {
 
    describe("POST /users", () => {
       it("should create a new user successfully", async() => {
-         const mockUser = createMockUser();
-         mockReq.body = mockUser;
+         mockReq.body = createMockUser();
 
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.CREATED,
@@ -50,15 +43,14 @@ describe("User Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockCreateUser,
-            [mockReq, mockRes, mockUser],
+            [mockReq, mockRes, mockReq.body],
             HTTP_STATUS.CREATED,
             { success: true }
          );
       });
 
       it("should handle user creation conflicts", async() => {
-         const mockUser = createMockUser();
-         mockReq.body = mockUser;
+         mockReq.body = createMockUser();
 
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.CONFLICT,
@@ -76,7 +68,7 @@ describe("User Controller", () => {
          assertControllerValidationErrorResponse(
             mockRes,
             mockCreateUser,
-            [mockReq, mockRes, mockUser],
+            [mockReq, mockRes, mockReq.body],
             HTTP_STATUS.CONFLICT,
             {
                username: "Username already exists",

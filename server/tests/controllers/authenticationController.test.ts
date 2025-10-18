@@ -6,16 +6,10 @@ import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } fro
 import { assertControllerErrorResponse, assertControllerSuccessResponse, assertControllerValidationErrorResponse, callServiceMethod } from "@/tests/utils/controllers";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
 
-/**
- * Mock the services module
- */
 jest.mock("@/lib/services", () => ({
    submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
 }));
 
-/**
- * Mock authentication service methods
- */
 jest.mock("@/services/authenticationService", () => ({
    getAuthentication: jest.fn(),
    authenticateUser: jest.fn(),

@@ -1,15 +1,7 @@
-/**
- * Password field test utilities for visibility toggling and interaction testing
- *
- * This module provides helper functions for testing password field interactions
- * including visibility toggling, field filling, validation, and assertions
- */
-
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Default secure test password that meets complexity requirements
- * Includes uppercase, lowercase, numbers, and special characters
+ * Default secure test password that meets complexity requirements, includes uppercase, lowercase, numbers, and special characters
  */
 export const DEFAULT_TEST_PASSWORD = "TestPassword123!";
 
@@ -25,9 +17,9 @@ export const getPasswordInput = (page: Page, testId: string): Locator => {
 };
 
 /**
- * Gets the password visibility toggle icon for a specific password field
- *
- * Locates the SVG eye icon that toggles password visibility within the input's parent container
+ * Gets the password visibility toggle icon for a specific password field, locates
+ * the SVG eye icon that toggles password visibility within the input's parent
+ * container
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test ID of the password field
@@ -115,10 +107,9 @@ export const expectPasswordInputValue = async(
 };
 
 /**
- * Comprehensive test for password visibility toggle functionality
- *
- * Tests the complete flow: fill password, verify hidden, toggle to visible,
- * verify visible, toggle back to hidden
+ * Comprehensive test for password visibility toggle functionality, tests the
+ * complete flow: fill password, verify hidden, toggle to visible, verify visible,
+ * toggle back to hidden
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test ID of the password field

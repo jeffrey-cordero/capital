@@ -1,17 +1,10 @@
-/**
- * Form handling test utilities for authentication and validation testing
- *
- * This module provides constants and helper functions for testing form interactions
- * including form submission, validation error checking, and field management
- */
-
 import { expect, type Page } from "@playwright/test";
 
 const ERROR_INDICATOR_SELECTOR = "p.Mui-error";
 
 /**
- * Form data type for dynamic form filling
- * Maps field names to their string values
+ * Form data type for dynamic form filling, maps field names
+ * to their string values
  */
 type FormData = Record<string, string>;
 
@@ -47,11 +40,10 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
 };
 
 /**
- * Fills form fields with provided data and submits the form
- *
- * This function iterates through the provided data object and fills each field
- * that has a non-null/undefined value, then triggers form submission with
- * configurable options for navigation and error handling
+ * Fills form fields with provided data and submits the form, iterates through
+ * the provided data object and fills each field that has a non-null/undefined
+ * value, then triggers form submission with configurable options for navigation
+ * and error handling
  *
  * @param {Page} page - Playwright page instance
  * @param {FormData} data - Object containing test ids as keys and values to fill in the form
@@ -132,9 +124,8 @@ export const submitForm = async(
 };
 
 /**
- * Waits for validation error indicators to appear on the form
- *
- * Checks for the presence of MUI error helper text elements
+ * Waits for validation error indicators to appear on the form, checks for the
+ * presence of MUI error helper text elements
  *
  * @param {Page} page - Playwright page instance
  * @returns {Promise<void>}
@@ -144,10 +135,9 @@ export const waitForErrorIndicators = async(page: Page): Promise<void> => {
 };
 
 /**
- * Validates that a specific field displays the expected error message
- *
- * Locates the FormHelperText element within the FormControl and verifies
- * it contains the expected validation error message
+ * Validates that a specific field displays the expected error message, locates
+ * the FormHelperText element within the FormControl and verifies it contains
+ * the expected validation error message
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test id of the form field
@@ -164,9 +154,9 @@ export const validateFieldErrorMessage = async(
 };
 
 /**
- * Expects a validation error for a specific field with the given message
- *
- * Combines waiting for error indicators and validating the specific field error message
+ * Expects a validation error for a specific field with the given message,
+ * combines waiting for error indicators and validating the specific field
+ * error message
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test id of the form field
@@ -183,9 +173,8 @@ export const expectValidationError = async(
 };
 
 /**
- * Clears all form fields to reset form state
- *
- * Useful for resetting forms between test cases or validation checks
+ * Clears all form fields to reset form state, useful for resetting forms
+ * between test cases or validation checks
  *
  * @param {Page} page - Playwright page instance
  * @param {string[]} testIds - Array of test ids to clear
