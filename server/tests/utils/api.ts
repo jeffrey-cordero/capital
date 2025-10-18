@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
 /**
- * Mock Request/Response interfaces for unit testing purposes
+ * Mock Request/Response/NextFunction interfaces for unit testing purposes
  */
 export interface MockRequest extends Partial<Request> {
    ip?: string;
@@ -24,6 +24,10 @@ export interface MockResponse extends Partial<Response> {
    locals: Record<string, any>;
 }
 
+export interface MockNextFunction extends jest.Mock {
+   (_error?: Error): void;
+}
+
 type MockRequestOptions = {
    cookies?: Record<string, string>;
    body?: any;
@@ -35,7 +39,7 @@ type MockRequestOptions = {
 type MockMiddleware = {
    mockReq: jest.Mocked<MockRequest>,
    mockRes: MockResponse,
-   mockNext: jest.Mock
+   mockNext: MockNextFunction
 }
 
 /**
@@ -44,7 +48,7 @@ type MockMiddleware = {
  * @param {MockRequestOptions} options - Mock request options
  * @returns {MockRequest} Mock request object
  */
-export const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
+const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
    cookies: options.cookies ?? {},
    body: options.body ?? {},
    params: options.params ?? {},
@@ -57,7 +61,7 @@ export const createMockRequest = (options: MockRequestOptions = {}): MockRequest
  *
  * @returns {MockResponse} Mock response object
  */
-export const createMockResponse = (): MockResponse => {
+const createMockResponse = (): MockResponse => {
    const mockRes: MockResponse = {
       locals: {},
       cookies: {},
@@ -94,5 +98,5 @@ export const createMockResponse = (): MockResponse => {
 export const createMockMiddleware = (options: MockRequestOptions = {}): MockMiddleware => ({
    mockReq: createMockRequest(options),
    mockRes: createMockResponse(),
-   mockNext: jest.fn()
+   mockNext: jest.fn() as MockNextFunction
 });

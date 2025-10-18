@@ -1,35 +1,19 @@
-/**
- * Tests for userController with mocked database
- */
-
 import { createMockUser, TEST_CONSTANTS } from "capital/mocks/server";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
-import { Request, Response } from "express";
 
 import * as userController from "@/controllers/userController";
-import { createMockRequest, createMockResponse } from "@/tests/utils/api";
-import { assertControllerSuccessResponse, assertControllerValidationErrorResponse } from "@/tests/utils/controllers";
-
-/**
- * Mock the database module
- */
-jest.mock("@/lib/database", () => ({
-   pool: {
-      query: jest.fn()
-   }
-}));
+import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
+import { assertControllerSuccessResponse, assertControllerValidationErrorResponse, callServiceMethod } from "@/tests/utils/controllers";
 
 /**
  * Mock the services module
  */
-jest.mock("@/lib/services", () => {
-   const { createMockSubmitServiceRequest } = require("@/tests/utils/controllers");
-
-   return { submitServiceRequest: createMockSubmitServiceRequest() };
-});
+jest.mock("@/lib/services", () => ({
+   submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
+}));
 
 /**
- * Mock the userService module
+ * Mock user service methods
  */
 jest.mock("@/services/userService", () => ({
    createUser: jest.fn(),
@@ -39,21 +23,21 @@ jest.mock("@/services/userService", () => ({
 }));
 
 describe("User Controller", () => {
-   let mockReq: Partial<Request>;
-   let mockRes: Partial<Response>;
+   let mockReq: MockRequest;
+   let mockRes: MockResponse;
+   let mockNext: MockNextFunction;
+   let userService: typeof import("@/services/userService");
 
-   beforeEach(() => {
-      mockReq = createMockRequest();
-      mockRes = createMockResponse();
+   beforeEach(async() => {
+      ({ mockReq, mockRes, mockNext } = createMockMiddleware());
+      userService = await import("@/services/userService");
    });
 
    describe("POST /users", () => {
       it("should create a new user successfully", async() => {
-         // Arrange
          const mockUser = createMockUser();
          mockReq.body = mockUser;
 
-         const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.CREATED,
             data: { success: true }
@@ -61,10 +45,8 @@ describe("User Controller", () => {
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
          mockCreateUser.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.POST, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerSuccessResponse(
             mockRes,
             mockCreateUser,
@@ -75,7 +57,6 @@ describe("User Controller", () => {
       });
 
       it("should handle user creation conflicts", async() => {
-         // Arrange
          const mockUser = createMockUser();
          mockReq.body = mockUser;
 
@@ -87,14 +68,11 @@ describe("User Controller", () => {
             }
          };
 
-         const userService = await import("@/services/userService");
          const mockCreateUser = userService.createUser as jest.MockedFunction<typeof userService.createUser>;
          mockCreateUser.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.POST(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.POST, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerValidationErrorResponse(
             mockRes,
             mockCreateUser,
@@ -110,10 +88,8 @@ describe("User Controller", () => {
 
    describe("GET /users", () => {
       it("should fetch user details successfully", async() => {
-         // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
 
-         const userService = await import("@/services/userService");
          const mockUserDetails = createMockUser();
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.OK,
@@ -122,10 +98,8 @@ describe("User Controller", () => {
          const mockFetchUserDetails = userService.fetchUserDetails as jest.MockedFunction<typeof userService.fetchUserDetails>;
          mockFetchUserDetails.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.GET(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.GET, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerSuccessResponse(
             mockRes,
             mockFetchUserDetails,
@@ -138,12 +112,10 @@ describe("User Controller", () => {
 
    describe("PUT /users", () => {
       it("should update user account details successfully", async() => {
-         // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockUpdates = { username: "newusername", email: "newemail@example.com" };
          mockReq.body = mockUpdates;
 
-         const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.OK,
             data: { success: true }
@@ -151,10 +123,8 @@ describe("User Controller", () => {
          const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
          mockUpdateAccountDetails.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.PUT, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerSuccessResponse(
             mockRes,
             mockUpdateAccountDetails,
@@ -165,7 +135,6 @@ describe("User Controller", () => {
       });
 
       it("should handle user update conflicts", async() => {
-         // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockUpdates = { username: "newusername" };
          mockReq.body = mockUpdates;
@@ -177,14 +146,11 @@ describe("User Controller", () => {
             }
          };
 
-         const userService = await import("@/services/userService");
          const mockUpdateAccountDetails = userService.updateAccountDetails as jest.MockedFunction<typeof userService.updateAccountDetails>;
          mockUpdateAccountDetails.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.PUT(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.PUT, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerValidationErrorResponse(
             mockRes,
             mockUpdateAccountDetails,
@@ -199,10 +165,8 @@ describe("User Controller", () => {
 
    describe("DELETE /users", () => {
       it("should delete user account successfully", async() => {
-         // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
 
-         const userService = await import("@/services/userService");
          const mockResponse: ServerResponse = {
             code: HTTP_STATUS.OK,
             data: { success: true }
@@ -210,10 +174,8 @@ describe("User Controller", () => {
          const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
          mockDeleteAccount.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.DELETE, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerSuccessResponse(
             mockRes,
             mockDeleteAccount,
@@ -224,7 +186,6 @@ describe("User Controller", () => {
       });
 
       it("should handle user not found during deletion", async() => {
-         // Arrange
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
 
          const mockResponse: ServerResponse = {
@@ -234,14 +195,11 @@ describe("User Controller", () => {
             }
          };
 
-         const userService = await import("@/services/userService");
          const mockDeleteAccount = userService.deleteAccount as jest.MockedFunction<typeof userService.deleteAccount>;
          mockDeleteAccount.mockResolvedValue(mockResponse);
 
-         // Act
-         await userController.DELETE(mockReq as Request, mockRes as Response, jest.fn());
+         await callServiceMethod(userController.DELETE, mockReq, mockRes, mockNext);
 
-         // Assert
          assertControllerValidationErrorResponse(
             mockRes,
             mockDeleteAccount,

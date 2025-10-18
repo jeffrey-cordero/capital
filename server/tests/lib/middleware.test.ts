@@ -3,7 +3,7 @@ import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { authenticateRefreshToken, authenticateToken, clearTokens, configureToken } from "@/lib/middleware";
-import { createMockMiddleware, MockRequest, MockResponse } from "@/tests/utils/api";
+import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 import {
    callMiddleware,
    TEST_SECRET,
@@ -37,7 +37,7 @@ jest.mock("@/lib/logger", () => ({
 describe("Authentication Middleware", () => {
    let mockReq: MockRequest;
    let mockRes: MockResponse;
-   let mockNext: jest.Mock;
+   let mockNext: MockNextFunction;
 
    beforeEach(() => {
       ({ mockReq, mockRes, mockNext } = createMockMiddleware());

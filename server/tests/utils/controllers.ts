@@ -3,9 +3,9 @@
 */
 
 import { HTTP_STATUS, ServerResponse } from "capital/server";
-import { Response } from "express";
+import { RequestHandler, Response } from "express";
 
-import { MockResponse } from "@/tests/utils/api";
+import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
  * Test Redis error scenarios with logging
@@ -138,6 +138,24 @@ export function assertControllerValidationErrorResponse(
    expect(mockRes.status).toHaveBeenCalledWith(expectedStatusCode);
    expect(mockRes.json).toHaveBeenCalledWith({ errors: expectedErrors });
    expect(mockRes.end).toHaveBeenCalled();
+}
+
+/**
+ * Calls a service method with proper type casting for Express middleware/controller functions
+ *
+ * @param {RequestHandler} serviceMethod - The Express RequestHandler (controller method) to call
+ * @param {MockRequest} mockReq - Mock Express Request object
+ * @param {MockResponse} mockRes - Mock Express Response object
+ * @param {MockNextFunction} mockNext - Mock Express NextFunction
+ * @returns {Promise<any>} The result of the service method call
+ */
+export async function callServiceMethod(
+   serviceMethod: RequestHandler,
+   mockReq: MockRequest,
+   mockRes: MockResponse,
+   mockNext: MockNextFunction
+): Promise<any> {
+   return await serviceMethod(mockReq as any, mockRes as any, mockNext as any);
 }
 
 /**

@@ -2,6 +2,7 @@
  * Tests for logger functionality
  *
  * Expected output format:
+ *
  * 2025-10-13T23:32:51.509Z (info)
  *
  * Test info message
