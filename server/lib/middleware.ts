@@ -6,6 +6,14 @@ import { logger } from "@/lib/logger";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
+ * Token expiration constants in milliseconds
+ */
+export const TOKEN_EXPIRATIONS = {
+   ACCESS_TOKEN: 60 * 60 * 1000, // 1 hour
+   REFRESH_TOKEN: 7 * 24 * 60 * 60 * 1000 // 7 days
+} as const;
+
+/**
  * Sets JWT access and refresh tokens in HTTP-only cookies
  *
  * Access token expires in 24 hours, refresh token in 7 days.
@@ -21,7 +29,7 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
    res.cookie("access_token", access_token, {
       httpOnly: true,
       sameSite: "none",
-      maxAge: 1000 * 60 * 60,
+      maxAge: TOKEN_EXPIRATIONS.ACCESS_TOKEN,
       secure: true
    });
 
@@ -29,7 +37,7 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
    res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       sameSite: "none",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      maxAge: (secondsUntilExpire || TOKEN_EXPIRATIONS.REFRESH_TOKEN),
       secure: true,
       path: "/api/v1/authentication/refresh"
    });
@@ -91,6 +99,7 @@ export function authenticateToken(required: boolean) {
             next();
          } catch (error: any) {
             logger.error(error.message);
+
             if (error instanceof jwt.TokenExpiredError) {
                // Signal to the client that refresh is needed
                return sendSuccess(res, HTTP_STATUS.UNAUTHORIZED, { refreshable: true });

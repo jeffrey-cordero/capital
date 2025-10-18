@@ -33,9 +33,9 @@ type MockRequestOptions = {
 }
 
 type MockMiddleware = {
-   req: MockRequest,
-   res: MockResponse,
-   next: jest.Mock
+   mockReq: jest.Mocked<MockRequest>,
+   mockRes: MockResponse,
+   mockNext: jest.Mock
 }
 
 /**
@@ -58,31 +58,31 @@ export const createMockRequest = (options: MockRequestOptions = {}): MockRequest
  * @returns {MockResponse} Mock response object
  */
 export const createMockResponse = (): MockResponse => {
-   const res: MockResponse = {
+   const mockRes: MockResponse = {
       locals: {},
       cookies: {},
       statusCode: 0,
       jsonData: undefined,
       clearCookie: jest.fn((name: string, _options?: Record<string, any>) => {
-         delete res.cookies[name];
-         return res;
+         delete mockRes.cookies[name];
+         return mockRes;
       }),
       cookie: jest.fn((name: string, value: string, options: Record<string, any>) => {
-         res.cookies[name] = { value, options };
-         return res;
+         mockRes.cookies[name] = { value, options };
+         return mockRes;
       }),
       status: jest.fn((code: number) => {
-         res.statusCode = code;
-         return res;
+         mockRes.statusCode = code;
+         return mockRes;
       }),
       json: jest.fn((data: any) => {
-         res.jsonData = data;
-         return res;
+         mockRes.jsonData = data;
+         return mockRes;
       }),
-      end: jest.fn(() => res)
+      end: jest.fn(() => mockRes)
    };
 
-   return res;
+   return mockRes;
 };
 
 /**
@@ -92,7 +92,7 @@ export const createMockResponse = (): MockResponse => {
  * @returns {MockMiddleware} Mock middleware function with mock request, response, and next functions
  */
 export const createMockMiddleware = (options: MockRequestOptions = {}): MockMiddleware => ({
-   req: createMockRequest(options),
-   res: createMockResponse(),
-   next: jest.fn()
+   mockReq: createMockRequest(options),
+   mockRes: createMockResponse(),
+   mockNext: jest.fn()
 });

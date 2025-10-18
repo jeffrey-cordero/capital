@@ -80,8 +80,9 @@ export async function authenticateUser(res: Response, username: string, password
  */
 export async function refreshToken(res: Response, user_id: string): Promise<ServerResponse> {
    // Determine the expiration time of the refresh token
-   const refreshTokenExpiration: number = new Date(res.locals.refresh_token_expiration).getTime();
-   const secondsUntilExpire: number = Math.floor((refreshTokenExpiration - Date.now()) / 1000);
+   const expirationTime: number = new Date(res.locals.refresh_token_expiration).getTime();
+   const now: number = Date.now();
+   const secondsUntilExpire: number = Math.max(0, Math.floor((expirationTime - now) / 1000));
 
    // Rotate both tokens for security
    configureToken(res, user_id, secondsUntilExpire);

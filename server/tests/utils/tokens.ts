@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
-import { HTTP_STATUS } from "capital/server";
+
+import { TOKEN_EXPIRATIONS } from "@/lib/middleware";
+import { createMockMiddleware, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
  * Test token constants for authentication testing, used across middleware and controller
@@ -29,12 +31,11 @@ export const TEST_SECRET = "test-secret-key";
 /**
  * Helper function to test unexpected error handling
  *
- * @param {Function} middlewareFunction - The middleware function to test
+ * @param {any} middlewareFunction - The middleware function to test
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
- * @param {any} createMockMiddleware - Function to create mock middleware objects
  */
-export function testUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token", createMockMiddleware: any) {
+export function testUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    const mockError = new Error("Unexpected error");
    mockError.stack = "Error: Unexpected error\n    at someFunction";
 
@@ -43,11 +44,11 @@ export function testUnexpectedErrorHandling(middlewareFunction: any, expectedSta
    });
 
    const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
-   const { req, res, next } = createMockMiddleware({ cookies: { [cookieName]: validToken } });
-   middlewareFunction(req, res, next);
+   const { mockReq, mockRes, mockNext } = createMockMiddleware({ cookies: { [cookieName]: validToken } });
+   callMiddleware(middlewareFunction, mockReq, mockRes, mockNext);
 
-   expect(res.status).toHaveBeenCalledWith(expectedStatus);
-   expect(next).not.toHaveBeenCalled();
+   expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
+   expect(mockNext).not.toHaveBeenCalled();
 
    // Restore original jwt.verify
    verifySpy.mockRestore();
@@ -59,9 +60,8 @@ export function testUnexpectedErrorHandling(middlewareFunction: any, expectedSta
  * @param {Function} middlewareFunction - The middleware function to test
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
- * @param {any} createMockMiddleware - Function to create mock middleware objects
  */
-export function testMissingSessionSecret(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token", createMockMiddleware: any) {
+export function testMissingSessionSecret(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    // Store original secret
    const originalSecret = process.env.SESSION_SECRET;
 
@@ -69,12 +69,12 @@ export function testMissingSessionSecret(middlewareFunction: any, expectedStatus
    delete process.env.SESSION_SECRET;
 
    const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
-   const { req, res, next } = createMockMiddleware({ cookies: { [cookieName]: validToken } });
+   const { mockReq, mockRes, mockNext } = createMockMiddleware({ cookies: { [cookieName]: validToken } });
 
-   middlewareFunction(req, res, next);
+   callMiddleware(middlewareFunction, mockReq, mockRes, mockNext);
 
-   expect(res.status).toHaveBeenCalledWith(expectedStatus);
-   expect(next).not.toHaveBeenCalled();
+   expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
+   expect(mockNext).not.toHaveBeenCalled();
 
    // Restore original secret
    process.env.SESSION_SECRET = originalSecret;
@@ -83,12 +83,12 @@ export function testMissingSessionSecret(middlewareFunction: any, expectedStatus
 /**
  * Helper function to validate token cookie structure and properties
  *
- * @param {any} res - The mock response object
+ * @param {MockResponse} mockRes - The mock response object
  * @param {"access_token" | "refresh_token"} tokenType - The type of token to validate
  * @param {boolean} exists - Whether the token should exist
  */
-export function validateTokenCookie(res: any, tokenType: "access_token" | "refresh_token", exists: boolean) {
-   const token = res.cookies[tokenType];
+export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_token" | "refresh_token", exists: boolean) {
+   const token = mockRes.cookies[tokenType];
 
    if (exists) {
       expect(token).toBeDefined();
@@ -98,7 +98,7 @@ export function validateTokenCookie(res: any, tokenType: "access_token" | "refre
             httpOnly: true,
             sameSite: "none",
             secure: true,
-            maxAge: tokenType === "access_token" ? 1000 * 60 * 60 : 1000 * 60 * 60 * 24 * 7
+            maxAge: tokenType === "access_token" ? TOKEN_EXPIRATIONS.ACCESS_TOKEN : TOKEN_EXPIRATIONS.REFRESH_TOKEN
          })
       });
 
@@ -117,49 +117,83 @@ export function validateTokenCookie(res: any, tokenType: "access_token" | "refre
  * Helper function to verify JWT token properties
  *
  * @param {string} tokenValue - The JWT token value
+ * @param {"access_token" | "refresh_token"} tokenType - The type of token to verify
  * @param {string} expectedUserId - The expected user ID
- * @param {number} minExpirationSeconds - Optional minimum expiration time in seconds from now
+ * @param {number} customExpirationSeconds - Optional custom expiration time in seconds (overrides default type-based validation)
  */
-export function verifyToken(tokenValue: string, expectedUserId: string = TEST_USER_ID, minExpirationSeconds?: number): jwt.JwtPayload {
+export function verifyToken(tokenValue: string, tokenType: "access_token" | "refresh_token", expectedUserId: string = TEST_USER_ID, customExpirationSeconds?: number): jwt.JwtPayload {
    const decoded = jwt.verify(tokenValue, TEST_SECRET) as jwt.JwtPayload;
+
+   // Verify user_id is present
    expect(decoded).toMatchObject({ user_id: expectedUserId });
 
-   if (minExpirationSeconds !== undefined) {
-      expect(decoded.exp).toBeGreaterThan(Date.now() / 1000 + minExpirationSeconds);
+   // Verify expiration is present
+   expect(decoded.exp).toBeDefined();
+   expect(typeof decoded.exp).toBe("number");
+
+   // Verify token is not expired
+   const currentTime = Math.floor(Date.now() / 1000);
+   expect(decoded.exp).toBeGreaterThan(currentTime);
+
+   // Verify token has appropriate expiration time
+   if (customExpirationSeconds !== undefined) {
+      // For custom expiration times, just verify it's reasonable (not too far in the past or future)
+      const expectedExpiration = currentTime + customExpirationSeconds;
+      expect(decoded.exp).toBeGreaterThanOrEqual(expectedExpiration);
+   } else {
+      // For standard expiration times, verify against type-based expectations
+      const expectedExpirationSeconds = (tokenType === "access_token" ? TOKEN_EXPIRATIONS.ACCESS_TOKEN : TOKEN_EXPIRATIONS.REFRESH_TOKEN) / 1000;
+      const expectedExpiration = currentTime + expectedExpirationSeconds;
+      expect(decoded.exp).toBeGreaterThanOrEqual(expectedExpiration);
    }
 
    return decoded;
 }
 
-
 /**
  * Helper function to verify both access and refresh tokens are properly configured
  *
- * @param {any} res - The mock response object
+ * @param {MockResponse} mockRes - The mock response object
  * @param {string} expectedUserId - The expected user ID
  */
-export function verifyTokenConfiguration(res: any, expectedUserId: string = TEST_USER_ID) {
+export function verifyTokenConfiguration(mockRes: MockResponse, expectedUserId: string = TEST_USER_ID) {
    // Validate cookie structure
-   validateTokenCookie(res, "access_token", true);
-   validateTokenCookie(res, "refresh_token", true);
+   expect(Object.keys(mockRes.cookies)).toHaveLength(2);
+   validateTokenCookie(mockRes, "refresh_token", true);
+   validateTokenCookie(mockRes, "access_token", true);
 
    // Verify JWT payloads
-   const accessToken = res.cookies["access_token"];
-   const refreshToken = res.cookies["refresh_token"];
-   verifyToken(accessToken!.value, expectedUserId);
-   verifyToken(refreshToken!.value, expectedUserId);
+   const accessToken = mockRes.cookies["access_token"];
+   const refreshToken = mockRes.cookies["refresh_token"];
+   verifyToken(accessToken!.value, "access_token", expectedUserId);
+   verifyToken(refreshToken!.value, "refresh_token", expectedUserId);
 }
 
 /**
  * Helper function to verify that both access and refresh tokens are cleared
  *
- * @param {any} res - The mock response object
+ * @param {MockResponse} mockRes - The mock response object
  */
-export function verifyTokensCleared(res: any) {
+export function verifyTokensCleared(mockRes: MockResponse) {
    // Verify clearCookie was called for both tokens
-   expect(res.clearCookie).toHaveBeenCalledWith("access_token", expect.any(Object));
-   expect(res.clearCookie).toHaveBeenCalledWith("refresh_token", expect.any(Object));
+   expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token", expect.any(Object));
+   expect(mockRes.clearCookie).toHaveBeenCalledWith("refresh_token", expect.any(Object));
 
    // Verify cookies object is empty
-   expect(Object.keys(res.cookies)).toHaveLength(0);
+   expect(Object.keys(mockRes.cookies)).toHaveLength(0);
+}
+
+/**
+ * Helper function to call middleware with proper type casting
+ *
+ * This reduces redundancy in middleware tests by encapsulating the common
+ * pattern of calling middleware with type assertions
+ *
+ * @param {any} middleware - The middleware function to call
+ * @param {MockRequest} mockReq - The mock request object
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function callMiddleware(middleware: any, mockReq: MockRequest, mockRes: MockResponse, mockNext: jest.Mock): void {
+   middleware(mockReq as any, mockRes as any, mockNext as any);
 }

@@ -5,6 +5,8 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { Response } from "express";
 
+import { MockResponse } from "@/tests/utils/api";
+
 /**
  * Test Redis error scenarios with logging
  *
@@ -144,7 +146,7 @@ export function assertControllerValidationErrorResponse(
  * @returns {jest.Mock} Mock submit service request function
  */
 export function createMockSubmitServiceRequest(): jest.Mock {
-   return jest.fn(async(res, callback) => {
+   return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
       const { logger } = require("@/lib/logger");
       const { sendSuccess, sendErrors } = require("@/lib/response");
 
@@ -156,16 +158,16 @@ export function createMockSubmitServiceRequest(): jest.Mock {
 
          if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
             // Success response
-            return sendSuccess(res, result.code, result.data ?? undefined);
+            return sendSuccess(mockRes, result.code, result.data ?? undefined);
          } else {
             // Error response
-            return sendErrors(res, result.code, result.errors);
+            return sendErrors(mockRes, result.code, result.errors);
          }
       } catch (error: any) {
          // Log unexpected errors
          logger.error(error.stack);
 
-         return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         return sendErrors(mockRes, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       }
    });
 }
