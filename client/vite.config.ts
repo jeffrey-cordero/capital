@@ -25,7 +25,7 @@ export default defineConfig({
       _global: ({})
    },
    optimizeDeps: {
-      exclude: ["chunk-HR3LP2OW"]
+      exclude: ["chunk-HR3LP2OW", "chunk-H7IYD2RX"]
    },
    build: {
       rollupOptions: {

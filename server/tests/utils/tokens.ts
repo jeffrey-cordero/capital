@@ -281,3 +281,83 @@ export function verifyUnauthorizedWithTokenClearing(mockRes: MockResponse, mockN
    // Verify an unauthorized response status and next call is not called
    verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
 }
+
+/**
+ * Verifies token rotation by checking that new tokens are different from original tokens
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {string} firstAccessToken - The first access token
+ * @param {string} firstRefreshToken - The first refresh token
+ * @param {string} secondAccessToken - The second access token
+ * @param {string} secondRefreshToken - The second refresh token
+ */
+export function verifyTokenRotation(mockRes: MockResponse, firstAccessToken: string, firstRefreshToken: string, secondAccessToken: string, secondRefreshToken: string): void {
+   // Tokens should be different due to different iat timestamps
+   expect(firstAccessToken).not.toBe(secondAccessToken);
+   expect(firstRefreshToken).not.toBe(secondRefreshToken);
+
+   // Verify the new tokens
+   verifyTokenConfiguration(mockRes);
+}
+
+/**
+ * Verifies refresh token expiration preservation across multiple refresh calls
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {MockRequest} mockReq - The mock request object
+ * @param {jest.Mock} mockNext - The mock next function
+ * @param {string} originalRefreshToken - The original refresh token
+ * @param {number} originalExpirationTime - The original expiration time
+ * @param {number} secondsUntilExpire - Seconds until expiration
+ */
+export function verifyRefreshTokenExpirationPreservation(mockRes: MockResponse, mockReq: MockRequest, mockNext: jest.Mock, originalRefreshToken: string, originalExpirationTime: number, secondsUntilExpire: number): void {
+   // Simulate the refresh token authentication middleware setting the expiration time in res.locals
+   mockReq.cookies = { "refresh_token": originalRefreshToken };
+   const { authenticateRefreshToken } = require("@/lib/middleware");
+   const middleware = authenticateRefreshToken();
+   callMiddleware(middleware, mockReq, mockRes, mockNext);
+
+   // Verify the middleware set the expiration time in res.locals
+   verifySuccessfulRefreshAuthentication(mockRes, mockNext);
+
+   // Simulate refresh by configuring tokens again with the same expiration time as the original
+   const { configureToken } = require("@/lib/middleware");
+   configureToken(mockRes as any, TEST_USER_ID, secondsUntilExpire);
+
+   const newRefreshToken = mockRes.cookies["refresh_token"]!.value;
+   const newDecoded = verifyAndDecodeToken(newRefreshToken, "refresh_token", secondsUntilExpire);
+
+   // The new refresh token should have the same expiration time as the original refresh token
+   expect(Math.abs(newDecoded.exp! - originalExpirationTime)).toEqual(0);
+}
+
+/**
+ * Verifies token expiration relationship and expired token behavior
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {MockRequest} mockReq - The mock request object
+ * @param {jest.Mock} mockNext - The mock next function
+ * @param {string} refreshToken - The refresh token
+ * @param {string} accessToken - The access token
+ * @param {number} secondsUntilExpire - Seconds until expiration
+ */
+export async function verifyTokenExpirationRelationship(mockRes: MockResponse, mockReq: MockRequest, mockNext: jest.Mock, refreshToken: string, accessToken: string, secondsUntilExpire: number): Promise<void> {
+   const refreshDecoded = verifyAndDecodeToken(refreshToken, "refresh_token", secondsUntilExpire);
+   const accessDecoded = verifyAndDecodeToken(accessToken, "access_token");
+
+   // Initially the access token should expire before the refresh token
+   expect(accessDecoded.exp!).toBeGreaterThan(refreshDecoded.exp!);
+
+   // Wait for refresh token to expire
+   await new Promise(resolve => setTimeout(resolve, 2000));
+   const currentTime = Math.floor(Date.now() / 1000);
+   expect(currentTime).toBeGreaterThan(refreshDecoded.exp!);
+
+   // Verify the refresh token is expired when attempting to refresh the tokens
+   mockReq.cookies = { "refresh_token": refreshToken };
+   const { authenticateRefreshToken } = require("@/lib/middleware");
+   const middleware = authenticateRefreshToken();
+   callMiddleware(middleware, mockReq, mockRes, mockNext);
+
+   verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
+}

@@ -1,26 +1,5 @@
-/**
- * API error handling tests
- *
- * Tests how the UI handles various API error conditions including
- * server errors, validation errors, and network issues
- */
-
 import { expect, test } from "@playwright/test";
-
-// Define HTTP status codes locally to avoid import issues
-const HTTP_STATUS = {
-   OK: 200,
-   CREATED: 201,
-   NO_CONTENT: 204,
-   REDIRECT: 302,
-   BAD_REQUEST: 400,
-   UNAUTHORIZED: 401,
-   FORBIDDEN: 403,
-   NOT_FOUND: 404,
-   CONFLICT: 409,
-   TOO_MANY_REQUESTS: 429,
-   INTERNAL_SERVER_ERROR: 500
-};
+import { HTTP_STATUS } from "capital/server";
 
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
@@ -78,6 +57,10 @@ test.describe("API Error Handling", () => {
          // Mock the refresh endpoint
          let refreshCalled = false;
          let refreshAttempted = false;
+
+         // Now reload to fetch authentication state
+         await page.reload();
+
          await page.route("**/api/v1/authentication/refresh", async(route) => {
             refreshCalled = true;
             await route.fulfill({
@@ -101,9 +84,6 @@ test.describe("API Error Handling", () => {
                });
             }
          });
-
-         // Now reload or navigate — routes are already active
-         await page.reload();
 
          // Wait for the refresh call
          const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
