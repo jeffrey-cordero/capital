@@ -50,7 +50,7 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
  *
  * @param {Response} res - Express response object
  */
-export function clearToken(res: Response): void {
+export function clearTokens(res: Response): void {
    res.clearCookie("access_token", {
       httpOnly: true,
       sameSite: "none",
@@ -91,6 +91,7 @@ export function authenticateToken(required: boolean) {
 
             // Ensure user_id exists in token payload
             if (!user.user_id) {
+               res.clearCookie("access_token");
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             }
 
@@ -157,7 +158,7 @@ export function authenticateRefreshToken() {
       } catch (error: any) {
          if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
             // Clear invalid/expired refresh token
-            clearToken(res);
+            clearTokens(res);
             return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
          } else {
             // Log unexpected errors

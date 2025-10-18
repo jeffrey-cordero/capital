@@ -5,7 +5,7 @@ import { Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { logger } from "@/lib/logger";
-import { clearToken, configureToken } from "@/lib/middleware";
+import { clearTokens, configureToken } from "@/lib/middleware";
 import { sendServiceResponse } from "@/lib/services";
 import { findByUsername } from "@/repository/userRepository";
 
@@ -98,7 +98,7 @@ export async function refreshToken(res: Response, user_id: string): Promise<Serv
  */
 export async function logoutUser(res: Response): Promise<ServerResponse> {
    // Clear both access and refresh tokens
-   clearToken(res);
+   clearTokens(res);
 
    return sendServiceResponse(HTTP_STATUS.OK, { success: true });
 }

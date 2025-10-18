@@ -136,18 +136,4 @@ There are two main ways to run the application locally:
 
 ## Testing
 
-- Playwright end-to-end testing requires disabling rate limiting within `server/.env`
-
-## Future Roadmap
-
-Potential features and improvements for future development:
-
-* **Pagination:** Implement pagination for transaction lists and potentially accounts/budgets.
-* **Multi-Select Categories:** Allow assigning transactions to multiple budget categories.
-* **Import/Export:** Add functionality to import/export transactions from/to CSV/OFX files, potentially with a helper modal for mapping fields.
-* **Recurring Transactions:** Add support for scheduling recurring income and expenses.
-* **Goal Tracking:** Implement features for setting and tracking specific financial goals (e.g., saving for a down payment).
-* **AI Agent Integration:** Explore integrating an AI agent for financial insights, advice, or automated categorization.
-* **Live Data Feeds:** Integrate real-time stock market and news feeds instead of periodic fetching.
-* **Bank API Syncing:** Connect directly to bank APIs (e.g., Plaid) to automatically import accounts and transactions.
-
+...

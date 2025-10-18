@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "capital/server";
 import jwt from "jsonwebtoken";
 
 import { TOKEN_EXPIRATIONS } from "@/lib/middleware";
@@ -29,13 +30,14 @@ export const TEST_USER_ID = "test-user-123";
 export const TEST_SECRET = "test-secret-key";
 
 /**
- * Helper function to test unexpected error handling
+ * Tests unexpected error handling
  *
  * @param {any} middlewareFunction - The middleware function to test
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
  */
 export function testUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
+   const { logger } = require("@/lib/logger");
    const mockError = new Error("Unexpected error");
    mockError.stack = "Error: Unexpected error\n    at someFunction";
 
@@ -48,9 +50,11 @@ export function testUnexpectedErrorHandling(middlewareFunction: any, expectedSta
    callMiddleware(middlewareFunction, mockReq, mockRes, mockNext);
 
    expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
+   expect(logger.error).toHaveBeenCalledWith(mockError.stack);
+   expect(mockRes.clearCookie).not.toHaveBeenCalled();
    expect(mockNext).not.toHaveBeenCalled();
 
-   // Restore original jwt.verify
+   // Restore the original jwt.verify
    verifySpy.mockRestore();
 }
 
@@ -114,14 +118,14 @@ export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_to
 }
 
 /**
- * Helper function to verify JWT token properties
+ * Helper function to verify JWT token properties and return the decoded token payload
  *
  * @param {string} tokenValue - The JWT token value
  * @param {"access_token" | "refresh_token"} tokenType - The type of token to verify
  * @param {string} expectedUserId - The expected user ID
- * @param {number} customExpirationSeconds - Optional custom expiration time in seconds (overrides default type-based validation)
+ * @param {number} customExpirationSeconds - Optional custom expiration time in seconds
  */
-export function verifyToken(tokenValue: string, tokenType: "access_token" | "refresh_token", expectedUserId: string = TEST_USER_ID, customExpirationSeconds?: number): jwt.JwtPayload {
+export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_token" | "refresh_token", expectedUserId: string = TEST_USER_ID, customExpirationSeconds?: number): jwt.JwtPayload {
    const decoded = jwt.verify(tokenValue, TEST_SECRET) as jwt.JwtPayload;
 
    // Verify user_id is present
@@ -165,8 +169,9 @@ export function verifyTokenConfiguration(mockRes: MockResponse, expectedUserId: 
    // Verify JWT payloads
    const accessToken = mockRes.cookies["access_token"];
    const refreshToken = mockRes.cookies["refresh_token"];
-   verifyToken(accessToken!.value, "access_token", expectedUserId);
-   verifyToken(refreshToken!.value, "refresh_token", expectedUserId);
+
+   verifyAndDecodeToken(accessToken!.value, "access_token", expectedUserId);
+   verifyAndDecodeToken(refreshToken!.value, "refresh_token", expectedUserId);
 }
 
 /**
@@ -184,10 +189,7 @@ export function verifyTokensCleared(mockRes: MockResponse) {
 }
 
 /**
- * Helper function to call middleware with proper type casting
- *
- * This reduces redundancy in middleware tests by encapsulating the common
- * pattern of calling middleware with type assertions
+ * Calls middleware with proper type casting
  *
  * @param {any} middleware - The middleware function to call
  * @param {MockRequest} mockReq - The mock request object
@@ -196,4 +198,85 @@ export function verifyTokensCleared(mockRes: MockResponse) {
  */
 export function callMiddleware(middleware: any, mockReq: MockRequest, mockRes: MockResponse, mockNext: jest.Mock): void {
    middleware(mockReq as any, mockRes as any, mockNext as any);
+}
+
+/**
+ * Verifies forbidden response with access token clearing
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifyForbiddenResponse(mockRes: MockResponse, mockNext: jest.Mock): void {
+   expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
+   expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token");
+   expect(mockRes.json).toHaveBeenCalledWith({ errors: {} });
+   expect(mockNext).not.toHaveBeenCalled();
+}
+
+/**
+ * Verifies response status without next call
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {number} expectedStatus - The expected HTTP status code
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifyResponseStatus(mockRes: MockResponse, expectedStatus: number, mockNext: jest.Mock): void {
+   expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
+   expect(mockNext).not.toHaveBeenCalled();
+}
+
+/**
+ * Verifies unauthorized response with refreshable flag
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifyUnauthorizedWithRefreshable(mockRes: MockResponse, mockNext: jest.Mock): void {
+   expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
+   expect(mockRes.json).toHaveBeenCalledWith({ data: { refreshable: true } });
+   expect(mockRes.clearCookie).not.toHaveBeenCalled();
+   expect(mockNext).not.toHaveBeenCalled();
+}
+
+/**
+ * Verifies successful authentication with user_id
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {string} expectedUserId - The expected user ID
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifySuccessfulAuthentication(mockRes: MockResponse, expectedUserId: string, mockNext: jest.Mock): void {
+   expect(mockRes.locals.user_id).toBe(expectedUserId);
+   expect(mockRes.status).not.toHaveBeenCalled();
+   expect(mockNext).toHaveBeenCalled();
+}
+
+/**
+ * Verifies successful authentication with refresh token expiration
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {string} expectedUserId - The expected user ID
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifySuccessfulRefreshAuthentication(mockRes: MockResponse, expectedUserId: string, mockNext: jest.Mock): void {
+   // Verify successful authentication is attached to res.locals as the user_id and next method is called
+   verifySuccessfulAuthentication(mockRes, expectedUserId, mockNext);
+
+   // Verify refresh token expiration is attached to res.locals as a Date object
+   expect(mockRes.locals.refresh_token_expiration).toBeDefined();
+   expect(mockRes.locals.refresh_token_expiration).toBeInstanceOf(Date);
+}
+
+/**
+ * Verifies unauthorized response with token clearing
+ *
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {jest.Mock} mockNext - The mock next function
+ */
+export function verifyUnauthorizedWithTokenClearing(mockRes: MockResponse, mockNext: jest.Mock): void {
+   // Verify both access and refresh tokens are cleared
+   verifyTokensCleared(mockRes);
+
+   // Verify an unauthorized response status and next call is not called
+   verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
 }

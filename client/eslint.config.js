@@ -77,12 +77,12 @@ export default [
          "no-multiple-empty-lines": ["error", { max: 1 }],
          "space-before-function-paren": ["error", "never"],
          "no-console": ["warn", { allow: ["warn", "error"] }],
-         "no-unused-vars": ["error",{
+         "no-unused-vars": ["error", {
             "argsIgnorePattern": "^_",
             "varsIgnorePattern": "^_",
             "caughtErrorsIgnorePattern": "^_",
             "destructuredArrayIgnorePattern": "^_"
-            }
+         }
          ],
 
          "react-hooks/rules-of-hooks": "error",

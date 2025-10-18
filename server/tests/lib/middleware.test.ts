@@ -2,7 +2,7 @@ import { HTTP_STATUS } from "capital/server";
 import { Response } from "express";
 import jwt from "jsonwebtoken";
 
-import { authenticateRefreshToken, authenticateToken, clearToken, configureToken } from "@/lib/middleware";
+import { authenticateRefreshToken, authenticateToken, clearTokens, configureToken } from "@/lib/middleware";
 import { createMockMiddleware, MockRequest, MockResponse } from "@/tests/utils/api";
 import {
    callMiddleware,
@@ -10,9 +10,15 @@ import {
    TEST_USER_ID,
    testMissingSessionSecret,
    testUnexpectedErrorHandling,
-   verifyToken,
+   verifyForbiddenResponse,
+   verifyResponseStatus,
+   verifySuccessfulAuthentication,
+   verifySuccessfulRefreshAuthentication,
+   verifyAndDecodeToken,
    verifyTokenConfiguration,
-   verifyTokensCleared
+   verifyTokensCleared,
+   verifyUnauthorizedWithRefreshable,
+   verifyUnauthorizedWithTokenClearing
 } from "@/tests/utils/tokens";
 
 /**
@@ -24,7 +30,7 @@ jest.mock("@/lib/logger", () => ({
    }
 }));
 
-describe("Middleware Functions", () => {
+describe("Authentication Middleware", () => {
    let mockReq: MockRequest;
    let mockRes: MockResponse;
    let mockNext: jest.Mock;
@@ -35,141 +41,96 @@ describe("Middleware Functions", () => {
       jest.clearAllMocks();
    });
 
-   describe("configureToken", () => {
+   describe("Token Configuration", () => {
       it("should set both access_token and refresh_token cookies", () => {
-         // Act
          configureToken(mockRes as Response, TEST_USER_ID);
 
-         // Assert
          verifyTokenConfiguration(mockRes, TEST_USER_ID);
       });
 
       it("should use default refresh token expiration when secondsUntilExpire is not provided", () => {
-         // Act
          configureToken(mockRes as Response, TEST_USER_ID);
 
-         // Assert
          const refreshToken = mockRes.cookies["refresh_token"];
          expect(refreshToken).toBeDefined();
-
-         // Verify refresh token uses default 7d expiration
-         verifyToken(refreshToken!.value, "refresh_token", TEST_USER_ID);
+         verifyAndDecodeToken(refreshToken!.value, "refresh_token", TEST_USER_ID);
       });
 
       it("should handle missing SESSION_SECRET environment variable", () => {
-         // Arrange
          delete process.env.SESSION_SECRET;
 
-         // Act & Assert - JWT requires a secret
          expect(() => configureToken(mockRes as Response, TEST_USER_ID)).toThrow("secretOrPrivateKey must have a value");
       });
    });
 
-   describe("clearToken", () => {
+   describe("Token Clearing", () => {
       it("should clear both access_token and refresh_token cookies", () => {
-         // Act
-         clearToken(mockRes as Response);
+         clearTokens(mockRes as Response);
 
-         // Assert
          verifyTokensCleared(mockRes);
       });
    });
 
-   describe("authenticateToken", () => {
+   describe("Token Authentication", () => {
       it("should authenticate valid access token and attach user_id", () => {
-         // Arrange
          const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "1h" });
          mockReq.cookies = { "access_token": validToken };
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
-         expect(mockRes.status).not.toHaveBeenCalled();
-         expect(mockNext).toHaveBeenCalled();
+         verifySuccessfulAuthentication(mockRes, TEST_USER_ID, mockNext);
       });
 
-      it("should return unauthorized when token is missing and authentication required", () => {
-         // Arrange
+      it("should return unauthorized when access token is missing and authentication required", () => {
          mockReq.cookies = {};
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
       });
 
-      it("should return unauthorized with refreshable flag for expired token", () => {
-         // Arrange
+      it("should return unauthorized with refreshable flag for expired access token", () => {
          const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1h" });
          mockReq.cookies = { "access_token": expiredToken };
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         expect(mockRes.json).toHaveBeenCalledWith({ data: { refreshable: true } });
-         // Not clearing cookie on expired token as it's handled by the client refresh flow
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyUnauthorizedWithRefreshable(mockRes, mockNext);
       });
 
-      it("should return forbidden for invalid JWT signature", () => {
-         // Arrange
-         const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
+      it("should return forbidden for invalid JWT signature and clear the invalid access token", () => {
+         const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "invalid-secret");
          mockReq.cookies = { "access_token": invalidToken };
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
-         expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token");
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyForbiddenResponse(mockRes, mockNext);
       });
 
-      it("should return forbidden for malformed JWT", () => {
-         // Arrange
+      it("should return forbidden for malformed JWT and clear the malformed token", () => {
          mockReq.cookies = { "access_token": "not-a-valid-jwt" };
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
-         expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token");
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyForbiddenResponse(mockRes, mockNext);
       });
 
-      it("should return forbidden when user_id is missing from JWT payload", () => {
-         // Arrange
-         const tokenWithoutUserId = jwt.sign({ some_field: "value" }, TEST_SECRET);
-         mockReq.cookies = { "access_token": tokenWithoutUserId };
+      it("should return forbidden when user_id is missing from access token payload and clear the invalid access token", () => {
+         const missingUserIdToken = jwt.sign({ some_field: "value" }, TEST_SECRET);
+         mockReq.cookies = { "access_token": missingUserIdToken };
 
          const middleware = authenticateToken(true);
-
-         // Act
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Assert
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyForbiddenResponse(mockRes, mockNext);
       });
 
-      it("should call next when token not required and not present", () => {
+      it("should call next when the access token is not required and not present", () => {
          const middleware = authenticateToken(false);
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
@@ -177,224 +138,211 @@ describe("Middleware Functions", () => {
          expect(mockRes.status).not.toHaveBeenCalled();
       });
 
-      it("should return redirect when token present but not required", () => {
-         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
-         mockReq.cookies = { "access_token": validToken };
+      it("should return redirect when the access token is present but not required", () => {
+         const validAccessToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET);
+         mockReq.cookies = { "access_token": validAccessToken };
 
          const middleware = authenticateToken(false);
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.REDIRECT);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyResponseStatus(mockRes, HTTP_STATUS.REDIRECT, mockNext);
       });
 
-      it("should handle unexpected errors during token verification", () => {
+      it("should handle unexpected errors during access token verification", () => {
          testUnexpectedErrorHandling(authenticateToken(true), HTTP_STATUS.FORBIDDEN, "access_token");
       });
 
-      it("should handle missing SESSION_SECRET environment variable", () => {
+      it("should handle missing SESSION_SECRET environment variable for access token", () => {
          testMissingSessionSecret(authenticateToken(true), HTTP_STATUS.FORBIDDEN, "access_token");
       });
    });
 
-   describe("authenticateRefreshToken", () => {
-      it("should authenticate valid refresh token and attach user_id", () => {
-         const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "7d" });
-         mockReq.cookies = { "refresh_token": validToken };
+   describe("Refresh Token Authentication", () => {
+      it("should authenticate valid refresh token and attach user_id to res.locals after a successful token refresh", () => {
+         const validRefreshToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "7d" });
+         mockReq.cookies = { "refresh_token": validRefreshToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
-         expect(mockNext).toHaveBeenCalled();
-         expect(mockRes.status).not.toHaveBeenCalled();
+         verifySuccessfulRefreshAuthentication(mockRes, TEST_USER_ID, mockNext);
       });
 
-      it("should return unauthorized when refresh token is missing", () => {
+      it("should return unauthorized when the refresh token is missing", () => {
          mockReq.cookies = {};
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
       });
 
-      it("should return unauthorized and clear tokens for expired refresh token", () => {
+      it("should return unauthorized and clear both access and refresh tokens for an expired refresh token", () => {
          const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1d" });
          mockReq.cookies = { "refresh_token": expiredToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         verifyTokensCleared(mockRes);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
       });
 
-      it("should return unauthorized and clear tokens for invalid refresh token", () => {
+      it("should return unauthorized and clear both tokens when an invalid refresh token is provided", () => {
          const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
          mockReq.cookies = { "refresh_token": invalidToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         verifyTokensCleared(mockRes);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
       });
 
-      it("should return forbidden when user_id is missing from refresh token payload", () => {
-         const tokenWithoutUserId = jwt.sign({ some_field: "value" }, TEST_SECRET);
-         mockReq.cookies = { "refresh_token": tokenWithoutUserId };
+       it("should return forbidden when user_id is missing from the refresh token payload", () => {
+          const missingUserIdToken = jwt.sign({ some_field: "value" }, TEST_SECRET);
+          mockReq.cookies = { "refresh_token": missingUserIdToken };
 
-         const middleware = authenticateRefreshToken();
-         callMiddleware(middleware, mockReq, mockRes, mockNext);
+          const middleware = authenticateRefreshToken();
+          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
-         expect(mockNext).not.toHaveBeenCalled();
-      });
+          verifyResponseStatus(mockRes, HTTP_STATUS.FORBIDDEN, mockNext);
+       });
 
-      it("should handle unexpected errors during refresh token verification", () => {
+      it("should handle unexpected errors during refresh token verification and clear both tokens", () => {
          testUnexpectedErrorHandling(authenticateRefreshToken(), HTTP_STATUS.FORBIDDEN, "refresh_token");
       });
 
-      it("should handle missing SESSION_SECRET environment variable", () => {
+      it("should handle missing SESSION_SECRET environment variable for the refresh token", () => {
          testMissingSessionSecret(authenticateRefreshToken(), HTTP_STATUS.UNAUTHORIZED, "refresh_token");
       });
    });
 
-   describe("Token Rotation on Refresh", () => {
-      it("should issue new tokens with same user_id when refreshing", async() => {
-         // First, configure initial tokens
+   describe("Token Rotation", () => {
+      it("should issue new access and refresh tokens with the same user_id when refreshing", async() => {
+         // Arrange the initial access and refresh tokens
          configureToken(mockRes as Response, TEST_USER_ID);
+
          const firstAccessToken = mockRes.cookies["access_token"]!.value;
          const firstRefreshToken = mockRes.cookies["refresh_token"]!.value;
 
-         // Clear the mock data
-         mockRes.cookies = {};
+         // Verify the initial tokens
+         verifyTokenConfiguration(mockRes, TEST_USER_ID);
 
-         // Wait a small amount to ensure different iat timestamp
+         // Clear the mock response cookies to simulate a local logout action
+         mockRes.cookies = {};
          await new Promise(resolve => setTimeout(resolve, 1100));
 
-         // Simulate refresh by configuring tokens again
+         // Simulate a successful token provision by configuring tokens after simulating a logout action
          configureToken(mockRes as Response, TEST_USER_ID);
          const secondAccessToken = mockRes.cookies["access_token"]!.value;
          const secondRefreshToken = mockRes.cookies["refresh_token"]!.value;
 
-         // Tokens should be different (rotated) due to different iat
+         // Tokens should be different due to different iat timestamps
          expect(firstAccessToken).not.toBe(secondAccessToken);
          expect(firstRefreshToken).not.toBe(secondRefreshToken);
 
-         // But they should contain the same user_id
-         verifyToken(secondAccessToken, "access_token", TEST_USER_ID);
-         verifyToken(secondRefreshToken, "refresh_token", TEST_USER_ID);
+         // Verify the new tokens
+         verifyTokenConfiguration(mockRes, TEST_USER_ID);
       });
 
-      it("should preserve original refresh token expiration time across multiple refreshes", async() => {
-         // Create initial refresh token with short expiration (2 minutes)
-         const shortExpirationSeconds = 120; // 2 minutes
-         configureToken(mockRes as Response, TEST_USER_ID, shortExpirationSeconds);
+      it("should preserve original refresh token expiration time across multiple refresh calls", async() => {
+         // Arrange the initial refresh token to expire in 2 minutes
+         configureToken(mockRes as Response, TEST_USER_ID);
 
-         // Get the original refresh token and its expiration
+         // Verify the initial access and refresh tokens
+         verifyTokenConfiguration(mockRes, TEST_USER_ID);
+
+         // Get the original refresh token and verify its expiration time
          const originalRefreshToken = mockRes.cookies["refresh_token"]!.value;
-         const originalDecoded = verifyToken(originalRefreshToken, "refresh_token", TEST_USER_ID, shortExpirationSeconds);
-         const originalExpiration = originalDecoded.exp!;
+         const originalDecoded = verifyAndDecodeToken(originalRefreshToken, "refresh_token", TEST_USER_ID);
+         const originalExpirationTime = originalDecoded.exp!;
 
-         // Simulate middleware setting the expiration in locals
-         mockRes.locals.refresh_token_expiration = new Date(originalExpiration * 1000);
+         // Simulate the refresh token authentication middleware setting the expiration time in res.locals
+         mockReq.cookies = { "refresh_token": originalRefreshToken };
+         const middleware = authenticateRefreshToken();
+         callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Clear the mock data
-         mockRes.cookies = {};
+         // Verify the middleware set the expiration time in res.locals
+         verifySuccessfulRefreshAuthentication(mockRes, TEST_USER_ID, mockNext);
 
-         // Wait a small amount
-         await new Promise(resolve => setTimeout(resolve, 100));
-
-         // Simulate refresh by configuring tokens again with preserved expiration
-         const secondsUntilExpire = Math.floor((originalExpiration * 1000 - Date.now()) / 1000);
+         // Simulate refresh by configuring tokens again with the same expiration time as the original
+         const secondsUntilExpire = Math.max(0, Math.floor((originalExpirationTime - Date.now()) / 1000));
          configureToken(mockRes as Response, TEST_USER_ID, secondsUntilExpire);
 
          const newRefreshToken = mockRes.cookies["refresh_token"]!.value;
-         const newDecoded = verifyToken(newRefreshToken, "refresh_token", TEST_USER_ID, secondsUntilExpire);
+         const newDecoded = verifyAndDecodeToken(newRefreshToken, "refresh_token", TEST_USER_ID, secondsUntilExpire);
 
-         // The new refresh token should have the same expiration time as the original
-         // Allow for 1 second difference due to timing of token creation
-         expect(Math.abs(newDecoded.exp! - originalExpiration)).toBeLessThanOrEqual(1);
+         // The new refresh token should have the same expiration time as the original refresh token
+         expect(Math.abs(newDecoded.exp! - originalExpirationTime)).toEqual(0);
       });
    });
 
-   describe("Refresh Token Expiration Handling", () => {
-      it("should set refresh_token_expiration in res.locals when authenticating refresh token", () => {
+   describe("Refresh Token Expiration", () => {
+      it("should authenticate a valid refresh token and set refresh_token_expiration in res.locals", () => {
          const validToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "7d" });
          mockReq.cookies = { "refresh_token": validToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
-         expect(mockRes.locals.refresh_token_expiration).toBeDefined();
-         expect(mockRes.locals.refresh_token_expiration).toBeInstanceOf(Date);
-         expect(mockNext).toHaveBeenCalled();
+         verifySuccessfulRefreshAuthentication(mockRes, TEST_USER_ID, mockNext);
       });
 
-      it("should call clearToken when refresh token is expired", () => {
+      it("should return unauthorized and clear both tokens when an expired refresh token is provided", () => {
          const expiredToken = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "-1d" });
          mockReq.cookies = { "refresh_token": expiredToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         verifyTokensCleared(mockRes);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
       });
 
-      it("should call clearToken when refresh token is invalid", () => {
+      it("should return unauthorized and clear both tokens when an invalid refresh token is provided", () => {
          const invalidToken = jwt.sign({ user_id: TEST_USER_ID }, "wrong-secret");
          mockReq.cookies = { "refresh_token": invalidToken };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
-         verifyTokensCleared(mockRes);
-         expect(mockNext).not.toHaveBeenCalled();
+         verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
       });
 
-      it("should handle refresh token very close to expiration", () => {
-         // Create token expiring in 1 second
-         const tokenExpiringSoon = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "1s" });
+      it("should authenticate a valid refresh token very close to expiration", () => {
+         // Create token expiring in 5 seconds
+         const tokenExpiringSoon = jwt.sign({ user_id: TEST_USER_ID }, TEST_SECRET, { expiresIn: "5s" });
          mockReq.cookies = { "refresh_token": tokenExpiringSoon };
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-         // Should still work if token is valid (not expired yet)
-         expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
-         expect(mockRes.locals.refresh_token_expiration).toBeDefined();
-         expect(mockNext).toHaveBeenCalled();
+         verifySuccessfulRefreshAuthentication(mockRes, TEST_USER_ID, mockNext);
       });
 
       it("should eventually have access token expiration greater than refresh token expiration", async() => {
-         // Create refresh token with very short expiration (5 seconds)
-         const shortExpirationSeconds = 5;
-         configureToken(mockRes as Response, TEST_USER_ID, shortExpirationSeconds);
+         // Create refresh token with a short expiration
+         const secondsUntilExpire = 1;
+         configureToken(mockRes as Response, TEST_USER_ID, secondsUntilExpire);
 
          const refreshToken = mockRes.cookies["refresh_token"]!.value;
          const accessToken = mockRes.cookies["access_token"]!.value;
 
-         const refreshDecoded = verifyToken(refreshToken, "refresh_token", TEST_USER_ID, shortExpirationSeconds);
-         const accessDecoded = verifyToken(accessToken, "access_token", TEST_USER_ID);
+         const refreshDecoded = verifyAndDecodeToken(refreshToken, "refresh_token", TEST_USER_ID, secondsUntilExpire);
+         const accessDecoded = verifyAndDecodeToken(accessToken, "access_token", TEST_USER_ID);
 
-         // Initially, access token should expire before refresh token (access: 1 hour, refresh: 5 seconds)
+         // Initially the access token should expire before the refresh token
          expect(accessDecoded.exp!).toBeGreaterThan(refreshDecoded.exp!);
 
          // Wait for refresh token to expire
-         await new Promise(resolve => setTimeout(resolve, 6000));
-
-         // Now refresh token should be expired
+         await new Promise(resolve => setTimeout(resolve, 2000));
          const currentTime = Math.floor(Date.now() / 1000);
          expect(currentTime).toBeGreaterThan(refreshDecoded.exp!);
+
+         // Verify the refresh token is expired when attempting to refresh the tokens
+         mockReq.cookies = { "refresh_token": refreshToken };
+         const middleware = authenticateRefreshToken();
+         callMiddleware(middleware, mockReq, mockRes, mockNext);
+
+         verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
       });
    });
 });

@@ -66,7 +66,7 @@ export async function sendApiRequest<T>(
          method,
          headers: { "Content-Type": "application/json" },
          body: body ? JSON.stringify(body) : undefined,
-      credentials: "include"
+         credentials: "include"
       });
 
       // Handle potential redirection cases
