@@ -24,7 +24,7 @@ export const HTTP_STATUS = {
  */
 export type ServerResponse = {
    /* HTTP status code */
-   code: number;
+   statusCode: number;
    /* Optional data payload */
    data?: any;
    /* Optional errors payload */

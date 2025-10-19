@@ -4,20 +4,86 @@ import { RequestHandler, Response } from "express";
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
+ * Mocked service function type
+ *
+ * @template T - The type of the service function
+ * @returns {jest.MockedFunction<T>} The mocked service function
+ */
+export type MockedServiceFunction<T extends (..._args: unknown[]) => unknown> = jest.MockedFunction<T>;
+
+/**
+ * Helper function to setup a mock service function with success response in one line
+ *
+ * @param {any} serviceModule - The service module to mock
+ * @param {string} methodName - The method name of the service to mock
+ * @param {number} statusCode - HTTP status code of the response
+ * @param {Object | undefined} data - Response data, if applicable
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ */
+export function setupMockServiceSuccess(
+   serviceModule: any,
+   methodName: string,
+   statusCode: number,
+   data: object | undefined
+): MockedServiceFunction<typeof serviceModule[typeof methodName]> {
+   const mockFunction = serviceModule[methodName] as MockedServiceFunction<typeof serviceModule[typeof methodName]>;
+   mockFunction.mockResolvedValue({ statusCode, data });
+   return mockFunction;
+}
+
+/**
+ * Helper function to setup a mock service function with validation error response in one line
+ *
+ * @param {any} serviceModule - The service module to mock
+ * @param {string} methodName - The method name of the service to mock
+ * @param {number} statusCode - HTTP status code
+ * @param {Record<string, string>} errors - Validation errors
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ */
+export function setupMockServiceValidationError(
+   serviceModule: any,
+   methodName: string,
+   statusCode: number,
+   errors: Record<string, string>
+): MockedServiceFunction<typeof serviceModule[typeof methodName]> {
+   const mockFunction = serviceModule[methodName] as MockedServiceFunction<typeof serviceModule[typeof methodName]>;
+   mockFunction.mockResolvedValue({ statusCode, errors });
+   return mockFunction;
+}
+
+/**
+ * Helper function to setup a mock service function that throws an error in one line
+ *
+ * @param {any} serviceModule - The service module to mock
+ * @param {string} methodName - The method name of the service to mock
+ * @param {Error} error - Error to throw
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ */
+export function setupMockServiceError(
+   serviceModule: any,
+   methodName: string,
+   error: Error
+): MockedServiceFunction<any> {
+   const mockFunction = serviceModule[methodName] as MockedServiceFunction<typeof serviceModule[typeof methodName]>;
+   mockFunction.mockRejectedValue(error);
+   return mockFunction;
+}
+
+/**
  * Tests Redis error scenarios with logging
  *
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
+ * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
  * @param {string} errorMessage - Expected error message
- * @param {string} code - Expected error code, where ECONNREFUSED is a Redis connection error always logged to the console
+ * @param {string} statusCode - Expected error status code, where ECONNREFUSED is a Redis connection error always logged to the console
  */
 export function testRedisErrorScenario(
-   mockServiceFunction: jest.MockedFunction<any>,
+   mockServiceFunction: MockedServiceFunction<any>,
    errorMessage: string,
-   code: "ENOMEM" | "ECONNREFUSED" = "ENOMEM"
+   statusCode: "ENOMEM" | "ECONNREFUSED" = "ENOMEM"
 ): void {
    // Mock Redis error
    const redisError = new Error(errorMessage);
-   (redisError as any).code = code;
+   (redisError as any).code = statusCode;
    redisError.stack = `Error: ${errorMessage}\n    at Redis connection`;
 
    mockServiceFunction.mockRejectedValue(redisError);
@@ -38,14 +104,14 @@ export function createMockRepositoryResponse<T>(data: T[]): T[] {
  * the service call and the success response
  *
  * @param {Partial<Response>} mockRes - Mock response object
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
+ * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
  * @param {any[]} expectedServiceArgs - Expected arguments passed to the service function
- * @param {number} expectedStatusCode - Expected HTTP status code (200, 201, or 204)
+ * @param {number} expectedStatusCode - Expected HTTP status code (`200`, `201`, or `204`)
  * @param {any} expectedData - Expected data to be sent in the response body
  */
 export function assertControllerSuccessResponse(
    mockRes: Partial<Response>,
-   mockServiceFunction: jest.MockedFunction<any>,
+   mockServiceFunction: MockedServiceFunction<any>,
    expectedServiceArgs: any[],
    expectedStatusCode: number,
    expectedData: any
@@ -57,10 +123,10 @@ export function assertControllerSuccessResponse(
    expect(mockRes.status).toHaveBeenCalledWith(expectedStatusCode);
 
    if (expectedStatusCode === HTTP_STATUS.NO_CONTENT) {
-      // For 204 responses, verify no JSON was sent
+      // For 204 responses, verify no JSON was sent to the client
       expect(mockRes.json).not.toHaveBeenCalled();
    } else {
-      // For 200/201 responses, verify JSON was sent with correct data
+      // For 200/201 responses, verify JSON was sent to the client with correct data
       expect(mockRes.json).toHaveBeenCalledWith({ data: expectedData });
    }
 
@@ -74,7 +140,7 @@ export function assertControllerSuccessResponse(
  *
  * @param {Partial<Response>} mockRes - Mock response object
  * @param {Error | undefined} expectedError - Expected error that should be thrown by the service
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
+ * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
  * @param {any[]} [expectedServiceArgs] - Expected arguments passed to the service function
  * @param {number} [expectedStatusCode] - Expected HTTP status code (defaults to INTERNAL_SERVER_ERROR)
  * @param {Record<string, any>} [expectedErrors] - Expected error object (defaults to server error)
@@ -82,18 +148,16 @@ export function assertControllerSuccessResponse(
 export function assertControllerErrorResponse(
    mockRes: Partial<Response>,
    expectedError: Error | undefined,
-   mockServiceFunction: jest.MockedFunction<any>,
+   mockServiceFunction: MockedServiceFunction<any>,
    expectedServiceArgs?: any[],
    expectedStatusCode?: number,
    expectedErrors?: Record<string, any>
 ): void {
    const { logger } = require("@/lib/logger");
 
-   // Verify the service function throws the expected error
+   // Verify the service function throws the expected error and properly logged the error stack
    if (expectedError) {
       expect(mockServiceFunction()).rejects.toThrow(expectedError);
-
-      // Verify the error stack is being logged
       expect(logger.error).toHaveBeenCalledWith(expectedError.stack);
    }
 
@@ -102,7 +166,7 @@ export function assertControllerErrorResponse(
       expect(mockServiceFunction).toHaveBeenCalledWith(...expectedServiceArgs);
    }
 
-   // Use provided values or defaults
+   // Use provided values or default to INTERNAL_SERVER_ERROR (500)
    const statusCode = expectedStatusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
    const errors = expectedErrors ?? { server: "Internal Server Error" };
 
@@ -116,14 +180,14 @@ export function assertControllerErrorResponse(
  * Asserts that a controller properly handled a validation error by verifying both the service call and the error response
  *
  * @param {Partial<Response>} mockRes - Mock response object
- * @param {jest.MockedFunction} mockServiceFunction - The mocked service function
+ * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
  * @param {any[]} expectedServiceArgs - Expected arguments passed to the service function
  * @param {number} expectedStatusCode - Expected HTTP status code
  * @param {Record<string, string>} expectedErrors - Expected error object
  */
 export function assertControllerValidationErrorResponse(
    mockRes: Partial<Response>,
-   mockServiceFunction: jest.MockedFunction<any>,
+   mockServiceFunction: MockedServiceFunction<any>,
    expectedServiceArgs: any[],
    expectedStatusCode: number,
    expectedErrors: Record<string, string>
@@ -171,12 +235,12 @@ export function createMockSubmitServiceRequest(): jest.Mock {
       try {
          const result: ServerResponse = await callback();
 
-         if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
+         if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
             // Success response
-            return sendSuccess(mockRes, result.code, result.data ?? undefined);
+            return sendSuccess(mockRes, result.statusCode, result.data ?? undefined);
          } else {
             // Error response
-            return sendErrors(mockRes, result.code, result.errors);
+            return sendErrors(mockRes, result.statusCode, result.errors);
          }
       } catch (error: any) {
          // Log unexpected errors

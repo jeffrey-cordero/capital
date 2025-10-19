@@ -1,5 +1,6 @@
 import type { ServerResponse } from "../server";
 import { HTTP_STATUS } from "../server";
+import { User } from "../user";
 
 /**
  * Test constants for server testing
@@ -19,23 +20,23 @@ export const TEST_CONSTANTS = {
  */
 export const MOCK_RESPONSES = {
    SUCCESS: {
-      code: HTTP_STATUS.OK,
+      statusCode: HTTP_STATUS.OK,
       data: { success: true, message: "Operation successful" }
    } as ServerResponse,
    ERROR: {
-      code: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       errors: { server: "Operation failed" }
    } as ServerResponse,
    VALIDATION_ERROR: {
-      code: HTTP_STATUS.BAD_REQUEST,
+      statusCode: HTTP_STATUS.BAD_REQUEST,
       errors: { validation: "Invalid input data" }
    } as ServerResponse,
    UNAUTHORIZED: {
-      code: HTTP_STATUS.UNAUTHORIZED,
+      statusCode: HTTP_STATUS.UNAUTHORIZED,
       errors: { auth: "Authentication required" }
    } as ServerResponse,
    NOT_FOUND: {
-      code: HTTP_STATUS.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
       errors: { resource: "Resource not found" }
    } as ServerResponse
 } as const;
@@ -44,9 +45,9 @@ export const MOCK_RESPONSES = {
  * Creates a mock user object for testing
  *
  * @param {Partial<any>} overrides - Properties to override in the mock user
- * @returns {any} Mock user object with test data
+ * @returns {User} Mock user object with test data
  */
-export const createMockUser = (overrides: Partial<any> = {}): any => ({
+export const createMockUser = (overrides: Partial<User> = {}): User => ({
    user_id: TEST_CONSTANTS.TEST_USER_ID,
    username: TEST_CONSTANTS.TEST_USERNAME,
    email: TEST_CONSTANTS.TEST_EMAIL,
@@ -59,17 +60,17 @@ export const createMockUser = (overrides: Partial<any> = {}): any => ({
 /**
  * Creates a mock server response
  *
- * @param {number} code - HTTP status code
+ * @param {number} statusCode - HTTP status code
  * @param {any} data - Response data
  * @param {Record<string, string>} errors - Response errors
  * @returns {ServerResponse} Mock server response
  */
 export const createMockResponse = (
-   code: number = HTTP_STATUS.OK,
+   statusCode: number = HTTP_STATUS.OK,
    data?: any,
    errors?: Record<string, string>
 ): ServerResponse => ({
-   code,
+   statusCode,
    ...(data && { data }),
    ...(errors && { errors })
 });
@@ -80,17 +81,17 @@ export const createMockResponse = (
  * @param {any} data - Response data
  * @returns {ServerResponse} Successful server response
  */
-export const createSuccessResponse = (data?: any): ServerResponse => 
+export const createSuccessResponse = (data?: any): ServerResponse =>
    createMockResponse(HTTP_STATUS.OK, data);
 
 /**
  * Creates an error server response
  *
- * @param {number} code - HTTP error status code
+ * @param {number} statusCode - HTTP error status code
  * @param {Record<string, string>} errors - Error messages
  * @returns {ServerResponse} Error server response
  */
 export const createErrorResponse = (
-   code: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
+   statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
    errors: Record<string, string> = { server: "Operation failed" }
-): ServerResponse => createMockResponse(code, undefined, errors);
+): ServerResponse => createMockResponse(statusCode, undefined, errors);

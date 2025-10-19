@@ -22,7 +22,7 @@ export function sendValidationErrors(
       const errors = fields.error?.flatten().fieldErrors || {};
 
       return {
-         code: HTTP_STATUS.BAD_REQUEST,
+         statusCode: HTTP_STATUS.BAD_REQUEST,
          errors: Object.fromEntries(
             Object.entries(errors as Record<string, string[]>).map(([field, errors]) => [
                field, errors?.at(0) || "Unknown error"
@@ -32,7 +32,7 @@ export function sendValidationErrors(
    } else {
       // Use predefined validation errors
       return {
-         code: HTTP_STATUS.BAD_REQUEST,
+         statusCode: HTTP_STATUS.BAD_REQUEST,
          errors: errors || {}
       };
    }
@@ -41,15 +41,15 @@ export function sendValidationErrors(
 /**
  * Creates a structured service response with specified status code and data.
  *
- * @param {number} code - HTTP status code
+ * @param {number} statusCode - HTTP status code
  * @param {any} [data] - Optional response data
  * @param {Record<string, string>} [errors] - Optional error details
  * @returns {ServerResponse} Formatted server response
  */
-export function sendServiceResponse(code: number, data?: any, errors?: Record<string, string>): ServerResponse {
+export function sendServiceResponse(statusCode: number, data?: any, errors?: Record<string, string>): ServerResponse {
    return {
-      code: code,
-      data: data ?? undefined,
+      statusCode,
+      data: data || undefined,
       errors: errors || undefined
    };
 }
@@ -67,12 +67,12 @@ export const submitServiceRequest = async(
    try {
       const result: ServerResponse = await serviceMethod();
 
-      if (result.code === HTTP_STATUS.OK || result.code === HTTP_STATUS.CREATED || result.code === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
+      if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
          // Success response
-         return sendSuccess(res, result.code, result.data ?? undefined);
+         return sendSuccess(res, result.statusCode, result.data ?? undefined);
       } else {
          // Error response
-         return sendErrors(res, result.code, result.errors);
+         return sendErrors(res, result.statusCode, result.errors);
       }
    } catch (error: any) {
       // Log unexpected errors

@@ -33,7 +33,6 @@ wait_for_services() {
       sleep 5
    done
 
-   # Timeout reached
    echo "ERROR: Server failed to start within ${timeout} seconds"
    echo "Final server logs:"
    docker compose logs server
@@ -45,7 +44,6 @@ wait_for_services() {
 health_check() {
    echo "Performing health check..."
 
-   # Check if all services are running
    local failed_services
    failed_services=$(docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up" | tail -n +2 || true)
 
@@ -74,10 +72,10 @@ setup_environment() {
    cp client/.env.example client/.env
    cp server/.env.example server/.env
 
-   # Disable rate limiting for tests
+   # Disable rate limiting for end-to-end testing
    sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED="false"/' server/.env
 
-   # Note the testing environment is explicitly set to test in the .env file
+   # Note the end-to-end testing environment is explicitly set to prevent external API calls
    sed -i 's/^CI=.*/CI="true"/' server/.env
 
    echo "Environment configured for testing"

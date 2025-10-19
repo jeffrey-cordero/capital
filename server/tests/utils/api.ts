@@ -75,8 +75,8 @@ const createMockResponse = (): MockResponse => {
          mockRes.cookies[name] = { value, options };
          return mockRes;
       }),
-      status: jest.fn((code: number) => {
-         mockRes.statusCode = code;
+      status: jest.fn((statusCode: number) => {
+         mockRes.statusCode = statusCode;
          return mockRes;
       }),
       json: jest.fn((data: any) => {
