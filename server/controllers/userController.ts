@@ -15,7 +15,7 @@ import * as userService from "@/services/userService";
 export const POST = asyncHandler(async(req: Request, res: Response) => {
    const user: User = req.body;
 
-   return submitServiceRequest(res, async() => userService.createUser(req, res, user));
+   return submitServiceRequest(res, async() => userService.createUser(res, user));
 });
 
 /**
@@ -51,5 +51,5 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  * @returns {Promise<Response>} Service response with deletion confirmation
  */
 export const DELETE = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => userService.deleteAccount(req, res));
+   return submitServiceRequest(res, async() => userService.deleteAccount(res));
 });

@@ -1,4 +1,4 @@
-import type { LoginPayload, RegisterPayload } from "../user";
+import type { LoginPayload, RegisterPayload, User, UserDetails, UserUpdates } from "../user";
 
 /**
  * Valid registration test data with secure password that meets all requirements
@@ -137,3 +137,140 @@ export const createLoginCredentials = (username: string): LoginPayload => ({
   ...VALID_LOGIN,
   username
 });
+
+/**
+ * Creates mock UserDetails object (without sensitive fields)
+ *
+ * @param {Partial<UserDetails>} overrides - Properties to override in the mock user details
+ * @returns {UserDetails} Mock user details object
+ */
+export const createMockUserDetails = (overrides: Partial<UserDetails> = {}): UserDetails => {
+  const { username, email } = generateTestCredentials();
+  return {
+    username,
+    email,
+    name: "Test User",
+    birthday: "1990-01-01",
+    ...overrides
+  };
+};
+
+/**
+ * Creates valid UserUpdates payload for testing
+ *
+ * @param {Partial<UserUpdates>} overrides - Properties to override in the mock updates
+ * @returns {Partial<UserUpdates>} Mock user updates object
+ */
+export const createMockUserUpdates = (overrides: Partial<UserUpdates> = {}): Partial<UserUpdates> => {
+  const { username, email } = generateTestCredentials();
+  return {
+    username,
+    email,
+    name: "Updated Test User",
+    birthday: "1990-01-01",
+    ...overrides
+  };
+};
+
+/**
+ * Creates UserUpdates payload with password change fields
+ *
+ * @param {string} currentPassword - Current password for verification
+ * @param {string} newPassword - New password to set
+ * @param {Partial<UserUpdates>} overrides - Additional properties to override
+ * @returns {Partial<UserUpdates>} Mock user updates with password change
+ */
+export const createUserUpdatesWithPasswordChange = (
+  currentPassword: string = "Password1!",
+  newPassword: string = "NewPassword1!",
+  overrides: Partial<UserUpdates> = {}
+): Partial<UserUpdates> => ({
+  password: currentPassword,
+  newPassword,
+  verifyPassword: newPassword,
+  ...overrides
+});
+
+/**
+ * Creates a user with specific username/email for conflict testing
+ *
+ * @param {string} username - Specific username to use
+ * @param {string} email - Specific email to use
+ * @param {Partial<User>} overrides - Additional properties to override
+ * @returns {User} Mock user with specified credentials
+ */
+export const createConflictingUser = (
+  username: string,
+  email: string,
+  overrides: Partial<User> = {}
+): User => ({
+  user_id: "conflict-user-id-123",
+  username,
+  email,
+  name: "Conflict User",
+  birthday: "1990-01-01",
+  password: "Password1!",
+  ...overrides
+});
+
+/**
+ * Creates invalid UserUpdates payload for validation testing
+ *
+ * @param {string} invalidType - Type of invalidity to test
+ * @returns {Partial<UserUpdates>} Invalid user updates object
+ */
+export const createInvalidUserUpdates = (invalidType: "invalidEmail" | "invalidUsername" | "invalidBirthday" = "invalidEmail"): Partial<UserUpdates> => {
+  const { username } = generateTestCredentials();
+  
+  const invalidUpdates = {
+    invalidEmail: {
+      username,
+      email: "invalid-email-format"
+    },
+    invalidUsername: {
+      username: "a", // Too short
+      email: `${username}@example.com`
+    },
+    invalidBirthday: {
+      username,
+      email: `${username}@example.com`,
+      birthday: "invalid-date"
+    }
+  };
+
+  return invalidUpdates[invalidType];
+};
+
+/**
+ * Creates user data with case variations for conflict testing
+ *
+ * @param {string} baseUsername - Base username to create variations from
+ * @param {string} baseEmail - Base email to create variations from
+ * @param {string} variation - Type of case variation
+ * @returns {User} Mock user with case-varied credentials
+ */
+export const createUserWithCaseVariation = (
+  baseUsername: string,
+  baseEmail: string,
+  variation: "uppercase" | "lowercase" | "mixed" = "uppercase"
+): User => {
+  const variations = {
+    uppercase: {
+      username: baseUsername.toUpperCase(),
+      email: baseEmail.toUpperCase()
+    },
+    lowercase: {
+      username: baseUsername.toLowerCase(),
+      email: baseEmail.toLowerCase()
+    },
+    mixed: {
+      username: baseUsername.charAt(0).toUpperCase() + baseUsername.slice(1).toLowerCase(),
+      email: baseEmail.charAt(0).toUpperCase() + baseEmail.slice(1).toLowerCase()
+    }
+  };
+
+  return createConflictingUser(
+    variations[variation].username,
+    variations[variation].email
+  );
+};

@@ -35,7 +35,7 @@ describe("User Controller", () => {
    });
 
    describe("POST /users", () => {
-      it("should create a new user successfully", async() => {
+      it("should return success for valid user creation", async() => {
          mockReq.body = createMockUser();
          const mockCreateUser = setupMockServiceSuccess(userService, "createUser", HTTP_STATUS.CREATED, { success: true });
 
@@ -44,13 +44,13 @@ describe("User Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockCreateUser,
-            [mockReq, mockRes, mockReq.body],
+            [mockRes, mockReq.body],
             HTTP_STATUS.CREATED,
             { success: true }
          );
       });
 
-      it("should handle user creation conflicts", async() => {
+      it("should return validation errors for user creation conflicts", async() => {
          mockReq.body = createMockUser();
          const mockCreateUser = setupMockServiceValidationError(userService, "createUser", HTTP_STATUS.CONFLICT, {
             username: "Username already exists",
@@ -62,7 +62,7 @@ describe("User Controller", () => {
          assertControllerValidationErrorResponse(
             mockRes,
             mockCreateUser,
-            [mockReq, mockRes, mockReq.body],
+            [mockRes, mockReq.body],
             HTTP_STATUS.CONFLICT,
             {
                username: "Username already exists",
@@ -73,7 +73,7 @@ describe("User Controller", () => {
    });
 
    describe("GET /users", () => {
-      it("should fetch user details successfully", async() => {
+      it("should return user details for valid user ID", async() => {
          const mockUser: User = createMockUser();
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockFetchUserDetails = setupMockServiceSuccess(userService, "fetchUserDetails", HTTP_STATUS.OK, mockUser);
@@ -91,7 +91,7 @@ describe("User Controller", () => {
    });
 
    describe("PUT /users", () => {
-      it("should update user account details successfully", async() => {
+      it("should return success for valid user account details update", async() => {
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          mockReq.body = { username: "newusername", email: "newemail@example.com" };
          const mockUpdateAccountDetails = setupMockServiceSuccess(userService, "updateAccountDetails", HTTP_STATUS.OK, { success: true });
@@ -107,7 +107,7 @@ describe("User Controller", () => {
          );
       });
 
-      it("should handle user update conflicts", async() => {
+      it("should return validation errors for user update conflicts", async() => {
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          mockReq.body = { username: "newusername" };
          const mockUpdateAccountDetails = setupMockServiceValidationError(userService, "updateAccountDetails", HTTP_STATUS.CONFLICT, {
@@ -129,7 +129,7 @@ describe("User Controller", () => {
    });
 
    describe("DELETE /users", () => {
-      it("should delete user account successfully", async() => {
+      it("should return success for valid user account deletion", async() => {
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockDeleteAccount = setupMockServiceSuccess(userService, "deleteAccount", HTTP_STATUS.OK, { success: true });
 
@@ -138,13 +138,13 @@ describe("User Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockDeleteAccount,
-            [mockReq, mockRes],
+            [mockRes],
             HTTP_STATUS.OK,
             { success: true }
          );
       });
 
-      it("should handle user not found during deletion", async() => {
+      it("should return validation errors for user not found", async() => {
          mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
          const mockDeleteAccount = setupMockServiceValidationError(userService, "deleteAccount", HTTP_STATUS.NOT_FOUND, {
             user_id: "User not found"
@@ -155,7 +155,7 @@ describe("User Controller", () => {
          assertControllerValidationErrorResponse(
             mockRes,
             mockDeleteAccount,
-            [mockReq, mockRes],
+            [mockRes],
             HTTP_STATUS.NOT_FOUND,
             {
                user_id: "User not found"

@@ -7,7 +7,7 @@ import {
    userSchema,
    UserUpdates
 } from "capital/user";
-import { Request, Response } from "express";
+import { Response } from "express";
 
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
@@ -106,12 +106,11 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
 /**
  * Creates a new user and configures JWT token
  *
- * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {User} user - User object to create
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.CREATED` with success status or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.CONFLICT` with respective errors
  */
-export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
+export async function createUser(res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields against the user schema
    const fields = userSchema.safeParse(user);
 
@@ -210,11 +209,10 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
 /**
  * Deletes a user account and all associated data
  *
- * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.NOT_FOUND` with respective errors
  */
-export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
+export async function deleteAccount(res: Response): Promise<ServerResponse> {
    // Attempt to delete the user and their associated data
    const user_id: string = res.locals.user_id;
    const result = await userRepository.deleteUser(user_id);
