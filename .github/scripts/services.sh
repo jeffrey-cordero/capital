@@ -25,7 +25,7 @@ wait_for_services() {
 
    start_time=$(date +%s)
    while (( $(date +%s) - start_time < timeout )); do
-      if docker compose logs server | grep -qE "Started Capital on port [0-9]+"; then
+      if docker compose logs server | grep "Started Capital"; then
          echo "Server is ready!"
          exit 0
       fi

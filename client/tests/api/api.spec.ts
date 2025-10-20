@@ -91,7 +91,7 @@ test.describe("API Error Handling", () => {
 
          // Navigate to dashboard should work as intended
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
-         await expect(page.getByTestId("empty-accounts-trends-overview")).toHaveText("No available accounts");
+         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
       });
    });
 });

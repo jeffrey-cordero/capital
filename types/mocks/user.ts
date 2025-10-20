@@ -31,21 +31,18 @@ export const VALID_LOGIN: LoginPayload = {
 /**
  * Generates unique test credentials for username and email
  *
- * Combines timestamp and random suffix to ensure uniqueness across test runs.
- * The username is derived from the email prefix for consistency.
- *
  * @returns {{ username: string; email: string }} Object containing unique username and email
  */
 export const generateTestCredentials = (): { username: string; email: string } => {
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).substring(2, 8);
-  const identifier = `${timestamp}-${randomSuffix}`;
+  const length = 62;
+  const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const randomBytes = (globalThis as any).crypto.getRandomValues(new Uint8Array(length));
+  const identifier = Array.from(randomBytes, (b: number) => alphabet[b % alphabet.length]).join("").substring(0, 30);
 
-  // Username limited to 30 characters for validation purposes
-  const username = identifier.substring(0, 30);
-  const email = `${identifier}@example.com`;
-
-  return { username, email };
+  return {
+    username: identifier,
+    email: `${identifier}@example.com`
+  };
 };
 
 /**

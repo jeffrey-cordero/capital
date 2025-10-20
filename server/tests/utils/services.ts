@@ -129,6 +129,17 @@ export function setupMockCacheError(
 }
 
 /**
+ * Helper function to setup default Redis cache behavior for all cache methods
+ *
+ * @param {any} cacheModule - The cache module to mock
+ */
+export function setupDefaultRedisCacheBehavior(cacheModule: any): void {
+   (cacheModule.getCacheValue as jest.Mock).mockResolvedValue(null);
+   (cacheModule.setCacheValue as jest.Mock).mockResolvedValue(undefined);
+   (cacheModule.removeCacheValue as jest.Mock).mockResolvedValue(undefined);
+}
+
+/**
  * Tests Redis error scenarios with logging verification
  *
  * @param {MockedServiceFunction<any>} mockCacheFunction - The mocked cache function
@@ -447,4 +458,98 @@ export function assertUserNotFoundBehavior(
 ): void {
    expect(repositoryModule[repositoryMethod]).toHaveBeenCalledWith(repositoryParam);
    expect(cacheModule.setCacheValue).not.toHaveBeenCalled();
+}
+
+/**
+ * Asserts service success response with data
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {any} expectedData - Expected data in the response
+ */
+export function assertServiceSuccessResponseWithData(
+   result: any,
+   expectedStatusCode: number,
+   expectedData: any
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.data).toEqual(expectedData);
+}
+
+/**
+ * Asserts service success response without data (e.g., NO_CONTENT)
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ */
+export function assertServiceSuccessResponseWithoutData(
+   result: any,
+   expectedStatusCode: number
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.data).toBeUndefined();
+}
+
+/**
+ * Asserts service validation error response with partial error matching
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {Record<string, any>} expectedErrorPattern - Expected error pattern
+ */
+export function assertServiceValidationErrorResponseWithPattern(
+   result: any,
+   expectedStatusCode: number,
+   expectedErrorPattern: Record<string, any>
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.errors).toEqual(expect.objectContaining(expectedErrorPattern));
+}
+
+/**
+ * Asserts service not found error response
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {Record<string, string>} expectedErrors - Expected error object
+ */
+export function assertServiceNotFoundErrorResponse(
+   result: any,
+   expectedStatusCode: number,
+   expectedErrors: Record<string, string>
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.errors).toEqual(expectedErrors);
+}
+
+/**
+ * Asserts service conflict error response
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {Record<string, string>} expectedErrors - Expected error object
+ */
+export function assertServiceConflictErrorResponse(
+   result: any,
+   expectedStatusCode: number,
+   expectedErrors: Record<string, string>
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.errors).toEqual(expectedErrors);
+}
+
+/**
+ * Asserts service bad request error response
+ *
+ * @param {any} result - Service response result
+ * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {Record<string, string>} expectedErrors - Expected error object
+ */
+export function assertServiceBadRequestErrorResponse(
+   result: any,
+   expectedStatusCode: number,
+   expectedErrors: Record<string, string>
+): void {
+   expect(result.statusCode).toBe(expectedStatusCode);
+   expect(result.errors).toEqual(expectedErrors);
 }
