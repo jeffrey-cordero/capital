@@ -10,17 +10,14 @@ import { HTTP_STATUS } from "capital/server";
 import { User, UserDetails, UserUpdates } from "capital/user";
 
 import * as userService from "@/services/userService";
+import { USER_DETAILS_CACHE_DURATION } from "@/services/userService";
 import { createMockMiddleware, MockResponse } from "@/tests/utils/api";
 import {
    assertCacheHitBehavior,
    assertCacheMissBehavior,
-   assertServiceBadRequestErrorResponse,
-   assertServiceConflictErrorResponse,
-   assertServiceNotFoundErrorResponse,
-   assertServiceSuccessResponseWithData,
-   assertServiceSuccessResponseWithoutData,
-   assertServiceValidationErrorResponse,
-   assertServiceValidationErrorResponseWithPattern,
+   assertRepositoryCall,
+   assertServiceErrorResponse,
+   assertServiceSuccessResponse,
    assertUserCreationConflictBehavior,
    assertUserCreationSuccessBehavior,
    assertUserDeletionSuccessBehavior,
@@ -34,11 +31,9 @@ import {
    setupMockRepositoryError,
    setupMockRepositoryNull,
    setupMockRepositorySuccess,
-   testDatabaseErrorScenario,
-   testRedisErrorScenario
+   testDatabaseErrorScenario
 } from "@/tests/utils/services";
 
-// Mock all external dependencies
 jest.mock("argon2", () => ({
    hash: jest.fn(),
    verify: jest.fn()
@@ -66,12 +61,6 @@ jest.mock("@/repository/userRepository", () => ({
    deleteUser: jest.fn()
 }));
 
-jest.mock("@/lib/logger", () => ({
-   logger: {
-      error: jest.fn()
-   }
-}));
-
 describe("User Service", () => {
    let mockRes: MockResponse;
    let userRepository: typeof import("@/repository/userRepository");
@@ -79,27 +68,18 @@ describe("User Service", () => {
    let argon2: typeof import("argon2");
    let middleware: typeof import("@/lib/middleware");
    let authenticationService: typeof import("@/services/authenticationService");
-   let logger: typeof import("@/lib/logger");
 
    beforeEach(async() => {
-      // Reset all mocks
       jest.clearAllMocks();
 
-      // Get fresh module references
       userRepository = await import("@/repository/userRepository");
       redis = await import("@/lib/redis");
       argon2 = await import("argon2");
       middleware = await import("@/lib/middleware");
       authenticationService = await import("@/services/authenticationService");
-      logger = await import("@/lib/logger");
 
-      // Reset Redis mocks to default behavior using helper methods
       setupDefaultRedisCacheBehavior(redis);
-
-      // Setup mock response object
-      const { mockRes: mockResponse } = createMockMiddleware();
-      mockRes = mockResponse;
-      mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+      ({ mockRes } = createMockMiddleware({ locals: { user_id: TEST_CONSTANTS.TEST_USER_ID } }));
    });
 
    describe("fetchUserDetails", () => {
@@ -108,14 +88,12 @@ describe("User Service", () => {
       it("should return cached user details on cache hit", async() => {
          const cachedUserDetails: UserDetails = createMockUserDetails();
          const cachedData = JSON.stringify(cachedUserDetails);
-
          setupMockCacheHit(redis, "getCacheValue", cachedData);
 
          const result = await userService.fetchUserDetails(user_id);
 
          assertCacheHitBehavior(redis, "getCacheValue", userRepository, "findByUserId", `user:${user_id}`);
-
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.OK, cachedUserDetails);
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, cachedUserDetails);
       });
 
       it("should fetch from database and cache on cache miss", async() => {
@@ -140,10 +118,9 @@ describe("User Service", () => {
             `user:${user_id}`,
             user_id,
             expectedUserDetails,
-            30 * 60 // USER_DETAILS_CACHE_DURATION
+            USER_DETAILS_CACHE_DURATION
          );
-
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.OK, expectedUserDetails);
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, expectedUserDetails);
       });
 
       it("should fall back to database on cache error", async() => {
@@ -155,7 +132,6 @@ describe("User Service", () => {
             birthday: mockUser.birthday
          };
 
-         // Mock Redis error - getCacheValue should return null on error (handled internally)
          setupMockCacheMiss(redis, "getCacheValue");
          setupMockRepositorySuccess(userRepository, "findByUserId", mockUser);
 
@@ -169,13 +145,12 @@ describe("User Service", () => {
             `user:${user_id}`,
             user_id,
             expectedUserDetails,
-            30 * 60
+            USER_DETAILS_CACHE_DURATION
          );
-
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.OK, expectedUserDetails);
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, expectedUserDetails);
       });
 
-      it("should handle Redis cache errors and log them", async() => {
+      it("should handle Redis cache errors", async() => {
          const mockUser: User = createMockUser();
          const expectedUserDetails: UserDetails = {
             username: mockUser.username,
@@ -184,17 +159,14 @@ describe("User Service", () => {
             birthday: mockUser.birthday
          };
 
-         // Mock Redis to return null on error (actual behavior)
          setupMockCacheMiss(redis, "getCacheValue");
          setupMockRepositorySuccess(userRepository, "findByUserId", mockUser);
 
          const result = await userService.fetchUserDetails(user_id);
 
-         // Should work by falling back to database
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.OK, expectedUserDetails);
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, expectedUserDetails);
       });
-
 
       it("should return not found when user does not exist", async() => {
          setupMockCacheMiss(redis, "getCacheValue");
@@ -203,8 +175,7 @@ describe("User Service", () => {
          const result = await userService.fetchUserDetails(user_id);
 
          assertUserNotFoundBehavior(userRepository, "findByUserId", redis, user_id);
-
-         assertServiceNotFoundErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
+         assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
       it("should propagate database errors", async() => {
@@ -213,7 +184,7 @@ describe("User Service", () => {
 
          await expect(userService.fetchUserDetails(user_id)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
          expect(redis.setCacheValue).not.toHaveBeenCalled();
       });
    });
@@ -243,7 +214,7 @@ describe("User Service", () => {
             mockRes
          );
 
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.CREATED, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { success: true });
       });
 
       it("should return validation errors for invalid user data", async() => {
@@ -263,14 +234,14 @@ describe("User Service", () => {
          expect(userRepository.create).not.toHaveBeenCalled();
          expect(middleware.configureToken).not.toHaveBeenCalled();
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             username: expect.any(String),
             email: expect.any(String),
             name: expect.any(String),
             birthday: expect.any(String),
             password: expect.any(String),
             verifyPassword: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return validation errors for weak passwords", async() => {
@@ -283,9 +254,9 @@ describe("User Service", () => {
          expect(userRepository.create).not.toHaveBeenCalled();
          expect(middleware.configureToken).not.toHaveBeenCalled();
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return validation errors for passwords without uppercase", async() => {
@@ -293,9 +264,9 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, weakPasswordUser);
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return validation errors for passwords without lowercase", async() => {
@@ -303,9 +274,9 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, weakPasswordUser);
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return validation errors for passwords without numbers", async() => {
@@ -313,9 +284,9 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, weakPasswordUser);
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return validation errors for passwords without special characters", async() => {
@@ -324,7 +295,7 @@ describe("User Service", () => {
          const result = await userService.createUser(mockRes as any, weakPasswordUser);
 
          // Note: "Password123" actually passes validation since special characters are not required
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.CREATED, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { success: true });
       });
 
       it("should return conflict error for existing username", async() => {
@@ -343,7 +314,7 @@ describe("User Service", () => {
             mockUser.email
          );
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
       it("should return conflict error for existing email", async() => {
@@ -354,7 +325,7 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
       });
 
       it("should return conflict error for both username and email", async() => {
@@ -365,7 +336,7 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, {
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, {
             username: "Username already exists",
             email: "Email already exists"
          });
@@ -383,7 +354,7 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
       it("should detect case-insensitive email conflicts", async() => {
@@ -398,7 +369,7 @@ describe("User Service", () => {
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
       });
 
       it("should propagate database errors during conflict check", async() => {
@@ -407,10 +378,10 @@ describe("User Service", () => {
 
          await expect(userService.createUser(mockRes as any, mockUser)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(
+         assertRepositoryCall(userRepository, "findConflictingUsers", [
             mockUser.username,
             mockUser.email
-         );
+         ]);
          expect(argon2.hash).not.toHaveBeenCalled();
          expect(userRepository.create).not.toHaveBeenCalled();
       });
@@ -421,10 +392,10 @@ describe("User Service", () => {
 
          await expect(userService.createUser(mockRes as any, mockUser)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(
+         assertRepositoryCall(userRepository, "findConflictingUsers", [
             mockUser.username,
             mockUser.email
-         );
+         ]);
          expect(argon2.hash).not.toHaveBeenCalled();
          expect(userRepository.create).not.toHaveBeenCalled();
       });
@@ -439,11 +410,11 @@ describe("User Service", () => {
 
          await expect(userService.createUser(mockRes as any, mockUser)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+         assertRepositoryCall(userRepository, "create", [expect.objectContaining({
             ...mockUser,
             password: hashedPassword,
             birthday: expect.any(String)
-         }));
+         })]);
          expect(middleware.configureToken).not.toHaveBeenCalled();
       });
 
@@ -457,11 +428,11 @@ describe("User Service", () => {
 
          await expect(userService.createUser(mockRes as any, mockUser)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+         assertRepositoryCall(userRepository, "create", [expect.objectContaining({
             ...mockUser,
             password: hashedPassword,
             birthday: expect.any(String)
-         }));
+         })]);
          expect(middleware.configureToken).not.toHaveBeenCalled();
       });
 
@@ -473,17 +444,14 @@ describe("User Service", () => {
          setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
          (argon2.hash as jest.Mock).mockResolvedValue(hashedPassword);
          setupMockRepositorySuccess(userRepository, "create", user_id);
-         
-         // Mock Redis cache to fail silently (actual behavior)
-         (redis.setCacheValue as jest.Mock).mockImplementation(() => {
-            // Simulate Redis error that gets caught and logged internally
-            throw new Error("Redis cache error");
-         });
+
+         // Mock Redis cache error using helper
+         setupMockCacheError(redis, "setCacheValue", new Error("Redis cache error"));
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
          // User creation should still succeed despite cache error
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.CREATED, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { success: true });
          expect(userRepository.create).toHaveBeenCalled();
          expect(middleware.configureToken).toHaveBeenCalled();
       });
@@ -496,17 +464,13 @@ describe("User Service", () => {
          setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
          (argon2.hash as jest.Mock).mockResolvedValue(hashedPassword);
          setupMockRepositorySuccess(userRepository, "create", user_id);
-         
-         // Mock Redis cache error using helper
+
          setupMockCacheError(redis, "setCacheValue", new Error("Redis cache error"));
 
          const result = await userService.createUser(mockRes as any, mockUser);
 
-         // Verify Redis error was logged
-         testRedisErrorScenario(redis.setCacheValue as any, "Redis cache error");
-
          // User creation should still succeed despite cache error
-         assertServiceSuccessResponseWithData(result, HTTP_STATUS.CREATED, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { success: true });
          expect(userRepository.create).toHaveBeenCalled();
          expect(middleware.configureToken).toHaveBeenCalled();
       });
@@ -538,7 +502,7 @@ describe("User Service", () => {
             `user:${user_id}`
          );
 
-         assertServiceSuccessResponseWithoutData(result, HTTP_STATUS.NO_CONTENT);
+         assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
       it("should update password successfully with valid credentials", async() => {
@@ -558,16 +522,16 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
          expect(argon2.verify).toHaveBeenCalledWith(currentUser.password, updates.password);
          expect(argon2.hash).toHaveBeenCalledWith(updates.newPassword);
-         expect(userRepository.update).toHaveBeenCalledWith(user_id, {
+         assertRepositoryCall(userRepository, "update", [user_id, {
             ...updates,
             password: hashedNewPassword
-         });
+         }]);
          expect(redis.removeCacheValue).toHaveBeenCalledWith(`user:${user_id}`);
 
-         assertServiceSuccessResponseWithoutData(result, HTTP_STATUS.NO_CONTENT);
+         assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
       it("should return validation errors for invalid update data", async() => {
@@ -584,11 +548,11 @@ describe("User Service", () => {
          expect(userRepository.update).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             username: expect.any(String),
             email: expect.any(String),
             birthday: expect.any(String)
-         });
+         }, false);
       });
 
       it("should return conflict error when updating to existing username", async() => {
@@ -599,15 +563,15 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(
+         assertRepositoryCall(userRepository, "findConflictingUsers", [
             updates.username,
             "",
             user_id
-         );
+         ]);
          expect(userRepository.update).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
       it("should return conflict error when updating to existing email", async() => {
@@ -618,7 +582,7 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
       });
 
       it("should detect case-insensitive conflicts", async() => {
@@ -633,7 +597,7 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         assertServiceConflictErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
+         assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
       it("should return not found when user does not exist during password change", async() => {
@@ -648,13 +612,13 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
          expect(argon2.verify).not.toHaveBeenCalled();
          expect(argon2.hash).not.toHaveBeenCalled();
          expect(userRepository.update).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceNotFoundErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
+         assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
       it("should return bad request for invalid current password", async() => {
@@ -671,13 +635,13 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
          expect(argon2.verify).toHaveBeenCalledWith(currentUser.password, updates.password);
          expect(argon2.hash).not.toHaveBeenCalled();
          expect(userRepository.update).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceBadRequestErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
       });
 
       it("should return bad request for missing current password during password change", async() => {
@@ -695,9 +659,9 @@ describe("User Service", () => {
          expect(userRepository.update).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceValidationErrorResponseWithPattern(result, HTTP_STATUS.BAD_REQUEST, {
+         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: expect.any(String)
-         });
+         }, false);
       });
 
       it("should propagate database errors during password change user lookup", async() => {
@@ -712,7 +676,7 @@ describe("User Service", () => {
 
          await expect(userService.updateAccountDetails(user_id, updates)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.findByUserId).toHaveBeenCalledWith(user_id);
+         assertRepositoryCall(userRepository, "findByUserId", [user_id]);
          expect(argon2.verify).not.toHaveBeenCalled();
          expect(argon2.hash).not.toHaveBeenCalled();
          expect(userRepository.update).not.toHaveBeenCalled();
@@ -727,10 +691,10 @@ describe("User Service", () => {
 
          const result = await userService.updateAccountDetails(user_id, updates);
 
-         expect(userRepository.update).toHaveBeenCalledWith(user_id, expect.objectContaining(updates));
+         assertRepositoryCall(userRepository, "update", [user_id, expect.objectContaining(updates)]);
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceNotFoundErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
+         assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
       it("should propagate database errors during conflict check", async() => {
@@ -739,11 +703,11 @@ describe("User Service", () => {
 
          await expect(userService.updateAccountDetails(user_id, updates)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(
+         assertRepositoryCall(userRepository, "findConflictingUsers", [
             updates.username,
             "",
             user_id
-         );
+         ]);
          expect(userRepository.update).not.toHaveBeenCalled();
       });
 
@@ -755,7 +719,7 @@ describe("User Service", () => {
 
          await expect(userService.updateAccountDetails(user_id, updates)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.update).toHaveBeenCalledWith(user_id, expect.objectContaining(updates));
+         assertRepositoryCall(userRepository, "update", [user_id, expect.objectContaining(updates)]);
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
       });
 
@@ -767,7 +731,7 @@ describe("User Service", () => {
 
          await expect(userService.updateAccountDetails(user_id, updates)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.update).toHaveBeenCalledWith(user_id, expect.objectContaining(updates));
+         assertRepositoryCall(userRepository, "update", [user_id, expect.objectContaining(updates)]);
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
       });
 
@@ -787,7 +751,7 @@ describe("User Service", () => {
             mockRes
          );
 
-         assertServiceSuccessResponseWithoutData(result, HTTP_STATUS.NO_CONTENT);
+         assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
       it("should return not found when user does not exist", async() => {
@@ -795,11 +759,11 @@ describe("User Service", () => {
 
          const result = await userService.deleteAccount(mockRes as any);
 
-         expect(userRepository.deleteUser).toHaveBeenCalledWith(mockRes.locals.user_id);
+         assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.user_id]);
          expect(authenticationService.logoutUser).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
 
-         assertServiceNotFoundErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
+         assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
       it("should propagate database errors during deletion", async() => {
@@ -807,7 +771,7 @@ describe("User Service", () => {
 
          await expect(userService.deleteAccount(mockRes as any)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.deleteUser).toHaveBeenCalledWith(mockRes.locals.user_id);
+         assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.user_id]);
          expect(authenticationService.logoutUser).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
       });
@@ -817,10 +781,9 @@ describe("User Service", () => {
 
          await expect(userService.deleteAccount(mockRes as any)).rejects.toThrow("Database connection failed");
 
-         expect(userRepository.deleteUser).toHaveBeenCalledWith(mockRes.locals.user_id);
+         assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.user_id]);
          expect(authenticationService.logoutUser).not.toHaveBeenCalled();
          expect(redis.removeCacheValue).not.toHaveBeenCalled();
       });
-
    });
 });

@@ -18,7 +18,7 @@ import { logoutUser } from "@/services/authenticationService";
 /**
  * Cache duration for user details (30 minutes)
  */
-const USER_DETAILS_CACHE_DURATION = 30 * 60;
+export const USER_DETAILS_CACHE_DURATION = 30 * 60;
 
 /**
  * Normalizes user input for case-insensitive comparison

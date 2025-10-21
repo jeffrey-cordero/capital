@@ -8,6 +8,7 @@ export interface MockRequest extends Partial<Request> {
    body?: any;
    params?: Record<string, string>;
    query?: Record<string, string>;
+   locals?: Record<string, any>;
    headers?: Record<string, string>;
    cookies?: Record<string, string>;
 }
@@ -33,6 +34,7 @@ type MockRequestOptions = {
    body?: any;
    params?: Record<string, string>;
    query?: Record<string, string>;
+   locals?: Record<string, any>;
    headers?: Record<string, string>;
 }
 
@@ -53,7 +55,8 @@ const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
    body: options.body ?? {},
    params: options.params ?? {},
    query: options.query ?? {},
-   headers: options.headers ?? {}
+   headers: options.headers ?? {},
+   locals: options.locals ?? {}
 });
 
 /**

@@ -140,26 +140,6 @@ export function setupDefaultRedisCacheBehavior(cacheModule: any): void {
 }
 
 /**
- * Tests Redis error scenarios with logging verification
- *
- * @param {MockedServiceFunction<any>} mockCacheFunction - The mocked cache function
- * @param {string} errorMessage - Expected error message
- * @param {string} statusCode - Expected error status code, where ECONNREFUSED is a Redis connection error always logged to the console
- */
-export function testRedisErrorScenario(
-   mockCacheFunction: MockedServiceFunction<any>,
-   errorMessage: string,
-   statusCode: "ENOMEM" | "ECONNREFUSED" = "ENOMEM"
-): void {
-   // Mock Redis error
-   const redisError = new Error(errorMessage);
-   (redisError as any).code = statusCode;
-   redisError.stack = `Error: ${errorMessage}\n    at Redis connection`;
-
-   mockCacheFunction.mockRejectedValue(redisError);
-}
-
-/**
  * Tests database error scenarios with logging verification
  *
  * @param {MockedRepositoryFunction<any>} mockRepositoryFunction - The mocked repository function
@@ -179,53 +159,41 @@ export function testDatabaseErrorScenario(
 /**
  * Asserts that a service function properly handled a success response
  *
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
- * @param {any[]} expectedArgs - Expected arguments passed to the service function
+ * @param {any} result - Service response result
  * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {any} expectedData - Expected data in the response
+ * @param {Object | undefined} [expectedData] - Expected data in the response (undefined for NO_CONTENT)
  */
 export function assertServiceSuccessResponse(
-   mockServiceFunction: MockedServiceFunction<any>,
-   expectedArgs: any[],
+   result: any,
    expectedStatusCode: number,
-   expectedData: any
+   expectedData?: object | undefined
 ): void {
-   // Verify the service function was called with the expected arguments
-   expect(mockServiceFunction).toHaveBeenCalledWith(...expectedArgs);
-
-   // Verify the service function returned the expected response
-   expect(mockServiceFunction).toHaveReturnedWith(
-      expect.objectContaining({
-         statusCode: expectedStatusCode,
-         data: expectedData
-      })
-   );
+   const { statusCode, data } = result;
+   expect(statusCode).toBe(expectedStatusCode);
+   expect(data).toEqual(expectedData);
 }
 
 /**
- * Asserts that a service function properly handled a validation error response
+ * Asserts that a service function properly handled an error response
  *
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
- * @param {any[]} expectedArgs - Expected arguments passed to the service function
+ * @param {any} result - Service response result
  * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, string>} expectedErrors - Expected error object
+ * @param {Record<string, any>} expectedErrors - Expected error object or pattern
+ * @param {boolean} [exactMatch] - Whether to use exact matching (default: true) or partial matching
  */
-export function assertServiceValidationErrorResponse(
-   mockServiceFunction: MockedServiceFunction<any>,
-   expectedArgs: any[],
+export function assertServiceErrorResponse(
+   result: any,
    expectedStatusCode: number,
-   expectedErrors: Record<string, string>
+   expectedErrors: Record<string, any>,
+   exactMatch: boolean = true
 ): void {
-   // Verify the service function was called with the expected arguments
-   expect(mockServiceFunction).toHaveBeenCalledWith(...expectedArgs);
+   expect(result.statusCode).toBe(expectedStatusCode);
 
-   // Verify the service function returned the expected error response
-   expect(mockServiceFunction).toHaveReturnedWith(
-      expect.objectContaining({
-         statusCode: expectedStatusCode,
-         errors: expectedErrors
-      })
-   );
+   if (exactMatch) {
+      expect(result.errors).toEqual(expectedErrors);
+   } else {
+      expect(result.errors).toEqual(expect.objectContaining(expectedErrors));
+   }
 }
 
 /**
@@ -461,95 +429,22 @@ export function assertUserNotFoundBehavior(
 }
 
 /**
- * Asserts service success response with data
+ * Asserts that a repository function was called with expected parameters and optionally verifies return value
  *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {any} expectedData - Expected data in the response
+ * @param {any} repositoryModule - Repository module mock
+ * @param {string} repositoryMethod - Repository method name (e.g., "deleteUser", "findByUserId", "create")
+ * @param {any} expectedParams - Expected parameters passed to the repository function
+ * @param {any} [expectedReturnValue] - Optional expected return value from the repository function
  */
-export function assertServiceSuccessResponseWithData(
-   result: any,
-   expectedStatusCode: number,
-   expectedData: any
+export function assertRepositoryCall(
+   repositoryModule: any,
+   repositoryMethod: string,
+   expectedParams: any[],
+   expectedReturnValue?: any
 ): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.data).toEqual(expectedData);
-}
+   expect(repositoryModule[repositoryMethod]).toHaveBeenCalledWith(...expectedParams);
 
-/**
- * Asserts service success response without data (e.g., NO_CONTENT)
- *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- */
-export function assertServiceSuccessResponseWithoutData(
-   result: any,
-   expectedStatusCode: number
-): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.data).toBeUndefined();
-}
-
-/**
- * Asserts service validation error response with partial error matching
- *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, any>} expectedErrorPattern - Expected error pattern
- */
-export function assertServiceValidationErrorResponseWithPattern(
-   result: any,
-   expectedStatusCode: number,
-   expectedErrorPattern: Record<string, any>
-): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.errors).toEqual(expect.objectContaining(expectedErrorPattern));
-}
-
-/**
- * Asserts service not found error response
- *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, string>} expectedErrors - Expected error object
- */
-export function assertServiceNotFoundErrorResponse(
-   result: any,
-   expectedStatusCode: number,
-   expectedErrors: Record<string, string>
-): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.errors).toEqual(expectedErrors);
-}
-
-/**
- * Asserts service conflict error response
- *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, string>} expectedErrors - Expected error object
- */
-export function assertServiceConflictErrorResponse(
-   result: any,
-   expectedStatusCode: number,
-   expectedErrors: Record<string, string>
-): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.errors).toEqual(expectedErrors);
-}
-
-/**
- * Asserts service bad request error response
- *
- * @param {any} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, string>} expectedErrors - Expected error object
- */
-export function assertServiceBadRequestErrorResponse(
-   result: any,
-   expectedStatusCode: number,
-   expectedErrors: Record<string, string>
-): void {
-   expect(result.statusCode).toBe(expectedStatusCode);
-   expect(result.errors).toEqual(expectedErrors);
+   if (expectedReturnValue !== undefined) {
+      expect(repositoryModule[repositoryMethod]).toHaveReturnedWith(expectedReturnValue);
+   }
 }
