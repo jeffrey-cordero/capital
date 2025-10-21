@@ -1,3 +1,5 @@
+import { ServerResponse } from "capital/server";
+
 import { MockedServiceFunction } from "@/tests/utils/controllers";
 
 /**
@@ -307,33 +309,24 @@ export function assertCacheErrorFallbackBehavior(
  * @param {any} repositoryModule - Repository module mock
  * @param {any} argon2Module - Argon2 module mock
  * @param {any} middlewareModule - Middleware module mock
- * @param {string} username - Expected username for conflict check
- * @param {string} email - Expected email for conflict check
  * @param {string} password - Expected password for hashing
- * @param {string} hashedPassword - Expected hashed password
- * @param {any} expectedUserData - Expected user data for creation
- * @param {string} user_id - Expected user ID for token config
+ * @param {Record<string, any>} expectedUserData - Expected user data for creation including the hashed password
+ * @param {string} userId - Expected user ID for token config
  * @param {any} mockRes - Mock response object
  */
 export function assertUserCreationSuccessBehavior(
    repositoryModule: any,
    argon2Module: any,
    middlewareModule: any,
-   username: string,
-   email: string,
    password: string,
-   hashedPassword: string,
-   expectedUserData: any,
-   user_id: string,
+   expectedUserData: Record<string, any>,
+   userId: string,
    mockRes: any
 ): void {
-   expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(username, email);
+   expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(expectedUserData.username, expectedUserData.email);
    expect(argon2Module.hash).toHaveBeenCalledWith(password);
-   expect(repositoryModule.create).toHaveBeenCalledWith(expect.objectContaining({
-      ...expectedUserData,
-      birthday: expect.any(String)
-   }));
-   expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, user_id);
+   expect(repositoryModule.create).toHaveBeenCalledWith(expect.objectContaining(expectedUserData));
+   expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId);
 }
 
 /**
@@ -365,8 +358,8 @@ export function assertUserCreationConflictBehavior(
  * @param {any} cacheModule - Cache module mock
  * @param {string} username - Expected username for conflict check
  * @param {string} email - Expected email for conflict check
- * @param {string} user_id - Expected user ID
- * @param {any} expectedUpdates - Expected updates data
+ * @param {string} userId - Expected user ID
+ * @param {Record<string, any>} expectedUpdates - Expected updates data
  * @param {string} cacheKey - Expected cache key to clear
  */
 export function assertUserUpdateSuccessBehavior(
@@ -374,15 +367,12 @@ export function assertUserUpdateSuccessBehavior(
    cacheModule: any,
    username: string,
    email: string,
-   user_id: string,
-   expectedUpdates: any,
+   userId: string,
+   expectedUpdates: Record<string, any>,
    cacheKey: string
 ): void {
-   expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(username, email, user_id);
-   expect(repositoryModule.update).toHaveBeenCalledWith(user_id, expect.objectContaining({
-      ...expectedUpdates,
-      birthday: expect.any(String)
-   }));
+   expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(username, email, userId);
+   expect(repositoryModule.update).toHaveBeenCalledWith(userId, expect.objectContaining(expectedUpdates));
    expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(cacheKey);
 }
 
@@ -446,5 +436,80 @@ export function assertRepositoryCall(
 
    if (expectedReturnValue !== undefined) {
       expect(repositoryModule[repositoryMethod]).toHaveReturnedWith(expectedReturnValue);
+   }
+}
+
+/**
+ * Helper function to call service methods with proper type casting for mockRes
+ *
+ * @param {any} serviceModule - The service module to call
+ * @param {string} methodName - The method name to call
+ * @param {any} mockRes - Mock response object
+ * @param {...any} args - Additional arguments to pass to the service method
+ * @returns {Promise<any>} The result of the service method call
+ */
+export async function callServiceMethodWithMockRes(
+   serviceModule: any,
+   methodName: string,
+   mockRes: any,
+   ...args: any[]
+): Promise<any> {
+   return await serviceModule[methodName](mockRes, ...args);
+}
+
+/**
+ * Helper function to test that a service method throws the expected error,
+ * which naturally propagates errors without try-catch blocks for controller
+ * error handling.
+ *
+ * @param {() => Promise<ServerResponse>} serviceCall - The service method call (should be a function that returns a promise)
+ * @param {string} expectedErrorMessage - The expected error message
+ * @returns {Promise<void>}
+ */
+export async function expectServiceToThrow(serviceCall: () => Promise<ServerResponse>, expectedErrorMessage: string): Promise<void> {
+   try {
+      await serviceCall();
+      fail(`Expected service to throw "${expectedErrorMessage}" but it succeeded`);
+   } catch (error: any) {
+      expect(error.message).toBe(expectedErrorMessage);
+   }
+}
+
+/**
+ * Helper function to setup argon2 mocks for password verification and hashing
+ *
+ * @param {any} argon2Module - The argon2 module to mock
+ * @param {string} hashedPassword - The hashed password to return from hash operation
+ * @param {boolean} [verifyResult] - The result to return from verify operation (defaults to false)
+ */
+export function setupArgon2Mocks(argon2Module: any, hashedPassword: string, verifyResult: boolean = false): void {
+   (argon2Module.verify as jest.Mock).mockResolvedValue(verifyResult);
+   (argon2Module.hash as jest.Mock).mockResolvedValue(hashedPassword);
+}
+
+/**
+ * Helper function to assert argon2 method calls
+ *
+ * @param {any} argon2Module - The argon2 module to assert
+ * @param {string} [verifyPassword] - If provided, asserts verify was called with this password
+ * @param {string} [verifyHash] - If provided, asserts verify was called with this hash
+ * @param {string} [hashPassword] - If provided, asserts hash was called with this password
+ */
+export function assertArgon2Calls(
+   argon2Module: any,
+   verifyPassword?: string,
+   verifyHash?: string,
+   hashPassword?: string
+): void {
+   if (verifyPassword && verifyHash) {
+      expect(argon2Module.verify).toHaveBeenCalledWith(verifyHash, verifyPassword);
+   } else {
+      expect(argon2Module.verify).not.toHaveBeenCalled();
+   }
+
+   if (hashPassword) {
+      expect(argon2Module.hash).toHaveBeenCalledWith(hashPassword);
+   } else {
+      expect(argon2Module.hash).not.toHaveBeenCalled();
    }
 }

@@ -1,4 +1,5 @@
 import type { LoginPayload, RegisterPayload, User, UserDetails, UserUpdates } from "../user";
+import { createMockUser } from "./server";
 
 /**
  * Valid registration test data with secure password that meets all requirements
@@ -270,4 +271,20 @@ export const createUserWithCaseVariation = (
     variations[variation].username,
     variations[variation].email
   );
+};
+
+/**
+ * Creates a mock user and extracts the expected user details for testing
+ *
+ * @returns {Object} Object containing both mockUser and expectedUserDetails
+ */
+export const createMockUserWithDetails = (): { mockUser: User; expectedUserDetails: UserDetails } => {
+  const mockUser: User = createMockUser();
+  const expectedUserDetails: UserDetails = {
+    username: mockUser.username,
+    name: mockUser.name,
+    email: mockUser.email,
+    birthday: mockUser.birthday
+  };
+  return { mockUser, expectedUserDetails };
 };
