@@ -2,7 +2,6 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 
 import { MockResponse } from "@/tests/utils/api";
 import { MockedServiceFunction } from "@/tests/utils/controllers";
-import { TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
 
 /**
  * Mocked repository function type
@@ -231,7 +230,13 @@ export function assertServiceErrorResponse(
    expectedErrors: Record<string, any>,
    exactMatch: boolean = true
 ): void {
+   const { logger } = require("@/lib/logger");
    expect(result.statusCode).toBe(expectedStatusCode);
+
+   if (expectedStatusCode === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+      // Typically, this will be the error stack relative to the service method call
+      expect(logger.error).toHaveBeenCalledWith(expect.any(String));
+   }
 
    if (exactMatch) {
       expect(result.errors).toEqual(expectedErrors);
@@ -539,58 +544,32 @@ export function setupArgon2Mocks(argon2Module: any, hashedPassword: string, veri
 }
 
 /**
- * Helper function to assert argon2 method calls
+ * Helper function to assert argon2 method calls, where undefined hashed or plain password implies
+ * the respective verify method should not have been called and undefined hashing password implies
+ * the hash method should not have been called
  *
  * @param {any} argon2Module - The argon2 module to assert
- * @param {string} [verifyPassword] - If provided, asserts verify was called with this password
- * @param {string} [verifyHash] - If provided, asserts verify was called with this hash
- * @param {string} [hashPassword] - If provided, asserts hash was called with this password
+ * @param {string} [hashedPassword] - If provided, asserts verify was called with this hash
+ * @param {string} [plainPassword] - If provided, asserts verify was called with this plain password
+ * @param {string} [hashingPassword] - If provided, asserts hash was called with this plain password
  */
 export function assertArgon2Calls(
    argon2Module: any,
-   verifyPassword?: string,
-   verifyHash?: string,
-   hashPassword?: string
+   hashedPassword?: string,
+   plainPassword?: string,
+   hashingPassword?: string
 ): void {
-   if (verifyPassword && verifyHash) {
-      expect(argon2Module.verify).toHaveBeenCalledWith(verifyHash, verifyPassword);
+   if (hashedPassword !== undefined && plainPassword !== undefined) {
+      expect(argon2Module.verify).toHaveBeenCalledWith(hashedPassword, plainPassword);
    } else {
       expect(argon2Module.verify).not.toHaveBeenCalled();
    }
 
-   if (hashPassword) {
-      expect(argon2Module.hash).toHaveBeenCalledWith(hashPassword);
+   if (hashingPassword !== undefined) {
+      expect(argon2Module.hash).toHaveBeenCalledWith(hashingPassword);
    } else {
       expect(argon2Module.hash).not.toHaveBeenCalled();
    }
-}
-
-/**
- * Setup JWT verify mock to return payload
- *
- * @param {any} jwtModule - The JWT module to mock
- * @param {any} payload - Optional payload to return (defaults to TEST_USER_PAYLOAD)
- */
-export function setupMockJWTVerify(jwtModule: any, payload?: any): void {
-   (jwtModule.verify as jest.Mock).mockReturnValue(payload || TEST_USER_PAYLOAD);
-}
-
-/**
- * Setup JWT verify mock to throw error
- *
- * @param {any} jwtModule - The JWT module to mock
- * @param {string} errorMessage - Error message to throw
- */
-export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
-   (jwtModule.verify as jest.Mock).mockImplementation(() => {
-      if (errorMessage === "jwt expired") {
-         throw new jwtModule.TokenExpiredError("jwt expired", new Date());
-      } else if (errorMessage === "invalid signature" || errorMessage === "jwt malformed") {
-         throw new jwtModule.JsonWebTokenError(errorMessage);
-      } else {
-         throw new Error(errorMessage);
-      }
-   });
 }
 
 /**
@@ -601,35 +580,4 @@ export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): v
  */
 export function setupArgon2Error(argon2Module: any, error: Error): void {
    (argon2Module.verify as jest.Mock).mockRejectedValue(error);
-}
-
-/**
- * Assert middleware.configureToken was called correctly
- *
- * @param {any} middlewareModule - The middleware module to assert
- * @param {MockResponse} mockRes - The mock response object
- * @param {string} userId - Expected user ID
- * @param {number} secondsUntilExpire - Optional expected seconds until expire
- */
-export function assertTokenConfigured(
-   middlewareModule: any,
-   mockRes: MockResponse,
-   userId: string,
-   secondsUntilExpire?: number
-): void {
-   if (secondsUntilExpire !== undefined) {
-      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId, secondsUntilExpire);
-   } else {
-      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId);
-   }
-}
-
-/**
- * Assert middleware.clearTokens was called
- *
- * @param {any} middlewareModule - The middleware module to assert
- * @param {MockResponse} mockRes - The mock response object
- */
-export function assertTokensCleared(middlewareModule: any, mockRes: MockResponse): void {
-   expect(middlewareModule.clearTokens).toHaveBeenCalledWith(mockRes);
 }

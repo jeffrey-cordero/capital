@@ -515,7 +515,7 @@ describe("User Service", () => {
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertArgon2Calls(argon2, updates.password, currentUser.password, updates.newPassword);
+         assertArgon2Calls(argon2, currentUser.password, updates.password, updates.newPassword);
          assertRepositoryCall(userRepository, "update", [userId, {
             ...updates,
             password: hashedNewPassword
@@ -816,7 +816,7 @@ describe("User Service", () => {
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertArgon2Calls(argon2, updates.password, currentUser.password);
+         assertArgon2Calls(argon2, currentUser.password, updates.password);
          assertUpdateOperationsNotCalled(userRepository, redis);
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
       });

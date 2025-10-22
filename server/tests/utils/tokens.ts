@@ -360,3 +360,62 @@ export async function verifyTokenExpirationRelationship(mockRes: MockResponse, m
 
    verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
 }
+
+/**
+ * Setup JWT verify mock to return the provided payload
+ *
+ * @param {any} jwtModule - The JWT module to mock
+ * @param {Record<string, any>} payload - Payload to inject into the JWT verify mock
+ */
+export function setupMockJWTVerify(jwtModule: any, payload: Record<string, any>): void {
+   (jwtModule.verify as jest.Mock).mockReturnValue(payload);
+}
+
+/**
+ * Setup JWT verify mock to throw error
+ *
+ * @param {any} jwtModule - The JWT module to mock
+ * @param {string} errorMessage - Error message to throw
+ */
+export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
+   (jwtModule.verify as jest.Mock).mockImplementation(() => {
+      if (errorMessage === "jwt expired") {
+         throw new jwtModule.TokenExpiredError("jwt expired", new Date());
+      } else if (errorMessage === "invalid signature" || errorMessage === "jwt malformed" || errorMessage === "jwt must be provided") {
+         throw new jwtModule.JsonWebTokenError(errorMessage);
+      } else {
+         throw new Error(errorMessage);
+      }
+   });
+}
+
+/**
+ * Assert middleware.configureToken was called correctly
+ *
+ * @param {any} middlewareModule - The middleware module to assert
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {string} userId - Expected user ID
+ * @param {number} secondsUntilExpire - Optional expected seconds until expire
+ */
+export function assertTokenConfigured(
+   middlewareModule: any,
+   mockRes: MockResponse,
+   userId: string,
+   secondsUntilExpire?: number
+): void {
+   if (secondsUntilExpire !== undefined) {
+      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId, secondsUntilExpire);
+   } else {
+      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId);
+   }
+}
+
+/**
+ * Assert middleware.clearTokens was called
+ *
+ * @param {any} middlewareModule - The middleware module to assert
+ * @param {MockResponse} mockRes - The mock response object
+ */
+export function assertTokensCleared(middlewareModule: any, mockRes: MockResponse): void {
+   expect(middlewareModule.clearTokens).toHaveBeenCalledWith(mockRes);
+}
