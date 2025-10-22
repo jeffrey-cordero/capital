@@ -18,12 +18,7 @@ jest.mock("@/lib/services", () => ({
    submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
 }));
 
-jest.mock("@/services/authenticationService", () => ({
-   getAuthentication: jest.fn(),
-   authenticateUser: jest.fn(),
-   refreshToken: jest.fn(),
-   logoutUser: jest.fn()
-}));
+jest.mock("@/services/authenticationService");
 
 describe("Authentication Controller", () => {
    let mockReq: MockRequest;

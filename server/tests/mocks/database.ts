@@ -29,29 +29,3 @@ export const createMockQueryResult = (rows: any[] = []) => ({
    oid: 0,
    fields: []
 });
-
-/**
- * Mock successful database query
- */
-export const mockSuccessfulQuery = (rows: any[] = []) => {
-   (mockPool.query as jest.Mock).mockResolvedValue(createMockQueryResult(rows));
-   (mockClient.query as jest.Mock).mockResolvedValue(createMockQueryResult(rows));
-};
-
-/**
- * Mock database error
- */
-export const mockDatabaseError = (message: string = "Database error") => {
-   const error = new Error(message);
-   (mockPool.query as jest.Mock).mockRejectedValue(error);
-   (mockClient.query as jest.Mock).mockRejectedValue(error);
-};
-
-/**
- * Reset all database mocks
- */
-export const resetDatabaseMocks = () => {
-   jest.clearAllMocks();
-   (mockPool.query as jest.Mock).mockClear();
-   (mockClient.query as jest.Mock).mockClear();
-};

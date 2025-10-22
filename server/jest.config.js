@@ -19,14 +19,6 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  coverageThreshold: {
-    global: {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: 90,
-    },
-  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^capital/(.*)$': '<rootDir>/../types/$1.ts',

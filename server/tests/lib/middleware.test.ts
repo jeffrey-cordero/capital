@@ -26,13 +26,9 @@ import {
 } from "@/tests/utils/tokens";
 
 /**
- * Mock the error logger to minimize the output during middleware tests
+ * Mock the logger to minimize the error output during middleware tests
  */
-jest.mock("@/lib/logger", () => ({
-   logger: {
-      error: jest.fn()
-   }
-}));
+jest.mock("@/lib/logger");
 
 describe("Authentication Middleware", () => {
    let mockReq: MockRequest;

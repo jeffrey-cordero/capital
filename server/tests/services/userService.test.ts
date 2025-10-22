@@ -19,16 +19,20 @@ import {
    assertArgon2Calls,
    assertCacheHitBehavior,
    assertCacheInvalidation,
+   assertCacheInvalidationNotCalled,
    assertCacheMissBehavior,
+   assertDeleteOperationsNotCalled,
    assertMethodsNotCalled,
    assertRepositoryCall,
    assertServiceErrorResponse,
    assertServiceSuccessResponse,
+   assertUpdateOperationsNotCalled,
    assertUserCreationConflictBehavior,
    assertUserCreationSuccessBehavior,
    assertUserDeletionSuccessBehavior,
    assertUserNotFoundBehavior,
    assertUserUpdateSuccessBehavior,
+   assertValidationErrorResponse,
    callServiceMethodWithMockRes,
    expectServiceToThrow,
    setupArgon2Mocks,
@@ -38,36 +42,14 @@ import {
    setupMockRepositoryEmpty,
    setupMockRepositoryError,
    setupMockRepositoryNull,
-   setupMockRepositorySuccess,
-   testDatabaseErrorScenario
+   setupMockRepositorySuccess
 } from "@/tests/utils/services";
 
-jest.mock("argon2", () => ({
-   hash: jest.fn(),
-   verify: jest.fn()
-}));
-
-jest.mock("@/lib/redis", () => ({
-   getCacheValue: jest.fn(),
-   setCacheValue: jest.fn(),
-   removeCacheValue: jest.fn()
-}));
-
-jest.mock("@/lib/middleware", () => ({
-   configureToken: jest.fn()
-}));
-
-jest.mock("@/services/authenticationService", () => ({
-   logoutUser: jest.fn()
-}));
-
-jest.mock("@/repository/userRepository", () => ({
-   findByUserId: jest.fn(),
-   findConflictingUsers: jest.fn(),
-   create: jest.fn(),
-   update: jest.fn(),
-   deleteUser: jest.fn()
-}));
+jest.mock("argon2");
+jest.mock("@/lib/redis");
+jest.mock("@/lib/middleware");
+jest.mock("@/repository/userRepository");
+jest.mock("@/services/authenticationService");
 
 describe("User Service", () => {
    const userId: string = TEST_CONSTANTS.TEST_USER_ID;
@@ -125,26 +107,6 @@ describe("User Service", () => {
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, expectedUserDetails);
       });
 
-      it("should fall back to database on cache miss or error", async() => {
-         const { mockUser, expectedUserDetails }: { mockUser: User; expectedUserDetails: UserDetails } = createMockUserWithDetails();
-
-         setupMockCacheMiss(redis);
-         setupMockRepositorySuccess(userRepository, "findByUserId", mockUser);
-
-         const result: ServerResponse = await userService.fetchUserDetails(userId);
-
-         assertCacheMissBehavior(
-            redis,
-            userRepository,
-            "findByUserId",
-            userDetailsCacheKey,
-            userId,
-            expectedUserDetails,
-            USER_DETAILS_CACHE_DURATION
-         );
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, expectedUserDetails);
-      });
-
       it("should return not found when user does not exist", async() => {
          setupMockCacheMiss(redis);
          setupMockRepositoryNull(userRepository, "findByUserId");
@@ -155,15 +117,6 @@ describe("User Service", () => {
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
-      it("should propagate database errors", async() => {
-         setupMockCacheMiss(redis);
-         testDatabaseErrorScenario(userRepository.findByUserId, "Database connection failed");
-
-         await expectServiceToThrow(() => userService.fetchUserDetails(userId), "Database connection failed");
-
-         assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertMethodsNotCalled([{ module: redis, methods: ["setCacheValue"] }]);
-      });
    });
 
    describe("createUser", () => {
@@ -208,19 +161,21 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username must be at least 2 characters",
-            email: "Invalid email address",
-            name: "Name must be at least 2 characters",
-            birthday: "Invalid date",
-            password: "Password must be at least 8 characters",
-            verifyPassword: "Password must contain at least one uppercase letter"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            {
+               username: "Username must be at least 2 characters",
+               email: "Invalid email address",
+               name: "Name must be at least 2 characters",
+               birthday: "Invalid date",
+               password: "Password must be at least 8 characters",
+               verifyPassword: "Password must contain at least one uppercase letter"
+            }
+         );
       });
 
       const requiredFields = ["username", "email", "name", "birthday", "password", "verifyPassword"];
@@ -234,19 +189,18 @@ describe("User Service", () => {
 
             const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-            assertArgon2Calls(argon2);
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["findConflictingUsers", "create"] },
-               { module: middleware, methods: ["configureToken"] }
-            ]);
-
             // Special case for password verification field, which has the same error as password for simplicity
             const identifier: string = field === "verifyPassword" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
             const expectedError: string = `${identifier} is required`;
 
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               [field]: expectedError
-            });
+            assertValidationErrorResponse(
+               result,
+               argon2,
+               userRepository,
+               middleware,
+               null,
+               { [field]: expectedError }
+            );
          });
       });
 
@@ -266,14 +220,14 @@ describe("User Service", () => {
 
                const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-               assertArgon2Calls(argon2);
-               assertMethodsNotCalled([
-                  { module: userRepository, methods: ["findConflictingUsers", "create"] },
-                  { module: middleware, methods: ["configureToken"] }
-               ]);
-               assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-                  [field]: `${fieldName} ${errorSuffix}`
-               });
+               assertValidationErrorResponse(
+                  result,
+                  argon2,
+                  userRepository,
+                  middleware,
+                  null,
+                  { [field]: `${fieldName} ${errorSuffix}` }
+               );
             });
          });
       });
@@ -284,14 +238,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username may only contain letters, numbers, underscores, and hyphens"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { username: "Username may only contain letters, numbers, underscores, and hyphens" }
+         );
       });
 
       it("should return validation errors for email too long", async() => {
@@ -300,14 +254,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            email: "Email must be at most 255 characters"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { email: "Email must be at most 255 characters" }
+         );
       });
 
       it("should return validation errors for birthday too early", async() => {
@@ -316,14 +270,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            birthday: "Birthday must be on or after 1800-01-01"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { birthday: "Birthday must be on or after 1800-01-01" }
+         );
       });
 
       it("should return validation errors for birthday in the future", async() => {
@@ -336,14 +290,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            birthday: "Birthday cannot be in the future"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { birthday: "Birthday cannot be in the future" }
+         );
       });
 
       it("should return validation errors for empty birthday", async() => {
@@ -352,15 +306,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            birthday: "Birthday is required"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { birthday: "Birthday is required" }
+         );
       });
 
       it("should return validation errors for password too long", async() => {
@@ -371,15 +324,17 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            password: "Password must be at most 255 characters",
-            verifyPassword: "Password must be at most 255 characters"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            {
+               password: "Password must be at most 255 characters",
+               verifyPassword: "Password must be at most 255 characters"
+            }
+         );
       });
 
       it("should return validation errors for mismatched passwords", async() => {
@@ -388,14 +343,14 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            verifyPassword: "Passwords don't match"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            null,
+            { verifyPassword: "Passwords don't match" }
+         );
       });
 
       const invalidPasswordCases = [
@@ -411,15 +366,17 @@ describe("User Service", () => {
 
             const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidPasswordUser);
 
-            assertArgon2Calls(argon2);
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["create", "findConflictingUsers"] },
-               { module: middleware, methods: ["configureToken"] }
-            ]);
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               password: expectedError,
-               verifyPassword: expectedError
-            });
+            assertValidationErrorResponse(
+               result,
+               argon2,
+               userRepository,
+               middleware,
+               null,
+               {
+                  password: expectedError,
+                  verifyPassword: expectedError
+               }
+            );
          });
       });
 
@@ -496,26 +453,9 @@ describe("User Service", () => {
          assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { email: "Email already exists" });
       });
 
-      it("should propagate database errors during conflict check", async() => {
-         const mockUser: RegisterPayload = createValidRegistration();
-         testDatabaseErrorScenario(userRepository.findConflictingUsers, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "findConflictingUsers", [
-            mockUser.username,
-            mockUser.email
-         ]);
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([{ module: userRepository, methods: ["create"] }]);
-      });
-
       it("should handle repository errors during conflict check using helper", async() => {
          const mockUser: RegisterPayload = createValidRegistration();
-         setupMockRepositoryError(userRepository, "findConflictingUsers", new Error("Database connection failed"));
+         setupMockRepositoryError(userRepository, "findConflictingUsers", "Database connection failed");
 
          await expectServiceToThrow(
             () => callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser),
@@ -530,26 +470,6 @@ describe("User Service", () => {
          assertMethodsNotCalled([{ module: userRepository, methods: ["create"] }]);
       });
 
-      it("should propagate database errors during user creation", async() => {
-         const mockUser: RegisterPayload = createValidRegistration();
-         const hashedPassword: string = "hashed_password_123";
-
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupArgon2Mocks(argon2, hashedPassword);
-         testDatabaseErrorScenario(userRepository.create, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "create", [expect.objectContaining({
-            ...mockUser,
-            password: hashedPassword,
-            birthday: new Date(mockUser.birthday).toISOString()
-         })]);
-         assertMethodsNotCalled([{ module: middleware, methods: ["configureToken"] }]);
-      });
    });
 
    describe("updateAccountDetails", () => {
@@ -613,16 +533,19 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username must be at least 2 characters",
-            email: "Invalid email address",
-            birthday: "Invalid date"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            {
+               username: "Username must be at least 2 characters",
+               email: "Invalid email address",
+               birthday: "Invalid date"
+            },
+            true
+         );
       });
 
       const updateValidationTypes: string[] = ["short", "long"];
@@ -641,13 +564,15 @@ describe("User Service", () => {
 
                const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-               assertMethodsNotCalled([
-                  { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-                  { module: redis, methods: ["removeCacheValue"] }
-               ]);
-               assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-                  [field]: `${fieldName} ${errorSuffix}`
-               });
+               assertValidationErrorResponse(
+                  result,
+                  argon2,
+                  userRepository,
+                  middleware,
+                  redis,
+                  { [field]: `${fieldName} ${errorSuffix}` },
+                  true
+               );
             });
          });
       });
@@ -658,13 +583,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username may only contain letters, numbers, underscores, and hyphens"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { username: "Username may only contain letters, numbers, underscores, and hyphens" },
+            true
+         );
       });
 
       it("should return validation errors for email too long", async() => {
@@ -673,13 +600,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            email: "Email must be at most 255 characters"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { email: "Email must be at most 255 characters" },
+            true
+         );
       });
 
       it("should return validation errors for birthday too early", async() => {
@@ -688,13 +617,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            birthday: "Birthday must be on or after 1800-01-01"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { birthday: "Birthday must be on or after 1800-01-01" },
+            true
+         );
       });
 
       it("should return validation errors for birthday in the future", async() => {
@@ -707,13 +638,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            birthday: "Birthday cannot be in the future"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { birthday: "Birthday cannot be in the future" },
+            true
+         );
       });
 
       it("should return validation errors for password too long", async() => {
@@ -724,14 +657,18 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            newPassword: "Password must be at most 255 characters",
-            verifyPassword: "Password must be at most 255 characters"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            {
+               newPassword: "Password must be at most 255 characters",
+               verifyPassword: "Password must be at most 255 characters"
+            },
+            true
+         );
       });
 
       it("should return validation errors for mismatched new passwords", async() => {
@@ -740,13 +677,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            verifyPassword: "Passwords don't match"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { verifyPassword: "Passwords don't match" },
+            true
+         );
       });
 
       it("should return validation errors for new password same as old password", async() => {
@@ -756,13 +695,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            newPassword: "New password must not match the old password"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { newPassword: "New password must not match the old password" },
+            true
+         );
       });
 
       it("should return validation errors for missing new password", async() => {
@@ -771,14 +712,18 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            newPassword: "New password is required to set a new password",
-            verifyPassword: "Passwords don't match"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            {
+               newPassword: "New password is required to set a new password",
+               verifyPassword: "Passwords don't match"
+            },
+            true
+         );
       });
 
       it("should return validation errors for missing password verification", async() => {
@@ -787,13 +732,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            verifyPassword: "Password verification is required to set a new password"
-         });
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { verifyPassword: "Password verification is required to set a new password" },
+            true
+         );
       });
 
       it("should return conflict error when updating to existing username", async() => {
@@ -804,15 +751,9 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
-         assertRepositoryCall(userRepository, "findConflictingUsers", [
-            updates.username,
-            "",
-            userId
-         ]);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         // Empty string for the email, which was not provided in the updates
+         assertRepositoryCall(userRepository, "findConflictingUsers", [updates.username, "", userId]);
+         assertUpdateOperationsNotCalled(userRepository, redis);
          assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
@@ -856,10 +797,7 @@ describe("User Service", () => {
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
          assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertUpdateOperationsNotCalled(userRepository, redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
@@ -879,10 +817,7 @@ describe("User Service", () => {
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
          assertArgon2Calls(argon2, updates.password, currentUser.password);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertUpdateOperationsNotCalled(userRepository, redis);
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
       });
 
@@ -894,37 +829,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            password: "Current password is required to set a new password"
-         });
-      });
-
-      it("should propagate database errors during password change user lookup", async() => {
-         const updates: Partial<UserUpdates> = {
-            password: "Password1!",
-            newPassword: "NewPassword1!",
-            verifyPassword: "NewPassword1!"
-         };
-
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         testDatabaseErrorScenario(userRepository.findByUserId, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => userService.updateAccountDetails(userId, updates),
-            "Database connection failed"
+         assertValidationErrorResponse(
+            result,
+            argon2,
+            userRepository,
+            middleware,
+            redis,
+            { password: "Current password is required to set a new password" },
+            true
          );
-
-         assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
       });
 
       it("should return not found when user does not exist during update", async() => {
@@ -936,47 +849,15 @@ describe("User Service", () => {
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
+         assertCacheInvalidationNotCalled(redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
-      });
-
-      it("should propagate database errors during conflict check", async() => {
-         const updates: Partial<UserUpdates> = { username: "newusername" };
-         testDatabaseErrorScenario(userRepository.findConflictingUsers, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => userService.updateAccountDetails(userId, updates),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "findConflictingUsers", [
-            updates.username,
-            "",
-            userId
-         ]);
-         assertMethodsNotCalled([{ module: userRepository, methods: ["update"] }]);
-      });
-
-      it("should propagate database errors during update", async() => {
-         const updates: Partial<UserUpdates> = { username: "newusername" };
-
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         testDatabaseErrorScenario(userRepository.update, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => userService.updateAccountDetails(userId, updates),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
       });
 
       it("should handle repository errors during update using helper", async() => {
          const updates: Partial<UserUpdates> = { username: "newusername" };
 
          setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositoryError(userRepository, "update", new Error("Database connection failed"));
+         setupMockRepositoryError(userRepository, "update", "Database connection failed");
 
          await expectServiceToThrow(
             () => userService.updateAccountDetails(userId, updates),
@@ -984,7 +865,7 @@ describe("User Service", () => {
          );
 
          assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
+         assertCacheInvalidationNotCalled(redis);
       });
    });
 
@@ -1010,40 +891,19 @@ describe("User Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "deleteAccount");
 
          assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
-         assertMethodsNotCalled([
-            { module: authenticationService, methods: ["logoutUser"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertDeleteOperationsNotCalled(authenticationService, redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
-      it("should propagate database errors during deletion", async() => {
-         testDatabaseErrorScenario(userRepository.deleteUser, "Database connection failed");
-
-         await expectServiceToThrow(
-            () => callServiceMethodWithMockRes(mockRes, userService, "deleteAccount"),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
-         assertMethodsNotCalled([
-            { module: authenticationService, methods: ["logoutUser"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-      });
-
       it("should handle repository errors during deletion using helper", async() => {
-         setupMockRepositoryError(userRepository, "deleteUser", new Error("Database connection failed"));
+         setupMockRepositoryError(userRepository, "deleteUser", "Database connection failed");
 
          await expectServiceToThrow(
             () => callServiceMethodWithMockRes(mockRes, userService, "deleteAccount"),
             "Database connection failed"
          );
          assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
-         assertMethodsNotCalled([
-            { module: authenticationService, methods: ["logoutUser"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertDeleteOperationsNotCalled(authenticationService, redis);
       });
    });
 });

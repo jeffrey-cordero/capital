@@ -1,4 +1,4 @@
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 
 import { MockResponse } from "@/tests/utils/api";
 import { MockedServiceFunction } from "@/tests/utils/controllers";
@@ -66,16 +66,16 @@ export function setupMockRepositoryEmpty(
  *
  * @param {any} repositoryModule - The repository module to mock
  * @param {string} methodName - The method name of the repository to mock
- * @param {Error} error - Database error to throw
+ * @param {string} errorMessage - Database error message to throw
  * @returns {MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>} The mocked repository function
  */
 export function setupMockRepositoryError(
    repositoryModule: any,
    methodName: string,
-   error: Error
+   errorMessage: string
 ): MockedRepositoryFunction<typeof repositoryModule[typeof methodName]> {
    const mockFunction = repositoryModule[methodName] as MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>;
-   mockFunction.mockRejectedValue(error);
+   mockFunction.mockRejectedValue(new Error(errorMessage));
    return mockFunction;
 }
 
@@ -121,23 +121,6 @@ export function setupDefaultRedisCacheBehavior(cacheModule: any): void {
 }
 
 /**
- * Tests database error scenarios with logging verification
- *
- * @param {MockedRepositoryFunction<any>} mockRepositoryFunction - The mocked repository function
- * @param {string} errorMessage - Expected error message
- */
-export function testDatabaseErrorScenario(
-   mockRepositoryFunction: MockedRepositoryFunction<any>,
-   errorMessage: string
-): void {
-   // Mock database error
-   const dbError = new Error(errorMessage);
-   dbError.stack = `Error: ${errorMessage}\n    at Database query`;
-
-   mockRepositoryFunction.mockRejectedValue(dbError);
-}
-
-/**
  * Asserts that a service function properly handled a success response
  *
  * @param {any} result - Service response result
@@ -155,15 +138,94 @@ export function assertServiceSuccessResponse(
 }
 
 /**
- * Asserts that a service function properly handled an error response
+ * Asserts validation error response for create/update operations
  *
  * @param {any} result - Service response result
+ * @param {any} argon2 - Argon2 mock module
+ * @param {any} userRepository - User repository mock module
+ * @param {any} middleware - Middleware mock module
+ * @param {any} redis - Redis mock module (optional, for update operations)
+ * @param {any} expectedErrors - Expected validation errors
+ * @param {boolean} isUpdate - Whether this is for update operations (default: false)
+ */
+export function assertValidationErrorResponse(
+   result: any,
+   argon2: any,
+   userRepository: any,
+   middleware: any,
+   redis: any = null,
+   expectedErrors: any,
+   isUpdate: boolean = false
+): void {
+   assertArgon2Calls(argon2);
+   if (isUpdate) {
+      assertMethodsNotCalled([
+         { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
+         { module: redis, methods: ["removeCacheValue"] }
+      ]);
+   } else {
+      assertMethodsNotCalled([
+         { module: userRepository, methods: ["findConflictingUsers", "create"] },
+         { module: middleware, methods: ["configureToken"] }
+      ]);
+   }
+
+   assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, expectedErrors);
+}
+
+/**
+ * Asserts that update operations were not called during conflict scenarios
+ *
+ * @param {any} userRepository - User repository mock module
+ * @param {any} redis - Redis mock module
+ */
+export function assertUpdateOperationsNotCalled(
+   userRepository: any,
+   redis: any
+): void {
+   assertMethodsNotCalled([
+      { module: userRepository, methods: ["update"] },
+      { module: redis, methods: ["removeCacheValue"] }
+   ]);
+}
+
+/**
+ * Asserts that delete operations were not called during error scenarios
+ *
+ * @param {any} authenticationService - Authentication service mock module
+ * @param {any} redis - Redis mock module
+ */
+export function assertDeleteOperationsNotCalled(
+   authenticationService: any,
+   redis: any
+): void {
+   assertMethodsNotCalled([
+      { module: authenticationService, methods: ["logoutUser"] },
+      { module: redis, methods: ["removeCacheValue"] }
+   ]);
+}
+
+/**
+ * Asserts that cache invalidation was not called during error scenarios
+ *
+ * @param {any} redis - Redis mock module
+ */
+export function assertCacheInvalidationNotCalled(
+   redis: any
+): void {
+   assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
+}
+
+/**
+ * Asserts that a service function properly handled an error response
+ *
+ * @param {ServerResponse} result - Service response result
  * @param {number} expectedStatusCode - Expected HTTP status code
  * @param {Record<string, any>} expectedErrors - Expected error object or pattern
  * @param {boolean} [exactMatch] - Whether to use exact matching (default: true) or partial matching
  */
 export function assertServiceErrorResponse(
-   result: any,
+   result: ServerResponse,
    expectedStatusCode: number,
    expectedErrors: Record<string, any>,
    exactMatch: boolean = true
@@ -321,9 +383,11 @@ export function assertUserCreationConflictBehavior(
    email: string
 ): void {
    expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(username, email);
-   expect(argon2Module.hash).not.toHaveBeenCalled();
-   expect(repositoryModule.create).not.toHaveBeenCalled();
-   expect(middlewareModule.configureToken).not.toHaveBeenCalled();
+   assertMethodsNotCalled([
+      { module: argon2Module, methods: ["hash"] },
+      { module: repositoryModule, methods: ["create"] },
+      { module: middlewareModule, methods: ["configureToken"] }
+   ]);
 }
 
 /**

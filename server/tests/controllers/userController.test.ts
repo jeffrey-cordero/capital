@@ -16,12 +16,7 @@ jest.mock("@/lib/services", () => ({
    submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
 }));
 
-jest.mock("@/services/userService", () => ({
-   createUser: jest.fn(),
-   fetchUserDetails: jest.fn(),
-   updateAccountDetails: jest.fn(),
-   deleteAccount: jest.fn()
-}));
+jest.mock("@/services/userService");
 
 describe("User Controller", () => {
    let mockReq: MockRequest;
