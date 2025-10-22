@@ -70,6 +70,9 @@ jest.mock("@/repository/userRepository", () => ({
 }));
 
 describe("User Service", () => {
+   const userId: string = TEST_CONSTANTS.TEST_USER_ID;
+   const userDetailsCacheKey: string = `user:${userId}`;
+
    let mockRes: MockResponse;
    let userRepository: typeof import("@/repository/userRepository");
    let redis: typeof import("@/lib/redis");
@@ -91,9 +94,6 @@ describe("User Service", () => {
    });
 
    describe("fetchUserDetails", () => {
-      const userId: string = TEST_CONSTANTS.TEST_USER_ID;
-      const userDetailsCacheKey: string = `user:${userId}`;
-
       it("should return cached user details on cache hit", async() => {
          const cachedUserDetails: UserDetails = createMockUserDetails();
          const cachedData: string = JSON.stringify(cachedUserDetails);
@@ -251,40 +251,29 @@ describe("User Service", () => {
       });
 
       // Fields that have [2, 30] character length validation
+      const validationTypes: string[] = ["short", "long"];
       const lengthValidationFields: (keyof RegisterPayload)[] = ["username", "name"];
 
       lengthValidationFields.forEach((field) => {
-         const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+         const fieldName: string = field.charAt(0).toUpperCase() + field.slice(1);
 
-         it(`should return validation errors for ${field} too short`, async() => {
-            const invalidUser: RegisterPayload = createValidRegistration();
-            invalidUser[field] = "a";
+         validationTypes.forEach((type) => {
+            it(`should return validation errors for ${field} too ${type}`, async() => {
+               const invalidUser: RegisterPayload = createValidRegistration();
+               const value: string = type === "short" ? "a" : "a".repeat(31);
+               const errorSuffix: string = type === "short" ? "must be at least 2 characters" : "must be at most 30 characters";
+               invalidUser[field] = value;
 
-            const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
+               const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-            assertArgon2Calls(argon2);
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["findConflictingUsers", "create"] },
-               { module: middleware, methods: ["configureToken"] }
-            ]);
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               [field]: `${fieldName} must be at least 2 characters`
-            });
-         });
-
-         it(`should return validation errors for ${field} too long`, async() => {
-            const invalidUser: RegisterPayload = createValidRegistration();
-            invalidUser[field] = "a".repeat(31);
-
-            const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
-
-            assertArgon2Calls(argon2);
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["findConflictingUsers", "create"] },
-               { module: middleware, methods: ["configureToken"] }
-            ]);
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               [field]: `${fieldName} must be at most 30 characters`
+               assertArgon2Calls(argon2);
+               assertMethodsNotCalled([
+                  { module: userRepository, methods: ["findConflictingUsers", "create"] },
+                  { module: middleware, methods: ["configureToken"] }
+               ]);
+               assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+                  [field]: `${fieldName} ${errorSuffix}`
+               });
             });
          });
       });
@@ -375,7 +364,7 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for password too long", async() => {
-         const longPassword = "a".repeat(256);
+         const longPassword: string = "a".repeat(256);
          const invalidUser: RegisterPayload = createValidRegistration();
          invalidUser.password = longPassword;
          invalidUser.verifyPassword = longPassword;
@@ -387,7 +376,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: "Password must be at most 255 characters",
             verifyPassword: "Password must be at most 255 characters"
@@ -396,7 +384,7 @@ describe("User Service", () => {
 
       it("should return validation errors for mismatched passwords", async() => {
          const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.verifyPassword = "Password2!"; // Different password
+         invalidUser.verifyPassword = "Password2!";
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -405,7 +393,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             verifyPassword: "Passwords don't match"
          });
@@ -429,7 +416,6 @@ describe("User Service", () => {
                { module: userRepository, methods: ["create", "findConflictingUsers"] },
                { module: middleware, methods: ["configureToken"] }
             ]);
-
             assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
                password: expectedError,
                verifyPassword: expectedError
@@ -452,7 +438,6 @@ describe("User Service", () => {
             mockUser.username,
             mockUser.email
          );
-
          assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
@@ -499,7 +484,7 @@ describe("User Service", () => {
       it("should detect case-insensitive email conflicts", async() => {
          const mockUser: RegisterPayload = createValidRegistration();
          const conflictingUser: User = createUserWithCaseVariation(
-            "differentuser",
+            "differentUsername",
             mockUser.email,
             "uppercase"
          );
@@ -525,9 +510,7 @@ describe("User Service", () => {
             mockUser.email
          ]);
          assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["create"] }
-         ]);
+         assertMethodsNotCalled([{ module: userRepository, methods: ["create"] }]);
       });
 
       it("should handle repository errors during conflict check using helper", async() => {
@@ -544,9 +527,7 @@ describe("User Service", () => {
             mockUser.email
          ]);
          assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["create"] }
-         ]);
+         assertMethodsNotCalled([{ module: userRepository, methods: ["create"] }]);
       });
 
       it("should propagate database errors during user creation", async() => {
@@ -567,39 +548,11 @@ describe("User Service", () => {
             password: hashedPassword,
             birthday: new Date(mockUser.birthday).toISOString()
          })]);
-         assertMethodsNotCalled([
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-      });
-
-      it("should handle repository errors during user creation using helper", async() => {
-         const mockUser: RegisterPayload = createValidRegistration();
-         const hashedPassword: string = "hashed_password_123";
-
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupArgon2Mocks(argon2, hashedPassword);
-         setupMockRepositoryError(userRepository, "create", new Error("Database connection failed"));
-
-         await expectServiceToThrow(
-            () => callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser),
-            "Database connection failed"
-         );
-
-         assertRepositoryCall(userRepository, "create", [expect.objectContaining({
-            ...mockUser,
-            password: hashedPassword,
-            birthday: new Date(mockUser.birthday).toISOString()
-         })]);
-         assertMethodsNotCalled([
-            { module: middleware, methods: ["configureToken"] }
-         ]);
+         assertMethodsNotCalled([{ module: middleware, methods: ["configureToken"] }]);
       });
    });
 
    describe("updateAccountDetails", () => {
-      const userId: string = TEST_CONSTANTS.TEST_USER_ID;
-      const userDetailsCacheKey: string = `user:${userId}`;
-
       it("should update basic user details successfully", async() => {
          const updates: Partial<UserUpdates> = {
             username: "newusername",
@@ -622,7 +575,6 @@ describe("User Service", () => {
             updates,
             userDetailsCacheKey
          );
-
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -649,13 +601,12 @@ describe("User Service", () => {
             password: hashedNewPassword
          }]);
          assertCacheInvalidation(redis, userDetailsCacheKey);
-
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
       it("should return validation errors for invalid update data", async() => {
          const invalidUpdates: Partial<UserUpdates> = {
-            username: "a", // Too short
+            username: "a",
             email: "invalid-email",
             birthday: "invalid-date"
          };
@@ -674,46 +625,36 @@ describe("User Service", () => {
          });
       });
 
-      // Fields that have [2, 30] character length validation for updates
+      const updateValidationTypes: string[] = ["short", "long"];
       const updateLengthValidationFields: (keyof UserUpdates)[] = ["username", "name"];
 
       updateLengthValidationFields.forEach((field) => {
-         const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+         const fieldName: string = field.charAt(0).toUpperCase() + field.slice(1);
 
-         it(`should return validation errors for ${field} too short`, async() => {
-            const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-            invalidUpdates[field] = "a";
+         updateValidationTypes.forEach((type) => {
+            it(`should return validation errors for ${field} too ${type}`, async() => {
+               const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
+               const value: string = type === "short" ? "a" : "a".repeat(31);
+               const errorSuffix: string = type === "short" ? "must be at least 2 characters" : "must be at most 30 characters";
 
-            const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
+               invalidUpdates[field] = value;
 
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-               { module: redis, methods: ["removeCacheValue"] }
-            ]);
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               [field]: `${fieldName} must be at least 2 characters`
-            });
-         });
+               const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         it(`should return validation errors for ${field} too long`, async() => {
-            const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-            invalidUpdates[field] = "a".repeat(31);
-
-            const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
-
-            assertMethodsNotCalled([
-               { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-               { module: redis, methods: ["removeCacheValue"] }
-            ]);
-            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-               [field]: `${fieldName} must be at most 30 characters`
+               assertMethodsNotCalled([
+                  { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
+                  { module: redis, methods: ["removeCacheValue"] }
+               ]);
+               assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+                  [field]: `${fieldName} ${errorSuffix}`
+               });
             });
          });
       });
 
       it("should return validation errors for username with invalid characters", async() => {
          const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.username = "test@user!"; // Contains invalid characters
+         invalidUpdates.username = "test@user!";
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -872,13 +813,12 @@ describe("User Service", () => {
             { module: userRepository, methods: ["update"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
       it("should return conflict error when updating to existing email", async() => {
          const updates: Partial<UserUpdates> = { email: "existing@example.com" };
-         const conflictingUser: User = createConflictingUser("differentuser", updates.email!);
+         const conflictingUser: User = createConflictingUser("differentUsername", updates.email!);
 
          setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
@@ -920,7 +860,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["update"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
@@ -934,7 +873,7 @@ describe("User Service", () => {
 
          setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
          setupMockRepositorySuccess(userRepository, "findByUserId", currentUser);
-         setupArgon2Mocks(argon2, "dummy-hash", false);
+         setupArgon2Mocks(argon2, "hashed_password_123", false);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -944,7 +883,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["update"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
       });
 
@@ -961,7 +899,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             password: "Current password is required to set a new password"
          });
@@ -999,10 +936,7 @@ describe("User Service", () => {
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-
+         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
@@ -1020,9 +954,7 @@ describe("User Service", () => {
             "",
             userId
          ]);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["update"] }
-         ]);
+         assertMethodsNotCalled([{ module: userRepository, methods: ["update"] }]);
       });
 
       it("should propagate database errors during update", async() => {
@@ -1037,9 +969,7 @@ describe("User Service", () => {
          );
 
          assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
       });
 
       it("should handle repository errors during update using helper", async() => {
@@ -1054,11 +984,8 @@ describe("User Service", () => {
          );
 
          assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
-         assertMethodsNotCalled([
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
       });
-
    });
 
    describe("deleteAccount", () => {
@@ -1074,7 +1001,6 @@ describe("User Service", () => {
             mockRes.locals.userId,
             mockRes
          );
-
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -1088,7 +1014,6 @@ describe("User Service", () => {
             { module: authenticationService, methods: ["logoutUser"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
@@ -1114,7 +1039,6 @@ describe("User Service", () => {
             () => callServiceMethodWithMockRes(mockRes, userService, "deleteAccount"),
             "Database connection failed"
          );
-
          assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
          assertMethodsNotCalled([
             { module: authenticationService, methods: ["logoutUser"] },
