@@ -91,7 +91,7 @@ export function authenticateToken(required: boolean) {
 
             // Ensure user_id exists in token payload
             if (!user.user_id) {
-               res.clearCookie("access_token");
+               clearTokens(res);
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             }
 
@@ -106,7 +106,7 @@ export function authenticateToken(required: boolean) {
                return sendSuccess(res, HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
             } else if (error instanceof jwt.JsonWebTokenError) {
                // Clear invalid token
-               res.clearCookie("access_token");
+               clearTokens(res);
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             } else {
                // Log unexpected errors
@@ -145,6 +145,7 @@ export function authenticateRefreshToken() {
 
          // Ensure user_id exists in token payload
          if (!user.user_id) {
+            clearTokens(res);
             return sendErrors(res, HTTP_STATUS.FORBIDDEN);
          }
 

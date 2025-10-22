@@ -22,7 +22,7 @@ import {
    assertCacheInvalidationNotCalled,
    assertCacheMissBehavior,
    assertDeleteOperationsNotCalled,
-   assertMethodsNotCalled,
+   assertMethodNotCalled,
    assertRepositoryCall,
    assertServiceErrorResponse,
    assertServiceSuccessResponse,
@@ -467,7 +467,7 @@ describe("User Service", () => {
             mockUser.email
          ]);
          assertArgon2Calls(argon2);
-         assertMethodsNotCalled([{ module: userRepository, methods: ["create"] }]);
+         assertMethodNotCalled(userRepository, "create");
       });
 
    });

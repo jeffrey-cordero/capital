@@ -2,6 +2,7 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 
 import { MockResponse } from "@/tests/utils/api";
 import { MockedServiceFunction } from "@/tests/utils/controllers";
+import { TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
 
 /**
  * Mocked repository function type
@@ -213,7 +214,7 @@ export function assertDeleteOperationsNotCalled(
 export function assertCacheInvalidationNotCalled(
    redis: any
 ): void {
-   assertMethodsNotCalled([{ module: redis, methods: ["removeCacheValue"] }]);
+   assertMethodNotCalled(redis, "removeCacheValue");
 }
 
 /**
@@ -237,25 +238,6 @@ export function assertServiceErrorResponse(
    } else {
       expect(result.errors).toEqual(expect.objectContaining(expectedErrors));
    }
-}
-
-/**
- * Asserts that a service function properly handled an error by throwing it
- *
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
- * @param {any[]} expectedArgs - Expected arguments passed to the service function
- * @param {Error} expectedError - Expected error that should be thrown
- */
-export function assertServiceErrorThrown(
-   mockServiceFunction: MockedServiceFunction<any>,
-   expectedArgs: any[],
-   expectedError: Error
-): void {
-   // Verify the service function was called with the expected arguments
-   expect(mockServiceFunction).toHaveBeenCalledWith(...expectedArgs);
-
-   // Verify the service function throws the expected error
-   expect(mockServiceFunction()).rejects.toThrow(expectedError);
 }
 
 /**
@@ -507,6 +489,16 @@ export function assertMethodsNotCalled(moduleMethods: Array<{module: any, method
 }
 
 /**
+ * Asserts that a single method was not called on a module for simplicity
+ *
+ * @param {any} module - The module to assert
+ * @param {string} method - The method name to assert was not called
+ */
+export function assertMethodNotCalled(module: any, method: string): void {
+   expect(module[method]).not.toHaveBeenCalled();
+}
+
+/**
  * Asserts that cache invalidation was called with the expected cache key
  *
  * @param {any} cacheModule - Cache module mock
@@ -571,4 +563,73 @@ export function assertArgon2Calls(
    } else {
       expect(argon2Module.hash).not.toHaveBeenCalled();
    }
+}
+
+/**
+ * Setup JWT verify mock to return payload
+ *
+ * @param {any} jwtModule - The JWT module to mock
+ * @param {any} payload - Optional payload to return (defaults to TEST_USER_PAYLOAD)
+ */
+export function setupMockJWTVerify(jwtModule: any, payload?: any): void {
+   (jwtModule.verify as jest.Mock).mockReturnValue(payload || TEST_USER_PAYLOAD);
+}
+
+/**
+ * Setup JWT verify mock to throw error
+ *
+ * @param {any} jwtModule - The JWT module to mock
+ * @param {string} errorMessage - Error message to throw
+ */
+export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
+   (jwtModule.verify as jest.Mock).mockImplementation(() => {
+      if (errorMessage === "jwt expired") {
+         throw new jwtModule.TokenExpiredError("jwt expired", new Date());
+      } else if (errorMessage === "invalid signature" || errorMessage === "jwt malformed") {
+         throw new jwtModule.JsonWebTokenError(errorMessage);
+      } else {
+         throw new Error(errorMessage);
+      }
+   });
+}
+
+/**
+ * Setup argon2 mock to throw an error
+ *
+ * @param {any} argon2Module - The argon2 module to mock
+ * @param {Error} error - Error to throw from argon2.verify
+ */
+export function setupArgon2Error(argon2Module: any, error: Error): void {
+   (argon2Module.verify as jest.Mock).mockRejectedValue(error);
+}
+
+/**
+ * Assert middleware.configureToken was called correctly
+ *
+ * @param {any} middlewareModule - The middleware module to assert
+ * @param {MockResponse} mockRes - The mock response object
+ * @param {string} userId - Expected user ID
+ * @param {number} secondsUntilExpire - Optional expected seconds until expire
+ */
+export function assertTokenConfigured(
+   middlewareModule: any,
+   mockRes: MockResponse,
+   userId: string,
+   secondsUntilExpire?: number
+): void {
+   if (secondsUntilExpire !== undefined) {
+      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId, secondsUntilExpire);
+   } else {
+      expect(middlewareModule.configureToken).toHaveBeenCalledWith(mockRes, userId);
+   }
+}
+
+/**
+ * Assert middleware.clearTokens was called
+ *
+ * @param {any} middlewareModule - The middleware module to assert
+ * @param {MockResponse} mockRes - The mock response object
+ */
+export function assertTokensCleared(middlewareModule: any, mockRes: MockResponse): void {
+   expect(middlewareModule.clearTokens).toHaveBeenCalledWith(mockRes);
 }

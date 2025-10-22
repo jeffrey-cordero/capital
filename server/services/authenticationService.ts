@@ -27,13 +27,11 @@ export async function getAuthentication(res: Response, token: string): Promise<S
       if (error instanceof jwt.TokenExpiredError) {
          // Signal to the client that refresh is needed
          return sendServiceResponse(HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
-      }
-      else if (error instanceof jwt.JsonWebTokenError) {
-         // Clear invalid token
-         res.clearCookie("access_token");
+      } else if (error instanceof jwt.JsonWebTokenError) {
+         // Clear invalid tokens
+         clearTokens(res);
          return sendServiceResponse(HTTP_STATUS.OK, { authenticated: false });
-      }
-      else {
+      } else {
          // For unexpected errors, log them and return server error status
          logger.error(error.stack);
          return sendServiceResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, undefined, { server: "Internal Server Error" });

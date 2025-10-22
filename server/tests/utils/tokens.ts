@@ -210,9 +210,9 @@ export function callMiddleware(middleware: any, mockReq: MockRequest, mockRes: M
  */
 export function verifyForbiddenResponse(mockRes: MockResponse, mockNext: MockNextFunction): void {
    expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
-   expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token");
    expect(mockRes.json).toHaveBeenCalledWith({ errors: {} });
    expect(mockNext).not.toHaveBeenCalled();
+   verifyTokensCleared(mockRes);
 }
 
 /**
