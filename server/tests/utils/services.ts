@@ -1,5 +1,6 @@
 import { ServerResponse } from "capital/server";
 
+import { MockResponse } from "@/tests/utils/api";
 import { MockedServiceFunction } from "@/tests/utils/controllers";
 
 /**
@@ -82,16 +83,14 @@ export function setupMockRepositoryError(
  * Helper function to setup a mock cache function with successful hit
  *
  * @param {any} cacheModule - The cache module to mock
- * @param {string} methodName - The method name of the cache function to mock
  * @param {string} data - Cached data to return
- * @returns {MockedServiceFunction<typeof cacheModule[typeof methodName]>} The mocked cache function
+ * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} The mocked cache function
  */
 export function setupMockCacheHit(
    cacheModule: any,
-   methodName: string,
    data: string
-): MockedServiceFunction<typeof cacheModule[typeof methodName]> {
-   const mockFunction = cacheModule[methodName] as MockedServiceFunction<typeof cacheModule[typeof methodName]>;
+): MockedServiceFunction<typeof cacheModule.getCacheValue> {
+   const mockFunction = cacheModule.getCacheValue as MockedServiceFunction<typeof cacheModule.getCacheValue>;
    mockFunction.mockResolvedValue(data);
    return mockFunction;
 }
@@ -100,33 +99,13 @@ export function setupMockCacheHit(
  * Helper function to setup a mock cache function with cache miss (null return)
  *
  * @param {any} cacheModule - The cache module to mock
- * @param {string} methodName - The method name of the cache function to mock
- * @returns {MockedServiceFunction<typeof cacheModule[typeof methodName]>} The mocked cache function
+ * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} The mocked cache function
  */
 export function setupMockCacheMiss(
-   cacheModule: any,
-   methodName: string
-): MockedServiceFunction<typeof cacheModule[typeof methodName]> {
-   const mockFunction = cacheModule[methodName] as MockedServiceFunction<typeof cacheModule[typeof methodName]>;
+   cacheModule: any
+): MockedServiceFunction<typeof cacheModule.getCacheValue> {
+   const mockFunction = cacheModule.getCacheValue as MockedServiceFunction<typeof cacheModule.getCacheValue>;
    mockFunction.mockResolvedValue(null);
-   return mockFunction;
-}
-
-/**
- * Helper function to setup a mock cache function that throws a cache error
- *
- * @param {any} cacheModule - The cache module to mock
- * @param {string} methodName - The method name of the cache function to mock
- * @param {Error} error - Cache error to throw
- * @returns {MockedServiceFunction<typeof cacheModule[typeof methodName]>} The mocked cache function
- */
-export function setupMockCacheError(
-   cacheModule: any,
-   methodName: string,
-   error: Error
-): MockedServiceFunction<typeof cacheModule[typeof methodName]> {
-   const mockFunction = cacheModule[methodName] as MockedServiceFunction<typeof cacheModule[typeof methodName]>;
-   mockFunction.mockRejectedValue(error);
    return mockFunction;
 }
 
@@ -221,19 +200,17 @@ export function assertServiceErrorThrown(
  * Asserts cache hit behavior - cache was called, repository was not called, cache was not set
  *
  * @param {any} cacheModule - Cache module mock
- * @param {string} cacheMethod - Cache method name (e.g., "getCacheValue")
  * @param {any} repositoryModule - Repository module mock
  * @param {string} repositoryMethod - Repository method name (e.g., "findByUserId")
  * @param {string} cacheKey - Expected cache key
  */
 export function assertCacheHitBehavior(
    cacheModule: any,
-   cacheMethod: string,
    repositoryModule: any,
    repositoryMethod: string,
    cacheKey: string
 ): void {
-   expect(cacheModule[cacheMethod]).toHaveBeenCalledWith(cacheKey);
+   expect(cacheModule.getCacheValue).toHaveBeenCalledWith(cacheKey);
    expect(repositoryModule[repositoryMethod]).not.toHaveBeenCalled();
    expect(cacheModule.setCacheValue).not.toHaveBeenCalled();
 }
@@ -242,7 +219,6 @@ export function assertCacheHitBehavior(
  * Asserts cache miss behavior - cache was called, repository was called, cache was set
  *
  * @param {any} cacheModule - Cache module mock
- * @param {string} cacheMethod - Cache method name (e.g., "getCacheValue")
  * @param {any} repositoryModule - Repository module mock
  * @param {string} repositoryMethod - Repository method name (e.g., "findByUserId")
  * @param {string} cacheKey - Expected cache key
@@ -252,7 +228,6 @@ export function assertCacheHitBehavior(
  */
 export function assertCacheMissBehavior(
    cacheModule: any,
-   cacheMethod: string,
    repositoryModule: any,
    repositoryMethod: string,
    cacheKey: string,
@@ -260,7 +235,7 @@ export function assertCacheMissBehavior(
    expectedData: any,
    cacheDuration: number
 ): void {
-   expect(cacheModule[cacheMethod]).toHaveBeenCalledWith(cacheKey);
+   expect(cacheModule.getCacheValue).toHaveBeenCalledWith(cacheKey);
    expect(repositoryModule[repositoryMethod]).toHaveBeenCalledWith(repositoryParam);
    expect(cacheModule.setCacheValue).toHaveBeenCalledWith(
       cacheKey,
@@ -306,22 +281,22 @@ export function assertCacheErrorFallbackBehavior(
 /**
  * Asserts user creation success behavior - conflict check, hash, create, token config
  *
+ * @param {any} mockRes - Mock response object
  * @param {any} repositoryModule - Repository module mock
  * @param {any} argon2Module - Argon2 module mock
  * @param {any} middlewareModule - Middleware module mock
  * @param {string} password - Expected password for hashing
  * @param {Record<string, any>} expectedUserData - Expected user data for creation including the hashed password
  * @param {string} userId - Expected user ID for token config
- * @param {any} mockRes - Mock response object
  */
 export function assertUserCreationSuccessBehavior(
+   mockRes: MockResponse,
    repositoryModule: any,
    argon2Module: any,
    middlewareModule: any,
    password: string,
    expectedUserData: Record<string, any>,
-   userId: string,
-   mockRes: any
+   userId: string
 ): void {
    expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(expectedUserData.username, expectedUserData.email);
    expect(argon2Module.hash).toHaveBeenCalledWith(password);
@@ -373,7 +348,7 @@ export function assertUserUpdateSuccessBehavior(
 ): void {
    expect(repositoryModule.findConflictingUsers).toHaveBeenCalledWith(username, email, userId);
    expect(repositoryModule.update).toHaveBeenCalledWith(userId, expect.objectContaining(expectedUpdates));
-   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(cacheKey);
+   assertCacheInvalidation(cacheModule, cacheKey);
 }
 
 /**
@@ -394,10 +369,9 @@ export function assertUserDeletionSuccessBehavior(
 ): void {
    expect(repositoryModule.deleteUser).toHaveBeenCalledWith(user_id);
    expect(authenticationServiceModule.logoutUser).toHaveBeenCalledWith(mockRes);
-   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(`accounts:${user_id}`);
-   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(`budgets:${user_id}`);
-   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(`transactions:${user_id}`);
-   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(`user:${user_id}`);
+   ["accounts", "budgets", "transactions", "user"].forEach(key => {
+      assertCacheInvalidation(cacheModule, `${key}:${user_id}`);
+   });
 }
 
 /**
@@ -442,19 +416,40 @@ export function assertRepositoryCall(
 /**
  * Helper function to call service methods with proper type casting for mockRes
  *
+ * @param {MockResponse} mockRes - Mock response object
  * @param {any} serviceModule - The service module to call
  * @param {string} methodName - The method name to call
- * @param {any} mockRes - Mock response object
  * @param {...any} args - Additional arguments to pass to the service method
  * @returns {Promise<any>} The result of the service method call
  */
 export async function callServiceMethodWithMockRes(
+   mockRes: MockResponse,
    serviceModule: any,
    methodName: string,
-   mockRes: any,
    ...args: any[]
 ): Promise<any> {
    return await serviceModule[methodName](mockRes, ...args);
+}
+
+/**
+ * Asserts that multiple methods were not called
+ *
+ * @param {Array<{module: any, methods: string[]}>} moduleMethods - Array of modules with their method names to assert were not called
+ */
+export function assertMethodsNotCalled(moduleMethods: Array<{module: any, methods: string[]}>): void {
+   moduleMethods.forEach(({ module, methods }) => {
+      methods.forEach(method => expect(module[method]).not.toHaveBeenCalled());
+   });
+}
+
+/**
+ * Asserts that cache invalidation was called with the expected cache key
+ *
+ * @param {any} cacheModule - Cache module mock
+ * @param {string} cacheKey - Expected cache key to be invalidated
+ */
+export function assertCacheInvalidation(cacheModule: any, cacheKey: string): void {
+   expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(cacheKey);
 }
 
 /**

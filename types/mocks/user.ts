@@ -219,7 +219,7 @@ export const createConflictingUser = (
  */
 export const createInvalidUserUpdates = (invalidType: "invalidEmail" | "invalidUsername" | "invalidBirthday" = "invalidEmail"): Partial<UserUpdates> => {
   const { username } = generateTestCredentials();
-  
+
   const invalidUpdates = {
     invalidEmail: {
       username,
