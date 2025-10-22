@@ -162,9 +162,7 @@ describe("User Service", () => {
          await expectServiceToThrow(() => userService.fetchUserDetails(userId), "Database connection failed");
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertMethodsNotCalled([
-            { module: redis, methods: ["setCacheValue"] }
-         ]);
+         assertMethodsNotCalled([{ module: redis, methods: ["setCacheValue"] }]);
       });
    });
 
@@ -172,24 +170,26 @@ describe("User Service", () => {
       it("should create user successfully with valid data", async() => {
          const userId: string = "new-user-id-123";
          const hashedPassword: string = "hashed_password_123";
-         const validUserRegistration: RegisterPayload = createValidRegistration();
+         const validUser: RegisterPayload = createValidRegistration();
 
          setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
          setupArgon2Mocks(argon2, hashedPassword);
          setupMockRepositorySuccess(userRepository, "create", userId);
 
-         const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", validUserRegistration);
+         const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", validUser);
 
          assertUserCreationSuccessBehavior(
             mockRes,
             userRepository,
             argon2,
             middleware,
-            validUserRegistration.password,
+            validUser.password,
             {
-               ...validUserRegistration,
+               ...validUser,
+               // Password should be hashed at the service layer through the argon2 module
                password: hashedPassword,
-               birthday: new Date(validUserRegistration.birthday).toISOString()
+               // Date conversion should always be converted to an ISO string at the service layer
+               birthday: new Date(validUser.birthday).toISOString()
             },
             userId
          );
@@ -213,7 +213,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             username: "Username must be at least 2 characters",
             email: "Invalid email address",
@@ -224,19 +223,69 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for username too long", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.username = "a".repeat(31);
+      const requiredFields = ["username", "email", "name", "birthday", "password", "verifyPassword"];
 
-         const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
+      requiredFields.forEach((field) => {
+         it(`should return validation errors for missing ${field}`, async() => {
+            const invalidUser: RegisterPayload = {
+               ...createValidRegistration(),
+               [field]: undefined
+            };
 
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username must be at most 30 characters"
+            const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
+
+            assertArgon2Calls(argon2);
+            assertMethodsNotCalled([
+               { module: userRepository, methods: ["findConflictingUsers", "create"] },
+               { module: middleware, methods: ["configureToken"] }
+            ]);
+
+            // Special case for password verification field, which has the same error as password for simplicity
+            const identifier: string = field === "verifyPassword" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
+            const expectedError: string = `${identifier} is required`;
+
+            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+               [field]: expectedError
+            });
+         });
+      });
+
+      // Fields that have [2, 30] character length validation
+      const lengthValidationFields: (keyof RegisterPayload)[] = ["username", "name"];
+
+      lengthValidationFields.forEach((field) => {
+         const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+
+         it(`should return validation errors for ${field} too short`, async() => {
+            const invalidUser: RegisterPayload = createValidRegistration();
+            invalidUser[field] = "a";
+
+            const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
+
+            assertArgon2Calls(argon2);
+            assertMethodsNotCalled([
+               { module: userRepository, methods: ["findConflictingUsers", "create"] },
+               { module: middleware, methods: ["configureToken"] }
+            ]);
+            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+               [field]: `${fieldName} must be at least 2 characters`
+            });
+         });
+
+         it(`should return validation errors for ${field} too long`, async() => {
+            const invalidUser: RegisterPayload = createValidRegistration();
+            invalidUser[field] = "a".repeat(31);
+
+            const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
+
+            assertArgon2Calls(argon2);
+            assertMethodsNotCalled([
+               { module: userRepository, methods: ["findConflictingUsers", "create"] },
+               { module: middleware, methods: ["configureToken"] }
+            ]);
+            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+               [field]: `${fieldName} must be at most 30 characters`
+            });
          });
       });
 
@@ -251,33 +300,14 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             username: "Username may only contain letters, numbers, underscores, and hyphens"
          });
       });
 
-      it("should return validation errors for name too long", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         // 31 characters - too long
-         invalidUser.name = "a".repeat(31);
-
-         const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
-
-         assertArgon2Calls(argon2);
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "create"] },
-            { module: middleware, methods: ["configureToken"] }
-         ]);
-
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            name: "Name must be at most 30 characters"
-         });
-      });
-
       it("should return validation errors for email too long", async() => {
          const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.email = "a".repeat(250) + "@example.com"; // Over 255 characters
+         invalidUser.email = "a".repeat(250) + "@example.com";
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -286,7 +316,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             email: "Email must be at most 255 characters"
          });
@@ -294,7 +323,7 @@ describe("User Service", () => {
 
       it("should return validation errors for birthday too early", async() => {
          const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = "1799-12-31"; // Before 1800
+         invalidUser.birthday = "1799-12-31";
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -303,19 +332,18 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             birthday: "Birthday must be on or after 1800-01-01"
          });
       });
 
       it("should return validation errors for birthday in the future", async() => {
-         const futureDate = new Date();
-         futureDate.setFullYear(futureDate.getFullYear() + 1);
-         const futureDateString = futureDate.toISOString().split("T")[0];
+         // Application constraints are based on the Pacific/Kiritimati timezone to avoid global timezone issues
+         const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+         const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
          const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = futureDateString;
+         invalidUser.birthday = tomorrow.toISOString();
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -324,7 +352,6 @@ describe("User Service", () => {
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
-
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
             birthday: "Birthday cannot be in the future"
          });
@@ -332,7 +359,7 @@ describe("User Service", () => {
 
       it("should return validation errors for empty birthday", async() => {
          const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = ""; // Empty string
+         invalidUser.birthday = "";
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -647,22 +674,44 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for username too long in update", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.username = "a".repeat(31); // 31 characters - too long
+      // Fields that have [2, 30] character length validation for updates
+      const updateLengthValidationFields: (keyof UserUpdates)[] = ["username", "name"];
 
-         const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
+      updateLengthValidationFields.forEach((field) => {
+         const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
 
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            username: "Username must be at most 30 characters"
+         it(`should return validation errors for ${field} too short`, async() => {
+            const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
+            invalidUpdates[field] = "a";
+
+            const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
+
+            assertMethodsNotCalled([
+               { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
+               { module: redis, methods: ["removeCacheValue"] }
+            ]);
+            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+               [field]: `${fieldName} must be at least 2 characters`
+            });
+         });
+
+         it(`should return validation errors for ${field} too long`, async() => {
+            const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
+            invalidUpdates[field] = "a".repeat(31);
+
+            const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
+
+            assertMethodsNotCalled([
+               { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
+               { module: redis, methods: ["removeCacheValue"] }
+            ]);
+            assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
+               [field]: `${fieldName} must be at most 30 characters`
+            });
          });
       });
 
-      it("should return validation errors for username with invalid characters in update", async() => {
+      it("should return validation errors for username with invalid characters", async() => {
          const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
          invalidUpdates.username = "test@user!"; // Contains invalid characters
 
@@ -677,24 +726,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for name too long in update", async() => {
+      it("should return validation errors for email too long", async() => {
          const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.name = "a".repeat(31); // 31 characters - too long
-
-         const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
-
-         assertMethodsNotCalled([
-            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
-         assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, {
-            name: "Name must be at most 30 characters"
-         });
-      });
-
-      it("should return validation errors for email too long in update", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.email = "a".repeat(250) + "@example.com"; // Over 255 characters
+         invalidUpdates.email = "a".repeat(250) + "@example.com";
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -707,9 +741,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for birthday too early in update", async() => {
+      it("should return validation errors for birthday too early", async() => {
          const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.birthday = "1799-12-31"; // Before 1800
+         invalidUpdates.birthday = "1799-12-31";
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -722,7 +756,7 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for birthday in the future in update", async() => {
+      it("should return validation errors for birthday in the future", async() => {
          const futureDate = new Date();
          futureDate.setFullYear(futureDate.getFullYear() + 1);
          const futureDateString = futureDate.toISOString().split("T")[0];
@@ -741,7 +775,7 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for password too long in update", async() => {
+      it("should return validation errors for password too long", async() => {
          const longPassword = "a".repeat(256);
          const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
          invalidUpdates.newPassword = longPassword;
@@ -759,9 +793,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for mismatched new passwords in update", async() => {
+      it("should return validation errors for mismatched new passwords", async() => {
          const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         invalidUpdates.verifyPassword = "DifferentPassword1!"; // Different password
+         invalidUpdates.verifyPassword = "DifferentPassword1!";
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -774,9 +808,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for new password same as old password in update", async() => {
+      it("should return validation errors for new password same as old password", async() => {
          const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         invalidUpdates.newPassword = "Password1!"; // Same as old password
+         invalidUpdates.newPassword = "Password1!";
          invalidUpdates.verifyPassword = "Password1!";
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
@@ -790,9 +824,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for missing new password in update", async() => {
+      it("should return validation errors for missing new password", async() => {
          const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         delete invalidUpdates.newPassword; // Missing newPassword
+         delete invalidUpdates.newPassword;
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -806,9 +840,9 @@ describe("User Service", () => {
          });
       });
 
-      it("should return validation errors for missing password verification in update", async() => {
+      it("should return validation errors for missing password verification", async() => {
          const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         delete invalidUpdates.verifyPassword; // Missing verifyPassword
+         delete invalidUpdates.verifyPassword;
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 

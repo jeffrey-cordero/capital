@@ -2,8 +2,10 @@ import { z } from "zod";
 
 /**
  * Password validation rules for security compliance
- */
-const passwordSchema = z.string().min(8, {
+  */
+const passwordSchema = z.string({
+  message: "Password is required"
+}).min(8, {
   message: "Password must be at least 8 characters"
 }).max(255, {
   message: "Password must be at most 255 characters"
@@ -27,7 +29,9 @@ export const userSchema = z.object({
   }).nullable().optional(),
 
   /* Unique username */
-  username: z.string().trim().min(2, {
+  username: z.string({
+    required_error: "Username is required"
+  }).trim().min(2, {
     message: "Username must be at least 2 characters"
   }).max(30, {
     message: "Username must be at most 30 characters"
@@ -36,7 +40,9 @@ export const userSchema = z.object({
   }),
 
   /* Full name */
-  name: z.string().trim().min(2, {
+  name: z.string({
+    required_error: "Name is required"
+  }).trim().min(2, {
     message: "Name must be at least 2 characters"
   }).max(30, {
     message: "Name must be at most 30 characters"
@@ -53,8 +59,7 @@ export const userSchema = z.object({
       }
     },
     z.date({
-      required_error: "Birthday is required",
-      invalid_type_error: "Birthday must be a valid date",
+      message: "Birthday is required"
     })
     .min(new Date("1800-01-01"), { message: "Birthday must be on or after 1800-01-01" })
     .max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
@@ -70,7 +75,9 @@ export const userSchema = z.object({
   verifyPassword: passwordSchema,
 
   /* Unique email address */
-  email: z.string().max(255, {
+  email: z.string({
+    required_error: "Email is required"
+  }).max(255, {
     message: "Email must be at most 255 characters"
   }).email({
     message: "Invalid email address"
