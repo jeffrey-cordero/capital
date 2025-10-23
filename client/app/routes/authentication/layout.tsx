@@ -16,19 +16,9 @@ import { addNotification } from "@/redux/slices/notifications";
  * @returns {Promise<boolean | null>} Authentication status or null for error handling
  */
 export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean| null> {
-   const apiTimeout = setTimeout(() => {
-      dispatch(addNotification({
-         type: "info",
-         message: "Hang tight! The server could be waking up and will be ready shortly."
-      }));
-   }, 5000);
-
    const status = await sendApiRequest<{ authenticated: boolean }>(
       "authentication", "GET", null, dispatch, navigate
    );
-
-   // Clear the timer if the API responded before 5 seconds
-   clearTimeout(apiTimeout);
 
    if (typeof status === "object" && status !== null) {
       const authenticated: boolean = Boolean(status.authenticated);
