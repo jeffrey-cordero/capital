@@ -19,9 +19,6 @@ test.describe("Login Authentication", () => {
 
          // Verify navigation link to the registration page
          await expect(page.getByTestId("register-link")).toBeVisible();
-
-         // Un-blur the auto-focused input to ensure proper navigation
-         await page.evaluate(() => (document.activeElement as HTMLInputElement)?.blur());
          await page.getByTestId("register-link").click();
          await expect(page).toHaveURL(REGISTER_ROUTE);
       });
@@ -34,8 +31,8 @@ test.describe("Login Authentication", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await expectValidationError(page, "username", "Username must be at least 2 characters");
-         await expectValidationError(page, "password", "Password must be at least 8 characters");
+         await expectValidationError(page, "username", "Username is required");
+         await expectValidationError(page, "password", "Password is required");
       });
 
       test("should validate username length requirement", async({ page }) => {

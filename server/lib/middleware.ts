@@ -29,7 +29,8 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
    res.cookie("access_token", access_token, {
       httpOnly: true,
       sameSite: "none",
-      maxAge: TOKEN_EXPIRATIONS.ACCESS_TOKEN,
+      // Use a long cookie lifetime and short JWT expiration for simpler token refresh handling
+      maxAge: TOKEN_EXPIRATIONS.REFRESH_TOKEN,
       secure: true
    });
 
@@ -37,6 +38,7 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
    res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       sameSite: "none",
+      // Set cookie lifetime to the remaining time (if provided) or the default refresh token duration
       maxAge: (secondsUntilExpire || TOKEN_EXPIRATIONS.REFRESH_TOKEN),
       secure: true,
       path: "/api/v1/authentication/refresh"

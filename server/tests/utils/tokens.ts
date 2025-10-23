@@ -106,7 +106,7 @@ export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_to
             httpOnly: true,
             sameSite: "none",
             secure: true,
-            maxAge: tokenType === "access_token" ? TOKEN_EXPIRATIONS.ACCESS_TOKEN : TOKEN_EXPIRATIONS.REFRESH_TOKEN
+            maxAge: TOKEN_EXPIRATIONS.REFRESH_TOKEN
          })
       });
 
@@ -368,7 +368,7 @@ export async function verifyTokenExpirationRelationship(mockRes: MockResponse, m
  * @param {Record<string, any>} payload - Payload to inject into the JWT verify mock
  */
 export function setupMockJWTVerify(jwtModule: any, payload: Record<string, any>): void {
-   (jwtModule.verify as jest.Mock).mockReturnValue(payload);
+   jwtModule.verify.mockReturnValue(payload);
 }
 
 /**
@@ -378,7 +378,7 @@ export function setupMockJWTVerify(jwtModule: any, payload: Record<string, any>)
  * @param {string} errorMessage - Error message to throw
  */
 export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
-   (jwtModule.verify as jest.Mock).mockImplementation(() => {
+   jwtModule.verify.mockImplementation(() => {
       if (errorMessage === "jwt expired") {
          throw new jwtModule.TokenExpiredError("jwt expired", new Date());
       } else if (errorMessage === "invalid signature" || errorMessage === "jwt malformed" || errorMessage === "jwt must be provided") {

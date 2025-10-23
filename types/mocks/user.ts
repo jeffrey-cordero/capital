@@ -38,7 +38,9 @@ export const generateTestCredentials = (): { username: string; email: string } =
   const length = 62;
   const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const randomBytes = (globalThis as any).crypto.getRandomValues(new Uint8Array(length));
-  const identifier = Array.from(randomBytes, (b: number) => alphabet[b % alphabet.length]).join("").substring(0, 30);
+  const randomCharacters = Array.from(randomBytes, (b: number) => alphabet[b % alphabet.length]).join("");
+  // Generate a random identifier between 26 and 30 characters long for additional randomness
+  const identifier = randomCharacters.substring(0, 26 + Math.ceil(Math.random() * 4));
 
   return {
     username: identifier,

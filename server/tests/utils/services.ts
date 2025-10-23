@@ -115,9 +115,9 @@ export function setupMockCacheMiss(
  * @param {any} cacheModule - The cache module to mock
  */
 export function setupDefaultRedisCacheBehavior(cacheModule: any): void {
-   (cacheModule.getCacheValue as jest.Mock).mockResolvedValue(null);
-   (cacheModule.setCacheValue as jest.Mock).mockResolvedValue(undefined);
-   (cacheModule.removeCacheValue as jest.Mock).mockResolvedValue(undefined);
+   cacheModule.getCacheValue.mockResolvedValue(null);
+   cacheModule.setCacheValue.mockResolvedValue(undefined);
+   cacheModule.removeCacheValue.mockResolvedValue(undefined);
 }
 
 /**
@@ -539,8 +539,8 @@ export async function expectServiceToThrow(serviceCall: () => Promise<ServerResp
  * @param {boolean} [verifyResult] - The result to return from verify operation (defaults to false)
  */
 export function setupArgon2Mocks(argon2Module: any, hashedPassword: string, verifyResult: boolean = false): void {
-   (argon2Module.verify as jest.Mock).mockResolvedValue(verifyResult);
-   (argon2Module.hash as jest.Mock).mockResolvedValue(hashedPassword);
+   argon2Module.verify.mockResolvedValue(verifyResult);
+   argon2Module.hash.mockResolvedValue(hashedPassword);
 }
 
 /**
@@ -579,5 +579,5 @@ export function assertArgon2Calls(
  * @param {Error} error - Error to throw from argon2.verify
  */
 export function setupArgon2Error(argon2Module: any, error: Error): void {
-   (argon2Module.verify as jest.Mock).mockRejectedValue(error);
+   argon2Module.verify.mockRejectedValue(error);
 }

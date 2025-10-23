@@ -29,8 +29,6 @@ test.describe("User Registration", () => {
 
          // Verify navigation link to login
          await expect(page.getByTestId("login-link")).toBeVisible();
-         // Un-blur the auto-focused input to ensure proper navigation
-         await page.evaluate(() => (document.activeElement as HTMLInputElement)?.blur());
          await page.getByTestId("login-link").click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });
@@ -74,12 +72,12 @@ test.describe("User Registration", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await expectValidationError(page, "name", "Name must be at least 2 characters");
+         await expectValidationError(page, "name", "Name is required");
          await expectValidationError(page, "birthday", "Birthday is required");
-         await expectValidationError(page, "username", "Username must be at least 2 characters");
-         await expectValidationError(page, "email", "Invalid email address");
-         await expectValidationError(page, "password", "Password must be at least 8 characters");
-         await expectValidationError(page, "verifyPassword", "Password must be at least 8 characters");
+         await expectValidationError(page, "username", "Username is required");
+         await expectValidationError(page, "email", "Email is required");
+         await expectValidationError(page, "password", "Password is required");
+         await expectValidationError(page, "verifyPassword", "Password is required");
       });
 
       test("should validate name field requirements", async({ page }) => {

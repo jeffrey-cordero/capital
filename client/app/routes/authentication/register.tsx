@@ -97,6 +97,7 @@ export default function Register(): React.ReactNode {
                   </Typography>
                </Stack>
                <form
+                  noValidate = { true }
                   aria-label = "Register Form"
                   onSubmit = { handleSubmit(onSubmit) }
                >

@@ -77,21 +77,17 @@ test.describe("API Error Handling", () => {
             });
          });
 
-         await page.route("**/api/v1/authentication", async(route) => {
+         await page.route("**/api/v1/dashboard", async(route) => {
             if (!refreshAttempted) {
-               // Mock the expiration of the access token
+               // Mock the expiration of the access token while fetching the dashboard data to indicate a need for a refresh token request
                refreshAttempted = true;
                await route.fulfill({
                   status: HTTP_STATUS.UNAUTHORIZED,
                   body: JSON.stringify({ data: { refreshable: true } })
                });
             } else {
-               // Mock post-refresh attempt requests
-               await route.fulfill({
-                  status: HTTP_STATUS.OK,
-                  // A valid refresh response should implies a valid authentication status for at least one hour
-                  body: JSON.stringify({ data: { authenticated: refreshCalled } })
-               });
+               // A valid refresh request should continue the dashboard data request
+               await route.continue();
             }
          });
 
