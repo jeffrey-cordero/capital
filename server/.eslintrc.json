@@ -34,6 +34,7 @@
     "object-curly-spacing": ["error", "always"],
     "keyword-spacing": ["error", { "after": true }],
     "no-multiple-empty-lines": ["error", { "max": 1 }],
+    "brace-style": ["error", "1tbs", { "allowSingleLine": false }],
     "space-before-function-paren": ["error", "never"],
     "no-console": ["error", { "allow": ["error"] }],
     "no-unused-vars": ["error",{

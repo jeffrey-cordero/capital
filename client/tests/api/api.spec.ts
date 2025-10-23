@@ -57,32 +57,46 @@ test.describe("API Error Handling", () => {
          let refreshCalled = false;
          let refreshAttempted = false;
 
-         // Now reload to fetch authentication state
-         await page.reload();
-
+         // Verify the refresh request was called and successful
          await page.route("**/api/v1/authentication/refresh", async(route) => {
+            // Mark that the refresh request was called`
             refreshCalled = true;
+
+            // Verify the response from the server
+            const response = await route.fetch();
+            const body = await response.json();
+
+            expect(response.status()).toBe(HTTP_STATUS.OK);
+            expect(body).toMatchObject({ data: { success: true } });
+
+            // Continue the request with the real response
             await route.fulfill({
-               status: HTTP_STATUS.OK,
-               body: JSON.stringify({ data: { success: refreshAttempted } })
+               status: response.status(),
+               headers: response.headers(),
+               body: JSON.stringify(body)
             });
          });
 
-         // Mock the authentication endpoint
          await page.route("**/api/v1/authentication", async(route) => {
             if (!refreshAttempted) {
+               // Mock the expiration of the access token
                refreshAttempted = true;
                await route.fulfill({
                   status: HTTP_STATUS.UNAUTHORIZED,
                   body: JSON.stringify({ data: { refreshable: true } })
                });
             } else {
+               // Mock post-refresh attempt requests
                await route.fulfill({
                   status: HTTP_STATUS.OK,
+                  // A valid refresh response should implies a valid authentication status for at least one hour
                   body: JSON.stringify({ data: { authenticated: refreshCalled } })
                });
             }
          });
+
+         // Now reload to fetch authentication state
+         await page.reload();
 
          // Wait for the refresh call
          const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");

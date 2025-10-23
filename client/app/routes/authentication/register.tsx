@@ -21,12 +21,12 @@ import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
-import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { getValidDateRange } from "@/lib/dates";
 import { authenticate } from "@/redux/slices/authentication";
+import { handleValidationErrors } from "@/lib/validation";
 
 /**
  * Registration page component with form validation
@@ -35,32 +35,37 @@ import { authenticate } from "@/redux/slices/authentication";
  */
 export default function Register(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate(), theme = useTheme();
-   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm({
-      resolver: zodResolver(userSchema),
-      mode: "onBlur",
-      defaultValues: {
-         name: "",
-         birthday: "" as unknown as Date,
-         username: "",
-         password: "",
-         verifyPassword: "",
-         email: ""
-      }
-   });
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
    const [showVerifyPassword, setShowVerifyPassword] = useState<boolean>(false);
 
    // Store the birthday date range constraints
    const [minDate, maxDate] = useMemo(() => getValidDateRange(), []);
 
-   const onSubmit = async(data: z.infer<typeof userSchema>) => {
-      const result = await sendApiRequest<{ success: boolean }>(
-         "users", "POST", data, dispatch, navigate, setError
-      );
+   const onSubmit = async(data: any) => {
+      const fields = userSchema.safeParse(data);
 
-      if (typeof result === "object" && result?.success) {
-         // Update authentication state
-         dispatch(authenticate(true));
+      if (!fields.success) {
+         handleValidationErrors(fields, setError);
+      } else {
+         // Submit registration fields
+         const registration = {
+            username: fields.data.username,
+            name: fields.data.name,
+            password: fields.data.password,
+            verifyPassword: fields.data.verifyPassword,
+            email: fields.data.email,
+            birthday: fields.data.birthday
+         };
+
+         const result = await sendApiRequest<{ success: boolean }>(
+            "users", "POST", registration, dispatch, navigate, setError
+         );
+
+         if (typeof result === "object" && result?.success) {
+            // Update authentication state
+            dispatch(authenticate(true));
+         }
       }
    };
 

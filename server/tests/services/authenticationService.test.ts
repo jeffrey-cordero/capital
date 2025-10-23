@@ -153,7 +153,7 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword);
 
          assertArgon2Calls(argon2, hashedPassword, validPassword);
-         assertTokenConfigured(middleware, mockRes, mockUser.user_id as string);
+         assertTokenConfigured(middleware, mockRes, mockUser.user_id!);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 

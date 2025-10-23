@@ -71,6 +71,7 @@ export default [
                "JSXSpreadChild"
             ]
          }],
+         "brace-style": ["error", "1tbs", { "allowSingleLine": false }],
          "space-before-blocks": ["error", "always"],
          "object-curly-spacing": ["error", "always"],
          "keyword-spacing": ["error", { after: true }],

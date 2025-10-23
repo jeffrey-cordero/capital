@@ -23,6 +23,7 @@ import { z } from "zod";
 
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
+import { handleValidationErrors } from "@/lib/validation";
 
 /**
  * Login page component with form validation and authentication
@@ -31,23 +32,28 @@ import { sendApiRequest } from "@/lib/api";
  */
 export default function Login(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm<z.infer<typeof loginSchema>>({
-      resolver: zodResolver(loginSchema),
-      mode: "onBlur",
-      defaultValues: {
-         username: "",
-         password: ""
-      }
-   });
+   const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm();
    const [showPassword, setShowPassword] = useState<boolean>(false);
 
-   const onSubmit = async(data: z.infer<typeof loginSchema>) => {
-      const result = await sendApiRequest<{ success: boolean }>(
-         "authentication/login", "POST", data, dispatch, navigate, setError
-      );
+   const onSubmit = async(data: any) => {
+      const fields = loginSchema.safeParse(data);
 
-      if (typeof result === "object" && result?.success) {
-         navigate("/dashboard");
+      if (!fields.success) {
+         handleValidationErrors(fields, setError);
+      } else {
+         // Submit authentication request
+         const credentials = {
+            username: fields.data.username,
+            password: fields.data.password
+         };
+
+         const result = await sendApiRequest<{ success: boolean }>(
+            "authentication/login", "POST", credentials, dispatch, navigate, setError
+         );
+
+         if (typeof result === "object" && result?.success) {
+            navigate("/dashboard");
+         }
       }
    };
 
