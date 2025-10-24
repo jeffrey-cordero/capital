@@ -24,8 +24,8 @@ import { useNavigate } from "react-router";
 import Callout from "@/components/global/callout";
 import { sendApiRequest } from "@/lib/api";
 import { getValidDateRange } from "@/lib/dates";
-import { authenticate } from "@/redux/slices/authentication";
 import { handleValidationErrors } from "@/lib/validation";
+import { authenticate } from "@/redux/slices/authentication";
 
 /**
  * Registration page component with form validation
@@ -97,8 +97,8 @@ export default function Register(): React.ReactNode {
                   </Typography>
                </Stack>
                <form
-                  noValidate = { true }
                   aria-label = "Register Form"
+                  noValidate = { true }
                   onSubmit = { handleSubmit(onSubmit) }
                >
                   <Stack

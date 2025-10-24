@@ -73,6 +73,7 @@ export async function sendApiRequest<T>(
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
          // Check if token is refreshable
          const json: ApiResponse<{ refreshable?: boolean }> = await response.json();
+         console.log(json, json.data);
 
          if (json.data?.refreshable && !isRetrying) {
             // Attempt to refresh tokens
@@ -80,6 +81,8 @@ export async function sendApiRequest<T>(
                method: "POST",
                credentials: "include"
             });
+
+            console.log(refreshResponse);
 
             if (refreshResponse.ok) {
                // Refresh successful, retry the original request once

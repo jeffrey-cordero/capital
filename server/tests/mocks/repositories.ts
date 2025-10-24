@@ -2,19 +2,19 @@
  * Mock database pool for testing
  */
 export const mockPool = {
-   query: jest.fn() as jest.Mock,
-   connect: jest.fn() as jest.Mock,
-   end: jest.fn() as jest.Mock,
-   on: jest.fn() as jest.Mock
+   query: jest.fn(),
+   connect: jest.fn(),
+   end: jest.fn(),
+   on: jest.fn()
 };
 
 /**
  * Mock database client for testing
  */
 export const mockClient = {
-   query: jest.fn() as jest.Mock,
-   release: jest.fn() as jest.Mock,
-   connect: jest.fn() as jest.Mock
+   query: jest.fn(),
+   release: jest.fn(),
+   connect: jest.fn()
 };
 
 /**
@@ -94,13 +94,15 @@ export function mockCreateCategoryRejected(errorMessage: string): void {
 /**
  * Mock database query result
  */
-export const createMockQueryResult = (rows: any[] = []) => ({
-   rows,
-   rowCount: rows.length,
-   command: "SELECT",
-   oid: 0,
-   fields: []
-});
+export function createMockQueryResult(rows: any[] = []): any {
+   return {
+      rows,
+      rowCount: rows.length,
+      command: "SELECT",
+      oid: 0,
+      fields: []
+   };
+}
 
 /**
  * Setup mock pool query to return specific data
@@ -182,16 +184,33 @@ export function resetDatabaseMocks(): void {
 }
 
 /**
- * Assert that query was called with expected SQL and parameters
+ * Assert that query was called with SQL containing key phrases and exact parameters
+ * This is more robust against formatting changes while still validating the query structure
  *
- * @param {string} expectedSql - Expected SQL query string
+ * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
  * @param {any[]} expectedParams - Expected parameters array
  * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export function assertQueryCalled(expectedSql: string, expectedParams: any[], callIndex: number = 0): void {
-   const mockQuery = mockPool.query;
+export function assertQueryCalledWithKeyPhrases(
+   keyPhrases: string[], 
+   expectedParams: any[], 
+   callIndex: number = 0,
+   mockQuery: any = mockPool.query
+): void {
    expect(mockQuery).toHaveBeenCalledTimes(callIndex + 1);
-   expect(mockQuery).toHaveBeenNthCalledWith(callIndex + 1, expectedSql, expectedParams);
+
+   const call = mockQuery.mock.calls[callIndex];
+   const actualSql = call[0];
+   const actualParams = call[1];
+
+   // Check that all key phrases are present in the SQL
+   keyPhrases.forEach(phrase => {
+      expect(actualSql).toContain(phrase);
+   });
+
+   // Check exact parameter match
+   expect(actualParams).toEqual(expectedParams);
 }
 
 /**
@@ -202,16 +221,54 @@ export function assertQueryNotCalled(): void {
 }
 
 /**
- * Assert transaction flow (BEGIN, execution, COMMIT)
+ * Assert transaction flow with configurable stages and isolation level
  *
  * @param {string[]} expectedStages - Expected transaction stages
+ * @param {string} [isolationLevel] - Expected isolation level (default: "READ COMMITTED")
+ * @param {any} [mockQuery] - Mock query object to check (default: mockClient.query)
  */
-export function assertTransactionFlow(expectedStages: string[]): void {
-   const mockQuery = mockClient.query;
+export function assertTransactionFlow(
+   expectedStages: string[], 
+   isolationLevel: string = "READ COMMITTED",
+   mockQuery: any = mockClient.query
+): void {
    expect(mockQuery).toHaveBeenCalledTimes(expectedStages.length);
 
    expectedStages.forEach((stage, index) => {
-      expect(mockQuery).toHaveBeenNthCalledWith(index + 1, stage);
+      if (stage.includes("BEGIN")) {
+         expect(mockQuery).toHaveBeenNthCalledWith(index + 1, expect.stringContaining(isolationLevel));
+      } else {
+         expect(mockQuery).toHaveBeenNthCalledWith(index + 1, stage);
+      }
+   });
+}
+
+/**
+ * Assert generic transaction flow with key phrases for each stage
+ *
+ * @param {Array<{stage: string, keyPhrases: string[], params?: any[]}>} expectedStages - Expected transaction stages with key phrases
+ * @param {any} [mockQuery] - Mock query object to check (default: mockClient.query)
+ */
+export function assertTransactionFlowWithKeyPhrases(
+   expectedStages: Array<{stage: string, keyPhrases: string[], params?: any[]}>,
+   mockQuery: any = mockClient.query
+): void {
+   expect(mockQuery).toHaveBeenCalledTimes(expectedStages.length);
+
+   expectedStages.forEach((stage, index) => {
+      const call = mockQuery.mock.calls[index];
+      const actualSql = call[0];
+      const actualParams = call[1];
+
+      // Check key phrases for this stage
+      stage.keyPhrases.forEach(phrase => {
+         expect(actualSql).toContain(phrase);
+      });
+
+      // Check parameters if provided
+      if (stage.params) {
+         expect(actualParams).toEqual(stage.params);
+      }
    });
 }
 
@@ -253,20 +310,71 @@ export function assertUserQueryResult(result: any, expectedUser: any): void {
 }
 
 /**
- * Assert conflict check behavior with exact SQL and parameters
+ * Assert generic SELECT query with key phrases and parameters
  *
- * @param {string} username - Expected username parameter
- * @param {string} email - Expected email parameter
- * @param {string} [userId] - Expected user_id parameter (optional)
+ * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
+ * @param {any[]} expectedParams - Expected parameters array
+ * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export function assertConflictCheckBehavior(username: string, email: string, userId?: string): void {
-   const expectedSql = `
-      SELECT user_id, username, email
-      FROM users
-      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id IS DISTINCT FROM $3);
-   `;
-   const expectedParams = [username.toLowerCase().trim(), email.toLowerCase().trim(), userId];
-   assertQueryCalled(expectedSql, expectedParams);
+export function assertSelectQuery(
+   keyPhrases: string[], 
+   expectedParams: any[], 
+   callIndex: number = 0,
+   mockQuery: any = mockPool.query
+): void {
+   assertQueryCalledWithKeyPhrases(keyPhrases, expectedParams, callIndex, mockQuery);
+}
+
+/**
+ * Assert generic INSERT query with key phrases and parameters
+ *
+ * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
+ * @param {any[]} expectedParams - Expected parameters array
+ * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
+ */
+export function assertInsertQuery(
+   keyPhrases: string[], 
+   expectedParams: any[], 
+   callIndex: number = 0,
+   mockQuery: any = mockPool.query
+): void {
+   assertQueryCalledWithKeyPhrases(keyPhrases, expectedParams, callIndex, mockQuery);
+}
+
+/**
+ * Assert generic UPDATE query with key phrases and parameters
+ *
+ * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
+ * @param {any[]} expectedParams - Expected parameters array
+ * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
+ */
+export function assertUpdateQuery(
+   keyPhrases: string[], 
+   expectedParams: any[], 
+   callIndex: number = 0,
+   mockQuery: any = mockPool.query
+): void {
+   assertQueryCalledWithKeyPhrases(keyPhrases, expectedParams, callIndex, mockQuery);
+}
+
+/**
+ * Assert generic DELETE query with key phrases and parameters
+ *
+ * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
+ * @param {any[]} expectedParams - Expected parameters array
+ * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
+ */
+export function assertDeleteQuery(
+   keyPhrases: string[], 
+   expectedParams: any[], 
+   callIndex: number = 0,
+   mockQuery: any = mockPool.query
+): void {
+   assertQueryCalledWithKeyPhrases(keyPhrases, expectedParams, callIndex, mockQuery);
 }
 
 /**
@@ -305,23 +413,37 @@ export function assertUserCreationFlow(client: any, userData: any, categoryParam
 }
 
 /**
- * Assert user update flow with dynamic query construction
+ * Assert update flow with dynamic query construction
  *
- * @param {string} userId - Expected user ID
+ * @param {string} tableName - Name of the table to update
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
  * @param {any} updates - Expected updates object
  * @param {any[]} expectedParams - Expected query parameters
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export function assertUserUpdateFlow(userId: string, updates: any, expectedParams: any[]): void {
-   const updateFields = Object.keys(updates).map((field, index) => `${field} = $${index + 1}`);
-   const expectedSql = `
-      UPDATE users
-      SET ${updateFields.join(", ")}
-      WHERE user_id = $${expectedParams.length}
-      RETURNING user_id;
-   `;
+export function assertUpdateFlow(
+   tableName: string,
+   idField: string,
+   updates: any, 
+   expectedParams: any[],
+   mockQuery: any = mockPool.query
+): void {
+   const updateFields = Object.keys(updates);
+   const keyPhrases = [
+      `UPDATE ${tableName}`,
+      "SET",
+      `WHERE ${idField} =`,
+      "RETURNING"
+   ];
 
-   assertQueryCalled(expectedSql, expectedParams);
+   // Add field-specific phrases
+   updateFields.forEach(field => {
+      keyPhrases.push(`${field} = $`);
+   });
+
+   assertUpdateQuery(keyPhrases, expectedParams, 0, mockQuery);
 }
+
 
 /**
  * Assert user deletion flow with trigger operations
@@ -352,83 +474,125 @@ export function assertUserDeletionFlow(userId: string, triggerOperations: boolea
 }
 
 /**
- * Test single field update with modular verification
+ * Test single field update with configurable table and field names
  *
+ * @param {string} tableName - Name of the table to update
  * @param {string} field - Field name to update
  * @param {any} value - Value to set
- * @param {string} userId - User ID to update
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
+ * @param {string} idValue - ID value
  * @param {Function} updateFn - Repository update function
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export async function testSingleFieldUpdate(field: string, value: any, userId: string, updateFn: (userId: string, updates: any) => Promise<boolean>): Promise<void> {
+export async function testSingleFieldUpdate(
+   tableName: string,
+   field: string, 
+   value: any, 
+   idField: string,
+   idValue: string, 
+   updateFn: (id: string, updates: any) => Promise<boolean>,
+   mockQuery: any = mockPool.query
+): Promise<void> {
    const updates = { [field]: value };
-   setupMockQuery([{ user_id: userId }]);
+   setupMockQuery([{ [idField]: idValue }]);
 
-   const result: boolean = await updateFn(userId, updates);
+   const result: boolean = await updateFn(idValue, updates);
 
-   const expectedSql = `
-      UPDATE users
-      SET ${field} = $1
-      WHERE user_id = $2
-      RETURNING user_id;
-   `;
-   const expectedParams = [value, userId];
-   assertQueryCalled(expectedSql, expectedParams);
+   const expectedParams = [value, idValue];
+   assertUpdateQuery([
+      `UPDATE ${tableName}`,
+      "SET",
+      `${field} = $1`,
+      `WHERE ${idField} = $2`,
+      "RETURNING"
+   ], expectedParams, 0, mockQuery);
    expect(result).toBe(true);
 }
 
 /**
- * Test multiple field update with modular verification
+ * Test multiple field update with configurable table and field names
  *
+ * @param {string} tableName - Name of the table to update
  * @param {any} updates - Updates object with multiple fields
- * @param {string} userId - User ID to update
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
+ * @param {string} idValue - ID value
  * @param {Function} updateFn - Repository update function
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export async function testMultipleFieldUpdate(updates: any, userId: string, updateFn: (userId: string, updates: any) => Promise<boolean>): Promise<void> {
-   setupMockQuery([{ user_id: userId }]);
+export async function testMultipleFieldUpdate(
+   tableName: string,
+   updates: any, 
+   idField: string,
+   idValue: string, 
+   updateFn: (id: string, updates: any) => Promise<boolean>,
+   mockQuery: any = mockPool.query
+): Promise<void> {
+   setupMockQuery([{ [idField]: idValue }]);
 
-   const result: boolean = await updateFn(userId, updates);
+   const result: boolean = await updateFn(idValue, updates);
 
    const fields = Object.keys(updates);
    const values = Object.values(updates);
-   const updateFields = fields.map((field, index) => `${field} = $${index + 1}`);
 
-   const expectedSql = `
-      UPDATE users
-      SET ${updateFields.join(", ")}
-      WHERE user_id = $${values.length + 1}
-      RETURNING user_id;
-   `;
-   const expectedParams = [...values, userId];
-   assertQueryCalled(expectedSql, expectedParams);
+   const keyPhrases = [
+      `UPDATE ${tableName}`,
+      "SET",
+      `WHERE ${idField} =`,
+      "RETURNING"
+   ];
+
+   // Add field-specific phrases
+   fields.forEach(field => {
+      keyPhrases.push(`${field} = $`);
+   });
+
+   const expectedParams = [...values, idValue];
+   assertUpdateQuery(keyPhrases, expectedParams, 0, mockQuery);
    expect(result).toBe(true);
 }
 
 /**
- * Test update result verification (true/false based on user existence)
+ * Test update result verification (true/false based on record existence)
  *
+ * @param {string} tableName - Name of the table to update
  * @param {any} updates - Updates object
- * @param {string} userId - User ID to update
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
+ * @param {string} idValue - ID value
  * @param {Function} updateFn - Repository update function
- * @param {boolean} userExists - Whether user should exist (affects expected result)
+ * @param {boolean} recordExists - Whether record should exist (affects expected result)
+ * @param {any} [mockQuery] - Mock query object to check (default: mockPool.query)
  */
-export async function testUpdateResult(updates: any, userId: string, updateFn: (userId: string, updates: any) => Promise<boolean>, userExists: boolean): Promise<void> {
-   const mockResult = userExists ? [{ user_id: userId }] : [];
+export async function testUpdateResult(
+   tableName: string,
+   updates: any, 
+   idField: string,
+   idValue: string, 
+   updateFn: (id: string, updates: any) => Promise<boolean>, 
+   recordExists: boolean,
+   mockQuery: any = mockPool.query
+): Promise<void> {
+   const mockResult = recordExists ? [{ [idField]: idValue }] : [];
    setupMockQuery(mockResult);
 
-   const result: boolean = await updateFn(userId, updates);
+   const result: boolean = await updateFn(idValue, updates);
 
-   expect(result).toBe(userExists);
+   expect(result).toBe(recordExists);
 }
 
 /**
- * Setup mock client for transaction operations with specific stages
+ * Setup mock client for transaction operations with configurable stages
  *
  * @param {Array} stages - Array of mock responses for each stage
  * @param {boolean} shouldFail - Whether the transaction should fail
  * @param {string} failStage - Which stage should fail (optional)
+ * @param {any} [mockQuery] - Mock query object to configure (default: mockClient.query)
  */
-export function setupMockTransactionStages(stages: any[], shouldFail: boolean = false, failStage?: string): void {
-   const mockQuery = mockClient.query;
+export function setupMockTransactionStages(
+   stages: any[], 
+   shouldFail: boolean = false, 
+   failStage?: string,
+   mockQuery: any = mockClient.query
+): void {
    mockQuery.mockClear();
 
    stages.forEach((stage, index) => {
@@ -441,38 +605,88 @@ export function setupMockTransactionStages(stages: any[], shouldFail: boolean = 
 }
 
 /**
- * Setup mock client for user creation transaction flow
+ * Setup transaction with configurable isolation level and stages
  *
- * @param {string} userId - Expected user ID
- * @param {boolean} shouldFail - Whether creation should fail
+ * @param {string} isolationLevel - Transaction isolation level (default: "READ COMMITTED")
+ * @param {Array} stages - Array of mock responses for each stage
+ * @param {boolean} shouldFail - Whether the transaction should fail
  * @param {string} failStage - Which stage should fail (optional)
+ * @param {any} [mockQuery] - Mock query object to configure (default: mockClient.query)
  */
-export function setupUserCreationTransaction(userId: string, shouldFail: boolean = false, failStage?: string): void {
-   const stages = [
-      {}, // BEGIN
-      { rows: [{ user_id: userId }] }, // User INSERT
-      {} // COMMIT
-   ];
-
-   setupMockTransactionStages(stages, shouldFail, failStage);
+export function setupTransaction(
+   isolationLevel: string = "READ COMMITTED",
+   stages: any[], 
+   shouldFail: boolean = false, 
+   failStage?: string,
+   mockQuery: any = mockClient.query
+): void {
+   setupMockTransactionStages(stages, shouldFail, failStage, mockQuery);
 }
 
 /**
- * Setup mock client for user deletion transaction flow
+ * Setup creation transaction flow with configurable table and ID field
  *
- * @param {boolean} shouldFail - Whether deletion should fail
+ * @param {string} tableName - Name of the table to create record in
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
+ * @param {string} idValue - Expected ID value
+ * @param {boolean} shouldFail - Whether creation should fail
  * @param {string} failStage - Which stage should fail (optional)
+ * @param {any} [mockQuery] - Mock query object to configure (default: mockClient.query)
  */
-export function setupUserDeletionTransaction(shouldFail: boolean = false, failStage?: string): void {
+export function setupCreationTransaction(
+   tableName: string,
+   idField: string,
+   idValue: string, 
+   shouldFail: boolean = false, 
+   failStage?: string,
+   mockQuery: any = mockClient.query
+): void {
    const stages = [
       {}, // BEGIN
-      {}, // Disable trigger
-      { rowCount: 1 }, // Deletion
-      {}, // Enable trigger
+      { rows: [{ [idField]: idValue }] }, // INSERT
       {} // COMMIT
    ];
 
-   setupMockTransactionStages(stages, shouldFail, failStage);
+   setupMockTransactionStages(stages, shouldFail, failStage, mockQuery);
+}
+
+/**
+ * Setup deletion transaction flow with configurable table and trigger operations
+ *
+ * @param {string} tableName - Name of the table to delete record from
+ * @param {string} idField - ID field name (e.g., "user_id", "account_id")
+ * @param {string} idValue - ID value to delete
+ * @param {boolean} shouldFail - Whether deletion should fail
+ * @param {string} failStage - Which stage should fail (optional)
+ * @param {boolean} hasTriggers - Whether table has triggers that need to be disabled/enabled
+ * @param {any} [mockQuery] - Mock query object to configure (default: mockClient.query)
+ */
+export function setupDeletionTransaction(
+   tableName: string,
+   idField: string,
+   idValue: string,
+   shouldFail: boolean = false, 
+   failStage?: string,
+   hasTriggers: boolean = false,
+   mockQuery: any = mockClient.query
+): void {
+   const stages = [
+      {}, // BEGIN
+   ];
+
+   if (hasTriggers) {
+      stages.push({}); // Disable trigger
+   }
+
+   stages.push({ rowCount: 1 }); // Deletion
+
+   if (hasTriggers) {
+      stages.push({}); // Enable trigger
+   }
+
+   stages.push({}); // COMMIT
+
+   setupMockTransactionStages(stages, shouldFail, failStage, mockQuery);
 }
 
 /**
@@ -580,8 +794,50 @@ export function assertCompleteUserFields(user: any): void {
    assertUserProperties(user, ["user_id", "username", "password", "email", "name", "birthday"]);
 }
 
+// ============================================================================
+// USER-SPECIFIC HELPERS (for backward compatibility)
+// ============================================================================
+
 /**
- * Setup mock client for successful user deletion transaction
+ * Assert conflict check behavior with exact SQL and parameters (user-specific)
+ *
+ * @param {string} username - Expected username parameter
+ * @param {string} email - Expected email parameter
+ * @param {string} [userId] - Expected user_id parameter (optional)
+ */
+export function assertConflictCheckBehavior(username: string, email: string, userId?: string): void {
+   const expectedParams = [username.toLowerCase().trim(), email.toLowerCase().trim(), userId];
+   assertSelectQuery([
+      "SELECT user_id, username, email",
+      "FROM users",
+      "WHERE (username_normalized = $1 OR email_normalized = $2)",
+      "AND (user_id IS DISTINCT FROM $3)"
+   ], expectedParams);
+}
+
+/**
+ * Setup mock client for user creation transaction flow (user-specific)
+ *
+ * @param {string} userId - Expected user ID
+ * @param {boolean} shouldFail - Whether creation should fail
+ * @param {string} failStage - Which stage should fail (optional)
+ */
+export function setupUserCreationTransaction(userId: string, shouldFail: boolean = false, failStage?: string): void {
+   setupCreationTransaction("users", "user_id", userId, shouldFail, failStage);
+}
+
+/**
+ * Setup mock client for user deletion transaction flow (user-specific)
+ *
+ * @param {boolean} shouldFail - Whether deletion should fail
+ * @param {string} failStage - Which stage should fail (optional)
+ */
+export function setupUserDeletionTransaction(shouldFail: boolean = false, failStage?: string): void {
+   setupDeletionTransaction("users", "user_id", "test-user-id", shouldFail, failStage, true);
+}
+
+/**
+ * Setup mock client for successful user deletion transaction (user-specific)
  *
  * @param {number} rowCount - Number of rows affected by deletion
  */

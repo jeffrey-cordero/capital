@@ -168,12 +168,13 @@ describe("Authentication Middleware", () => {
          verifySuccessfulRefreshAuthentication(mockRes, mockNext);
       });
 
-      it("should return unauthorized when the refresh token is missing", () => {
+      it("should return unauthorized and clear both tokens when the refresh token is missing", () => {
          mockReq.cookies = {};
 
          const middleware = authenticateRefreshToken();
          callMiddleware(middleware, mockReq, mockRes, mockNext);
 
+         verifyTokensCleared(mockRes);
          verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
       });
 

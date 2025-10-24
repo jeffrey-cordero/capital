@@ -8,12 +8,12 @@ import {
    assertClientReleased,
    assertCompleteUserFields,
    assertConflictCheckBehavior,
-   assertQueryCalled,
+   assertQueryCalledWithKeyPhrases,
    assertQueryNotCalled,
    assertTransactionRollback,
    assertUserDeletionFlow,
    assertUserQueryResult,
-   assertUserUpdateFlow,
+   assertUpdateFlow,
    createMockQueryResult,
    mockClient,
    mockClientQueryForUserCreation,
@@ -36,47 +36,29 @@ import {
    testUpdateResult
 } from "@/tests/mocks/repositories";
 
-// Mock the pg module directly
-jest.mock("pg", () => {
-   return {
-      Pool: jest.fn(() => mockPool)
-   };
-});
+
+jest.mock("pg", () => ({
+   Pool: jest.fn(() => mockPool)
+}));
+jest.mock("@/repository/budgetsRepository");
 
 import * as userRepository from "@/repository/userRepository";
 
-jest.mock("@/repository/budgetsRepository");
-
 describe("User Repository", () => {
-   const userId: string = TEST_CONSTANTS.TEST_USER_ID;
    const username: string = "testuser";
    const email: string = "test@example.com";
    const password: string = "hashed_password_123";
+   const userId: string = TEST_CONSTANTS.TEST_USER_ID;
 
    let budgetsRepository: typeof import("@/repository/budgetsRepository");
 
    beforeEach(async() => {
-      jest.clearAllMocks();
       resetDatabaseMocks();
-
       mockPool.connect.mockResolvedValue(mockClient);
-
       budgetsRepository = await import("@/repository/budgetsRepository");
    });
 
    describe("findConflictingUsers", () => {
-      // Common SQL queries for findConflictingUsers tests
-      const FIND_CONFLICTING_USERS_SQL_WITH_USER_ID = `
-      SELECT user_id, username, email
-      FROM users
-      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id IS DISTINCT FROM $3);
-   `;
-      const FIND_CONFLICTING_USERS_SQL_WITHOUT_USER_ID = `
-      SELECT user_id, username, email
-      FROM users
-      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id IS DISTINCT FROM $3);
-   `;
-
       it("should find users by exact username match", async() => {
          const conflictingUser: User = createConflictingUser(username, "different@example.com");
          setupMockQuery([conflictingUser]);
@@ -122,7 +104,12 @@ describe("User Repository", () => {
          const result: User[] = await userRepository.findConflictingUsers(username, email, userId);
 
          const expectedParams = [username.toLowerCase().trim(), email.toLowerCase().trim(), userId];
-         assertQueryCalled(FIND_CONFLICTING_USERS_SQL_WITH_USER_ID, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, email",
+            "FROM users",
+            "WHERE (username_normalized = $1 OR email_normalized = $2)",
+            "AND (user_id IS DISTINCT FROM $3)"
+         ], expectedParams);
          assertUserQueryResult(result, []);
       });
 
@@ -142,7 +129,12 @@ describe("User Repository", () => {
          const result: User[] = await userRepository.findConflictingUsers(username, email, undefined);
 
          const expectedParams = [username.toLowerCase().trim(), email.toLowerCase().trim(), undefined];
-         assertQueryCalled(FIND_CONFLICTING_USERS_SQL_WITHOUT_USER_ID, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, email",
+            "FROM users",
+            "WHERE (username_normalized = $1 OR email_normalized = $2)",
+            "AND (user_id IS DISTINCT FROM $3)"
+         ], expectedParams);
          assertUserQueryResult(result, []);
       });
 
@@ -161,7 +153,13 @@ describe("User Repository", () => {
          await userRepository.findConflictingUsers(username, email, userId);
 
          const expectedParams = [username.toLowerCase().trim(), email.toLowerCase().trim(), userId];
-         assertQueryCalled(FIND_CONFLICTING_USERS_SQL_WITH_USER_ID, expectedParams);
+         // More robust assertion that checks key SQL phrases rather than exact formatting
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, email",
+            "FROM users",
+            "WHERE (username_normalized = $1 OR email_normalized = $2)",
+            "AND (user_id IS DISTINCT FROM $3)"
+         ], expectedParams);
       });
    });
 
@@ -180,7 +178,11 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUsername(username);
 
          const expectedParams = [username];
-         assertQueryCalled(FIND_BY_USERNAME_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, password",
+            "FROM users",
+            "WHERE username = $1"
+         ], expectedParams);
          assertUserQueryResult(result, mockUser);
       });
 
@@ -190,7 +192,11 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUsername(username);
 
          const expectedParams = [username];
-         assertQueryCalled(FIND_BY_USERNAME_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, password",
+            "FROM users",
+            "WHERE username = $1"
+         ], expectedParams);
          expect(result).toBeNull();
       });
 
@@ -210,7 +216,11 @@ describe("User Repository", () => {
             .rejects.toThrow("Database connection failed");
 
          const expectedParams = [username];
-         assertQueryCalled(FIND_BY_USERNAME_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, password",
+            "FROM users",
+            "WHERE username = $1"
+         ], expectedParams);
       });
 
       it("should be case-sensitive for username matching", async() => {
@@ -219,7 +229,11 @@ describe("User Repository", () => {
          await userRepository.findByUsername(username.toUpperCase());
 
          const expectedParams = [username.toUpperCase()];
-         assertQueryCalled(FIND_BY_USERNAME_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, password",
+            "FROM users",
+            "WHERE username = $1"
+         ], expectedParams);
       });
 
       it("should handle special characters in username", async() => {
@@ -229,7 +243,11 @@ describe("User Repository", () => {
          await userRepository.findByUsername(specialUsername);
 
          const expectedParams = [specialUsername];
-         assertQueryCalled(FIND_BY_USERNAME_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT user_id, username, password",
+            "FROM users",
+            "WHERE username = $1"
+         ], expectedParams);
       });
    });
 
@@ -247,7 +265,10 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUserId(userId);
 
          const expectedParams = [userId];
-         assertQueryCalled(FIND_BY_USER_ID_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT * FROM users",
+            "WHERE user_id = $1"
+         ], expectedParams);
          assertUserQueryResult(result, mockUser);
       });
 
@@ -257,7 +278,10 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUserId(userId);
 
          const expectedParams = [userId];
-         assertQueryCalled(FIND_BY_USER_ID_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT * FROM users",
+            "WHERE user_id = $1"
+         ], expectedParams);
          expect(result).toBeNull();
       });
 
@@ -277,7 +301,10 @@ describe("User Repository", () => {
             .rejects.toThrow("Database connection failed");
 
          const expectedParams = [userId];
-         assertQueryCalled(FIND_BY_USER_ID_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT * FROM users",
+            "WHERE user_id = $1"
+         ], expectedParams);
       });
 
       it("should handle invalid UUID format gracefully", async() => {
@@ -288,7 +315,10 @@ describe("User Repository", () => {
             .rejects.toThrow("invalid input syntax for type uuid");
 
          const expectedParams = [invalidUserId];
-         assertQueryCalled(FIND_BY_USER_ID_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "SELECT * FROM users",
+            "WHERE user_id = $1"
+         ], expectedParams);
       });
    });
 
@@ -482,23 +512,38 @@ describe("User Repository", () => {
    `;
 
       it("should update single field (username only)", async() => {
-         await testSingleFieldUpdate("username", "newusername", userId, userRepository.update);
+         // Arrange
+         const updates = { username: "newusername" };
+         setupMockQuery([{ user_id: userId }]);
+
+         // Act
+         const result: boolean = await userRepository.update(userId, updates);
+
+         // Assert
+         const expectedParams = ["newusername", userId];
+         assertQueryCalledWithKeyPhrases([
+            "UPDATE users",
+            "SET username = $1",
+            "WHERE user_id = $2",
+            "RETURNING user_id"
+         ], expectedParams);
+         expect(result).toBe(true);
       });
 
       it("should update single field (email only)", async() => {
-         await testSingleFieldUpdate("email", "newemail@example.com", userId, userRepository.update);
+         await testSingleFieldUpdate("users", "email", "newemail@example.com", "user_id", userId, userRepository.update);
       });
 
       it("should update single field (name only)", async() => {
-         await testSingleFieldUpdate("name", "New Name", userId, userRepository.update);
+         await testSingleFieldUpdate("users", "name", "New Name", "user_id", userId, userRepository.update);
       });
 
       it("should update single field (password only)", async() => {
-         await testSingleFieldUpdate("password", "newpassword", userId, userRepository.update);
+         await testSingleFieldUpdate("users", "password", "newpassword", "user_id", userId, userRepository.update);
       });
 
       it("should update single field (birthday only)", async() => {
-         await testSingleFieldUpdate("birthday", "1990-01-01", userId, userRepository.update);
+         await testSingleFieldUpdate("users", "birthday", "1990-01-01", "user_id", userId, userRepository.update);
       });
 
       it("should update multiple fields (username + email)", async() => {
@@ -506,7 +551,7 @@ describe("User Repository", () => {
             username: "newusername",
             email: "newemail@example.com"
          };
-         await testMultipleFieldUpdate(updates, userId, userRepository.update);
+         await testMultipleFieldUpdate("users", updates, "user_id", userId, userRepository.update);
       });
 
       it("should update all fields together", async() => {
@@ -517,17 +562,17 @@ describe("User Repository", () => {
             email: "newemail@example.com",
             birthday: "1990-01-01"
          };
-         await testMultipleFieldUpdate(updates, userId, userRepository.update);
+         await testMultipleFieldUpdate("users", updates, "user_id", userId, userRepository.update);
       });
 
       it("should return true when user exists and is updated", async() => {
          const updates = { username: "newusername" };
-         await testUpdateResult(updates, userId, userRepository.update, true);
+         await testUpdateResult("users", updates, "user_id", userId, userRepository.update, true);
       });
 
       it("should return false when user does not exist", async() => {
          const updates = { username: "newusername" };
-         await testUpdateResult(updates, userId, userRepository.update, false);
+         await testUpdateResult("users", updates, "user_id", userId, userRepository.update, false);
       });
 
       it("should return true immediately when no fields provided (no-op)", async() => {
@@ -549,7 +594,7 @@ describe("User Repository", () => {
          await userRepository.update(userId, updates);
 
          const expectedParams = ["newusername", "newemail@example.com", userId];
-         assertUserUpdateFlow(userId, updates, expectedParams);
+         assertUpdateFlow("users", "user_id", updates, expectedParams);
       });
 
       it("should properly increment parameter indices", async() => {
@@ -563,7 +608,7 @@ describe("User Repository", () => {
          await userRepository.update(userId, updates);
 
          const expectedParams = ["newusername", "New Name", "newemail@example.com", userId];
-         assertUserUpdateFlow(userId, updates, expectedParams);
+         assertUpdateFlow("users", "user_id", updates, expectedParams);
       });
 
       it("should handle database errors during update", async() => {
@@ -574,7 +619,12 @@ describe("User Repository", () => {
             .rejects.toThrow("Database connection failed");
 
          const expectedParams = ["newusername", userId];
-         assertQueryCalled(UPDATE_USER_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "UPDATE users",
+            "SET username = $1",
+            "WHERE user_id = $2",
+            "RETURNING user_id"
+         ], expectedParams);
       });
 
       it("should validate field names against USER_UPDATES constant", async() => {
@@ -588,7 +638,12 @@ describe("User Repository", () => {
 
          // Should only include valid fields from USER_UPDATES constant
          const expectedParams = ["newusername", userId];
-         assertQueryCalled(UPDATE_USER_SQL, expectedParams);
+         assertQueryCalledWithKeyPhrases([
+            "UPDATE users",
+            "SET username = $1",
+            "WHERE user_id = $2",
+            "RETURNING user_id"
+         ], expectedParams);
       });
    });
 

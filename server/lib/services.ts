@@ -60,10 +60,10 @@ export function sendServiceResponse(statusCode: number, data?: any, errors?: Rec
  * @param {Response} res - Express response object
  * @param {Function} serviceMethod - Async function containing the service logic
  */
-export const submitServiceRequest = async(
+export async function submitServiceRequest(
    res: Response,
    serviceMethod: () => Promise<ServerResponse>
-): Promise<void> => {
+): Promise<void>  {
    try {
       const result: ServerResponse = await serviceMethod();
 
@@ -80,7 +80,7 @@ export const submitServiceRequest = async(
 
       return sendErrors(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
    }
-};
+}
 
 /**
  * Helper function to send a successful update response after clearing a cache key for strong consistency.
@@ -88,7 +88,7 @@ export const submitServiceRequest = async(
  * @param {string} key - Cache key
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content
  */
-export const clearCacheAndSendSuccess = (key: string): ServerResponse => {
+export function clearCacheAndSendSuccess(key: string): ServerResponse {
    removeCacheValue(key);
    return sendServiceResponse(HTTP_STATUS.NO_CONTENT);
-};
+}

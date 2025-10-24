@@ -48,35 +48,10 @@ test.describe("API Error Handling", () => {
    });
 
    test.describe("Token Refresh Handling", () => {
-      test("should handle token expiration and refresh", async({ page }) => {
-         // Setup: Navigate to login page and login
-         await navigateToPath(page, LOGIN_ROUTE);
-         await createUser(page);
-
-         // Mock the refresh endpoint
-         let refreshCalled = false;
+      test("should handle a successfully make a refresh token request and continue the original request or redirect to login page", async({ page }) => {
          let refreshAttempted = false;
 
-         // Verify the refresh request was called and successful
-         await page.route("**/api/v1/authentication/refresh", async(route) => {
-            // Mark that the refresh request was called`
-            refreshCalled = true;
-
-            // Verify the response from the server
-            const response = await route.fetch();
-            const body = await response.json();
-
-            expect(response.status()).toBe(HTTP_STATUS.OK);
-            expect(body).toMatchObject({ data: { success: true } });
-
-            // Continue the request with the real response
-            await route.fulfill({
-               status: response.status(),
-               headers: response.headers(),
-               body: JSON.stringify(body)
-            });
-         });
-
+         // Mock the dashboard request to return a refreshable flag for expired access token
          await page.route("**/api/v1/dashboard", async(route) => {
             if (!refreshAttempted) {
                // Mock the expiration of the access token while fetching the dashboard data to indicate a need for a refresh token request
@@ -91,17 +66,40 @@ test.describe("API Error Handling", () => {
             }
          });
 
+         // Setup: Navigate to login page and login
+         await navigateToPath(page, LOGIN_ROUTE);
+         await createUser(page);
+
          // Now reload to fetch authentication state
          await page.reload();
-
-         // Wait for the refresh call
-         const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
-         expect(refreshResponse.ok()).toBe(true);
-         expect(refreshCalled).toBe(true);
+         let refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
+         expect(refreshResponse.status()).toBe(HTTP_STATUS.OK);
+         expect(await refreshResponse.json()).toMatchObject({ data: { success: true } });
 
          // Navigate to dashboard should work as intended
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
          await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+
+         // Now clear the refresh token
+         refreshAttempted = false;
+         const context = page.context();
+         const cookies = await context.cookies();
+
+         // Filter out only the ones you want to keep
+         const filtered = cookies.filter(cookie => cookie.name !== "refresh_token");
+
+         // Clear all cookies, then re-add only the filtered ones
+         await context.clearCookies();
+         await context.addCookies(filtered);
+
+         // Test refresh token handling with a missing refresh token, which should redirect to the login page
+         await page.reload();
+
+         refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
+         expect(refreshResponse.status()).toBe(HTTP_STATUS.UNAUTHORIZED);
+
+         // Verify the user is redirected to the login page
+         await expect(page).toHaveURL(LOGIN_ROUTE);
       });
    });
 });

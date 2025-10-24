@@ -6,7 +6,6 @@ import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 
 /**
  * Fetches authentication status and handles redirection logic

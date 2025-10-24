@@ -420,6 +420,7 @@ export function assertUserDeletionSuccessBehavior(
 ): void {
    expect(repositoryModule.deleteUser).toHaveBeenCalledWith(user_id);
    expect(authenticationServiceModule.logoutUser).toHaveBeenCalledWith(mockRes);
+   // All applicable cache regions should be cleared for the given user_id
    ["accounts", "budgets", "transactions", "user"].forEach(key => {
       assertCacheInvalidation(cacheModule, `${key}:${user_id}`);
    });

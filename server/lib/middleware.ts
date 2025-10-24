@@ -138,6 +138,8 @@ export function authenticateRefreshToken() {
       const token = req.cookies.refresh_token;
 
       if (!token) {
+         // Missing refresh token, clear both tokens
+         clearTokens(res);
          return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
       }
 
@@ -147,6 +149,7 @@ export function authenticateRefreshToken() {
 
          // Ensure user_id exists in token payload
          if (!user.user_id) {
+            // User ID missing from token payload, clear both tokens
             clearTokens(res);
             return sendErrors(res, HTTP_STATUS.FORBIDDEN);
          }
@@ -160,7 +163,7 @@ export function authenticateRefreshToken() {
          next();
       } catch (error: any) {
          if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-            // Clear invalid/expired refresh token
+            // Invalid/expired refresh token, clear both tokens
             clearTokens(res);
             return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
          } else {

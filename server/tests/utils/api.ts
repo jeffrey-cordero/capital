@@ -98,8 +98,10 @@ const createMockResponse = (): MockResponse => {
  * @param {MockRequestOptions} options - Mock request options
  * @returns {MockMiddleware} Mock middleware function with mock request, response, and next functions
  */
-export const createMockMiddleware = (options: MockRequestOptions = {}): MockMiddleware => ({
-   mockReq: createMockRequest(options),
-   mockRes: createMockResponse(),
-   mockNext: jest.fn() as MockNextFunction
-});
+export function createMockMiddleware(options: MockRequestOptions = {}): MockMiddleware {
+   return {
+      mockReq: createMockRequest(options),
+      mockRes: createMockResponse(),
+      mockNext: jest.fn() as MockNextFunction
+   };
+}
