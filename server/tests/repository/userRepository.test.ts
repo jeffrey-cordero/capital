@@ -201,6 +201,11 @@ describe("User Repository", () => {
     * @param {string} failStage - Stage where error should occur (`"BEGIN"`, `"insertion"`)
     */
    const arrangeUserCreationTransactionError = (errorMessage: string, failStage: "BEGIN" | "insertion" | "income_category_creation" | "expenses_category_creation"): void => {
+      // Import the original budget repository createCategory function to properly track query calls
+      jest.unmock("@/repository/budgetsRepository");
+      const realBudgetsRepository: typeof import("@/repository/budgetsRepository") = jest.requireActual("@/repository/budgetsRepository");
+      budgetsRepository.createCategory = realBudgetsRepository.createCategory;
+
       switch (failStage) {
          case "BEGIN":
             mockClient.query.mockRejectedValueOnce(new Error(errorMessage)); // BEGIN fails
@@ -212,17 +217,16 @@ describe("User Repository", () => {
          case "income_category_creation":
             mockClient.query.mockResolvedValueOnce({}) // BEGIN
                .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // Insertion
-               .mockRejectedValueOnce(new Error(errorMessage)); // Income category creation fails
-            // TODO: fix this
-            // jest.mocked(budgetsRepository.createCategory).mockRejectedValueOnce(new Error(errorMessage));
+               .mockResolvedValueOnce({ rows: [{ budget_category_id: "income-category-id" }] }) // Income category insertion
+               .mockRejectedValueOnce(new Error(errorMessage)); // Income category record insertion fails
             break;
          case "expenses_category_creation":
             mockClient.query.mockResolvedValueOnce({}) // BEGIN
                .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // Insertion
-               .mockResolvedValueOnce({}) // Income category creation
-               .mockRejectedValueOnce(new Error(errorMessage)); // Expenses category creation fails
-            // TODO: fix this
-            // jest.mocked(budgetsRepository.createCategory).mockRejectedValue(new Error(errorMessage));
+               .mockResolvedValueOnce({ rows: [{ budget_category_id: "income-category-id" }] }) // Income category insertion
+               .mockResolvedValueOnce({}) // Income category record insertion
+               .mockResolvedValueOnce({ rows: [{ budget_category_id: "expenses-category-id" }] }) // Expenses category insertion
+               .mockRejectedValueOnce(new Error(errorMessage)); // Expenses category record insertion fails
             break;
          default:
             throw new Error(`Unknown fail stage: ${failStage}`);
@@ -352,10 +356,6 @@ describe("User Repository", () => {
          birthday: "1990-01-01"
       };
 
-      beforeEach(() => {
-         // jest.mocked(budgetsRepository.createCategory).mockResolvedValue("category-id");
-      });
-
       it("should create user successfully with complete transaction flow", async() => {
          arrangeUserCreationTransactionSuccess();
 
@@ -414,24 +414,26 @@ describe("User Repository", () => {
          assertTransactionRollback(mockClient, 1);
       });
 
-      it("should throw error when database connection fails during income category creation", async() => {
+      it("should rollback when income category creation fails", async() => {
          arrangeUserCreationTransactionError("Income category creation failed", "income_category_creation");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
             "Income category creation failed"
          );
-         assertTransactionRollback(mockClient, 2);
+
+         assertTransactionRollback(mockClient, 3);
       });
 
-      it("should rollback transaction when expenses category creation fails", async() => {
+      it("should rollback when expenses category creation fails", async() => {
          arrangeUserCreationTransactionError("Expenses category creation failed", "expenses_category_creation");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
             "Expenses category creation failed"
          );
-         assertTransactionRollback(mockClient, 3);
+
+         assertTransactionRollback(mockClient, 5);
       });
    });
 

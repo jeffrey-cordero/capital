@@ -63,7 +63,7 @@ export async function transaction<T>(
          // Use provided client for ongoing transactions to just run a series of statements
          client = externalClient;
       } else {
-         // Start transaction with specified isolation
+         // Start a new internal transaction with specified isolation
          client = await pool.connect();
          await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
       }

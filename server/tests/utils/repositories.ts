@@ -183,12 +183,18 @@ export function assertClientReleased(mockClient: MockClient): void {
 export function assertTransactionRollback(mockClient: MockClient, expectedStatements: number): void {
    const mockClientQueries: any[] = mockClient.query.mock.calls;
    const totalQueries: number = mockClientQueries.length;
+
+   // BEGIN, statements, and ROLLBACK must be called
    expect(totalQueries).toBe(expectedStatements + 2);
 
+   // BEGIN must be called with the proper isolation level
    expect(mockClientQueries[0][0]).toMatch(
       /^BEGIN TRANSACTION ISOLATION LEVEL (READ UNCOMMITTED|READ COMMITTED|REPEATABLE READ|SERIALIZABLE);?$/
    );
+   // COMMIT must not be called for a proper transaction rollback
    expect(mockClient.query).not.toHaveBeenCalledWith("COMMIT;");
+
+   // ROLLBACK must be called
    expect(mockClientQueries[totalQueries - 1][0]).toBe("ROLLBACK;");
    assertClientReleased(mockClient);
 }
