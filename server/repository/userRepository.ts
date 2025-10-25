@@ -7,7 +7,7 @@ import { createCategory } from "@/repository/budgetsRepository";
 /**
  * Updatable user fields
  */
-const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
+export const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
 
 /**
  * Finds potentially conflicting users for email and/or username unique constraints

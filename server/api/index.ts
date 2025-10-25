@@ -54,7 +54,7 @@ app.use(compression());
  * CORS middleware for cross-origin resource sharing configuration
  */
 app.use(cors({
-   origin: (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000").split(","),
+   origin: process.env.CORS_ALLOWED_ORIGINS?.split(",") || "*",
    methods: ["GET", "POST", "PUT", "DELETE"],
    allowedHeaders: ["Content-Type", "Authorization"],
    credentials: true
