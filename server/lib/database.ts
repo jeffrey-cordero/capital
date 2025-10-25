@@ -43,40 +43,44 @@ export async function query(query: string, parameters: any[]): Promise<any[]> {
 
 /**
  * Executes multiple database operations within a transaction and automatically handles
- * `BEGIN`, `COMMIT`, and `ROLLBACK` statements.
+ * `BEGIN`, `COMMIT`, and `ROLLBACK` statements for non-external database clients to avoid nested transactions.
  *
- * @param {(client: PoolClient) => Promise<any>} statements - Function containing database operations
+ * @param {(client: PoolClient) => Promise<T>} operations - Function containing database operations
  * @param {string} [isolationLevel] - Transaction isolation level
- * @returns {Promise<unknown>} Result of the transaction
+ * @param {PoolClient | null} [externalClient] - Optional client for ongoing transactions to avoid nested transactions
+ * @returns {Promise<T>} Result of the transaction
  * @throws {Error} If transaction fails
  */
-export async function transaction(
-   statements: (_client: PoolClient) => Promise<any>,
-   isolationLevel: "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" = "READ COMMITTED"
-): Promise<unknown> {
+export async function transaction<T>(
+   operations: (_client: PoolClient) => Promise<T>,
+   isolationLevel: "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" = "READ COMMITTED",
+   externalClient: PoolClient | null = null
+): Promise<T> {
    let client: PoolClient | null = null;
 
    try {
-      // Get a client from the pool
-      client = await pool.connect();
+      if (externalClient) {
+         // Use provided client for ongoing transactions to just run a series of statements
+         client = externalClient;
+      } else {
+         // Start transaction with specified isolation
+         client = await pool.connect();
+         await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
+      }
 
-      // Start transaction with specified isolation
-      await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
-
-      // Execute the transaction statements
-      const result = await statements(client) as unknown;
+      // Execute the series of database operations
+      const result = await operations(client);
 
       // Commit changes
-      await client.query("COMMIT;");
+      if (!externalClient) await client.query("COMMIT;");
 
       return result;
    } catch (error: any) {
       // Rollback on error
-      await client?.query("ROLLBACK;");
-
+      if (!externalClient) await client?.query("ROLLBACK;");
       throw error;
    } finally {
       // Return client to pool
-      client?.release();
+      if (!externalClient) client?.release();
    }
 }

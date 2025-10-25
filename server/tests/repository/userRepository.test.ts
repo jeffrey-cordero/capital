@@ -6,7 +6,7 @@ import { User, UserUpdates } from "capital/user";
 import {
    arrangeMockQuery,
    arrangeMockQueryError,
-   arrangeUpdateQueryFormation,
+   arrangeUpdateQueryStructure,
    assertObjectProperties,
    assertQueryCalledWithKeyPhrases,
    assertQueryNotCalled,
@@ -45,11 +45,11 @@ describe("User Repository", () => {
    let budgetsRepository: typeof import("@/repository/budgetsRepository");
 
    /**
-    * Assert conflict check formation with exact SQL and parameters
+    * Asserts the conflict check query was called with the expected SQL structure and exact parameters
     *
-    * @param {string} [userId] - Expected user_id parameter (optional)
+    * @param {string} [userId] - Potential user_id parameter to exclude from the conflict check
     */
-   const assertConflictCheckFormation = (userId?: string): void => {
+   const assertConflictCheckStructure = (userId?: string): void => {
       assertQueryCalledWithKeyPhrases([
          "SELECT user_id, username, email",
          "FROM users",
@@ -59,9 +59,9 @@ describe("User Repository", () => {
    };
 
    /**
-    * Assert username lookup formation with exact SQL and parameters
+    * Asserts the username lookup query was called with the expected SQL structure and exact parameters
     */
-   const assertUsernameLookupFormation = (): void => {
+   const assertUsernameLookupStructure = (): void => {
       assertQueryCalledWithKeyPhrases([
          "SELECT user_id, username, password",
          "FROM users"
@@ -69,11 +69,11 @@ describe("User Repository", () => {
    };
 
    /**
-    * Assert user ID lookup formation with exact SQL and parameters
+    * Asserts the user ID lookup query was called with the expected SQL structure and exact parameters
     *
     * @param {string} userId - Expected user_id parameter
     */
-   const assertUserIdLookupFormation = (userId: string): void => {
+   const assertUserIdLookupStructure = (userId: string): void => {
       assertQueryCalledWithKeyPhrases([
          "SELECT * FROM users",
          "WHERE user_id = $1"
@@ -81,7 +81,7 @@ describe("User Repository", () => {
    };
 
    /**
-    * Assert user deletion flow with trigger operations
+    * Asserts the user deletion flow with trigger operations
     *
     * @param {string} userId - Expected user ID
     */
@@ -114,9 +114,9 @@ describe("User Repository", () => {
    };
 
    /**
-    * Arrange mock client for successful user deletion transaction
+    * Arranges a mock client for a successful user deletion transaction
     *
-    * @param {number} rowCount - Number of rows affected by deletion
+    * @param {number} rowCount - Number of rows affected by deletion (defaults to `1`)
     */
    const arrangeUserDeletionTransactionSuccess = (rowCount: number = 1): void => {
       mockClient.query
@@ -128,12 +128,12 @@ describe("User Repository", () => {
    };
 
    /**
-    * Arrange mock client for user deletion transaction with error at specific stage
+    * Arranges a mock client for a user deletion transaction with an error at a specific stage
     *
     * @param {string} errorMessage - Error message to throw
-    * @param {string} failStage - Stage where error should occur ("deletion", "trigger_disable", "trigger_enable")
+    * @param {string} failStage - Stage where error should occur (`"deletion"`, `"trigger_disable"`, `"trigger_enable"`)
     */
-   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: string): void => {
+   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: "trigger_disable" | "deletion" | "trigger_enable"): void => {
       switch (failStage) {
          case "trigger_disable":
             mockClient.query.mockResolvedValueOnce({}) // BEGIN
@@ -156,20 +156,20 @@ describe("User Repository", () => {
    };
 
    /**
-    * Assert user creation flow with transaction operations
+    * Asserts the user creation flow with transaction operations
     *
     * @param {User} userData - Expected user data
     */
    const assertUserCreationFlow = (userData: User): void => {
-      // Verify BEGIN transaction (1st call)
+      // Verify the transaction isolation level (1st call)
       assertQueryCalledWithKeyPhrases([
          "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED"
       ], [], 0, mockPool);
 
-      // Verify INSERT query (2nd call)
+      // Verify the user insertion (2nd call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO users",
-         "VALUES"
+         "INSERT INTO users (username, name, password, email, birthday)",
+         "VALUES ($1, $2, $3, $4, $5)"
       ], [
          userData.username,
          userData.name,
@@ -178,49 +178,55 @@ describe("User Repository", () => {
          userData.birthday
       ], 1, mockPool);
 
-      // Verify COMMIT (3rd call)
+      // Verify the transaction commit (3rd call)
       assertQueryCalledWithKeyPhrases([
          "COMMIT"
       ], [], 2, mockPool);
    };
 
    /**
-    * Arrange mock client for successful user creation transaction
+    * Arranges a mock client for a successful user creation transaction
     */
    const arrangeUserCreationTransactionSuccess = (): void => {
       mockClient.query
          .mockResolvedValueOnce({}) // BEGIN
-         .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // INSERT
+         .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // Insertion
          .mockResolvedValueOnce({}); // COMMIT
    };
 
    /**
-    * Arrange mock client for user creation transaction with error at specific stage
+    * Arranges a mock client for a user creation transaction with an error at a specific stage
     *
     * @param {string} errorMessage - Error message to throw
-    * @param {string} failStage - Stage where error should occur ("BEGIN", "user_insert")
+    * @param {string} failStage - Stage where error should occur (`"BEGIN"`, `"insertion"`)
     */
-   const arrangeUserCreationTransactionError = (errorMessage: string, failStage: string): void => {
+   const arrangeUserCreationTransactionError = (errorMessage: string, failStage: "BEGIN" | "insertion" | "income_category_creation" | "expenses_category_creation"): void => {
       switch (failStage) {
          case "BEGIN":
             mockClient.query.mockRejectedValueOnce(new Error(errorMessage)); // BEGIN fails
             break;
-         case "user_insert":
+         case "insertion":
             mockClient.query.mockResolvedValueOnce({}) // BEGIN
-               .mockRejectedValueOnce(new Error(errorMessage)); // INSERT fails
+               .mockRejectedValueOnce(new Error(errorMessage)); // Insertion fails
+            break;
+         case "income_category_creation":
+            mockClient.query.mockResolvedValueOnce({}) // BEGIN
+               .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // Insertion
+               .mockRejectedValueOnce(new Error(errorMessage)); // Income category creation fails
+            // TODO: fix this
+            // jest.mocked(budgetsRepository.createCategory).mockRejectedValueOnce(new Error(errorMessage));
+            break;
+         case "expenses_category_creation":
+            mockClient.query.mockResolvedValueOnce({}) // BEGIN
+               .mockResolvedValueOnce({ rows: [{ user_id: userId }] }) // Insertion
+               .mockResolvedValueOnce({}) // Income category creation
+               .mockRejectedValueOnce(new Error(errorMessage)); // Expenses category creation fails
+            // TODO: fix this
+            // jest.mocked(budgetsRepository.createCategory).mockRejectedValue(new Error(errorMessage));
             break;
          default:
             throw new Error(`Unknown fail stage: ${failStage}`);
       }
-   };
-
-   /**
-    * Reject the next createCategory call
-    *
-    * @param {string} errorMessage - Error message to reject with
-    */
-   const rejectNextCategoryCreation = (errorMessage: string): void => {
-      jest.mocked(budgetsRepository.createCategory).mockRejectedValueOnce(new Error(errorMessage));
    };
 
    beforeEach(async() => {
@@ -237,7 +243,7 @@ describe("User Repository", () => {
 
          const result: User[] = await userRepository.findConflictingUsers(username, email);
 
-         assertConflictCheckFormation();
+         assertConflictCheckStructure();
          assertQueryResult(result, [conflictingUser]);
       });
 
@@ -246,7 +252,7 @@ describe("User Repository", () => {
 
          const result: User[] = await userRepository.findConflictingUsers(username, email, userId);
 
-         assertConflictCheckFormation(userId);
+         assertConflictCheckStructure(userId);
          assertQueryResult(result, []);
       });
 
@@ -257,7 +263,7 @@ describe("User Repository", () => {
             () => userRepository.findConflictingUsers(username, email),
             "Database connection failed"
          );
-         assertConflictCheckFormation();
+         assertConflictCheckStructure();
       });
    });
 
@@ -268,8 +274,7 @@ describe("User Repository", () => {
 
          const result: User | null = await userRepository.findByUsername(username);
 
-         // Verify query formation and result handling
-         assertUsernameLookupFormation();
+         assertUsernameLookupStructure();
          assertObjectProperties(result!, ["user_id", "username", "password"], ["email", "name", "birthday"]);
          assertQueryResult(result, mockUser);
       });
@@ -279,7 +284,7 @@ describe("User Repository", () => {
 
          const result: User | null = await userRepository.findByUsername(username);
 
-         assertUsernameLookupFormation();
+         assertUsernameLookupStructure();
          assertQueryResult(result, null);
       });
 
@@ -290,7 +295,7 @@ describe("User Repository", () => {
             () => userRepository.findByUsername(username),
             "Database connection failed"
          );
-         assertUsernameLookupFormation();
+         assertUsernameLookupStructure();
       });
    });
 
@@ -301,8 +306,7 @@ describe("User Repository", () => {
 
          const result: User | null = await userRepository.findByUserId(userId);
 
-         // Verify query formation and complete user object return
-         assertUserIdLookupFormation(userId);
+         assertUserIdLookupStructure(userId);
          assertObjectProperties(result!, ["user_id", "username", "password", "email", "name", "birthday"]);
          assertQueryResult(result, mockUser);
       });
@@ -312,7 +316,7 @@ describe("User Repository", () => {
 
          const result: User | null = await userRepository.findByUserId(userId);
 
-         assertUserIdLookupFormation(userId);
+         assertUserIdLookupStructure(userId);
          assertQueryResult(result, null);
       });
 
@@ -323,7 +327,7 @@ describe("User Repository", () => {
             () => userRepository.findByUserId(userId),
             "Database connection failed"
          );
-         assertUserIdLookupFormation(userId);
+         assertUserIdLookupStructure(userId);
       });
 
       it("should return null when user_id has invalid UUID format", async() => {
@@ -334,7 +338,7 @@ describe("User Repository", () => {
             () => userRepository.findByUserId(invalidUserId),
             "invalid input syntax for type uuid"
          );
-         assertUserIdLookupFormation(invalidUserId);
+         assertUserIdLookupStructure(invalidUserId);
       });
    });
 
@@ -349,8 +353,7 @@ describe("User Repository", () => {
       };
 
       beforeEach(() => {
-         // Mock createCategory to track calls
-         jest.mocked(budgetsRepository.createCategory).mockResolvedValue("category-id");
+         // jest.mocked(budgetsRepository.createCategory).mockResolvedValue("category-id");
       });
 
       it("should create user successfully with complete transaction flow", async() => {
@@ -390,29 +393,6 @@ describe("User Repository", () => {
          });
       });
 
-      it("should rollback transaction when user creation fails", async() => {
-         arrangeUserCreationTransactionError("User creation failed", "user_insert");
-
-         await expectRepositoryToThrow(
-            () => userRepository.create(userData),
-            "User creation failed"
-         );
-
-         assertTransactionRollback(mockClient);
-      });
-
-      it("should rollback transaction when category creation fails", async() => {
-         arrangeUserCreationTransactionSuccess();
-         rejectNextCategoryCreation("Category creation failed");
-
-         await expectRepositoryToThrow(
-            () => userRepository.create(userData),
-            "Category creation failed"
-         );
-
-         assertTransactionRollback(mockClient);
-      });
-
       it("should throw error when database connection fails during user creation", async() => {
          arrangeUserCreationTransactionError("Database connection failed", "BEGIN");
 
@@ -420,18 +400,38 @@ describe("User Repository", () => {
             () => userRepository.create(userData),
             "Database connection failed"
          );
-         expect(budgetsRepository.createCategory).not.toHaveBeenCalled();
+         assertTransactionRollback(mockClient, 0);
       });
 
-      it("should throw error when database connection fails during category creation", async() => {
-         arrangeUserCreationTransactionSuccess();
-         rejectNextCategoryCreation("Database connection failed");
+      it("should rollback transaction when user creation fails", async() => {
+         arrangeUserCreationTransactionError("User creation failed", "insertion");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
-            "Database connection failed"
+            "User creation failed"
          );
-         expect(budgetsRepository.createCategory).toHaveBeenCalledTimes(1);
+
+         assertTransactionRollback(mockClient, 1);
+      });
+
+      it("should throw error when database connection fails during income category creation", async() => {
+         arrangeUserCreationTransactionError("Income category creation failed", "income_category_creation");
+
+         await expectRepositoryToThrow(
+            () => userRepository.create(userData),
+            "Income category creation failed"
+         );
+         assertTransactionRollback(mockClient, 2);
+      });
+
+      it("should rollback transaction when expenses category creation fails", async() => {
+         arrangeUserCreationTransactionError("Expenses category creation failed", "expenses_category_creation");
+
+         await expectRepositoryToThrow(
+            () => userRepository.create(userData),
+            "Expenses category creation failed"
+         );
+         assertTransactionRollback(mockClient, 3);
       });
    });
 
@@ -446,7 +446,7 @@ describe("User Repository", () => {
 
       USER_UPDATES.forEach((field) => {
          it(`should update single field (${field} only)`, async() => {
-            await arrangeUpdateQueryFormation("users", { [field]: mockUpdateData[field] }, "user_id", userId, userRepository.update, mockPool);
+            await arrangeUpdateQueryStructure("users", { [field]: mockUpdateData[field] }, "user_id", userId, userRepository.update, mockPool);
          });
       });
 
@@ -455,11 +455,11 @@ describe("User Repository", () => {
             username: mockUpdateData.username,
             email: mockUpdateData.email
          };
-         await arrangeUpdateQueryFormation("users", updates, "user_id", userId, userRepository.update, mockPool);
+         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
       });
 
       it("should update all fields together", async() => {
-         await arrangeUpdateQueryFormation("users", mockUpdateData, "user_id", userId, userRepository.update, mockPool);
+         await arrangeUpdateQueryStructure("users", mockUpdateData, "user_id", userId, userRepository.update, mockPool);
       });
 
       it("should return true when user exists and is updated successfully", async() => {
@@ -495,7 +495,7 @@ describe("User Repository", () => {
             email: mockUpdateData.email
          };
 
-         await arrangeUpdateQueryFormation("users", updates, "user_id", userId, userRepository.update, mockPool);
+         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
       });
 
       it("should increment parameter indices correctly for multiple fields", async() => {
@@ -505,7 +505,7 @@ describe("User Repository", () => {
             email: mockUpdateData.email
          };
 
-         await arrangeUpdateQueryFormation("users", updates, "user_id", userId, userRepository.update, mockPool);
+         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
       });
 
       it("should throw error when database connection fails", async() => {
@@ -569,7 +569,7 @@ describe("User Repository", () => {
             "Deletion failed"
          );
 
-         assertTransactionRollback(mockClient);
+         assertTransactionRollback(mockClient, 1);
       });
 
       it("should throw error when database connection fails during deletion", async() => {
@@ -580,7 +580,7 @@ describe("User Repository", () => {
             "Database connection failed"
          );
 
-         assertTransactionRollback(mockClient);
+         assertTransactionRollback(mockClient, 2);
          // Verify the index of the ROLLBACK call itself (3rd call)
          assertQueryCalledWithKeyPhrases([
             "ROLLBACK"

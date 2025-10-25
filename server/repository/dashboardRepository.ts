@@ -27,7 +27,7 @@ export async function getEconomicData(): Promise<{ time: string, data: Economy }
  * @param {string} data - Economic data in JSON format
  */
 export async function updateEconomicData(time: Date, data: string): Promise<void> {
-   return await transaction(async(client: PoolClient) => {
+   return await transaction<void>(async(client: PoolClient) => {
       // Clear existing economic data
       const removal = `
          DELETE FROM economy;
@@ -40,5 +40,5 @@ export async function updateEconomicData(time: Date, data: string): Promise<void
          VALUES ($1, $2);
       `;
       await client.query(insertion, [time, data]);
-   }) as void;
+   });
 }

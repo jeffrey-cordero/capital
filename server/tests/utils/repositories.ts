@@ -101,7 +101,7 @@ export function arrangeMockQuery(rows: any[] = [], mockPool: MockPool): void {
  * @param {MockPool} mockPool - Mock pool instance
  */
 export function arrangeMockQueryError(errorMessage: string, mockPool: MockPool): void {
-   mockPool.query.mockRejectedValue(new Error(errorMessage));
+   mockPool.query.mockRejectedValueOnce(new Error(errorMessage));
 }
 
 /**
@@ -178,10 +178,18 @@ export function assertClientReleased(mockClient: MockClient): void {
  * Assert that ROLLBACK was called
  *
  * @param {MockClient} mockClient - Mock client instance
+ * @param {number} expectedStatements - Expected number of statements to be called not including BEGIN/ROLLBACK
  */
-export function assertTransactionRollback(mockClient: MockClient): void {
+export function assertTransactionRollback(mockClient: MockClient, expectedStatements: number): void {
+   const mockClientQueries: any[] = mockClient.query.mock.calls;
+   const totalQueries: number = mockClientQueries.length;
+   expect(totalQueries).toBe(expectedStatements + 2);
+
+   expect(mockClientQueries[0][0]).toMatch(
+      /^BEGIN TRANSACTION ISOLATION LEVEL (READ UNCOMMITTED|READ COMMITTED|REPEATABLE READ|SERIALIZABLE);?$/
+   );
    expect(mockClient.query).not.toHaveBeenCalledWith("COMMIT;");
-   expect(mockClient.query).toHaveBeenCalledWith("ROLLBACK;");
+   expect(mockClientQueries[totalQueries - 1][0]).toBe("ROLLBACK;");
    assertClientReleased(mockClient);
 }
 
@@ -220,40 +228,38 @@ export function assertValidSQL(sql: string): void {
 }
 
 /**
- * Assert that a mock query was called with SQL containing key phrases and exact parameters
+ * Assert that a mock query was called with valid SQL syntax, expected key phrases, and exact parameters
  *
  * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
  * @param {any[]} expectedParams - Expected parameters array
- * @param {number} [callIndex] - Which call to check (default: 0)
+ * @param {number} callIndex - Index of the query call to check for matching key phrases and parameters
  * @param {MockPool} mockPool - Mock pool instance
  */
 export function assertQueryCalledWithKeyPhrases(
    keyPhrases: string[],
    expectedParams: any[],
-   callIndex: number = 0,
+   callIndex: number,
    mockPool: MockPool
 ): void {
    // Ensure the specific call index exists
    expect(mockPool.query.mock.calls.length).toBeGreaterThanOrEqual(callIndex + 1);
 
-   const call = mockPool.query.mock.calls[callIndex];
-   const actualSql = call[0];
-   const actualParams = call[1] || [];
+   const [expectedSql, actualParams] = mockPool.query.mock.calls[callIndex];
 
    // Validate that the SQL is syntactically correct
-   assertValidSQL(actualSql);
+   assertValidSQL(expectedSql);
 
    // Check that all key phrases are present in the SQL
    keyPhrases.forEach(phrase => {
-      expect(actualSql).toContain(phrase);
+      expect(expectedSql).toContain(phrase);
    });
 
    // Check exact parameter match
-   expect(actualParams).toEqual(expectedParams);
+   expect(expectedParams).toEqual(actualParams || []);
 }
 
 /**
- * Arrange UPDATE query formation test for single or multiple fields - pure SQL structure validation
+ * Arrange UPDATE query structure test for single or multiple fields - pure SQL structure validation
  *
  * @param {string} tableName - Name of the table to update
  * @param {Record<string, any>} updates - Updates object (single or multiple fields)
@@ -262,7 +268,7 @@ export function assertQueryCalledWithKeyPhrases(
  * @param {Function} updateFn - Repository update function
  * @param {MockPool} mockPool - Mock pool instance
  */
-export async function arrangeUpdateQueryFormation(
+export async function arrangeUpdateQueryStructure(
    tableName: string,
    updates: Record<string, any>,
    idField: string,
@@ -315,7 +321,7 @@ export async function expectRepositoryToThrow(
 ): Promise<void> {
    try {
       await repositoryFunction();
-      fail(`Expected repository to throw "${expectedErrorMessage}" but it succeeded`);
+      throw new Error(`Expected repository to throw "${expectedErrorMessage}" but it succeeded`);
    } catch (error: any) {
       expect(error.message).toBe(expectedErrorMessage);
    }

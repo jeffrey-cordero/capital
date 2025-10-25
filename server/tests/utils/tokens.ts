@@ -151,7 +151,9 @@ export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_toke
       // For standard expiration times, verify against type-based expectations
       const expectedExpirationSeconds = (tokenType === "access_token" ? TOKEN_EXPIRATIONS.ACCESS_TOKEN : TOKEN_EXPIRATIONS.REFRESH_TOKEN) / 1000;
       const expectedExpiration = currentTime + expectedExpirationSeconds;
-      expect(decoded.exp).toBeGreaterThanOrEqual(expectedExpiration);
+      // Allow a small margin of error for the expiration time
+      expect(decoded.exp).toBeGreaterThanOrEqual(expectedExpiration - 1);
+      expect(decoded.exp).toBeLessThanOrEqual(expectedExpiration + 1);
    }
 
    return decoded;

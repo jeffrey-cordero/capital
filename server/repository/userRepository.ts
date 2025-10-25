@@ -69,7 +69,7 @@ export async function findByUserId(user_id: string): Promise<User | null> {
  * @returns {Promise<string>} Created user ID
  */
 export async function create(user: User): Promise<string> {
-   return await transaction(async(client: PoolClient) => {
+   return await transaction<string>(async(client: PoolClient) => {
       // Create user record
       const creation = `
          INSERT INTO users (username, name, password, email, birthday)
@@ -112,7 +112,7 @@ export async function create(user: User): Promise<string> {
       }, client);
 
       return result.rows[0].user_id;
-   }) as string;
+   });
 }
 
 /**
@@ -159,7 +159,7 @@ export async function update(user_id: string, updates: Partial<UserUpdates>): Pr
  * @returns {Promise<boolean>} Success status
  */
 export async function deleteUser(user_id: string): Promise<boolean> {
-   return await transaction(async(client: PoolClient): Promise<boolean> => {
+   return await transaction<boolean>(async(client: PoolClient): Promise<boolean> => {
       // Disable main budget category protections
       await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
@@ -174,5 +174,5 @@ export async function deleteUser(user_id: string): Promise<boolean> {
       await client.query("ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
       return result.rowCount === 1;
-   }, "SERIALIZABLE") as boolean;
+   }, "SERIALIZABLE");
 }

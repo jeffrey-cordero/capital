@@ -526,7 +526,7 @@ export function assertCacheInvalidation(cacheModule: any, cacheKey: string): voi
 export async function expectServiceToThrow(serviceCall: () => Promise<ServerResponse>, expectedErrorMessage: string): Promise<void> {
    try {
       await serviceCall();
-      fail(`Expected service to throw "${expectedErrorMessage}" but it succeeded`);
+      throw new Error(`Expected service to throw "${expectedErrorMessage}" but it succeeded`);
    } catch (error: any) {
       expect(error.message).toBe(expectedErrorMessage);
    }
