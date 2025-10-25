@@ -1,13 +1,13 @@
 import { jest } from "@jest/globals";
 import { createMockUser, TEST_CONSTANTS } from "capital/mocks/server";
 import { createConflictingUser } from "capital/mocks/user";
-import { User, UserUpdates } from "capital/user";
+import { User } from "capital/user";
 
 import {
+   arrangeAndAssertUpdateQueries,
    arrangeMockQuery,
    arrangeMockQueryError,
    arrangeMockTransactionFlow,
-   arrangeUpdateQueryStructure,
    assertObjectProperties,
    assertQueryCalledWithKeyPhrases,
    assertQueryNotCalled,
@@ -23,7 +23,7 @@ import {
 } from "@/tests/utils/repositories";
 
 /**
- * Global mock pool for the mock database connection at the application level
+ * Global mock pool for the instance database connection
  */
 const globalMockPool: MockPool = createMockPool();
 
@@ -46,18 +46,18 @@ describe("User Repository", () => {
    let budgetsRepository: typeof import("@/repository/budgetsRepository");
 
    /**
-    * Imports the real budgets repository for testing transaction flows
+    * Imports the true budgets repository for testing the transaction flow to properly track all queries
     */
-   const importRealBudgetsRepository = (): void => {
+   const importTrueBudgetsRepository = (): void => {
       jest.unmock("@/repository/budgetsRepository");
       const realBudgetsRepository: typeof import("@/repository/budgetsRepository") = jest.requireActual("@/repository/budgetsRepository");
       budgetsRepository.createCategory = realBudgetsRepository.createCategory;
    };
 
    /**
-    * Asserts the conflict check query was called with the expected SQL structure and exact parameters
+    * Asserts the conflict check query was called with the proper structure and exact parameters
     *
-    * @param {string} [userId] - Potential user_id parameter to exclude from the conflict check
+    * @param {string} [userId] - Potential `user_id` parameter to exclude from the conflict check
     */
    const assertConflictCheckStructure = (userId?: string): void => {
       assertQueryCalledWithKeyPhrases([
@@ -69,7 +69,7 @@ describe("User Repository", () => {
    };
 
    /**
-    * Asserts the username lookup query was called with the expected SQL structure and exact parameters
+    * Asserts the username lookup query was called with the proper structure and exact parameters
     */
    const assertUsernameLookupStructure = (): void => {
       assertQueryCalledWithKeyPhrases([
@@ -79,7 +79,7 @@ describe("User Repository", () => {
    };
 
    /**
-    * Asserts the user ID lookup query was called with the expected SQL structure and exact parameters
+    * Asserts the user ID lookup query was called with the proper structure and exact parameters
     *
     * @param {string} userId - Expected user_id parameter
     */
@@ -94,20 +94,19 @@ describe("User Repository", () => {
     * Arranges a mock transaction flow for a successful user creation transaction
     */
    const arrangeUserCreationTransactionSuccess = (): void => {
-      // Mock all the queries that will be called by the real createCategory
       arrangeMockTransactionFlow(mockClient.query, [
          {}, // BEGIN
          { rows: [{ user_id: userId }] }, // User INSERT
-         { rows: [{ budget_category_id: "income-category-id" }] }, // Income category INSERT
-         {}, // Income budget INSERT
-         { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses category INSERT
-         {}, // Expenses budget INSERT
+         { rows: [{ budget_category_id: "income-category-id" }] }, // Income Category INSERT
+         {}, // Income Budget INSERT
+         { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses Category INSERT
+         {}, // Expenses Budget INSERT
          {}  // COMMIT
       ]);
    };
 
    /**
-    * Asserts the complete user creation transaction flow including budget categories
+    * Asserts the complete user creation transaction flow including categories and budgets
     *
     * @param {User} userData - Expected user data
     * @param {string} expectedUserId - Expected user ID
@@ -117,15 +116,15 @@ describe("User Repository", () => {
       const expectedMonth = today.getUTCMonth() + 1;
       const expectedYear = today.getUTCFullYear();
 
-      // Verify BEGIN transaction (1st call)
+      // Verify the start of the transaction (1st call)
       assertQueryCalledWithKeyPhrases([
          "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED"
       ], [], 0, mockPool);
 
-      // Verify user INSERT (2nd call)
+      // Verify the user insertion (2nd call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO users",
-         "VALUES",
+         "INSERT INTO users (username, name, password, email, birthday)",
+         "VALUES ($1, $2, $3, $4, $5)",
          "RETURNING user_id"
       ], [
          userData.username,
@@ -135,31 +134,33 @@ describe("User Repository", () => {
          userData.birthday
       ], 1, mockPool);
 
-      // Verify Income category INSERT (3rd call)
+      // Verify the income category insertion (3rd call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO budget_categories",
+         "INSERT INTO budget_categories (user_id, type, name, category_order)",
+         "VALUES ($1, $2, $3, $4)",
          "RETURNING budget_category_id"
       ], [expectedUserId, "Income", null, null], 2, mockPool);
 
-      // Verify Income budget INSERT (4th call)
+      // Verify the income budget insertion (4th call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO budgets",
-         "budget_category_id, goal, year, month"
-      ], [expect.any(String), 2000, expectedYear, expectedMonth], 3, mockPool);
+         "INSERT INTO budgets (budget_category_id, goal, year, month)",
+         "VALUES ($1, $2, $3, $4)"
+      ], ["income-category-id", 2000, expectedYear, expectedMonth], 3, mockPool);
 
-      // Verify Expenses category INSERT (5th call)
+      // Verify the expenses category insertion (5th call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO budget_categories",
+         "INSERT INTO budget_categories (user_id, type, name, category_order)",
+         "VALUES ($1, $2, $3, $4)",
          "RETURNING budget_category_id"
       ], [expectedUserId, "Expenses", null, null], 4, mockPool);
 
-      // Verify Expenses budget INSERT (6th call)
+      // Verify the expenses budget insertion (6th call)
       assertQueryCalledWithKeyPhrases([
-         "INSERT INTO budgets",
-         "budget_category_id, goal, year, month"
-      ], [expect.any(String), 2000, expectedYear, expectedMonth], 5, mockPool);
+         "INSERT INTO budgets (budget_category_id, goal, year, month)",
+         "VALUES ($1, $2, $3, $4)"
+      ], ["expenses-category-id", 2000, expectedYear, expectedMonth], 5, mockPool);
 
-      // Verify COMMIT (7th call)
+      // Verify the transaction commits successfully (7th call)
       assertQueryCalledWithKeyPhrases([
          "COMMIT"
       ], [], 6, mockPool);
@@ -169,39 +170,39 @@ describe("User Repository", () => {
     * Arranges a mock client for a user creation transaction with an error at a specific stage
     *
     * @param {string} errorMessage - Error message to throw
-    * @param {string} failStage - Stage where error should occur (`"BEGIN"`, `"insertion"`)
+    * @param {string} failStage - Stage where the error should occur (e.g. "begin", "insertion", "income_budget_creation", "expenses_budget_creation")
     */
-   const arrangeUserCreationTransactionError = (errorMessage: string, failStage: "BEGIN" | "insertion" | "income_category_creation" | "expenses_category_creation"): void => {
-      // Use the real budget repository to properly track query calls
-      importRealBudgetsRepository();
-
+   const arrangeUserCreationTransactionError = (errorMessage: string, failStage: "begin" | "insertion" | "income_budget_creation" | "expenses_budget_creation"): void => {
       const error = new Error(errorMessage);
+
+      importTrueBudgetsRepository();
+
       switch (failStage) {
-         case "BEGIN":
+         case "begin":
             arrangeMockTransactionFlow(mockClient.query, [error]); // BEGIN fails
             break;
          case "insertion":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               error // Insertion fails
+               error // User INSERT fails
             ]);
             break;
-         case "income_category_creation":
+         case "income_budget_creation":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               { rows: [{ user_id: userId }] }, // Insertion
-               { rows: [{ budget_category_id: "income-category-id" }] }, // Income category insertion
-               error // Income category record insertion fails
+               { rows: [{ user_id: userId }] }, // User INSERT
+               { rows: [{ budget_category_id: "income-category-id" }] }, // Income Category INSERT
+               error // Income Budget INSERT fails
             ]);
             break;
-         case "expenses_category_creation":
+         case "expenses_budget_creation":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               { rows: [{ user_id: userId }] }, // Insertion
-               { rows: [{ budget_category_id: "income-category-id" }] }, // Income category insertion
-               {}, // Income category record insertion
-               { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses category insertion
-               error // Expenses category record insertion fails
+               { rows: [{ user_id: userId }] }, // User INSERT
+               { rows: [{ budget_category_id: "income-category-id" }] }, // Income Category INSERT
+               {}, // Income Budget INSERT
+               { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses Category INSERT
+               error // Expenses Budget INSERT fails
             ]);
             break;
          default:
@@ -212,14 +213,14 @@ describe("User Repository", () => {
    /**
     * Arranges a mock client for a successful user deletion transaction
     *
-    * @param {number} rowCount - Number of rows affected by deletion (defaults to `1`)
+    * @param {number} rowCount - Number of rows affected by the deletion (defaults to `1`)
     */
    const arrangeUserDeletionTransactionSuccess = (rowCount: number = 1): void => {
       arrangeMockTransactionFlow(mockClient.query, [
          {}, // BEGIN
-         {}, // Disable trigger
-         { rowCount }, // Deletion
-         {}, // Enable trigger
+         {}, // DISABLE TRIGGER
+         { rowCount }, // DELETE
+         {}, // ENABLE TRIGGER
          {}  // COMMIT
       ]);
    };
@@ -230,29 +231,32 @@ describe("User Repository", () => {
     * @param {string} errorMessage - Error message to throw
     * @param {string} failStage - Stage where error should occur (`"deletion"`, `"trigger_disable"`, `"trigger_enable"`)
     */
-   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: "trigger_disable" | "deletion" | "trigger_enable"): void => {
+   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: "begin" | "trigger_disable" | "deletion" | "trigger_enable"): void => {
       const error = new Error(errorMessage);
 
       switch (failStage) {
+         case "begin":
+            arrangeMockTransactionFlow(mockClient.query, [error]); // BEGIN fails
+            break;
          case "trigger_disable":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               error // Disable trigger error
+               error // DISABLE TRIGGER error
             ]);
             break;
          case "deletion":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               {}, // Disable trigger
-               error // Deletion error
+               {}, // DISABLE TRIGGER
+               error // DELETE error
             ]);
             break;
          case "trigger_enable":
             arrangeMockTransactionFlow(mockClient.query, [
                {}, // BEGIN
-               {}, // Disable trigger
-               { rows: [], rowCount: 1 }, // Deletion
-               error // Enable trigger error
+               {}, // DISABLE TRIGGER
+               { rows: [], rowCount: 1 }, // DELETE
+               error // ENABLE TRIGGER error
             ]);
             break;
          default:
@@ -261,33 +265,33 @@ describe("User Repository", () => {
    };
 
    /**
-    * Asserts the user deletion flow with trigger operations
+    * Asserts the user deletion flow with database trigger operations
     *
     * @param {string} userId - Expected user ID
     */
    const assertUserDeletionFlow = (userId: string): void => {
-      // Verify the transaction isolation level (1st call)
+      // Verify the start of the transaction (1st call)
       assertQueryCalledWithKeyPhrases([
          "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE"
       ], [], 0, mockPool);
 
-      // Verify the trigger disable (2nd call)
+      // Verify the disable of the database trigger (2nd call)
       assertQueryCalledWithKeyPhrases([
          "ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger"
       ], [], 1, mockPool);
 
-      // Verify the deletion query (3rd call)
+      // Verify the user deletion (3rd call)
       assertQueryCalledWithKeyPhrases([
          "DELETE FROM users",
          "WHERE user_id = $1"
       ], [userId], 2, mockPool);
 
-      // Verify the trigger enable (4th call)
+      // Verify the enable of the database trigger (4th call)
       assertQueryCalledWithKeyPhrases([
          "ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger"
       ], [], 3, mockPool);
 
-      // Verify the transaction commit (5th call)
+      // Verify the transaction commits successfully (5th call)
       assertQueryCalledWithKeyPhrases([
          "COMMIT"
       ], [], 4, mockPool);
@@ -339,6 +343,7 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUsername(username);
 
          assertUsernameLookupStructure();
+         // Only the user ID, username, and password should be returned
          assertObjectProperties(result!, ["user_id", "username", "password"], ["email", "name", "birthday"]);
          assertQueryResult(result, mockUser);
       });
@@ -393,17 +398,6 @@ describe("User Repository", () => {
          );
          assertUserIdLookupStructure(userId);
       });
-
-      it("should return null when user_id has invalid UUID format", async() => {
-         const invalidUserId = "invalid-uuid";
-         arrangeMockQueryError("invalid input syntax for type uuid", mockPool);
-
-         await expectRepositoryToThrow(
-            () => userRepository.findByUserId(invalidUserId),
-            "invalid input syntax for type uuid"
-         );
-         assertUserIdLookupStructure(invalidUserId);
-      });
    });
 
    describe("create", () => {
@@ -416,20 +410,18 @@ describe("User Repository", () => {
          birthday: "1990-01-01"
       };
 
-      it("should create user with real budget repository and verify complete transaction flow", async() => {
-         // Use real budget repository to verify actual database queries
-         importRealBudgetsRepository();
+      it("should create user and verify the complete transaction flow", async() => {
+         importTrueBudgetsRepository();
          arrangeUserCreationTransactionSuccess();
 
          const result: string = await userRepository.create(userData);
 
-         // Verify return value and complete transaction flow
          assertQueryResult(result, userId);
          assertCompleteUserCreationTransaction(userData, userId);
       });
 
       it("should throw error when database connection fails during user creation", async() => {
-         arrangeUserCreationTransactionError("Database connection failed", "BEGIN");
+         arrangeUserCreationTransactionError("Database connection failed", "begin");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
@@ -452,27 +444,27 @@ describe("User Repository", () => {
          assertTransactionRollback(mockClient, 1);
       });
 
-      it("should rollback when income category creation fails", async() => {
-         arrangeUserCreationTransactionError("Income category creation failed", "income_category_creation");
+      it("should rollback when income budget creation fails", async() => {
+         arrangeUserCreationTransactionError("Income budget creation failed", "income_budget_creation");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
-            "Income category creation failed"
+            "Income budget creation failed"
          );
 
-         // Income category insertion and record insertion queries should be called after user insertion
+         // Income category and budget insertion queries should be called after the user creation queries
          assertTransactionRollback(mockClient, 3);
       });
 
-      it("should rollback when expenses category creation fails", async() => {
-         arrangeUserCreationTransactionError("Expenses category creation failed", "expenses_category_creation");
+      it("should rollback when expenses budget creation fails", async() => {
+         arrangeUserCreationTransactionError("Expenses budget creation failed", "expenses_budget_creation");
 
          await expectRepositoryToThrow(
             () => userRepository.create(userData),
-            "Expenses category creation failed"
+            "Expenses budget creation failed"
          );
 
-         // Expenses category insertion and record insertion queries should be called after income category insertion
+         // Expenses category and budget insertion queries should be called after the income budget and category queries
          assertTransactionRollback(mockClient, 5);
       });
    });
@@ -483,25 +475,24 @@ describe("User Repository", () => {
          name: "New Name",
          password: "newpassword",
          email: "newemail@example.com",
-         birthday: new Date().toISOString().split("T")[0] // Today's date
+         birthday: new Date().toISOString().split("T")[0] // Today's date in YYYY-MM-DD format
       };
 
       USER_UPDATES.forEach((field) => {
-         it(`should update single field (${field} only)`, async() => {
-            await arrangeUpdateQueryStructure("users", { [field]: mockUpdateData[field] }, "user_id", userId, userRepository.update, mockPool);
+         it(`should update the ${field} field only`, async() => {
+            await arrangeAndAssertUpdateQueries("users", { [field]: mockUpdateData[field] }, "user_id", userId, userRepository.update, mockPool);
          });
       });
 
-      it("should update multiple fields (username + email)", async() => {
-         const updates = {
+      it("should update username and email fields", async() => {
+         await arrangeAndAssertUpdateQueries("users", {
             username: mockUpdateData.username,
             email: mockUpdateData.email
-         };
-         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
+         }, "user_id", userId, userRepository.update, mockPool);
       });
 
-      it("should update all fields together", async() => {
-         await arrangeUpdateQueryStructure("users", mockUpdateData, "user_id", userId, userRepository.update, mockPool);
+      it("should update all fields uniformly", async() => {
+         await arrangeAndAssertUpdateQueries("users", mockUpdateData, "user_id", userId, userRepository.update, mockPool);
       });
 
       it("should return true when user exists and is updated successfully", async() => {
@@ -522,40 +513,18 @@ describe("User Repository", () => {
          assertQueryResult(result, false);
       });
 
-      it("should return true immediately when no fields provided", async() => {
-         const updates: Partial<UserUpdates> = {};
-
-         const result: boolean = await userRepository.update(userId, updates);
+      it("should return true immediately when no fields are provided", async() => {
+         const result: boolean = await userRepository.update(userId, {});
 
          assertQueryNotCalled(mockPool);
          assertQueryResult(result, true);
       });
 
-      it("should construct UPDATE query with correct parameter indices", async() => {
-         const updates = {
-            username: mockUpdateData.username,
-            email: mockUpdateData.email
-         };
-
-         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
-      });
-
-      it("should increment parameter indices correctly for multiple fields", async() => {
-         const updates = {
-            username: mockUpdateData.username,
-            name: mockUpdateData.name,
-            email: mockUpdateData.email
-         };
-
-         await arrangeUpdateQueryStructure("users", updates, "user_id", userId, userRepository.update, mockPool);
-      });
-
       it("should throw error when database connection fails", async() => {
-         const updates: Partial<UserUpdates> = { username: mockUpdateData.username };
          arrangeMockQueryError("Database connection failed", mockPool);
 
          await expectRepositoryToThrow(
-            () => userRepository.update(userId, updates),
+            () => userRepository.update(userId, { username: mockUpdateData.username }),
             "Database connection failed"
          );
       });
@@ -565,9 +534,8 @@ describe("User Repository", () => {
             username: mockUpdateData.username,
             invalidField: "should be ignored"
          };
-
-         // Test that invalid fields are filtered out by the repository
          arrangeMockQuery([{ user_id: userId }], mockPool);
+
          const result = await userRepository.update(userId, updates);
 
          assertQueryResult(result, true);
@@ -585,17 +553,16 @@ describe("User Repository", () => {
    });
 
    describe("deleteUser", () => {
-      it("should delete user successfully with complete transaction flow", async() => {
+      it("should delete user successfully and verify the complete transaction flow", async() => {
          arrangeUserDeletionTransactionSuccess();
 
          const result: boolean = await userRepository.deleteUser(userId);
 
-         // Verify transaction flow, trigger operations, and result
          assertUserDeletionFlow(userId);
          assertTransactionResult(result, true, mockClient);
       });
 
-      it("should return false when user does not exist", async() => {
+      it("should return false when the user does not exist", async() => {
          arrangeUserDeletionTransactionSuccess(0);
 
          const result: boolean = await userRepository.deleteUser(userId);
@@ -603,18 +570,27 @@ describe("User Repository", () => {
          assertQueryResult(result, false);
       });
 
-      it("should rollback transaction when deletion fails", async() => {
+      it("should rollback the transaction when the begin fails", async() => {
+         arrangeUserDeletionTransactionError("Deletion failed", "begin");
+
+         await expectRepositoryToThrow(
+            () => userRepository.deleteUser(userId),
+            "Deletion failed"
+         );
+         assertTransactionRollback(mockClient, 0);
+      });
+
+      it("should rollback the transaction when the trigger disable fails", async() => {
          arrangeUserDeletionTransactionError("Deletion failed", "trigger_disable");
 
          await expectRepositoryToThrow(
             () => userRepository.deleteUser(userId),
             "Deletion failed"
          );
-
          assertTransactionRollback(mockClient, 1);
       });
 
-      it("should throw error when database connection fails during deletion", async() => {
+      it("should throw error when the database connection fails during user deletion", async() => {
          arrangeUserDeletionTransactionError("Database connection failed", "deletion");
 
          await expectRepositoryToThrow(
@@ -623,10 +599,16 @@ describe("User Repository", () => {
          );
 
          assertTransactionRollback(mockClient, 2);
-         // Verify the index of the ROLLBACK call itself (3rd call)
-         assertQueryCalledWithKeyPhrases([
-            "ROLLBACK"
-         ], [], 3, mockPool);
+      });
+
+      it("should rollback the transaction when the trigger enable fails", async() => {
+         arrangeUserDeletionTransactionError("Deletion failed", "trigger_enable");
+
+         await expectRepositoryToThrow(
+            () => userRepository.deleteUser(userId),
+            "Deletion failed"
+         );
+         assertTransactionRollback(mockClient, 3);
       });
    });
 });

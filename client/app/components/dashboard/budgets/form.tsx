@@ -34,14 +34,14 @@ const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
  * Props for the BudgetForm component
  *
  * @property {"Income" | "Expenses"} type - Budget type
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
+ * @property {(fields: object, field: string) => void} updateDirtyFields - Dirty fields tracker
  * @property {boolean} displayWarning - Warning display flag
  * @property {boolean} open - Modal visibility state
  * @property {() => void} onClose - Modal close handler
  */
 interface BudgetFormProps {
    type: "Income" | "Expenses";
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
    displayWarning: boolean;
    open: boolean;
    onClose: () => void;

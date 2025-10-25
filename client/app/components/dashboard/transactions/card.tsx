@@ -19,12 +19,12 @@ import { displayCurrency, displayDate } from "@/lib/display";
  * Props for the TransactionCard component
  *
  * @property {TransactionRowModel} transaction - Transaction to display
- * @property {(_index: number) => void} onEdit - Callback for editing a transaction
+ * @property {(index: number) => void} onEdit - Callback for editing a transaction
  * @property {number | null} pageSize - Page size of the transactions table
  */
 interface TransactionCardProps {
    transaction: TransactionRowModel;
-   onEdit: (_index: number) => void;
+   onEdit: (index: number) => void;
    pageSize: number | null;
 }
 

@@ -52,7 +52,7 @@ export async function query(query: string, parameters: any[]): Promise<any[]> {
  * @throws {Error} If transaction fails
  */
 export async function transaction<T>(
-   operations: (_client: PoolClient) => Promise<T>,
+   operations: (client: PoolClient) => Promise<T>,
    isolationLevel: "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" = "READ COMMITTED",
    externalClient: PoolClient | null = null
 ): Promise<T> {

@@ -41,14 +41,14 @@ const constructSchema = budgetCategorySchema.omit({
  * @property {() => void} onClose - Close handler
  * @property {() => void} onOpen - Open handler
  * @property {"Income" | "Expenses"} type - Budget category type
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
+ * @property {(fields: object, field: string) => void} updateDirtyFields - Dirty fields tracker
  */
 interface ConstructCategoryProps {
    visible: boolean;
    onClose: () => void;
    onOpen: () => void;
    type: "Income" | "Expenses";
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
 }
 
 /**

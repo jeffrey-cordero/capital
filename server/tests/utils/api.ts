@@ -26,7 +26,7 @@ export interface MockResponse extends Partial<Response> {
 }
 
 export interface MockNextFunction extends jest.Mock {
-   (_error?: Error): void;
+   (error?: Error): void;
 }
 
 type MockRequestOptions = {

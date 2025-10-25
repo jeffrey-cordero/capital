@@ -49,7 +49,7 @@ import type { RootState } from "@/redux/store";
  */
 interface BudgetCategoriesProps {
    type: "Income" | "Expenses";
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
 }
 
 /**

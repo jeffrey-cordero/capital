@@ -28,13 +28,13 @@ import { type RootState } from "@/redux/store";
  * @property {BudgetCategory} category - The category to edit
  * @property {boolean} visible - Whether the form is visible
  * @property {() => void} onCancel - The function to call when the form is cancelled
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
+ * @property {(fields: object, field: string) => void} updateDirtyFields - The function to call to update the dirty fields
  */
 interface EditCategoryProps {
    visible: boolean;
    category: BudgetCategory;
    onCancel: () => void;
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
 }
 
 /**

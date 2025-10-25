@@ -48,7 +48,7 @@ function getCategoryInfo(
  * @param {GridFilterItem} filterItem - Filter item to apply
  * @returns {Function} Filter function that checks if an item is selected
  */
-export function getApplyFilterFn(filterItem: GridFilterItem): (_item: string) => boolean {
+export function getApplyFilterFn(filterItem: GridFilterItem): (item: string) => boolean {
    const selected = filterItem.value;
 
    return (item: string) => {
