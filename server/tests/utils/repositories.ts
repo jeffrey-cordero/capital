@@ -105,35 +105,19 @@ export function arrangeMockQueryError(errorMessage: string, mockPool: MockPool):
 }
 
 /**
- * Arrange mock transaction to fail at specific stage
+ * Arranges a mock transaction flow with a sequence of query results or errors, where the
+ * Error should be the final step in the flow if an error is expected.
  *
- * @param {string} errorMessage - Error message to throw
- * @param {'BEGIN' | 'execute' | 'COMMIT'} [atStage] - Stage where error should occur (default: 'execute')
- * @param {MockPool} mockPool - Mock pool instance
- * @param {MockClient} mockClient - Mock client instance
+ * @param {jest.MockedFunction} mockQuery - The mock query function to configure
+ * @param {Array<any | Error>} steps - Array of query results or Error objects
  */
-export function arrangeMockTransactionError(
-   errorMessage: string,
-   atStage: "BEGIN" | "execute" | "COMMIT" = "execute",
-   mockPool: MockPool,
-   mockClient: MockClient
-): void {
-   const errorObj = new Error(errorMessage);
-   mockPool.connect.mockRejectedValueOnce(errorObj);
-
-   switch (atStage) {
-      case "BEGIN":
-         mockClient.query.mockRejectedValueOnce(errorObj);
-         break;
-      case "execute":
-         mockClient.query.mockResolvedValueOnce({}) // BEGIN
-            .mockRejectedValueOnce(errorObj); // Execute
-         break;
-      case "COMMIT":
-         mockClient.query.mockResolvedValueOnce({}) // BEGIN
-            .mockResolvedValueOnce({}) // Execute
-            .mockRejectedValueOnce(errorObj); // COMMIT
-         break;
+export function arrangeMockTransactionFlow(mockQuery: jest.MockedFunction<any>, steps: Array<any | Error>): void {
+   for (const step of steps) {
+      if (step instanceof Error) {
+         mockQuery.mockRejectedValueOnce(step);
+      } else {
+         mockQuery.mockResolvedValueOnce(step ?? {});
+      }
    }
 }
 
