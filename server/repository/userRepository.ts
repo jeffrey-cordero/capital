@@ -21,7 +21,7 @@ export async function findConflictingUsers(username: string, email: string, user
    const conflicts = `
       SELECT user_id, username, email
       FROM users
-      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id IS DISTINCT FROM $3);
+      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id != $3 OR user_id IS NULL OR $3 IS NULL);
    `;
    const usernameNormalized = username.toLowerCase().trim();
    const emailNormalized = email.toLowerCase().trim();
