@@ -46,6 +46,15 @@ describe("User Repository", () => {
    let budgetsRepository: typeof import("@/repository/budgetsRepository");
 
    /**
+    * Imports the real budgets repository for testing transaction flows
+    */
+   const importRealBudgetsRepository = (): void => {
+      jest.unmock("@/repository/budgetsRepository");
+      const realBudgetsRepository: typeof import("@/repository/budgetsRepository") = jest.requireActual("@/repository/budgetsRepository");
+      budgetsRepository.createCategory = realBudgetsRepository.createCategory;
+   };
+
+   /**
     * Asserts the conflict check query was called with the expected SQL structure and exact parameters
     *
     * @param {string} [userId] - Potential user_id parameter to exclude from the conflict check
@@ -82,125 +91,19 @@ describe("User Repository", () => {
    };
 
    /**
-    * Asserts the user deletion flow with trigger operations
-    *
-    * @param {string} userId - Expected user ID
+    * Arranges a mock transaction flow for a successful user creation transaction
     */
-   const assertUserDeletionFlow = (userId: string): void => {
-      // Verify the transaction isolation level (1st call)
-      assertQueryCalledWithKeyPhrases([
-         "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE"
-      ], [], 0, mockPool);
-
-      // Verify the trigger disable (2nd call)
-      assertQueryCalledWithKeyPhrases([
-         "ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger"
-      ], [], 1, mockPool);
-
-      // Verify the deletion query (3rd call)
-      assertQueryCalledWithKeyPhrases([
-         "DELETE FROM users",
-         "WHERE user_id = $1"
-      ], [userId], 2, mockPool);
-
-      // Verify the trigger enable (4th call)
-      assertQueryCalledWithKeyPhrases([
-         "ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger"
-      ], [], 3, mockPool);
-
-      // Verify the transaction commit (5th call)
-      assertQueryCalledWithKeyPhrases([
-         "COMMIT"
-      ], [], 4, mockPool);
-   };
-
-   /**
-    * Arranges a mock client for a successful user deletion transaction
-    *
-    * @param {number} rowCount - Number of rows affected by deletion (defaults to `1`)
-    */
-   const arrangeUserDeletionTransactionSuccess = (rowCount: number = 1): void => {
+   const arrangeUserCreationTransactionSuccess = (): void => {
+      // Mock all the queries that will be called by the real createCategory
       arrangeMockTransactionFlow(mockClient.query, [
          {}, // BEGIN
-         {}, // Disable trigger
-         { rowCount }, // Deletion
-         {}, // Enable trigger
+         { rows: [{ user_id: userId }] }, // User INSERT
+         { rows: [{ budget_category_id: "income-category-id" }] }, // Income category INSERT
+         {}, // Income budget INSERT
+         { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses category INSERT
+         {}, // Expenses budget INSERT
          {}  // COMMIT
       ]);
-   };
-
-   /**
-    * Arranges a mock client for a user deletion transaction with an error at a specific stage
-    *
-    * @param {string} errorMessage - Error message to throw
-    * @param {string} failStage - Stage where error should occur (`"deletion"`, `"trigger_disable"`, `"trigger_enable"`)
-    */
-   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: "trigger_disable" | "deletion" | "trigger_enable"): void => {
-      const error = new Error(errorMessage);
-
-      switch (failStage) {
-         case "trigger_disable":
-            arrangeMockTransactionFlow(mockClient.query, [
-               {}, // BEGIN
-               error // Disable trigger
-            ]);
-            break;
-         case "deletion":
-            arrangeMockTransactionFlow(mockClient.query, [
-               {}, // BEGIN
-               {}, // Disable trigger
-               error // Deletion
-            ]);
-            break;
-         case "trigger_enable":
-            arrangeMockTransactionFlow(mockClient.query, [
-               {}, // BEGIN
-               {}, // Disable trigger
-               { rows: [], rowCount: 1 }, // Deletion
-               error // Enable trigger
-            ]);
-            break;
-         default:
-            throw new Error(`Unknown fail stage: ${failStage}`);
-      }
-   };
-
-   /**
-    * Uses the real budget repository for testing transaction flows
-    */
-   const importRealBudgetsRepository = (): void => {
-      jest.unmock("@/repository/budgetsRepository");
-      const realBudgetsRepository: typeof import("@/repository/budgetsRepository") = jest.requireActual("@/repository/budgetsRepository");
-      budgetsRepository.createCategory = realBudgetsRepository.createCategory;
-   };
-
-   /**
-    * Asserts the user creation flow with transaction operations
-    *
-    * @param {User} userData - Expected user data
-    */
-   const assertUserCreationFlow = (userData: User): void => {
-      // Verify the transaction isolation level (1st call)
-      assertQueryCalledWithKeyPhrases([
-         "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED"
-      ], [], 0, mockPool);
-
-      // Verify the user insertion (2nd call)
-      assertQueryCalledWithKeyPhrases([
-         "INSERT INTO users (username, name, password, email, birthday)",
-         "VALUES ($1, $2, $3, $4, $5)"
-      ], [
-         userData.username,
-         userData.name,
-         userData.password,
-         userData.email,
-         userData.birthday
-      ], 1, mockPool);
-
-      // Verify the transaction commit (3rd call)
-      assertQueryCalledWithKeyPhrases([
-         "COMMIT"
-      ], [], 2, mockPool);
    };
 
    /**
@@ -263,17 +166,6 @@ describe("User Repository", () => {
    };
 
    /**
-    * Arranges a mock client for a successful user creation transaction
-    */
-   const arrangeUserCreationTransactionSuccess = (): void => {
-      arrangeMockTransactionFlow(mockClient.query, [
-         {}, // BEGIN
-         { rows: [{ user_id: userId }] }, // Insertion
-         {}  // COMMIT
-      ]);
-   };
-
-   /**
     * Arranges a mock client for a user creation transaction with an error at a specific stage
     *
     * @param {string} errorMessage - Error message to throw
@@ -315,6 +207,90 @@ describe("User Repository", () => {
          default:
             throw new Error(`Unknown fail stage: ${failStage}`);
       }
+   };
+
+   /**
+    * Arranges a mock client for a successful user deletion transaction
+    *
+    * @param {number} rowCount - Number of rows affected by deletion (defaults to `1`)
+    */
+   const arrangeUserDeletionTransactionSuccess = (rowCount: number = 1): void => {
+      arrangeMockTransactionFlow(mockClient.query, [
+         {}, // BEGIN
+         {}, // Disable trigger
+         { rowCount }, // Deletion
+         {}, // Enable trigger
+         {}  // COMMIT
+      ]);
+   };
+
+   /**
+    * Arranges a mock client for a user deletion transaction with an error at a specific stage
+    *
+    * @param {string} errorMessage - Error message to throw
+    * @param {string} failStage - Stage where error should occur (`"deletion"`, `"trigger_disable"`, `"trigger_enable"`)
+    */
+   const arrangeUserDeletionTransactionError = (errorMessage: string, failStage: "trigger_disable" | "deletion" | "trigger_enable"): void => {
+      const error = new Error(errorMessage);
+
+      switch (failStage) {
+         case "trigger_disable":
+            arrangeMockTransactionFlow(mockClient.query, [
+               {}, // BEGIN
+               error // Disable trigger error
+            ]);
+            break;
+         case "deletion":
+            arrangeMockTransactionFlow(mockClient.query, [
+               {}, // BEGIN
+               {}, // Disable trigger
+               error // Deletion error
+            ]);
+            break;
+         case "trigger_enable":
+            arrangeMockTransactionFlow(mockClient.query, [
+               {}, // BEGIN
+               {}, // Disable trigger
+               { rows: [], rowCount: 1 }, // Deletion
+               error // Enable trigger error
+            ]);
+            break;
+         default:
+            throw new Error(`Unknown fail stage: ${failStage}`);
+      }
+   };
+
+   /**
+    * Asserts the user deletion flow with trigger operations
+    *
+    * @param {string} userId - Expected user ID
+    */
+   const assertUserDeletionFlow = (userId: string): void => {
+      // Verify the transaction isolation level (1st call)
+      assertQueryCalledWithKeyPhrases([
+         "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+      ], [], 0, mockPool);
+
+      // Verify the trigger disable (2nd call)
+      assertQueryCalledWithKeyPhrases([
+         "ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger"
+      ], [], 1, mockPool);
+
+      // Verify the deletion query (3rd call)
+      assertQueryCalledWithKeyPhrases([
+         "DELETE FROM users",
+         "WHERE user_id = $1"
+      ], [userId], 2, mockPool);
+
+      // Verify the trigger enable (4th call)
+      assertQueryCalledWithKeyPhrases([
+         "ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger"
+      ], [], 3, mockPool);
+
+      // Verify the transaction commit (5th call)
+      assertQueryCalledWithKeyPhrases([
+         "COMMIT"
+      ], [], 4, mockPool);
    };
 
    beforeEach(async() => {
@@ -440,57 +416,10 @@ describe("User Repository", () => {
          birthday: "1990-01-01"
       };
 
-      it("should create user successfully with complete transaction flow", async() => {
-         arrangeUserCreationTransactionSuccess();
-
-         const result: string = await userRepository.create(userData);
-
-         // Verify return value
-         assertQueryResult(result, userId);
-
-         // Verify transaction flow: BEGIN, user INSERT, COMMIT
-         expect(mockClient.query).toHaveBeenCalledTimes(3);
-
-         // Verify BEGIN transaction
-         assertUserCreationFlow(userData);
-
-         // Verify category creation
-         expect(budgetsRepository.createCategory).toHaveBeenCalledTimes(2);
-
-         // Verify both Income and Expenses categories with correct parameters
-         const today = new Date(new Date().setHours(0, 0, 0, 0));
-         const expectedMonth = today.getUTCMonth() + 1;
-         const expectedYear = today.getUTCFullYear();
-
-         const expectedCategories = ["Income", "Expenses"];
-         expectedCategories.forEach((categoryType, index) => {
-            expect(budgetsRepository.createCategory).toHaveBeenNthCalledWith(index + 1, userId, {
-               type: categoryType,
-               name: null,
-               category_order: null,
-               goal: 2000,
-               month: expectedMonth,
-               year: expectedYear,
-               goalIndex: 0,
-               goals: []
-            }, mockClient);
-         });
-      });
-
       it("should create user with real budget repository and verify complete transaction flow", async() => {
          // Use real budget repository to verify actual database queries
          importRealBudgetsRepository();
-
-         // Mock all the queries that will be called by the real createCategory
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [{ user_id: userId }] }, // User INSERT
-            { rows: [{ budget_category_id: "income-category-id" }] }, // Income category INSERT
-            {}, // Income budget INSERT
-            { rows: [{ budget_category_id: "expenses-category-id" }] }, // Expenses category INSERT
-            {}, // Expenses budget INSERT
-            {}  // COMMIT
-         ]);
+         arrangeUserCreationTransactionSuccess();
 
          const result: string = await userRepository.create(userData);
 
