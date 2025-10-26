@@ -1,5 +1,6 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 
+import { logger } from "@/lib/logger";
 import { MockResponse } from "@/tests/utils/api";
 import { MockedServiceFunction } from "@/tests/utils/controllers";
 
@@ -181,7 +182,6 @@ export function assertServiceErrorResponse(
    expectedErrors: Record<string, any>,
    exactMatch: boolean = true
 ): void {
-   const { logger } = require("@/lib/logger");
    expect(result.statusCode).toBe(expectedStatusCode);
 
    if (expectedStatusCode === HTTP_STATUS.INTERNAL_SERVER_ERROR) {

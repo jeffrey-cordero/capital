@@ -1,8 +1,9 @@
 import { HTTP_STATUS } from "capital/server";
 import jwt from "jsonwebtoken";
 
-import { TOKEN_EXPIRATIONS } from "@/lib/middleware";
+import { logger } from "@/lib/logger";
 import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
+import { authenticateRefreshToken, configureToken, TOKEN_EXPIRATIONS } from "@/lib/middleware";
 
 /**
  * Test token constants for authentication testing, used across middleware and controller tests for consistent token testing
@@ -41,7 +42,6 @@ export const TEST_USER_PAYLOAD = { user_id: TEST_USER_ID };
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
  */
 export function arrangeUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
-   const { logger } = require("@/lib/logger");
    const mockError = new Error("Unexpected error");
    mockError.stack = "Error: Unexpected error\n    at someFunction";
 
@@ -314,15 +314,12 @@ export function assertTokenRotation(mockRes: MockResponse, firstAccessToken: str
 export function assertRefreshTokenExpirationPreservation(mockRes: MockResponse, mockReq: MockRequest, mockNext: MockNextFunction, originalRefreshToken: string, originalExpirationTime: number, secondsUntilExpire: number): void {
    // Simulate the refresh token authentication middleware setting the expiration time in res.locals
    mockReq.cookies = { "refresh_token": originalRefreshToken };
-   const { authenticateRefreshToken } = require("@/lib/middleware");
-   const middleware = authenticateRefreshToken();
-   callMiddleware(middleware, mockReq, mockRes, mockNext);
+   callMiddleware(authenticateRefreshToken(), mockReq, mockRes, mockNext);
 
    // Verify the middleware set the expiration time in res.locals
    assertSuccessfulRefreshAuthentication(mockRes, mockNext);
 
    // Simulate refresh by configuring tokens again with the same expiration time as the original
-   const { configureToken } = require("@/lib/middleware");
    configureToken(mockRes as any, TEST_USER_ID, secondsUntilExpire);
 
    const newRefreshToken = mockRes.cookies["refresh_token"]!.value;
@@ -356,9 +353,7 @@ export async function assertTokenExpirationRelationship(mockRes: MockResponse, m
 
    // Verify the refresh token is expired when attempting to refresh the tokens
    mockReq.cookies = { "refresh_token": refreshToken };
-   const { authenticateRefreshToken } = require("@/lib/middleware");
-   const middleware = authenticateRefreshToken();
-   callMiddleware(middleware, mockReq, mockRes, mockNext);
+   callMiddleware(authenticateRefreshToken(), mockReq, mockRes, mockNext);
 
    assertUnauthorizedWithTokenClearing(mockRes, mockNext);
 }

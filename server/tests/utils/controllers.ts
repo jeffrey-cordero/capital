@@ -1,6 +1,8 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { RequestHandler, Response } from "express";
 
+import { logger } from "@/lib/logger";
+import { sendSuccess, sendErrors } from "@/lib/response";
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
@@ -18,9 +20,6 @@ export type MockedServiceFunction<T extends (..._args: unknown[]) => unknown> = 
  */
 export function createMockSubmitServiceRequest(): jest.Mock {
    return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
-      const { logger } = require("@/lib/logger");
-      const { sendSuccess, sendErrors } = require("@/lib/response");
-
       // Make sure error logging is mocked
       logger.error = jest.fn();
 
@@ -29,16 +28,16 @@ export function createMockSubmitServiceRequest(): jest.Mock {
 
          if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
             // Success response
-            return sendSuccess(mockRes, result.statusCode, result.data ?? undefined);
+            return sendSuccess(mockRes as Response, result.statusCode, result.data ?? undefined);
          } else {
             // Error response
-            return sendErrors(mockRes, result.statusCode, result.errors);
+            return sendErrors(mockRes as Response, result.statusCode, result.errors);
          }
       } catch (error: any) {
          // Log unexpected errors
          logger.error(error.stack);
 
-         return sendErrors(mockRes, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         return sendErrors(mockRes as Response, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       }
    });
 }
@@ -173,8 +172,6 @@ export function assertControllerErrorResponse(
    expectedStatusCode?: number,
    expectedErrors?: Record<string, any>
 ): void {
-   const { logger } = require("@/lib/logger");
-
    // Verify the service function throws the expected error and properly logged the error stack
    if (expectedError) {
       expect(mockServiceFunction()).rejects.toThrow(expectedError);
