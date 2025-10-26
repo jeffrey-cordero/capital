@@ -48,14 +48,23 @@ test.describe("API Error Handling", () => {
    });
 
    test.describe("Token Refresh Handling", () => {
-      test("should handle a successfully make a refresh token request and continue the original request or redirect to login page", async({ page }) => {
-         let refreshAttempted = false;
+      /**
+       * Mocks the dashboard request to simulate token refresh scenarios using Playwright environment
+       * variable to track refresh attempts per test
+       *
+       * @param {any} page - Playwright page object
+       */
+      const mockDashboardWithTokenRefresh = async(page: any): Promise<void> => {
+         const testId = process.env.PLAYWRIGHT_TEST_ID || "default";
+         const refreshKey = `refreshAttempted_${testId}`;
 
-         // Mock the dashboard request to return a refreshable flag for expired access token
-         await page.route("**/api/v1/dashboard", async(route) => {
+         await page.route("**/api/v1/dashboard", async(route: any) => {
+            const refreshAttempted = (global as any)[refreshKey];
+
             if (!refreshAttempted) {
                // Mock the expiration of the access token while fetching the dashboard data to indicate a need for a refresh token request
-               refreshAttempted = true;
+               (global as any)[refreshKey] = true;
+
                await route.fulfill({
                   status: HTTP_STATUS.UNAUTHORIZED,
                   body: JSON.stringify({ data: { refreshable: true } })
@@ -65,37 +74,60 @@ test.describe("API Error Handling", () => {
                await route.continue();
             }
          });
+      };
 
-         // Setup: Navigate to login page and login
-         await navigateToPath(page, LOGIN_ROUTE);
-         await createUser(page);
-
-         // Now reload to fetch authentication state
-         await page.reload();
-         let refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
-         expect(refreshResponse.status()).toBe(HTTP_STATUS.OK);
-         expect(await refreshResponse.json()).toMatchObject({ data: { success: true } });
-
-         // Navigate to dashboard should work as intended
-         await expect(page).toHaveURL(DASHBOARD_ROUTE);
-         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
-
-         // Now clear the refresh token
-         refreshAttempted = false;
+      /**
+       * Removes the refresh token from browser cookies while preserving other cookies
+       *
+       * @param {any} page - Playwright page object
+       */
+      const removeRefreshTokenFromCookies = async(page: any): Promise<void> => {
+         // Get all cookies
          const context = page.context();
          const cookies = await context.cookies();
 
-         // Filter out only the ones you want to keep
-         const filtered = cookies.filter(cookie => cookie.name !== "refresh_token");
-
-         // Clear all cookies, then re-add only the filtered ones
+         // Clear all cookies and re-add only the filtered cookies
          await context.clearCookies();
-         await context.addCookies(filtered);
+         await context.addCookies(cookies.filter((cookie: any) => cookie.name !== "refresh_token"));
+      };
 
-         // Test refresh token handling with a missing refresh token, which should redirect to the login page
+      test("should successfully refresh token and continue original request", async({ page }) => {
+         // Set unique test ID for this test
+         process.env.PLAYWRIGHT_TEST_ID = "successful_refresh";
+         await mockDashboardWithTokenRefresh(page);
+
+         // Navigate to login page and login with a new user
+         await navigateToPath(page, LOGIN_ROUTE);
+         await createUser(page);
+
+         // Reload to trigger the token refresh request
          await page.reload();
 
-         refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
+         const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
+         expect(refreshResponse.status()).toBe(HTTP_STATUS.OK);
+         expect(await refreshResponse.json()).toMatchObject({ data: { success: true } });
+
+         // Verify the user is redirected to the dashboard after a successful token refresh
+         await expect(page).toHaveURL(DASHBOARD_ROUTE);
+         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+      });
+
+      test("should redirect to login page when refresh token is missing", async({ page }) => {
+         // Set unique test ID for this test
+         process.env.PLAYWRIGHT_TEST_ID = "missing_refresh_token";
+         await mockDashboardWithTokenRefresh(page);
+
+         // Navigate to login page and login with a new user
+         await navigateToPath(page, LOGIN_ROUTE);
+         await createUser(page);
+
+         // Clear the refresh token
+         await removeRefreshTokenFromCookies(page);
+
+         // Reload to trigger the token refresh request
+         await page.reload();
+
+         const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
          expect(refreshResponse.status()).toBe(HTTP_STATUS.UNAUTHORIZED);
 
          // Verify the user is redirected to the login page

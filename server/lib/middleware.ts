@@ -101,8 +101,6 @@ export function authenticateToken(required: boolean) {
             res.locals.user_id = user.user_id;
             next();
          } catch (error: any) {
-            logger.error(error.message);
-
             if (error instanceof jwt.TokenExpiredError) {
                // Signal to the client that refresh is needed
                return sendSuccess(res, HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
