@@ -289,13 +289,13 @@ export async function arrangeAndAssertUpdateQueries(
 }
 
 /**
- * Expect a repository function to throw a database error and verify it throws
+ * Asserts that a repository function throws the expected error
  *
  * @param {Function} repositoryFunction - Repository function to test
  * @param {string} expectedErrorMessage - Expected error message
  * @returns {Promise<void>}
  */
-export async function expectRepositoryToThrow(
+export async function assertRepositoryThrows(
    repositoryFunction: () => Promise<any>,
    expectedErrorMessage: string
 ): Promise<void> {

@@ -12,7 +12,39 @@ import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 export type MockedServiceFunction<T extends (..._args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 /**
- * Helper function to setup a mock service function with success response in one line
+ * Arranges a mock submit service request function
+ *
+ * @returns {jest.Mock} Mock submit service request function
+ */
+export function createMockSubmitServiceRequest(): jest.Mock {
+   return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
+      const { logger } = require("@/lib/logger");
+      const { sendSuccess, sendErrors } = require("@/lib/response");
+
+      // Make sure error logging is mocked
+      logger.error = jest.fn();
+
+      try {
+         const result: ServerResponse = await callback();
+
+         if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
+            // Success response
+            return sendSuccess(mockRes, result.statusCode, result.data ?? undefined);
+         } else {
+            // Error response
+            return sendErrors(mockRes, result.statusCode, result.errors);
+         }
+      } catch (error: any) {
+         // Log unexpected errors
+         logger.error(error.stack);
+
+         return sendErrors(mockRes, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+      }
+   });
+}
+
+/**
+ * Arranges a mock service function with success response in one line
  *
  * @param {any} serviceModule - The service module to mock
  * @param {string} methodName - The method name of the service to mock
@@ -20,7 +52,7 @@ export type MockedServiceFunction<T extends (..._args: unknown[]) => unknown> = 
  * @param {Object | undefined} data - Response data, if applicable
  * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
  */
-export function setupMockServiceSuccess(
+export function arrangeMockServiceSuccess(
    serviceModule: any,
    methodName: string,
    statusCode: number,
@@ -32,7 +64,7 @@ export function setupMockServiceSuccess(
 }
 
 /**
- * Helper function to setup a mock service function with validation error response in one line
+ * Arranges a mock service function with validation error response in one line
  *
  * @param {any} serviceModule - The service module to mock
  * @param {string} methodName - The method name of the service to mock
@@ -40,7 +72,7 @@ export function setupMockServiceSuccess(
  * @param {Record<string, string>} errors - Validation errors
  * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
  */
-export function setupMockServiceValidationError(
+export function arrangeMockServiceValidationError(
    serviceModule: any,
    methodName: string,
    statusCode: number,
@@ -52,14 +84,14 @@ export function setupMockServiceValidationError(
 }
 
 /**
- * Helper function to setup a mock service function that throws an error in one line
+ * Arranges a mock service function that throws an error in one line
  *
  * @param {any} serviceModule - The service module to mock
  * @param {string} methodName - The method name of the service to mock
  * @param {Error} error - Error to throw
  * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
  */
-export function setupMockServiceError(
+export function arrangeMockServiceError(
    serviceModule: any,
    methodName: string,
    error: Error
@@ -70,33 +102,21 @@ export function setupMockServiceError(
 }
 
 /**
- * Tests Redis error scenarios with logging
+ * Calls a service method with proper type casting for Express middleware/controller functions
  *
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
- * @param {string} errorMessage - Expected error message
- * @param {string} statusCode - Expected error status code, where ECONNREFUSED is a Redis connection error always logged to the console
+ * @param {RequestHandler} serviceMethod - The Express RequestHandler (controller method) to call
+ * @param {MockRequest} mockReq - Mock Express Request object
+ * @param {MockResponse} mockRes - Mock Express Response object
+ * @param {MockNextFunction} mockNext - Mock Express NextFunction
+ * @returns {Promise<any>} The result of the service method call
  */
-export function testRedisErrorScenario(
-   mockServiceFunction: MockedServiceFunction<any>,
-   errorMessage: string,
-   statusCode: "ENOMEM" | "ECONNREFUSED" = "ENOMEM"
-): void {
-   // Mock Redis error
-   const redisError = new Error(errorMessage);
-   (redisError as any).code = statusCode;
-   redisError.stack = `Error: ${errorMessage}\n    at Redis connection`;
-
-   mockServiceFunction.mockRejectedValue(redisError);
-}
-
-/**
- * Creates mock repository response with exact types
- *
- * @param {T[]} data - Array of data to return
- * @returns {T[]} Mock repository response
- */
-export function createMockRepositoryResponse<T>(data: T[]): T[] {
-   return data;
+export async function callServiceMethod(
+   serviceMethod: RequestHandler,
+   mockReq: MockRequest,
+   mockRes: MockResponse,
+   mockNext: MockNextFunction
+): Promise<any> {
+   return await serviceMethod(mockReq as any, mockRes as any, mockNext as any);
 }
 
 /**
@@ -199,54 +219,4 @@ export function assertControllerValidationErrorResponse(
    expect(mockRes.status).toHaveBeenCalledWith(expectedStatusCode);
    expect(mockRes.json).toHaveBeenCalledWith({ errors: expectedErrors });
    expect(mockRes.end).toHaveBeenCalled();
-}
-
-/**
- * Calls a service method with proper type casting for Express middleware/controller functions
- *
- * @param {RequestHandler} serviceMethod - The Express RequestHandler (controller method) to call
- * @param {MockRequest} mockReq - Mock Express Request object
- * @param {MockResponse} mockRes - Mock Express Response object
- * @param {MockNextFunction} mockNext - Mock Express NextFunction
- * @returns {Promise<any>} The result of the service method call
- */
-export async function callServiceMethod(
-   serviceMethod: RequestHandler,
-   mockReq: MockRequest,
-   mockRes: MockResponse,
-   mockNext: MockNextFunction
-): Promise<any> {
-   return await serviceMethod(mockReq as any, mockRes as any, mockNext as any);
-}
-
-/**
- * Creates a mock submit service request function
- *
- * @returns {jest.Mock} Mock submit service request function
- */
-export function createMockSubmitServiceRequest(): jest.Mock {
-   return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
-      const { logger } = require("@/lib/logger");
-      const { sendSuccess, sendErrors } = require("@/lib/response");
-
-      // Make sure error logging is mocked
-      logger.error = jest.fn();
-
-      try {
-         const result: ServerResponse = await callback();
-
-         if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
-            // Success response
-            return sendSuccess(mockRes, result.statusCode, result.data ?? undefined);
-         } else {
-            // Error response
-            return sendErrors(mockRes, result.statusCode, result.errors);
-         }
-      } catch (error: any) {
-         // Log unexpected errors
-         logger.error(error.stack);
-
-         return sendErrors(mockRes, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
-      }
-   });
 }

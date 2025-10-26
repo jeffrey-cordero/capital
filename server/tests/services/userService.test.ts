@@ -16,33 +16,24 @@ import * as userService from "@/services/userService";
 import { USER_DETAILS_CACHE_DURATION } from "@/services/userService";
 import { createMockMiddleware, MockResponse } from "@/tests/utils/api";
 import {
+   arrangeArgon2Mocks,
+   arrangeDefaultRedisCacheBehavior,
+   arrangeMockCacheHit,
+   arrangeMockCacheMiss,
+   arrangeMockRepositoryError,
+   arrangeMockRepositorySuccess,
    assertArgon2Calls,
    assertCacheHitBehavior,
    assertCacheInvalidation,
    assertCacheInvalidationNotCalled,
    assertCacheMissBehavior,
-   assertDeleteOperationsNotCalled,
    assertMethodNotCalled,
+   assertMethodsNotCalled,
    assertRepositoryCall,
    assertServiceErrorResponse,
    assertServiceSuccessResponse,
-   assertUpdateOperationsNotCalled,
-   assertUserCreationConflictBehavior,
-   assertUserCreationSuccessBehavior,
-   assertUserDeletionSuccessBehavior,
-   assertUserNotFoundBehavior,
-   assertUserUpdateSuccessBehavior,
-   assertValidationErrorResponse,
-   callServiceMethodWithMockRes,
-   expectServiceToThrow,
-   setupArgon2Mocks,
-   setupDefaultRedisCacheBehavior,
-   setupMockCacheHit,
-   setupMockCacheMiss,
-   setupMockRepositoryEmpty,
-   setupMockRepositoryError,
-   setupMockRepositoryNull,
-   setupMockRepositorySuccess
+   assertServiceThrows,
+   callServiceMethodWithMockRes
 } from "@/tests/utils/services";
 
 jest.mock("argon2");
@@ -62,6 +53,49 @@ describe("User Service", () => {
    let middleware: typeof import("@/lib/middleware");
    let authenticationService: typeof import("@/services/authenticationService");
 
+   /**
+    * Asserts user validation error response for create/update operations
+    * @param {any} result - Service response result
+    * @param {any} expectedErrors - Expected validation errors
+    * @param {boolean} isUpdate - Whether this is for update operations (default: false)
+    */
+   const assertUserValidationErrorResponse = (result: any, expectedErrors: any, isUpdate: boolean = false): void => {
+      assertArgon2Calls(argon2);
+      if (isUpdate) {
+         assertMethodsNotCalled([
+            { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
+            { module: redis, methods: ["removeCacheValue"] }
+         ]);
+      } else {
+         assertMethodsNotCalled([
+            { module: userRepository, methods: ["findConflictingUsers", "create"] },
+            { module: middleware, methods: ["configureToken"] }
+         ]);
+      }
+
+      assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, expectedErrors);
+   };
+
+   /**
+    * Asserts that update operations were not called during conflict scenarios
+    */
+   const assertUpdateOperationsNotCalled = (): void => {
+      assertMethodsNotCalled([
+         { module: userRepository, methods: ["update"] },
+         { module: redis, methods: ["removeCacheValue"] }
+      ]);
+   };
+
+   /**
+    * Asserts that delete operations were not called during error scenarios
+    */
+   const assertDeleteOperationsNotCalled = (): void => {
+      assertMethodsNotCalled([
+         { module: authenticationService, methods: ["logoutUser"] },
+         { module: redis, methods: ["removeCacheValue"] }
+      ]);
+   };
+
    beforeEach(async() => {
       jest.clearAllMocks();
 
@@ -71,15 +105,25 @@ describe("User Service", () => {
       middleware = await import("@/lib/middleware");
       authenticationService = await import("@/services/authenticationService");
 
-      setupDefaultRedisCacheBehavior(redis);
+      arrangeDefaultRedisCacheBehavior(redis);
       ({ mockRes } = createMockMiddleware({ locals: { userId: TEST_CONSTANTS.TEST_USER_ID } }));
    });
 
    describe("fetchUserDetails", () => {
+      /**
+       * Asserts user not found behavior - repository called, cache not set.
+       * @param {string} repositoryMethod - Repository method name (e.g., "findByUserId")
+       * @param {string} repositoryParam - Expected parameter for repository call
+       */
+      const assertUserNotFoundBehavior = (repositoryMethod: string, repositoryParam: string): void => {
+         assertRepositoryCall(userRepository, repositoryMethod, [repositoryParam]);
+         assertMethodsNotCalled([{ module: redis, methods: ["setCacheValue"] }]);
+      };
+
       it("should return cached user details on cache hit", async() => {
          const cachedUserDetails: UserDetails = createMockUserDetails();
          const cachedData: string = JSON.stringify(cachedUserDetails);
-         setupMockCacheHit(redis, cachedData);
+         arrangeMockCacheHit(redis, cachedData);
 
          const result: ServerResponse = await userService.fetchUserDetails(userId);
 
@@ -90,8 +134,8 @@ describe("User Service", () => {
       it("should fetch from database and cache on cache miss", async() => {
          const { mockUser, expectedUserDetails }: { mockUser: User; expectedUserDetails: UserDetails } = createMockUserWithDetails();
 
-         setupMockCacheMiss(redis);
-         setupMockRepositorySuccess(userRepository, "findByUserId", mockUser);
+         arrangeMockCacheMiss(redis);
+         arrangeMockRepositorySuccess(userRepository, "findByUserId", mockUser);
 
          const result: ServerResponse = await userService.fetchUserDetails(userId);
 
@@ -108,34 +152,61 @@ describe("User Service", () => {
       });
 
       it("should return not found when user does not exist", async() => {
-         setupMockCacheMiss(redis);
-         setupMockRepositoryNull(userRepository, "findByUserId");
+         arrangeMockCacheMiss(redis);
+         arrangeMockRepositorySuccess(userRepository, "findByUserId", null);
 
          const result: ServerResponse = await userService.fetchUserDetails(userId);
 
-         assertUserNotFoundBehavior(userRepository, "findByUserId", redis, userId);
+         assertUserNotFoundBehavior("findByUserId", userId);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
    });
 
    describe("createUser", () => {
+      const requiredFields = ["username", "email", "name", "birthday", "password", "verifyPassword"];
+      const validationTypes: string[] = ["short", "long"];
+      const lengthValidationFields: (keyof RegisterPayload)[] = ["username", "name"];
+
+      /**
+       * Asserts user creation success behavior - conflict check, hash, create, token config.
+       * @param {string} password - Expected password for hashing
+       * @param {Record<string, any>} expectedUserData - Expected user data for creation including the hashed password
+       * @param {string} userId - Expected user ID for token config
+       */
+      const assertUserCreationSuccessBehavior = (password: string, expectedUserData: Record<string, any>, userId: string): void => {
+         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(expectedUserData.username, expectedUserData.email);
+         expect(argon2.hash).toHaveBeenCalledWith(password);
+         expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining(expectedUserData));
+         expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId);
+      };
+
+      /**
+       * Asserts user creation conflict behavior - conflict check, no hash, no create, no token.
+       * @param {string} username - Expected username for conflict check
+       * @param {string} email - Expected email for conflict check
+       */
+      const assertUserCreationConflictBehavior = (username: string, email: string): void => {
+         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(username, email);
+         assertMethodsNotCalled([
+            { module: argon2, methods: ["hash"] },
+            { module: userRepository, methods: ["create"] },
+            { module: middleware, methods: ["configureToken"] }
+         ]);
+      };
+
       it("should create user successfully with valid data", async() => {
          const userId: string = "new-user-id-123";
          const hashedPassword: string = "hashed_password_123";
          const validUser: RegisterPayload = createValidRegistration();
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupArgon2Mocks(argon2, hashedPassword);
-         setupMockRepositorySuccess(userRepository, "create", userId);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeArgon2Mocks(argon2, hashedPassword);
+         arrangeMockRepositorySuccess(userRepository, "create", userId);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", validUser);
 
          assertUserCreationSuccessBehavior(
-            mockRes,
-            userRepository,
-            argon2,
-            middleware,
             validUser.password,
             {
                ...validUser,
@@ -161,12 +232,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             {
                username: "Username must be at least 2 characters",
                email: "Invalid email address",
@@ -177,8 +244,6 @@ describe("User Service", () => {
             }
          );
       });
-
-      const requiredFields = ["username", "email", "name", "birthday", "password", "verifyPassword"];
 
       requiredFields.forEach((field) => {
          it(`should return validation errors for missing ${field}`, async() => {
@@ -193,21 +258,14 @@ describe("User Service", () => {
             const identifier: string = field === "verifyPassword" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
             const expectedError: string = `${identifier} is required`;
 
-            assertValidationErrorResponse(
+            assertUserValidationErrorResponse(
                result,
-               argon2,
-               userRepository,
-               middleware,
-               null,
                { [field]: expectedError }
             );
          });
       });
 
       // Fields that have [2, 30] character length validation
-      const validationTypes: string[] = ["short", "long"];
-      const lengthValidationFields: (keyof RegisterPayload)[] = ["username", "name"];
-
       lengthValidationFields.forEach((field) => {
          const fieldName: string = field.charAt(0).toUpperCase() + field.slice(1);
 
@@ -220,12 +278,8 @@ describe("User Service", () => {
 
                const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-               assertValidationErrorResponse(
+               assertUserValidationErrorResponse(
                   result,
-                  argon2,
-                  userRepository,
-                  middleware,
-                  null,
                   { [field]: `${fieldName} ${errorSuffix}` }
                );
             });
@@ -238,12 +292,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { username: "Username may only contain letters, numbers, underscores, and hyphens" }
          );
       });
@@ -254,12 +304,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { email: "Email must be at most 255 characters" }
          );
       });
@@ -270,12 +316,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { birthday: "Birthday must be on or after 1800-01-01" }
          );
       });
@@ -290,12 +332,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { birthday: "Birthday cannot be in the future" }
          );
       });
@@ -306,12 +344,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { birthday: "Birthday is required" }
          );
       });
@@ -324,12 +358,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             {
                password: "Password must be at most 255 characters",
                verifyPassword: "Password must be at most 255 characters"
@@ -343,12 +373,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            null,
             { verifyPassword: "Passwords don't match" }
          );
       });
@@ -366,12 +392,8 @@ describe("User Service", () => {
 
             const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidPasswordUser);
 
-            assertValidationErrorResponse(
+            assertUserValidationErrorResponse(
                result,
-               argon2,
-               userRepository,
-               middleware,
-               null,
                {
                   password: expectedError,
                   verifyPassword: expectedError
@@ -384,14 +406,11 @@ describe("User Service", () => {
          const mockUser: RegisterPayload = createValidRegistration();
          const conflictingUser: User = createConflictingUser(mockUser.username, "different@example.com");
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser);
 
          assertUserCreationConflictBehavior(
-            userRepository,
-            argon2,
-            middleware,
             mockUser.username,
             mockUser.email
          );
@@ -402,7 +421,7 @@ describe("User Service", () => {
          const mockUser: RegisterPayload = createValidRegistration();
          const conflictingUser: User = createConflictingUser("differentuser", mockUser.email);
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser);
 
@@ -413,7 +432,7 @@ describe("User Service", () => {
          const mockUser: RegisterPayload = createValidRegistration();
          const conflictingUser: User = createConflictingUser(mockUser.username, mockUser.email);
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser);
 
@@ -431,7 +450,7 @@ describe("User Service", () => {
             "uppercase"
          );
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser);
 
@@ -446,7 +465,7 @@ describe("User Service", () => {
             "uppercase"
          );
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser);
 
@@ -455,9 +474,9 @@ describe("User Service", () => {
 
       it("should handle repository errors during conflict check using helper", async() => {
          const mockUser: RegisterPayload = createValidRegistration();
-         setupMockRepositoryError(userRepository, "findConflictingUsers", "Database connection failed");
+         arrangeMockRepositoryError(userRepository, "findConflictingUsers", "Database connection failed");
 
-         await expectServiceToThrow(
+         await assertServiceThrows(
             () => callServiceMethodWithMockRes(mockRes, userService, "createUser", mockUser),
             "Database connection failed"
          );
@@ -473,6 +492,23 @@ describe("User Service", () => {
    });
 
    describe("updateAccountDetails", () => {
+      const updateValidationTypes: string[] = ["short", "long"];
+      const updateLengthValidationFields: (keyof UserUpdates)[] = ["username", "name"];
+
+      /**
+       * Asserts user update success behavior - conflict check, update, cache clear.
+       * @param {string} username - Expected username for conflict check
+       * @param {string} email - Expected email for conflict check
+       * @param {string} userId - Expected user ID
+       * @param {Record<string, any>} expectedUpdates - Expected updates data
+       * @param {string} cacheKey - Expected cache key to clear
+       */
+      const assertUserUpdateSuccessBehavior = (username: string, email: string, userId: string, expectedUpdates: Record<string, any>, cacheKey: string): void => {
+         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(username, email, userId);
+         expect(userRepository.update).toHaveBeenCalledWith(userId, expect.objectContaining(expectedUpdates));
+         assertCacheInvalidation(redis, cacheKey);
+      };
+
       it("should update basic user details successfully", async() => {
          const updates: Partial<UserUpdates> = {
             username: "newusername",
@@ -481,14 +517,12 @@ describe("User Service", () => {
             birthday: new Date("1990-01-01").toISOString()
          };
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositorySuccess(userRepository, "update", true);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositorySuccess(userRepository, "update", true);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertUserUpdateSuccessBehavior(
-            userRepository,
-            redis,
             updates.username!,
             updates.email!,
             userId,
@@ -507,10 +541,10 @@ describe("User Service", () => {
          };
          const hashedNewPassword: string = "hashed_new_password_123";
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositorySuccess(userRepository, "findByUserId", currentUser);
-         setupArgon2Mocks(argon2, hashedNewPassword, true);
-         setupMockRepositorySuccess(userRepository, "update", true);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositorySuccess(userRepository, "findByUserId", currentUser);
+         arrangeArgon2Mocks(argon2, hashedNewPassword, true);
+         arrangeMockRepositorySuccess(userRepository, "update", true);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -533,12 +567,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             {
                username: "Username must be at least 2 characters",
                email: "Invalid email address",
@@ -547,9 +577,6 @@ describe("User Service", () => {
             true
          );
       });
-
-      const updateValidationTypes: string[] = ["short", "long"];
-      const updateLengthValidationFields: (keyof UserUpdates)[] = ["username", "name"];
 
       updateLengthValidationFields.forEach((field) => {
          const fieldName: string = field.charAt(0).toUpperCase() + field.slice(1);
@@ -564,12 +591,8 @@ describe("User Service", () => {
 
                const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-               assertValidationErrorResponse(
+               assertUserValidationErrorResponse(
                   result,
-                  argon2,
-                  userRepository,
-                  middleware,
-                  redis,
                   { [field]: `${fieldName} ${errorSuffix}` },
                   true
                );
@@ -583,12 +606,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { username: "Username may only contain letters, numbers, underscores, and hyphens" },
             true
          );
@@ -600,12 +619,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { email: "Email must be at most 255 characters" },
             true
          );
@@ -617,12 +632,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { birthday: "Birthday must be on or after 1800-01-01" },
             true
          );
@@ -638,12 +649,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { birthday: "Birthday cannot be in the future" },
             true
          );
@@ -657,12 +664,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             {
                newPassword: "Password must be at most 255 characters",
                verifyPassword: "Password must be at most 255 characters"
@@ -677,12 +680,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { verifyPassword: "Passwords don't match" },
             true
          );
@@ -695,12 +694,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { newPassword: "New password must not match the old password" },
             true
          );
@@ -712,12 +707,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             {
                newPassword: "New password is required to set a new password",
                verifyPassword: "Passwords don't match"
@@ -732,12 +723,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { verifyPassword: "Password verification is required to set a new password" },
             true
          );
@@ -747,13 +734,13 @@ describe("User Service", () => {
          const updates: Partial<UserUpdates> = { username: "existinguser" };
          const conflictingUser: User = createConflictingUser(updates.username!, "different@example.com");
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          // Empty string for the email, which was not provided in the updates
          assertRepositoryCall(userRepository, "findConflictingUsers", [updates.username, "", userId]);
-         assertUpdateOperationsNotCalled(userRepository, redis);
+         assertUpdateOperationsNotCalled();
          assertServiceErrorResponse(result, HTTP_STATUS.CONFLICT, { username: "Username already exists" });
       });
 
@@ -761,7 +748,7 @@ describe("User Service", () => {
          const updates: Partial<UserUpdates> = { email: "existing@example.com" };
          const conflictingUser: User = createConflictingUser("differentUsername", updates.email!);
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -776,7 +763,7 @@ describe("User Service", () => {
             "uppercase"
          );
 
-         setupMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", [conflictingUser]);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -790,14 +777,14 @@ describe("User Service", () => {
             verifyPassword: "NewPassword1!"
          };
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositoryNull(userRepository, "findByUserId");
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositorySuccess(userRepository, "findByUserId", null);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
          assertArgon2Calls(argon2);
-         assertUpdateOperationsNotCalled(userRepository, redis);
+         assertUpdateOperationsNotCalled();
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
@@ -809,15 +796,15 @@ describe("User Service", () => {
             verifyPassword: "NewPassword1!"
          };
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositorySuccess(userRepository, "findByUserId", currentUser);
-         setupArgon2Mocks(argon2, "hashed_password_123", false);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositorySuccess(userRepository, "findByUserId", currentUser);
+         arrangeArgon2Mocks(argon2, "hashed_password_123", false);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
          assertArgon2Calls(argon2, currentUser.password, updates.password);
-         assertUpdateOperationsNotCalled(userRepository, redis);
+         assertUpdateOperationsNotCalled();
          assertServiceErrorResponse(result, HTTP_STATUS.BAD_REQUEST, { password: "Invalid credentials" });
       });
 
@@ -829,12 +816,8 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
-         assertValidationErrorResponse(
+         assertUserValidationErrorResponse(
             result,
-            argon2,
-            userRepository,
-            middleware,
-            redis,
             { password: "Current password is required to set a new password" },
             true
          );
@@ -843,8 +826,8 @@ describe("User Service", () => {
       it("should return not found when user does not exist during update", async() => {
          const updates: Partial<UserUpdates> = { username: "newusername" };
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositorySuccess(userRepository, "update", false);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositorySuccess(userRepository, "update", false);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -856,10 +839,10 @@ describe("User Service", () => {
       it("should handle repository errors during update using helper", async() => {
          const updates: Partial<UserUpdates> = { username: "newusername" };
 
-         setupMockRepositoryEmpty(userRepository, "findConflictingUsers");
-         setupMockRepositoryError(userRepository, "update", "Database connection failed");
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
+         arrangeMockRepositoryError(userRepository, "update", "Database connection failed");
 
-         await expectServiceToThrow(
+         await assertServiceThrows(
             () => userService.updateAccountDetails(userId, updates),
             "Database connection failed"
          );
@@ -870,40 +853,47 @@ describe("User Service", () => {
    });
 
    describe("deleteAccount", () => {
+      /**
+       * Asserts user deletion success behavior - delete, logout, cache clear.
+       * @param {string} user_id - Expected user ID
+       */
+      const assertUserDeletionSuccessBehavior = (user_id: string): void => {
+         expect(userRepository.deleteUser).toHaveBeenCalledWith(user_id);
+         expect(authenticationService.logoutUser).toHaveBeenCalledWith(mockRes);
+         // All applicable cache regions should be cleared for the given user_id
+         ["accounts", "budgets", "transactions", "user"].forEach(key => {
+            assertCacheInvalidation(redis, `${key}:${user_id}`);
+         });
+      };
+
       it("should delete user account successfully", async() => {
-         setupMockRepositorySuccess(userRepository, "deleteUser", true);
+         arrangeMockRepositorySuccess(userRepository, "deleteUser", true);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "deleteAccount");
 
-         assertUserDeletionSuccessBehavior(
-            userRepository,
-            authenticationService,
-            redis,
-            mockRes.locals.userId,
-            mockRes
-         );
+         assertUserDeletionSuccessBehavior(mockRes.locals.userId);
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
       it("should return not found when user does not exist", async() => {
-         setupMockRepositorySuccess(userRepository, "deleteUser", false);
+         arrangeMockRepositorySuccess(userRepository, "deleteUser", false);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "deleteAccount");
 
          assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
-         assertDeleteOperationsNotCalled(authenticationService, redis);
+         assertDeleteOperationsNotCalled();
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
 
       it("should handle repository errors during deletion using helper", async() => {
-         setupMockRepositoryError(userRepository, "deleteUser", "Database connection failed");
+         arrangeMockRepositoryError(userRepository, "deleteUser", "Database connection failed");
 
-         await expectServiceToThrow(
+         await assertServiceThrows(
             () => callServiceMethodWithMockRes(mockRes, userService, "deleteAccount"),
             "Database connection failed"
          );
          assertRepositoryCall(userRepository, "deleteUser", [mockRes.locals.userId]);
-         assertDeleteOperationsNotCalled(authenticationService, redis);
+         assertDeleteOperationsNotCalled();
       });
    });
 });

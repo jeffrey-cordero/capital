@@ -4,23 +4,22 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import * as authenticationService from "@/services/authenticationService";
 import { createMockMiddleware, MockResponse } from "@/tests/utils/api";
 import {
+   arrangeArgon2Error,
+   arrangeArgon2Mocks,
+   arrangeMockRepositoryError,
+   arrangeMockRepositorySuccess,
    assertArgon2Calls,
    assertMethodNotCalled,
    assertServiceErrorResponse,
    assertServiceSuccessResponse,
-   callServiceMethodWithMockRes,
-   expectServiceToThrow,
-   setupArgon2Error,
-   setupArgon2Mocks,
-   setupMockRepositoryError,
-   setupMockRepositoryNull,
-   setupMockRepositorySuccess
+   assertServiceThrows,
+   callServiceMethodWithMockRes
 } from "@/tests/utils/services";
 import {
+   arrangeMockJWTVerify,
+   arrangeMockJWTVerifyError,
+   assertMiddlewareTokensCleared,
    assertTokenConfigured,
-   assertTokensCleared,
-   setupMockJWTVerify,
-   setupMockJWTVerifyError,
    TEST_SECRET,
    TEST_TOKENS,
    TEST_USER_ID,
@@ -58,7 +57,7 @@ describe("Authentication Service", () => {
 
    describe("getAuthentication", () => {
       it("should authenticate user and return success for valid JWT token", async() => {
-         setupMockJWTVerify(jwt, TEST_USER_PAYLOAD);
+         arrangeMockJWTVerify(jwt, TEST_USER_PAYLOAD);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -66,7 +65,7 @@ describe("Authentication Service", () => {
       });
 
       it("should return refreshable flag when JWT token has expired", async() => {
-         setupMockJWTVerifyError(jwt, "jwt expired");
+         arrangeMockJWTVerifyError(jwt, "jwt expired");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.EXPIRED_ACCESS);
 
@@ -75,34 +74,34 @@ describe("Authentication Service", () => {
       });
 
       it("should clear tokens and return unauthenticated for invalid JWT signature", async() => {
-         setupMockJWTVerifyError(jwt, "invalid signature");
+         arrangeMockJWTVerifyError(jwt, "invalid signature");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.INVALID_ACCESS);
 
-         assertTokensCleared(middleware, mockRes);
+         assertMiddlewareTokensCleared(middleware, mockRes);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should clear tokens and return unauthenticated for malformed JWT", async() => {
-         setupMockJWTVerifyError(jwt, "jwt malformed");
+         arrangeMockJWTVerifyError(jwt, "jwt malformed");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.MALFORMED_ACCESS);
 
-         assertTokensCleared(middleware, mockRes);
+         assertMiddlewareTokensCleared(middleware, mockRes);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should clear tokens and return unauthenticated when no token is provided", async() => {
-         setupMockJWTVerifyError(jwt, "jwt must be provided");
+         arrangeMockJWTVerifyError(jwt, "jwt must be provided");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", "");
 
-         assertTokensCleared(middleware, mockRes);
+         assertMiddlewareTokensCleared(middleware, mockRes);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should return internal server error for unexpected errors", async() => {
-         setupMockJWTVerifyError(jwt, "Unexpected error");
+         arrangeMockJWTVerifyError(jwt, "Unexpected error");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -111,7 +110,7 @@ describe("Authentication Service", () => {
 
       it("should handle missing SESSION_SECRET environment variable", async() => {
          delete process.env.SESSION_SECRET;
-         setupMockJWTVerifyError(jwt, "secretOrPrivateKey must have a value");
+         arrangeMockJWTVerifyError(jwt, "secretOrPrivateKey must have a value");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -119,7 +118,7 @@ describe("Authentication Service", () => {
       });
 
       it("should verify jwt.verify is called with correct token and secret", async() => {
-         setupMockJWTVerify(jwt, TEST_USER_PAYLOAD);
+         arrangeMockJWTVerify(jwt, TEST_USER_PAYLOAD);
 
          await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -128,7 +127,7 @@ describe("Authentication Service", () => {
 
       it("should handle token expiring in 1 second", async() => {
          const payload = { ...TEST_USER_PAYLOAD, exp: Math.floor(Date.now() / 1000) + 1 };
-         setupMockJWTVerify(jwt, payload);
+         arrangeMockJWTVerify(jwt, payload);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", "expiring.token");
 
@@ -136,7 +135,7 @@ describe("Authentication Service", () => {
       });
 
       it("should handle token expired by 1 second", async() => {
-         setupMockJWTVerifyError(jwt, "jwt expired");
+         arrangeMockJWTVerifyError(jwt, "jwt expired");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.EXPIRED_ACCESS);
 
@@ -147,8 +146,8 @@ describe("Authentication Service", () => {
    describe("authenticateUser", () => {
       it("should authenticate user with valid credentials", async() => {
          const mockUser = createMockUser({ username: validUsername, password: hashedPassword });
-         setupMockRepositorySuccess(userRepository, "findByUsername", mockUser);
-         setupArgon2Mocks(argon2, hashedPassword, true);
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", mockUser);
+         arrangeArgon2Mocks(argon2, hashedPassword, true);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword);
 
@@ -158,7 +157,7 @@ describe("Authentication Service", () => {
       });
 
       it("should return unauthorized for nonexistent username", async() => {
-         setupMockRepositoryNull(userRepository, "findByUsername");
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", null);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", "nonexistent", validPassword);
 
@@ -173,8 +172,8 @@ describe("Authentication Service", () => {
 
       it("should return unauthorized for invalid password", async() => {
          const mockUser = createMockUser({ username: validUsername, password: hashedPassword });
-         setupMockRepositorySuccess(userRepository, "findByUsername", mockUser);
-         setupArgon2Mocks(argon2, hashedPassword, false);
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", mockUser);
+         arrangeArgon2Mocks(argon2, hashedPassword, false);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, "wrongpassword");
 
@@ -187,8 +186,8 @@ describe("Authentication Service", () => {
       });
 
       it("should return unauthorized for missing username", async() => {
-         setupMockRepositoryNull(userRepository, "findByUsername");
-         setupArgon2Mocks(argon2, "", false);
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", null);
+         arrangeArgon2Mocks(argon2, "", false);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", "", validPassword);
 
@@ -202,8 +201,8 @@ describe("Authentication Service", () => {
 
       it("should return unauthorized for missing password", async() => {
          const mockUser = createMockUser({ username: validUsername, password: hashedPassword });
-         setupMockRepositorySuccess(userRepository, "findByUsername", mockUser);
-         setupArgon2Mocks(argon2, hashedPassword, false);
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", mockUser);
+         arrangeArgon2Mocks(argon2, hashedPassword, false);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, "");
 
@@ -216,9 +215,9 @@ describe("Authentication Service", () => {
       });
 
       it("should handle repository error during user lookup", async() => {
-         setupMockRepositoryError(userRepository, "findByUsername", "Database connection failed");
+         arrangeMockRepositoryError(userRepository, "findByUsername", "Database connection failed");
 
-         await expectServiceToThrow(
+         await assertServiceThrows(
             () => callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword),
             "Database connection failed"
          );
@@ -229,11 +228,11 @@ describe("Authentication Service", () => {
 
       it("should handle argon2.verify error", async() => {
          const mockUser = createMockUser({ username: validUsername, password: hashedPassword });
-         setupMockRepositorySuccess(userRepository, "findByUsername", mockUser);
+         arrangeMockRepositorySuccess(userRepository, "findByUsername", mockUser);
          const argon2Error = new Error("Argon2 verification failed");
-         setupArgon2Error(argon2, argon2Error);
+         arrangeArgon2Error(argon2, argon2Error);
 
-         await expectServiceToThrow(
+         await assertServiceThrows(
             () => callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword),
             "Argon2 verification failed"
          );
@@ -292,7 +291,7 @@ describe("Authentication Service", () => {
       it("should logout user successfully", async() => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "logoutUser");
 
-         assertTokensCleared(middleware, mockRes);
+         assertMiddlewareTokensCleared(middleware, mockRes);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -308,7 +307,7 @@ describe("Authentication Service", () => {
       it("should verify clearTokens is called on response", async() => {
          await callServiceMethodWithMockRes(mockRes, authenticationService, "logoutUser");
 
-         assertTokensCleared(middleware, mockRes);
+         assertMiddlewareTokensCleared(middleware, mockRes);
       });
    });
 });

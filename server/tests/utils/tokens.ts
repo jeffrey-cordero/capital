@@ -34,13 +34,13 @@ export const TEST_SECRET = "test-secret-key";
 export const TEST_USER_PAYLOAD = { user_id: TEST_USER_ID };
 
 /**
- * Tests unexpected error handling
+ * Arranges unexpected error handling test
  *
  * @param {any} middlewareFunction - The middleware function to test
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
  */
-export function testUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
+export function arrangeUnexpectedErrorHandling(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    const { logger } = require("@/lib/logger");
    const mockError = new Error("Unexpected error");
    mockError.stack = "Error: Unexpected error\n    at someFunction";
@@ -63,13 +63,13 @@ export function testUnexpectedErrorHandling(middlewareFunction: any, expectedSta
 }
 
 /**
- * Helper function to test missing SESSION_SECRET
+ * Arranges missing `SESSION_SECRET` test
  *
  * @param {Function} middlewareFunction - The middleware function to test
  * @param {number} expectedStatus - The expected status code
  * @param {string} cookieName - The name of the cookie to test, defaults to 'access_token'
  */
-export function testMissingSessionSecret(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
+export function arrangeMissingSessionSecret(middlewareFunction: any, expectedStatus: number, cookieName: string = "access_token") {
    // Store original secret
    const originalSecret = process.env.SESSION_SECRET;
 
@@ -89,13 +89,13 @@ export function testMissingSessionSecret(middlewareFunction: any, expectedStatus
 }
 
 /**
- * Helper function to validate token cookie structure and properties
+ * Asserts token cookie structure and properties
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {"access_token" | "refresh_token"} tokenType - The type of token to validate
  * @param {boolean} exists - Whether the token should exist
  */
-export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_token" | "refresh_token", exists: boolean) {
+export function assertTokenCookie(mockRes: MockResponse, tokenType: "access_token" | "refresh_token", exists: boolean) {
    const token = mockRes.cookies[tokenType];
 
    if (exists) {
@@ -122,13 +122,13 @@ export function validateTokenCookie(mockRes: MockResponse, tokenType: "access_to
 }
 
 /**
- * Helper function to verify JWT token properties and return the decoded token payload
+ * Asserts JWT token properties and returns the decoded token payload
  *
  * @param {string} tokenValue - The JWT token value
  * @param {"access_token" | "refresh_token"} tokenType - The type of token to verify
  * @param {number} customExpirationSeconds - Optional custom expiration time in seconds
  */
-export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_token" | "refresh_token", customExpirationSeconds?: number): jwt.JwtPayload {
+export function assertAndDecodeToken(tokenValue: string, tokenType: "access_token" | "refresh_token", customExpirationSeconds?: number): jwt.JwtPayload {
    const decoded = jwt.verify(tokenValue, TEST_SECRET) as jwt.JwtPayload;
 
    // Verify user_id is present
@@ -160,30 +160,30 @@ export function verifyAndDecodeToken(tokenValue: string, tokenType: "access_toke
 }
 
 /**
- * Helper function to verify both access and refresh tokens are properly configured
+ * Asserts both access and refresh tokens are properly configured
  *
  * @param {MockResponse} mockRes - The mock response object
  */
-export function verifyTokenConfiguration(mockRes: MockResponse) {
+export function assertTokenConfiguration(mockRes: MockResponse) {
    // Validate cookie structure
    expect(Object.keys(mockRes.cookies)).toHaveLength(2);
-   validateTokenCookie(mockRes, "refresh_token", true);
-   validateTokenCookie(mockRes, "access_token", true);
+   assertTokenCookie(mockRes, "refresh_token", true);
+   assertTokenCookie(mockRes, "access_token", true);
 
    // Verify JWT payloads
    const accessToken = mockRes.cookies["access_token"];
    const refreshToken = mockRes.cookies["refresh_token"];
 
-   verifyAndDecodeToken(accessToken!.value, "access_token");
-   verifyAndDecodeToken(refreshToken!.value, "refresh_token");
+   assertAndDecodeToken(accessToken!.value, "access_token");
+   assertAndDecodeToken(refreshToken!.value, "refresh_token");
 }
 
 /**
- * Helper function to verify that both access and refresh tokens are cleared
+ * Asserts that both access and refresh tokens are cleared
  *
  * @param {MockResponse} mockRes - The mock response object
  */
-export function verifyTokensCleared(mockRes: MockResponse) {
+export function assertTokensCleared(mockRes: MockResponse) {
    // Verify clearCookie was called for both tokens
    expect(mockRes.clearCookie).toHaveBeenCalledWith("access_token", expect.any(Object));
    expect(mockRes.clearCookie).toHaveBeenCalledWith("refresh_token", expect.any(Object));
@@ -205,37 +205,37 @@ export function callMiddleware(middleware: any, mockReq: MockRequest, mockRes: M
 }
 
 /**
- * Verifies forbidden response with access token clearing
+ * Asserts forbidden response with access token clearing
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifyForbiddenResponse(mockRes: MockResponse, mockNext: MockNextFunction): void {
+export function assertForbiddenResponse(mockRes: MockResponse, mockNext: MockNextFunction): void {
    expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.FORBIDDEN);
    expect(mockRes.json).toHaveBeenCalledWith({ errors: {} });
    expect(mockNext).not.toHaveBeenCalled();
-   verifyTokensCleared(mockRes);
+   assertTokensCleared(mockRes);
 }
 
 /**
- * Verifies response status without next call
+ * Asserts response status without next call
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {number} expectedStatus - The expected HTTP status code
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifyResponseStatus(mockRes: MockResponse, expectedStatus: number, mockNext: MockNextFunction): void {
+export function assertResponseStatus(mockRes: MockResponse, expectedStatus: number, mockNext: MockNextFunction): void {
    expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
    expect(mockNext).not.toHaveBeenCalled();
 }
 
 /**
- * Verifies unauthorized response with refreshable flag
+ * Asserts unauthorized response with refreshable flag
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifyUnauthorizedWithRefreshable(mockRes: MockResponse, mockNext: MockNextFunction): void {
+export function assertUnauthorizedWithRefreshable(mockRes: MockResponse, mockNext: MockNextFunction): void {
    expect(mockRes.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED);
    expect(mockRes.json).toHaveBeenCalledWith({ data: { refreshable: true } });
    expect(mockRes.clearCookie).not.toHaveBeenCalled();
@@ -243,26 +243,26 @@ export function verifyUnauthorizedWithRefreshable(mockRes: MockResponse, mockNex
 }
 
 /**
- * Verifies successful authentication with user_id
+ * Asserts successful authentication with user_id
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifySuccessfulAuthentication(mockRes: MockResponse, mockNext: MockNextFunction): void {
+export function assertSuccessfulAuthentication(mockRes: MockResponse, mockNext: MockNextFunction): void {
    expect(mockRes.locals.user_id).toBe(TEST_USER_ID);
    expect(mockRes.status).not.toHaveBeenCalled();
    expect(mockNext).toHaveBeenCalled();
 }
 
 /**
- * Verifies successful authentication with refresh token expiration
+ * Asserts successful authentication with refresh token expiration
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifySuccessfulRefreshAuthentication(mockRes: MockResponse, mockNext: MockNextFunction): void {
+export function assertSuccessfulRefreshAuthentication(mockRes: MockResponse, mockNext: MockNextFunction): void {
    // Verify successful authentication is attached to res.locals as the user_id and next method is called
-   verifySuccessfulAuthentication(mockRes, mockNext);
+   assertSuccessfulAuthentication(mockRes, mockNext);
 
    // Verify refresh token expiration is attached to res.locals as a Date object
    expect(mockRes.locals.refresh_token_expiration).toBeDefined();
@@ -270,21 +270,21 @@ export function verifySuccessfulRefreshAuthentication(mockRes: MockResponse, moc
 }
 
 /**
- * Verifies unauthorized response with token clearing
+ * Asserts unauthorized response with token clearing
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockNextFunction} mockNext - The mock next function
  */
-export function verifyUnauthorizedWithTokenClearing(mockRes: MockResponse, mockNext: MockNextFunction): void {
+export function assertUnauthorizedWithTokenClearing(mockRes: MockResponse, mockNext: MockNextFunction): void {
    // Verify both access and refresh tokens are cleared
-   verifyTokensCleared(mockRes);
+   assertTokensCleared(mockRes);
 
    // Verify an unauthorized response status and next call is not called
-   verifyResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
+   assertResponseStatus(mockRes, HTTP_STATUS.UNAUTHORIZED, mockNext);
 }
 
 /**
- * Verifies token rotation by checking that new tokens are different from original tokens
+ * Asserts token rotation by checking that new tokens are different from original tokens
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {string} firstAccessToken - The first access token
@@ -292,17 +292,17 @@ export function verifyUnauthorizedWithTokenClearing(mockRes: MockResponse, mockN
  * @param {string} secondAccessToken - The second access token
  * @param {string} secondRefreshToken - The second refresh token
  */
-export function verifyTokenRotation(mockRes: MockResponse, firstAccessToken: string, firstRefreshToken: string, secondAccessToken: string, secondRefreshToken: string): void {
+export function assertTokenRotation(mockRes: MockResponse, firstAccessToken: string, firstRefreshToken: string, secondAccessToken: string, secondRefreshToken: string): void {
    // Tokens should be different due to different iat timestamps
    expect(firstAccessToken).not.toBe(secondAccessToken);
    expect(firstRefreshToken).not.toBe(secondRefreshToken);
 
    // Verify the new tokens
-   verifyTokenConfiguration(mockRes);
+   assertTokenConfiguration(mockRes);
 }
 
 /**
- * Verifies refresh token expiration preservation across multiple refresh calls
+ * Asserts refresh token expiration preservation across multiple refresh calls
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockRequest} mockReq - The mock request object
@@ -311,7 +311,7 @@ export function verifyTokenRotation(mockRes: MockResponse, firstAccessToken: str
  * @param {number} originalExpirationTime - The original expiration time
  * @param {number} secondsUntilExpire - Seconds until expiration
  */
-export function verifyRefreshTokenExpirationPreservation(mockRes: MockResponse, mockReq: MockRequest, mockNext: MockNextFunction, originalRefreshToken: string, originalExpirationTime: number, secondsUntilExpire: number): void {
+export function assertRefreshTokenExpirationPreservation(mockRes: MockResponse, mockReq: MockRequest, mockNext: MockNextFunction, originalRefreshToken: string, originalExpirationTime: number, secondsUntilExpire: number): void {
    // Simulate the refresh token authentication middleware setting the expiration time in res.locals
    mockReq.cookies = { "refresh_token": originalRefreshToken };
    const { authenticateRefreshToken } = require("@/lib/middleware");
@@ -319,21 +319,21 @@ export function verifyRefreshTokenExpirationPreservation(mockRes: MockResponse, 
    callMiddleware(middleware, mockReq, mockRes, mockNext);
 
    // Verify the middleware set the expiration time in res.locals
-   verifySuccessfulRefreshAuthentication(mockRes, mockNext);
+   assertSuccessfulRefreshAuthentication(mockRes, mockNext);
 
    // Simulate refresh by configuring tokens again with the same expiration time as the original
    const { configureToken } = require("@/lib/middleware");
    configureToken(mockRes as any, TEST_USER_ID, secondsUntilExpire);
 
    const newRefreshToken = mockRes.cookies["refresh_token"]!.value;
-   const newDecoded = verifyAndDecodeToken(newRefreshToken, "refresh_token", secondsUntilExpire);
+   const newDecoded = assertAndDecodeToken(newRefreshToken, "refresh_token", secondsUntilExpire);
 
    // The new refresh token should have the same expiration time as the original refresh token
    expect(Math.abs(newDecoded.exp! - originalExpirationTime)).toEqual(0);
 }
 
 /**
- * Verifies token expiration relationship and expired token behavior
+ * Asserts token expiration relationship and expired token behavior
  *
  * @param {MockResponse} mockRes - The mock response object
  * @param {MockRequest} mockReq - The mock request object
@@ -342,9 +342,9 @@ export function verifyRefreshTokenExpirationPreservation(mockRes: MockResponse, 
  * @param {string} accessToken - The access token
  * @param {number} secondsUntilExpire - Seconds until expiration
  */
-export async function verifyTokenExpirationRelationship(mockRes: MockResponse, mockReq: MockRequest, mockNext: MockNextFunction, refreshToken: string, accessToken: string, secondsUntilExpire: number): Promise<void> {
-   const refreshDecoded = verifyAndDecodeToken(refreshToken, "refresh_token", secondsUntilExpire);
-   const accessDecoded = verifyAndDecodeToken(accessToken, "access_token");
+export async function assertTokenExpirationRelationship(mockRes: MockResponse, mockReq: MockRequest, mockNext: MockNextFunction, refreshToken: string, accessToken: string, secondsUntilExpire: number): Promise<void> {
+   const refreshDecoded = assertAndDecodeToken(refreshToken, "refresh_token", secondsUntilExpire);
+   const accessDecoded = assertAndDecodeToken(accessToken, "access_token");
 
    // Initially the access token should expire before the refresh token
    expect(accessDecoded.exp!).toBeGreaterThan(refreshDecoded.exp!);
@@ -360,26 +360,26 @@ export async function verifyTokenExpirationRelationship(mockRes: MockResponse, m
    const middleware = authenticateRefreshToken();
    callMiddleware(middleware, mockReq, mockRes, mockNext);
 
-   verifyUnauthorizedWithTokenClearing(mockRes, mockNext);
+   assertUnauthorizedWithTokenClearing(mockRes, mockNext);
 }
 
 /**
- * Setup JWT verify mock to return the provided payload
+ * Arranges JWT verify mock to return the provided payload
  *
  * @param {any} jwtModule - The JWT module to mock
  * @param {Record<string, any>} payload - Payload to inject into the JWT verify mock
  */
-export function setupMockJWTVerify(jwtModule: any, payload: Record<string, any>): void {
+export function arrangeMockJWTVerify(jwtModule: any, payload: Record<string, any>): void {
    jwtModule.verify.mockReturnValue(payload);
 }
 
 /**
- * Setup JWT verify mock to throw error
+ * Arranges JWT verify mock to throw error
  *
  * @param {any} jwtModule - The JWT module to mock
  * @param {string} errorMessage - Error message to throw
  */
-export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
+export function arrangeMockJWTVerifyError(jwtModule: any, errorMessage: string): void {
    jwtModule.verify.mockImplementation(() => {
       if (errorMessage === "jwt expired") {
          throw new jwtModule.TokenExpiredError("jwt expired", new Date());
@@ -392,7 +392,7 @@ export function setupMockJWTVerifyError(jwtModule: any, errorMessage: string): v
 }
 
 /**
- * Assert middleware.configureToken was called correctly
+ * Asserts middleware.configureToken was called correctly
  *
  * @param {any} middlewareModule - The middleware module to assert
  * @param {MockResponse} mockRes - The mock response object
@@ -413,11 +413,11 @@ export function assertTokenConfigured(
 }
 
 /**
- * Assert middleware.clearTokens was called
+ * Asserts middleware.clearTokens was called
  *
  * @param {any} middlewareModule - The middleware module to assert
  * @param {MockResponse} mockRes - The mock response object
  */
-export function assertTokensCleared(middlewareModule: any, mockRes: MockResponse): void {
+export function assertMiddlewareTokensCleared(middlewareModule: any, mockRes: MockResponse): void {
    expect(middlewareModule.clearTokens).toHaveBeenCalledWith(mockRes);
 }

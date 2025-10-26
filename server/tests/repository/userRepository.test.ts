@@ -12,11 +12,11 @@ import {
    assertQueryCalledWithKeyPhrases,
    assertQueryNotCalled,
    assertQueryResult,
+   assertRepositoryThrows,
    assertTransactionResult,
    assertTransactionRollback,
    createMockClient,
    createMockPool,
-   expectRepositoryToThrow,
    MockClient,
    MockPool,
    resetDatabaseMocks
@@ -98,7 +98,7 @@ describe("User Repository", () => {
       it("should throw error when database connection fails", async() => {
          arrangeMockQueryError("Database connection failed", mockPool);
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.findConflictingUsers(username, email),
             "Database connection failed"
          );
@@ -141,7 +141,7 @@ describe("User Repository", () => {
       it("should throw error when database connection fails", async() => {
          arrangeMockQueryError("Database connection failed", mockPool);
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.findByUsername(username),
             "Database connection failed"
          );
@@ -185,7 +185,7 @@ describe("User Repository", () => {
       it("should throw error when database connection fails", async() => {
          arrangeMockQueryError("Database connection failed", mockPool);
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.findByUserId(userId),
             "Database connection failed"
          );
@@ -336,7 +336,7 @@ describe("User Repository", () => {
       it("should throw error when database connection fails during user creation", async() => {
          arrangeUserCreationTransactionError("Database connection failed", "begin");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.create(userData),
             "Database connection failed"
          );
@@ -348,7 +348,7 @@ describe("User Repository", () => {
       it("should rollback transaction when user creation fails", async() => {
          arrangeUserCreationTransactionError("User creation failed", "insertion");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.create(userData),
             "User creation failed"
          );
@@ -360,7 +360,7 @@ describe("User Repository", () => {
       it("should rollback when income budget creation fails", async() => {
          arrangeUserCreationTransactionError("Income budget creation failed", "income_budget_creation");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.create(userData),
             "Income budget creation failed"
          );
@@ -372,7 +372,7 @@ describe("User Repository", () => {
       it("should rollback when expenses budget creation fails", async() => {
          arrangeUserCreationTransactionError("Expenses budget creation failed", "expenses_budget_creation");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.create(userData),
             "Expenses budget creation failed"
          );
@@ -436,7 +436,7 @@ describe("User Repository", () => {
       it("should throw error when database connection fails", async() => {
          arrangeMockQueryError("Database connection failed", mockPool);
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.update(userId, { username: mockUpdateData.username }),
             "Database connection failed"
          );
@@ -573,7 +573,7 @@ describe("User Repository", () => {
       it("should rollback the transaction when the begin fails", async() => {
          arrangeUserDeletionTransactionError("Deletion failed", "begin");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.deleteUser(userId),
             "Deletion failed"
          );
@@ -583,7 +583,7 @@ describe("User Repository", () => {
       it("should rollback the transaction when the trigger disable fails", async() => {
          arrangeUserDeletionTransactionError("Deletion failed", "trigger_disable");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.deleteUser(userId),
             "Deletion failed"
          );
@@ -593,7 +593,7 @@ describe("User Repository", () => {
       it("should throw error when the database connection fails during user deletion", async() => {
          arrangeUserDeletionTransactionError("Database connection failed", "deletion");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.deleteUser(userId),
             "Database connection failed"
          );
@@ -604,7 +604,7 @@ describe("User Repository", () => {
       it("should rollback the transaction when the trigger enable fails", async() => {
          arrangeUserDeletionTransactionError("Deletion failed", "trigger_enable");
 
-         await expectRepositoryToThrow(
+         await assertRepositoryThrows(
             () => userRepository.deleteUser(userId),
             "Deletion failed"
          );
