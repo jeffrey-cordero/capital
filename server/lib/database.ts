@@ -15,7 +15,7 @@ const pool = new Pool({
    database: process.env.DB_NAME,
    port: Number(process.env.DB_PORT) || 5432,
    max: 50,
-   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+   ssl: process.env.DB_HOST !== "postgres" ? { rejectUnauthorized: false } : false
 });
 
 /**
