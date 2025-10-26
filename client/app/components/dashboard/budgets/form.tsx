@@ -196,16 +196,12 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   updateDirtyFields = { updateDirtyFields }
                />
             </Section>
-            {
-               open && (
-                  <Section icon = { faMoneyBillTransfer }>
-                     <Transactions
-                        filter = "budget"
-                        identifier = { type }
-                     />
-                  </Section>
-               )
-            }
+            <Section icon = { faMoneyBillTransfer }>
+               <Transactions
+                  filter = "budget"
+                  identifier = { type }
+               />
+            </Section>
          </Stack>
       </Modal>
    );
