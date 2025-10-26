@@ -15,16 +15,7 @@ import {
    assertServiceThrows,
    callServiceMethodWithMockRes
 } from "@/tests/utils/services";
-import {
-   arrangeMockJWTVerify,
-   arrangeMockJWTVerifyError,
-   assertMiddlewareTokensCleared,
-   assertTokenConfigured,
-   TEST_SECRET,
-   TEST_TOKENS,
-   TEST_USER_ID,
-   TEST_USER_PAYLOAD
-} from "@/tests/utils/tokens";
+import { TEST_SECRET, TEST_TOKENS, TEST_USER_ID, TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
 
 jest.mock("argon2");
 jest.mock("jsonwebtoken");
@@ -43,6 +34,30 @@ describe("Authentication Service", () => {
    let argon2: typeof import("argon2");
    let middleware: typeof import("@/lib/middleware");
 
+   /**
+    * Asserts the mock `clearTokens` method was called with the mock response object
+    */
+   const assertTokensCleared = (): void => {
+      expect(middleware.clearTokens).toHaveBeenCalledWith(mockRes);
+   };
+
+   /**
+    * Asserts middleware.configureToken was called correctly
+    *
+    * @param {string} userId - Expected user ID
+    * @param {number} secondsUntilExpire - Optional expected seconds until expire
+    */
+   const assertTokenConfigured = (
+      userId: string,
+      secondsUntilExpire?: number
+   ): void => {
+      if (secondsUntilExpire !== undefined) {
+         expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId, secondsUntilExpire);
+      } else {
+         expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId);
+      }
+   };
+
    beforeEach(async() => {
       jest.clearAllMocks();
 
@@ -56,8 +71,34 @@ describe("Authentication Service", () => {
    });
 
    describe("getAuthentication", () => {
+      /**
+       * Arranges JWT verify mock to return the provided payload
+       *
+       * @param {Record<string, any>} payload - Payload to inject into the JWT verify mock
+       */
+      const arrangeMockJWTVerify = (payload: Record<string, any>): void => {
+         (jwt.verify as jest.Mock).mockReturnValue(payload);
+      };
+
+      /**
+       * Arranges JWT verify mock to throw error
+       *
+       * @param {string} errorMessage - Error message to throw
+       */
+      const arrangeMockJWTVerifyError = (errorMessage: string): void => {
+         (jwt.verify as jest.Mock).mockImplementation(() => {
+            if (errorMessage === "jwt expired") {
+               throw new jwt.TokenExpiredError("jwt expired", new Date());
+            } else if (errorMessage === "invalid signature" || errorMessage === "jwt malformed" || errorMessage === "jwt must be provided") {
+               throw new jwt.JsonWebTokenError(errorMessage);
+            } else {
+               throw new Error(errorMessage);
+            }
+         });
+      };
+
       it("should authenticate user and return success for valid JWT token", async() => {
-         arrangeMockJWTVerify(jwt, TEST_USER_PAYLOAD);
+         arrangeMockJWTVerify(TEST_USER_PAYLOAD);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -65,7 +106,7 @@ describe("Authentication Service", () => {
       });
 
       it("should return refreshable flag when JWT token has expired", async() => {
-         arrangeMockJWTVerifyError(jwt, "jwt expired");
+         arrangeMockJWTVerifyError("jwt expired");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.EXPIRED_ACCESS);
 
@@ -74,34 +115,34 @@ describe("Authentication Service", () => {
       });
 
       it("should clear tokens and return unauthenticated for invalid JWT signature", async() => {
-         arrangeMockJWTVerifyError(jwt, "invalid signature");
+         arrangeMockJWTVerifyError("invalid signature");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.INVALID_ACCESS);
 
-         assertMiddlewareTokensCleared(middleware, mockRes);
+         assertTokensCleared();
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should clear tokens and return unauthenticated for malformed JWT", async() => {
-         arrangeMockJWTVerifyError(jwt, "jwt malformed");
+         arrangeMockJWTVerifyError("jwt malformed");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.MALFORMED_ACCESS);
 
-         assertMiddlewareTokensCleared(middleware, mockRes);
+         assertTokensCleared();
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should clear tokens and return unauthenticated when no token is provided", async() => {
-         arrangeMockJWTVerifyError(jwt, "jwt must be provided");
+         arrangeMockJWTVerifyError("jwt must be provided");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", "");
 
-         assertMiddlewareTokensCleared(middleware, mockRes);
+         assertTokensCleared();
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { authenticated: false });
       });
 
       it("should return internal server error for unexpected errors", async() => {
-         arrangeMockJWTVerifyError(jwt, "Unexpected error");
+         arrangeMockJWTVerifyError("Unexpected error");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -110,7 +151,7 @@ describe("Authentication Service", () => {
 
       it("should handle missing SESSION_SECRET environment variable", async() => {
          delete process.env.SESSION_SECRET;
-         arrangeMockJWTVerifyError(jwt, "secretOrPrivateKey must have a value");
+         arrangeMockJWTVerifyError("secretOrPrivateKey must have a value");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -118,7 +159,7 @@ describe("Authentication Service", () => {
       });
 
       it("should verify jwt.verify is called with correct token and secret", async() => {
-         arrangeMockJWTVerify(jwt, TEST_USER_PAYLOAD);
+         arrangeMockJWTVerify(TEST_USER_PAYLOAD);
 
          await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.VALID_ACCESS);
 
@@ -127,7 +168,7 @@ describe("Authentication Service", () => {
 
       it("should handle token expiring in 1 second", async() => {
          const payload = { ...TEST_USER_PAYLOAD, exp: Math.floor(Date.now() / 1000) + 1 };
-         arrangeMockJWTVerify(jwt, payload);
+         arrangeMockJWTVerify(payload);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", "expiring.token");
 
@@ -135,7 +176,7 @@ describe("Authentication Service", () => {
       });
 
       it("should handle token expired by 1 second", async() => {
-         arrangeMockJWTVerifyError(jwt, "jwt expired");
+         arrangeMockJWTVerifyError("jwt expired");
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "getAuthentication", TEST_TOKENS.EXPIRED_ACCESS);
 
@@ -152,7 +193,7 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword);
 
          assertArgon2Calls(argon2, hashedPassword, validPassword);
-         assertTokenConfigured(middleware, mockRes, mockUser.user_id!);
+         assertTokenConfigured(mockUser.user_id!);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -250,7 +291,7 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "refreshToken", TEST_USER_ID);
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
-         assertTokenConfigured(middleware, mockRes, TEST_USER_ID, expectedSeconds);
+         assertTokenConfigured(TEST_USER_ID, expectedSeconds);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -261,7 +302,7 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "refreshToken", TEST_USER_ID);
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
-         assertTokenConfigured(middleware, mockRes, TEST_USER_ID, expectedSeconds);
+         assertTokenConfigured(TEST_USER_ID, expectedSeconds);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -271,7 +312,7 @@ describe("Authentication Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "refreshToken", TEST_USER_ID);
 
-         assertTokenConfigured(middleware, mockRes, TEST_USER_ID, 0);
+         assertTokenConfigured(TEST_USER_ID, 0);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -282,7 +323,7 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "refreshToken", TEST_USER_ID);
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
-         assertTokenConfigured(middleware, mockRes, TEST_USER_ID, expectedSeconds);
+         assertTokenConfigured(TEST_USER_ID, expectedSeconds);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
    });
@@ -291,7 +332,7 @@ describe("Authentication Service", () => {
       it("should logout user successfully", async() => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "logoutUser");
 
-         assertMiddlewareTokensCleared(middleware, mockRes);
+         assertTokensCleared();
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -307,7 +348,7 @@ describe("Authentication Service", () => {
       it("should verify clearTokens is called on response", async() => {
          await callServiceMethodWithMockRes(mockRes, authenticationService, "logoutUser");
 
-         assertMiddlewareTokensCleared(middleware, mockRes);
+         assertTokensCleared();
       });
    });
 });

@@ -2,7 +2,7 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { RequestHandler, Response } from "express";
 
 import { logger } from "@/lib/logger";
-import { sendSuccess, sendErrors } from "@/lib/response";
+import { sendErrors, sendSuccess } from "@/lib/response";
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
