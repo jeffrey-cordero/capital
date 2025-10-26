@@ -17,7 +17,7 @@
     "test:server": "npm --prefix server run test",
     "test:client": "npm --prefix client run test:e2e"
   },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
+  "dependencies": {
+    "concurrently": "^9.2.1"
   }
 }
