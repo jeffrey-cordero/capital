@@ -6,12 +6,16 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: capital-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: 20
 
 jobs:
   setup:
-    name: "Dependencies"
+    name: "Setup Dependencies"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -71,59 +75,14 @@ jobs:
 
       - name: "Install Node Dependencies"
         if: steps.node-cache-client.outputs.cache-hit != 'true' || steps.node-cache-server.outputs.cache-hit != 'true' || steps.node-cache-types.outputs.cache-hit != 'true' || steps.node-cache-root.outputs.cache-hit != 'true'
-        run: npm install
+        run: npm ci
 
       - name: "Build Types"
         if: steps.types-dist-cache.outputs.cache-hit != 'true'
         run: npm --prefix types run build
 
-      - name: "Save Node Modules (Client)"
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: client/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Save Node Modules (Server)"
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: server/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Save Node Modules (Types)"
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: types/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Save Node Modules (Root)"
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Save Types Dist Cache"
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: types/dist
-          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
-          restore-keys: |
-            ${{ runner.os }}-types-dist-
-
   eslint:
-    name: "ESLint"
+    name: "Lint Code"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +132,7 @@ jobs:
         run: npm run lint:all
 
   typecheck:
-    name: "Typecheck"
+    name: "Type Check"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -231,7 +190,7 @@ jobs:
         run: npm run typecheck:all
 
   unit:
-    name: "Unit"
+    name: "Unit Tests"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -281,7 +240,7 @@ jobs:
           retention-days: 30
 
   client-e2e:
-    name: "E2E"
+    name: "End-to-End Tests"
     needs: setup
     runs-on: ubuntu-latest
     steps:
