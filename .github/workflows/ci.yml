@@ -64,24 +64,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Cache Types Dist"
+      - name: "Cache Types Build"
         uses: actions/cache@v4
-        id: types-dist-cache
+        id: types-build-cache
         with:
           path: types/dist
-          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
-            ${{ runner.os }}-types-dist-
+            ${{ runner.os }}-types-build-
 
       - name: "Install Node Dependencies"
         if: steps.node-cache-client.outputs.cache-hit != 'true' || steps.node-cache-server.outputs.cache-hit != 'true' || steps.node-cache-types.outputs.cache-hit != 'true' || steps.node-cache-root.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: "Build Types"
-        if: steps.types-dist-cache.outputs.cache-hit != 'true'
+        if: steps.types-build-cache.outputs.cache-hit != 'true'
         run: npm --prefix types run build
 
-  eslint:
+  lint:
     name: "Lint"
     needs: setup
     runs-on: ubuntu-latest
@@ -170,13 +170,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Types Dist Cache"
+      - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
           path: types/dist
-          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
-            ${{ runner.os }}-types-dist-
+            ${{ runner.os }}-types-build-
 
       - name: "Restore Node Modules (Root)"
         uses: actions/cache@v4
@@ -220,15 +220,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Types Dist Cache"
+      - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
           path: types/dist
-          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
-            ${{ runner.os }}-types-dist-
+            ${{ runner.os }}-types-build-
 
-      - name: "Run Unit Tests (Jest)"
+      - name: "Run Jest Unit Tests"
         run: npm run test:server
 
       - name: "Upload Coverage Reports"
@@ -239,7 +239,7 @@ jobs:
           path: server/coverage/
           retention-days: 30
 
-  client-e2e:
+  e2e:
     name: "E2E"
     needs: setup
     runs-on: ubuntu-latest
@@ -278,15 +278,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Types Dist Cache"
+      - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
           path: types/dist
-          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
-            ${{ runner.os }}-types-dist-
+            ${{ runner.os }}-types-build-
 
-      - name: "Setup E2E Test Environment"
+      - name: "Setup Playwright Environment"
         run: ./.github/scripts/services.sh start
 
       - name: "Cache Playwright Browsers"
@@ -304,7 +304,7 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: "Run E2E Tests (Playwright)"
+      - name: "Run Playwright E2E Tests"
         working-directory: client
         env:
           VITE_CLIENT_PORT: 3000
