@@ -40,21 +40,17 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
 };
 
 /**
- * Fills form fields with provided data and submits the form, iterates through
- * the provided data object and fills each field that has a non-null/undefined
- * value, then triggers form submission with configurable options for navigation
- * and error handling
+ * Fills form fields with provided data and submits the form
  *
  * @param {Page} page - Playwright page instance
  * @param {FormData} data - Object containing test ids as keys and values to fill in the form
  * @param {FormSubmitOptions} options - Options for form submission behavior
- * @returns {Promise<void>}
  */
-export const submitForm = async(
+export async function submitForm(
    page: Page,
    data: FormData,
    options: FormSubmitOptions = DEFAULT_FORM_OPTIONS
-): Promise<void> => {
+): Promise<void> {
    // Merge with default options
    const opts = { ...DEFAULT_FORM_OPTIONS, ...options };
 
@@ -121,24 +117,21 @@ export const submitForm = async(
          console.warn("Form validation errors:", errors);
       }
    }
-};
+}
 
 /**
- * Expects a validation error for a specific field with the given message,
- * combines waiting for error indicators and validating the specific field
- * error message
+ * Expects a validation error for a specific field with the given message
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test id of the form field
  * @param {string} expectedMessage - The expected error message text
- * @returns {Promise<void>}
  */
-export const expectValidationError = async(
+export async function expectValidationError(
    page: Page,
    testId: string,
    expectedMessage: string
-): Promise<void> => {
+): Promise<void> {
    await expect(page.locator(ERROR_INDICATOR_SELECTOR).first()).toBeVisible();
    const errorElement = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
    await expect(errorElement).toContainText(expectedMessage);
-};
+}

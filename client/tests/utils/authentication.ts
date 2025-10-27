@@ -22,35 +22,18 @@ export const SETTINGS_ROUTE = "/dashboard/settings";
 export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, SETTINGS_ROUTE] as const;
 
 /**
- * Derives the sidebar link title from a route path, extracts the last segment
- * after "/" and capitalizes it, special case: root route "/" returns "Home"
- *
- * @param {string} route - The route path (e.g., "/login", "/dashboard/accounts")
- * @returns {string} The expected sidebar link title (e.g., "Login", "Accounts")
- */
-export const getRouteLinkTitle = (route: string): string => {
-   if (route === ROOT_ROUTE) return "Home";
-
-   const segments = route.split("/");
-   const lastSegment = segments[segments.length - 1];
-   return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
-};
-
-/**
- * Creates a test user by registering with unique credentials, handles the
- * complete registration flow including navigation, form submission, and optional
- * logout for creating mock users
+ * Creates a test user by registering with unique credentials
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
- * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to true)
+ * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration
  * @returns {Promise<{ username: string; email: string }>} The credentials used for registration
  */
-export const createUser = async(
+export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true
-): Promise<{ username: string; email: string }> => {
+): Promise<{ username: string; email: string }> {
    const credentials = generateTestCredentials();
    const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
@@ -67,9 +50,8 @@ export const createUser = async(
       await expect(page).toHaveURL(LOGIN_ROUTE);
    }
 
-   // Return the actual credentials used (including overrides)
    return {
       username: registrationData.username,
       email: registrationData.email
    };
-};
+}

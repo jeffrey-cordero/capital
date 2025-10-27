@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { expectValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { testPasswordVisibilityToggle } from "@tests/utils/password";
+import { assertPasswordVisibilityToggle } from "@tests/utils/password";
 import { createValidLogin, VALID_LOGIN } from "capital/mocks/user";
 
 test.describe("Login Authentication", () => {
@@ -24,7 +24,7 @@ test.describe("Login Authentication", () => {
       });
 
       test("should toggle password visibility correctly", async({ page }) => {
-         await testPasswordVisibilityToggle(page, "password");
+         await assertPasswordVisibilityToggle(page, "password");
       });
    });
 

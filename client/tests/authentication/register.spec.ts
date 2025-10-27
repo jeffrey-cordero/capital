@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { expectValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { getPasswordToggleButton, testPasswordVisibilityToggle } from "@tests/utils/password";
+import { assertPasswordVisibilityToggle, getPasswordToggleButton } from "@tests/utils/password";
 import {
    createUserWithInvalidEmail,
    createUserWithMismatchedPasswords,
@@ -34,8 +34,8 @@ test.describe("User Registration", () => {
       });
 
       test("should toggle password visibility for both password fields", async({ page }) => {
-         await testPasswordVisibilityToggle(page, "password");
-         await testPasswordVisibilityToggle(page, "verifyPassword");
+         await assertPasswordVisibilityToggle(page, "password");
+         await assertPasswordVisibilityToggle(page, "verifyPassword");
       });
 
       test("should have independent toggle states for password fields", async({ page }) => {
