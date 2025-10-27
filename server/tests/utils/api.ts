@@ -70,7 +70,7 @@ const createMockResponse = (): MockResponse => {
       cookies: {},
       statusCode: 0,
       jsonData: undefined,
-      clearCookie: jest.fn((name: string, _options?: Record<string, any>) => {
+      clearCookie: jest.fn((name: string, _?: Record<string, any>) => {
          delete mockRes.cookies[name];
          return mockRes;
       }),

@@ -77,7 +77,7 @@ export const budgetCategorySchema = z.object({
    }),
 
    /* Budget category type */
-   type: z.enum(['Income', 'Expenses'], {
+   type: z.enum(["Income", "Expenses"], {
       message: "Type must be either 'Income' or 'Expenses'"
    }),
 

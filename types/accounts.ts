@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { zodPreprocessNumber } from './numerics';
+import { zodPreprocessNumber } from "./numerics";
 
 /**
  * Core account types supported in the application

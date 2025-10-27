@@ -1,4 +1,10 @@
-import type { LoginPayload, RegisterPayload, User, UserDetails, UserUpdates } from "../user";
+import type {
+   LoginPayload,
+   RegisterPayload,
+   User,
+   UserDetails,
+   UserUpdates
+} from "../user";
 import { createMockUser } from "./server";
 
 /**
@@ -7,14 +13,14 @@ import { createMockUser } from "./server";
  * Note: username and email fields should be set dynamically in tests to ensure uniqueness
  */
 export const VALID_REGISTRATION: RegisterPayload = {
-  // Will be set dynamically for each test
-  username: "",
-  email: "",
-  // Static test data
-  birthday: "1990-01-01",
-  name: "Test User",
-  password: "Password1!",
-  verifyPassword: "Password1!"
+   // Will be set dynamically for each test
+   username: "",
+   email: "",
+   // Static test data
+   birthday: "1990-01-01",
+   name: "Test User",
+   password: "Password1!",
+   verifyPassword: "Password1!"
 };
 
 /**
@@ -23,10 +29,10 @@ export const VALID_REGISTRATION: RegisterPayload = {
  * Note: username field should be set dynamically in tests to match registered user
  */
 export const VALID_LOGIN: LoginPayload = {
-  // Will be set dynamically for each test
-  username: "",
-  // Static test data
-  password: "Password1!"
+   // Will be set dynamically for each test
+   username: "",
+   // Static test data
+   password: "Password1!"
 };
 
 /**
@@ -35,17 +41,17 @@ export const VALID_LOGIN: LoginPayload = {
  * @returns {{ username: string; email: string }} Object containing unique username and email
  */
 export const generateTestCredentials = (): { username: string; email: string } => {
-  const length = 62;
-  const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const randomBytes = (globalThis as any).crypto.getRandomValues(new Uint8Array(length));
-  const randomCharacters = Array.from(randomBytes, (b: number) => alphabet[b % alphabet.length]).join("");
-  // Generate a random identifier between 26 and 30 characters long for additional randomness
-  const identifier = randomCharacters.substring(0, 26 + Math.ceil(Math.random() * 4));
+   const length = 62;
+   const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+   const randomBytes = (globalThis as any).crypto.getRandomValues(new Uint8Array(length));
+   const randomCharacters = Array.from(randomBytes, (b: number) => alphabet[b % alphabet.length]).join("");
+   // Generate a random identifier between 26 and 30 characters long for additional randomness
+   const identifier = randomCharacters.substring(0, 26 + Math.ceil(Math.random() * 4));
 
-  return {
-    username: identifier,
-    email: `${identifier}@example.com`
-  };
+   return {
+      username: identifier,
+      email: `${identifier}@example.com`
+   };
 };
 
 /**
@@ -54,8 +60,8 @@ export const generateTestCredentials = (): { username: string; email: string } =
  * @returns {RegisterPayload} Complete valid registration data with unique credentials
  */
 export const createValidRegistration = (): RegisterPayload => ({
-  ...VALID_REGISTRATION,
-  ...generateTestCredentials()
+   ...VALID_REGISTRATION,
+   ...generateTestCredentials()
 });
 
 /**
@@ -64,8 +70,8 @@ export const createValidRegistration = (): RegisterPayload => ({
  * @returns {LoginPayload} Complete valid login data with unique credentials
  */
 export const createValidLogin = (): LoginPayload => {
-  const { username } = generateTestCredentials();
-  return { ...VALID_LOGIN, username };
+   const { username } = generateTestCredentials();
+   return { ...VALID_LOGIN, username };
 };
 
 /**
@@ -75,22 +81,22 @@ export const createValidLogin = (): LoginPayload => {
  * @returns {RegisterPayload} Registration data with specified password weakness
  */
 export const createUserWithWeakPassword = (weakness: "tooShort" | "noUppercase" | "noLowercase" | "noNumber" | "noSpecial" = "tooShort"): RegisterPayload => {
-  const passwords = {
-    tooShort: "Short1!",
-    noUppercase: "password123!",
-    noLowercase: "PASSWORD123!",
-    noNumber: "Password!",
-    noSpecial: "Password123"
-  };
+   const passwords = {
+      tooShort: "Short1!",
+      noUppercase: "password123!",
+      noLowercase: "PASSWORD123!",
+      noNumber: "Password!",
+      noSpecial: "Password123"
+   };
 
-  const password = passwords[weakness];
+   const password = passwords[weakness];
 
-  return {
-    ...VALID_REGISTRATION,
-    ...generateTestCredentials(),
-    password,
-    verifyPassword: password
-  };
+   return {
+      ...VALID_REGISTRATION,
+      ...generateTestCredentials(),
+      password,
+      verifyPassword: password
+   };
 };
 
 /**
@@ -99,10 +105,10 @@ export const createUserWithWeakPassword = (weakness: "tooShort" | "noUppercase" 
  * @returns {RegisterPayload} Registration data with mismatched passwords
  */
 export const createUserWithMismatchedPasswords = (): RegisterPayload => ({
-  ...VALID_REGISTRATION,
-  ...generateTestCredentials(),
-  password: "Password123!",
-  verifyPassword: "Password456!"
+   ...VALID_REGISTRATION,
+   ...generateTestCredentials(),
+   password: "Password123!",
+   verifyPassword: "Password456!"
 });
 
 /**
@@ -112,19 +118,19 @@ export const createUserWithMismatchedPasswords = (): RegisterPayload => ({
  * @returns {RegisterPayload} Registration data with invalid email
  */
 export const createUserWithInvalidEmail = (invalidType: "noAtSymbol" | "noDomain" | "noUsername" = "noAtSymbol"): RegisterPayload => {
-  const { username } = generateTestCredentials();
+   const { username } = generateTestCredentials();
 
-  const emails = {
-    noAtSymbol: `${username}example.com`,
-    noDomain: `${username}@`,
-    noUsername: "@example.com"
-  };
+   const emails = {
+      noAtSymbol: `${username}example.com`,
+      noDomain: `${username}@`,
+      noUsername: "@example.com"
+   };
 
-  return {
-    ...VALID_REGISTRATION,
-    username,
-    email: emails[invalidType]
-  };
+   return {
+      ...VALID_REGISTRATION,
+      username,
+      email: emails[invalidType]
+   };
 };
 
 /**
@@ -134,8 +140,8 @@ export const createUserWithInvalidEmail = (invalidType: "noAtSymbol" | "noDomain
  * @returns {LoginPayload} Login data for the specified user
  */
 export const createLoginCredentials = (username: string): LoginPayload => ({
-  ...VALID_LOGIN,
-  username
+   ...VALID_LOGIN,
+   username
 });
 
 /**
@@ -145,14 +151,14 @@ export const createLoginCredentials = (username: string): LoginPayload => ({
  * @returns {UserDetails} Mock user details object
  */
 export const createMockUserDetails = (overrides: Partial<UserDetails> = {}): UserDetails => {
-  const { username, email } = generateTestCredentials();
-  return {
-    username,
-    email,
-    name: "Test User",
-    birthday: "1990-01-01",
-    ...overrides
-  };
+   const { username, email } = generateTestCredentials();
+   return {
+      username,
+      email,
+      name: "Test User",
+      birthday: "1990-01-01",
+      ...overrides
+   };
 };
 
 /**
@@ -162,14 +168,14 @@ export const createMockUserDetails = (overrides: Partial<UserDetails> = {}): Use
  * @returns {Partial<UserUpdates>} Mock user updates object
  */
 export const createMockUserUpdates = (overrides: Partial<UserUpdates> = {}): Partial<UserUpdates> => {
-  const { username, email } = generateTestCredentials();
-  return {
-    username,
-    email,
-    name: "Updated Test User",
-    birthday: "1990-01-01",
-    ...overrides
-  };
+   const { username, email } = generateTestCredentials();
+   return {
+      username,
+      email,
+      name: "Updated Test User",
+      birthday: "1990-01-01",
+      ...overrides
+   };
 };
 
 /**
@@ -181,14 +187,14 @@ export const createMockUserUpdates = (overrides: Partial<UserUpdates> = {}): Par
  * @returns {Partial<UserUpdates>} Mock user updates with password change
  */
 export const createUserUpdatesWithPasswordChange = (
-  currentPassword: string = "Password1!",
-  newPassword: string = "NewPassword1!",
-  overrides: Partial<UserUpdates> = {}
+   currentPassword: string = "Password1!",
+   newPassword: string = "NewPassword1!",
+   overrides: Partial<UserUpdates> = {}
 ): Partial<UserUpdates> => ({
-  password: currentPassword,
-  newPassword,
-  verifyPassword: newPassword,
-  ...overrides
+   password: currentPassword,
+   newPassword,
+   verifyPassword: newPassword,
+   ...overrides
 });
 
 /**
@@ -200,17 +206,17 @@ export const createUserUpdatesWithPasswordChange = (
  * @returns {User} Mock user with specified credentials
  */
 export const createConflictingUser = (
-  username: string,
-  email: string,
-  overrides: Partial<User> = {}
+   username: string,
+   email: string,
+   overrides: Partial<User> = {}
 ): User => ({
-  user_id: "conflict-user-id-123",
-  username,
-  email,
-  name: "Conflict User",
-  birthday: "1990-01-01",
-  password: "Password1!",
-  ...overrides
+   user_id: "conflict-user-id-123",
+   username,
+   email,
+   name: "Conflict User",
+   birthday: "1990-01-01",
+   password: "Password1!",
+   ...overrides
 });
 
 /**
@@ -220,25 +226,25 @@ export const createConflictingUser = (
  * @returns {Partial<UserUpdates>} Invalid user updates object
  */
 export const createInvalidUserUpdates = (invalidType: "invalidEmail" | "invalidUsername" | "invalidBirthday" = "invalidEmail"): Partial<UserUpdates> => {
-  const { username } = generateTestCredentials();
+   const { username } = generateTestCredentials();
 
-  const invalidUpdates = {
-    invalidEmail: {
-      username,
-      email: "invalid-email-format"
-    },
-    invalidUsername: {
-      username: "a", // Too short
-      email: `${username}@example.com`
-    },
-    invalidBirthday: {
-      username,
-      email: `${username}@example.com`,
-      birthday: "invalid-date"
-    }
-  };
+   const invalidUpdates = {
+      invalidEmail: {
+         username,
+         email: "invalid-email-format"
+      },
+      invalidUsername: {
+         username: "a", // Too short
+         email: `${username}@example.com`
+      },
+      invalidBirthday: {
+         username,
+         email: `${username}@example.com`,
+         birthday: "invalid-date"
+      }
+   };
 
-  return invalidUpdates[invalidType];
+   return invalidUpdates[invalidType];
 };
 
 /**
@@ -250,29 +256,29 @@ export const createInvalidUserUpdates = (invalidType: "invalidEmail" | "invalidU
  * @returns {User} Mock user with case-varied credentials
  */
 export const createUserWithCaseVariation = (
-  baseUsername: string,
-  baseEmail: string,
-  variation: "uppercase" | "lowercase" | "mixed" = "uppercase"
+   baseUsername: string,
+   baseEmail: string,
+   variation: "uppercase" | "lowercase" | "mixed" = "uppercase"
 ): User => {
-  const variations = {
-    uppercase: {
-      username: baseUsername.toUpperCase(),
-      email: baseEmail.toUpperCase()
-    },
-    lowercase: {
-      username: baseUsername.toLowerCase(),
-      email: baseEmail.toLowerCase()
-    },
-    mixed: {
-      username: baseUsername.charAt(0).toUpperCase() + baseUsername.slice(1).toLowerCase(),
-      email: baseEmail.charAt(0).toUpperCase() + baseEmail.slice(1).toLowerCase()
-    }
-  };
+   const variations = {
+      uppercase: {
+         username: baseUsername.toUpperCase(),
+         email: baseEmail.toUpperCase()
+      },
+      lowercase: {
+         username: baseUsername.toLowerCase(),
+         email: baseEmail.toLowerCase()
+      },
+      mixed: {
+         username: baseUsername.charAt(0).toUpperCase() + baseUsername.slice(1).toLowerCase(),
+         email: baseEmail.charAt(0).toUpperCase() + baseEmail.slice(1).toLowerCase()
+      }
+   };
 
-  return createConflictingUser(
-    variations[variation].username,
-    variations[variation].email
-  );
+   return createConflictingUser(
+      variations[variation].username,
+      variations[variation].email
+   );
 };
 
 /**
@@ -281,12 +287,12 @@ export const createUserWithCaseVariation = (
  * @returns {Object} Object containing both mockUser and expectedUserDetails
  */
 export const createMockUserWithDetails = (): { mockUser: User; expectedUserDetails: UserDetails } => {
-  const mockUser: User = createMockUser();
-  const expectedUserDetails: UserDetails = {
-    username: mockUser.username,
-    name: mockUser.name,
-    email: mockUser.email,
-    birthday: mockUser.birthday
-  };
-  return { mockUser, expectedUserDetails };
+   const mockUser: User = createMockUser();
+   const expectedUserDetails: UserDetails = {
+      username: mockUser.username,
+      name: mockUser.name,
+      email: mockUser.email,
+      birthday: mockUser.birthday
+   };
+   return { mockUser, expectedUserDetails };
 };

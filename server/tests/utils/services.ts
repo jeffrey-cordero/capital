@@ -10,7 +10,7 @@ import { MockedServiceFunction } from "@/tests/utils/controllers";
  * @template T - The type of the repository function
  * @returns {jest.MockedFunction<T>} The mocked repository function
  */
-export type MockedRepositoryFunction<T extends (..._args: unknown[]) => unknown> = jest.MockedFunction<T>;
+export type MockedRepositoryFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 /**
  * Arranges argon2 mocks for password verification and hashing

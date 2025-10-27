@@ -22,7 +22,7 @@ export const newsSchema = z.object({
          url: z.string(),
          site: z.string(),
          site_country: z.string(),
-         published: z.string(),
+         published: z.string()
       })).min(25),
       totalResults: z.coerce.number()
    })

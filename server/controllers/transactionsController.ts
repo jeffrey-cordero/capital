@@ -12,7 +12,7 @@ import * as transactionsService from "@/services/transactionsService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with transactions
  */
-export const GET = asyncHandler(async(req: Request, res: Response) => {
+export const GET = asyncHandler(async(_: Request, res: Response) => {
    return submitServiceRequest(res, async() => transactionsService.fetchTransactions(res.locals.user_id));
 });
 

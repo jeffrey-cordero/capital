@@ -12,7 +12,7 @@ import * as accountsService from "@/services/accountsService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with user's accounts
  */
-export const GET = asyncHandler(async(req: Request, res: Response) => {
+export const GET = asyncHandler(async(_: Request, res: Response) => {
    return submitServiceRequest(res, async() => accountsService.fetchAccounts(res.locals.user_id));
 });
 

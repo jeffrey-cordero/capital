@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { zodPreprocessNumber } from "./numerics";
 
 /**
@@ -48,9 +49,9 @@ export const transactionSchema = z.object({
       message: "Date must be a valid date"
    }).min(new Date("1800-01-01"), {
       message: "Date must be on or after 1800-01-01"
-   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })),{
+   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
       message: "Date cannot be in the future"
-   }).transform((date) => date.toISOString()),
+   }).transform((date) => date.toISOString())
 });
 
 /**

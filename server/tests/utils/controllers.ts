@@ -11,7 +11,7 @@ import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
  * @template T - The type of the service function
  * @returns {jest.MockedFunction<T>} The mocked service function
  */
-export type MockedServiceFunction<T extends (..._args: unknown[]) => unknown> = jest.MockedFunction<T>;
+export type MockedServiceFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 /**
  * Arranges a mock submit service request function

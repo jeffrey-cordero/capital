@@ -10,11 +10,8 @@ env:
   NODE_VERSION: 20
 
 jobs:
-  client-lint:
-    name: "ESLint (Client)"
-    defaults:
-      run:
-        working-directory: client
+  setup:
+    name: "Dependencies"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -25,27 +22,159 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: 'client/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
-      - name: "Cache Node Modules"
+      - name: "Restore Node Modules (Client)"
         uses: actions/cache@v4
-        id: node-cache
+        id: node-cache-client
         with:
           path: client/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
+      - name: "Restore Node Modules (Server)"
+        uses: actions/cache@v4
+        id: node-cache-server
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Types)"
+        uses: actions/cache@v4
+        id: node-cache-types
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Root)"
+        uses: actions/cache@v4
+        id: node-cache-root
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Types Dist Cache"
+        uses: actions/cache@v4
+        id: types-dist-cache
+        with:
+          path: types/dist
+          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-types-dist-
+
       - name: "Install Node Dependencies"
-        working-directory: client
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm ci
+        if: steps.node-cache-client.outputs.cache-hit != 'true' || steps.node-cache-server.outputs.cache-hit != 'true' || steps.node-cache-types.outputs.cache-hit != 'true' || steps.node-cache-root.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: "Build Types"
+        if: steps.types-dist-cache.outputs.cache-hit != 'true'
+        run: npm --prefix types run build
+
+      - name: "Save Node Modules (Client)"
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Save Node Modules (Server)"
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Save Node Modules (Types)"
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Save Node Modules (Root)"
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Save Types Dist Cache"
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: types/dist
+          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-types-dist-
+
+  eslint:
+    name: "ESLint"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: "Restore Node Modules (Client)"
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Server)"
+        uses: actions/cache@v4
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Types)"
+        uses: actions/cache@v4
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Root)"
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
 
       - name: "Run ESLint"
-        run: npm run lint
+        run: npm run lint:all
 
-  client-e2e:
-    name: "Playwright (E2E)"
+  typecheck:
+    name: "Typecheck"
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -56,25 +185,152 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: 'client/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
-      - name: "Cache Node Modules"
+      - name: "Restore Node Modules (Client)"
         uses: actions/cache@v4
-        id: node-cache
         with:
           path: client/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Install Node Dependencies"
-        working-directory: client
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm ci
+      - name: "Restore Node Modules (Server)"
+        uses: actions/cache@v4
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
 
-      - name: "Build Shared Types"
-        working-directory: types
-        run: npm install && npm run build
+      - name: "Restore Node Modules (Types)"
+        uses: actions/cache@v4
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Types Dist Cache"
+        uses: actions/cache@v4
+        with:
+          path: types/dist
+          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-types-dist-
+
+      - name: "Restore Node Modules (Root)"
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Run Type Check"
+        run: npm run typecheck:all
+
+  unit:
+    name: "Unit"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: "Restore Node Modules (Server)"
+        uses: actions/cache@v4
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Types)"
+        uses: actions/cache@v4
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Types Dist Cache"
+        uses: actions/cache@v4
+        with:
+          path: types/dist
+          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-types-dist-
+
+      - name: "Run Jest Unit Tests"
+        run: npm run test:server
+
+      - name: "Upload Coverage Reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage-report
+          path: server/coverage/
+          retention-days: 30
+
+  client-e2e:
+    name: "E2E"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: "Restore Node Modules (Client)"
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Server)"
+        uses: actions/cache@v4
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Node Modules (Types)"
+        uses: actions/cache@v4
+        with:
+          path: types/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('types/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: "Restore Types Dist Cache"
+        uses: actions/cache@v4
+        id: types-dist-cache-restore
+        with:
+          path: types/dist
+          key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-types-dist-
+
+      - name: "Build Types if Needed"
+        if: steps.types-dist-cache-restore.outputs.cache-hit != 'true'
+        run: npm --prefix types run build
 
       - name: "Setup E2E Test Environment"
         run: ./.github/scripts/services.sh start
@@ -111,84 +367,4 @@ jobs:
         with:
           name: playwright-test-results
           path: client/playwright-report/
-          retention-days: 30
-
-  server-lint:
-    name: "ESLint (Server)"
-    defaults:
-      run:
-        working-directory: server
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
-
-      - name: "Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'server/package-lock.json'
-
-      - name: "Cache Node Modules"
-        uses: actions/cache@v4
-        id: node-cache
-        with:
-          path: server/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Install Node Dependencies"
-        working-directory: server
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm ci
-
-      - name: "Run ESLint"
-        run: npm run lint
-
-  server-unit:
-    name: "Jest (Unit)"
-    defaults:
-      run:
-        working-directory: server
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
-
-      - name: "Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'server/package-lock.json'
-
-      - name: "Cache Node Modules"
-        uses: actions/cache@v4
-        id: node-cache
-        with:
-          path: server/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('server/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: "Install Node Dependencies"
-        working-directory: server
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm ci
-
-      - name: "Build Shared Types"
-        working-directory: types
-        run: npm install && npm run build
-
-      - name: "Run Jest Unit Tests"
-        run: npm run test
-
-      - name: "Upload Coverage Reports"
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jest-coverage-report
-          path: server/coverage/
           retention-days: 30

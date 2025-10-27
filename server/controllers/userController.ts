@@ -25,7 +25,7 @@ export const POST = asyncHandler(async(req: Request, res: Response) => {
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with user details
  */
-export const GET = asyncHandler(async(req: Request, res: Response) => {
+export const GET = asyncHandler(async(_: Request, res: Response) => {
    return submitServiceRequest(res, async() => userService.fetchUserDetails(res.locals.user_id));
 });
 
@@ -50,6 +50,6 @@ export const PUT = asyncHandler(async(req: Request, res: Response) => {
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with deletion confirmation
  */
-export const DELETE = asyncHandler(async(req: Request, res: Response) => {
+export const DELETE = asyncHandler(async(_: Request, res: Response) => {
    return submitServiceRequest(res, async() => userService.deleteAccount(res));
 });

@@ -13,7 +13,7 @@ export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
       } else if (typeof value === "string") {
          // Ensure at most two decimal places
          const input: string = value.trim();
-         const decimals: number = (value.toString().split('.')[1] || '').length;
+         const decimals: number = (value.toString().split(".")[1] || "").length;
 
          if (input === "" || isNaN(Number(input)) || decimals > 2) {
             return NaN;
@@ -26,4 +26,4 @@ export const zodPreprocessNumber = (schema: z.ZodNumber): z.ZodEffects<any> => {
          return NaN;
       }
    }, schema);
-}
+};

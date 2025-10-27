@@ -9,6 +9,7 @@
     "dev": "nodemon -L --watch '**/*.ts' --ext ts --exec 'npm run build && node build/api/index.js'",
     "lint": "npx eslint '**/*.ts' --ignore-pattern '**/build/'",
     "lint:fix": "npx eslint '**/*.ts' --fix --ignore-pattern '**/build/'",
+    "typecheck": "npx tsc --noEmit",
     "test": "npx jest tests/* --collect-coverage --detectOpenHandles --verbose"
   },
   "keywords": [],

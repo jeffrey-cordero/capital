@@ -1,4 +1,10 @@
-import type { BudgetCategory, BudgetGoal, BudgetPeriod, BudgetType, OrganizedBudgets } from "../budgets";
+import type {
+   BudgetCategory,
+   BudgetGoal,
+   BudgetPeriod,
+   BudgetType,
+   OrganizedBudgets
+} from "../budgets";
 
 /**
  * Creates a valid budget category
@@ -7,12 +13,12 @@ import type { BudgetCategory, BudgetGoal, BudgetPeriod, BudgetType, OrganizedBud
  * @returns {Partial<BudgetCategory>} Budget category data
  */
 export const createBudgetCategory = (type: BudgetType = "Expenses"): Partial<BudgetCategory> => ({
-  name: `Budget-${Date.now()}`,
-  type,
-  budget_category_id: `budget-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-  goals: [],
-  goalIndex: 0,
-  category_order: 0
+   name: `Budget-${Date.now()}`,
+   type,
+   budget_category_id: `budget-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+   goals: [],
+   goalIndex: 0,
+   category_order: 0
 });
 
 /**
@@ -24,12 +30,12 @@ export const createBudgetCategory = (type: BudgetType = "Expenses"): Partial<Bud
  * @returns {BudgetGoal} Budget goal data
  */
 export const createBudgetGoal = (goal: number = 500.00, month?: number, year?: number): BudgetGoal => {
-  const now = new Date();
-  return {
-    goal,
-    month: month ?? now.getMonth() + 1,
-    year: year ?? now.getFullYear()
-  };
+   const now = new Date();
+   return {
+      goal,
+      month: month ?? now.getMonth() + 1,
+      year: year ?? now.getFullYear()
+   };
 };
 
 /**
@@ -38,8 +44,8 @@ export const createBudgetGoal = (goal: number = 500.00, month?: number, year?: n
  * @returns {Partial<BudgetCategory>} Income budget category data
  */
 export const createIncomeBudgetCategory = (): Partial<BudgetCategory> => ({
-  ...createBudgetCategory("Income"),
-  name: `Income-${Date.now()}`
+   ...createBudgetCategory("Income"),
+   name: `Income-${Date.now()}`
 });
 
 /**
@@ -48,8 +54,8 @@ export const createIncomeBudgetCategory = (): Partial<BudgetCategory> => ({
  * @returns {Partial<BudgetCategory>} Expenses budget category data
  */
 export const createExpensesBudgetCategory = (): Partial<BudgetCategory> => ({
-  ...createBudgetCategory("Expenses"),
-  name: `Expenses-${Date.now()}`
+   ...createBudgetCategory("Expenses"),
+   name: `Expenses-${Date.now()}`
 });
 
 /**
@@ -60,21 +66,21 @@ export const createExpensesBudgetCategory = (): Partial<BudgetCategory> => ({
  * @returns {Partial<BudgetCategory>} Budget category with goals
  */
 export const createBudgetCategoryWithGoals = (type: BudgetType = "Expenses", goalCount: number = 3): Partial<BudgetCategory> => {
-  const goals: BudgetGoal[] = [];
-  const now = new Date();
+   const goals: BudgetGoal[] = [];
+   const now = new Date();
 
-  for (let i = 0; i < goalCount; i++) {
-   const month = now.getMonth() + 1 - i;
-   const year = month <= 0 ? now.getFullYear() - 1 : now.getFullYear();
-   const adjustedMonth = month <= 0 ? 12 + month : month;
+   for (let i = 0; i < goalCount; i++) {
+      const month = now.getMonth() + 1 - i;
+      const year = month <= 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const adjustedMonth = month <= 0 ? 12 + month : month;
 
-   goals.push(createBudgetGoal(500.00 + (i * 100), adjustedMonth, year));
-  }
+      goals.push(createBudgetGoal(500.00 + (i * 100), adjustedMonth, year));
+   }
 
-  return {
-   ...createBudgetCategory(type),
-   goals,
-   goalIndex: 0
+   return {
+      ...createBudgetCategory(type),
+      goals,
+      goalIndex: 0
    };
 };
 
@@ -86,9 +92,9 @@ export const createBudgetCategoryWithGoals = (type: BudgetType = "Expenses", goa
  * @returns {BudgetGoal} Budget goal for the specified period
  */
 export const createBudgetGoalForPeriod = (period: BudgetPeriod, goal: number = 500.00): BudgetGoal => ({
-  goal,
-  month: period.month,
-  year: period.year
+   goal,
+   month: period.month,
+   year: period.year
 });
 
 /**
@@ -98,8 +104,8 @@ export const createBudgetGoalForPeriod = (period: BudgetPeriod, goal: number = 5
  * @returns {Partial<BudgetCategory>} Budget category with custom properties
  */
 export const createCustomBudgetCategory = (overrides: Partial<BudgetCategory> = {}): Partial<BudgetCategory> => ({
-  ...createBudgetCategory(),
-  ...overrides
+   ...createBudgetCategory(),
+   ...overrides
 });
 
 /**
@@ -108,16 +114,16 @@ export const createCustomBudgetCategory = (overrides: Partial<BudgetCategory> = 
  * @returns {Partial<OrganizedBudgets>} Organized budget structure
  */
 export const createOrganizedBudgets = (): Partial<OrganizedBudgets> => ({
-  Income: {
-   budget_category_id: `income-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-   goalIndex: 0,
-   goals: [createBudgetGoal(3000.00)],
-   categories: []
-  },
-  Expenses: {
-   budget_category_id: `expenses-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-   goalIndex: 0,
-   goals: [createBudgetGoal(2500.00)],
-   categories: []
-  }
+   Income: {
+      budget_category_id: `income-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      goalIndex: 0,
+      goals: [createBudgetGoal(3000.00)],
+      categories: []
+   },
+   Expenses: {
+      budget_category_id: `expenses-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      goalIndex: 0,
+      goals: [createBudgetGoal(2500.00)],
+      categories: []
+   }
 });

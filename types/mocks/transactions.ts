@@ -7,11 +7,11 @@ import type { Transaction } from "../transactions";
  * @returns {Partial<Transaction>} Income transaction data
  */
 export const createIncomeTransaction = (accountId: string): Partial<Transaction> => ({
-  account_id: accountId,
-  amount: 1000.00,
-  type: "Income",
-  date: new Date().toISOString(),
-  description: `Paycheck-${Date.now()}`
+   account_id: accountId,
+   amount: 1000.00,
+   type: "Income",
+   date: new Date().toISOString(),
+   description: `Paycheck-${Date.now()}`
 });
 
 /**
@@ -21,11 +21,11 @@ export const createIncomeTransaction = (accountId: string): Partial<Transaction>
  * @returns {Partial<Transaction>} Expense transaction data
  */
 export const createExpenseTransaction = (accountId: string): Partial<Transaction> => ({
-  account_id: accountId,
-  amount: -75.50,
-  type: "Expenses",
-  date: new Date().toISOString(),
-  description: `Grocery Shopping-${Date.now()}`
+   account_id: accountId,
+   amount: -75.50,
+   type: "Expenses",
+   date: new Date().toISOString(),
+   description: `Grocery Shopping-${Date.now()}`
 });
 
 /**
@@ -35,11 +35,11 @@ export const createExpenseTransaction = (accountId: string): Partial<Transaction
  * @returns {Partial<Transaction>} Large income transaction data
  */
 export const createLargeIncomeTransaction = (accountId: string): Partial<Transaction> => ({
-  account_id: accountId,
-  amount: 5000.00,
-  type: "Income",
-  date: new Date().toISOString(),
-  description: `Bonus-${Date.now()}`
+   account_id: accountId,
+   amount: 5000.00,
+   type: "Income",
+   date: new Date().toISOString(),
+   description: `Bonus-${Date.now()}`
 });
 
 /**
@@ -49,11 +49,11 @@ export const createLargeIncomeTransaction = (accountId: string): Partial<Transac
  * @returns {Partial<Transaction>} Large expense transaction data
  */
 export const createLargeExpenseTransaction = (accountId: string): Partial<Transaction> => ({
-  account_id: accountId,
-  amount: -1500.00,
-  type: "Expenses",
-  date: new Date().toISOString(),
-  description: `Rent Payment-${Date.now()}`
+   account_id: accountId,
+   amount: -1500.00,
+   type: "Expenses",
+   date: new Date().toISOString(),
+   description: `Rent Payment-${Date.now()}`
 });
 
 /**
@@ -64,8 +64,8 @@ export const createLargeExpenseTransaction = (accountId: string): Partial<Transa
  * @returns {Partial<Transaction>} Transaction data with custom properties
  */
 export const createCustomTransaction = (accountId: string, overrides: Partial<Transaction> = {}): Partial<Transaction> => ({
-  ...createIncomeTransaction(accountId),
-  ...overrides
+   ...createIncomeTransaction(accountId),
+   ...overrides
 });
 
 /**
@@ -77,11 +77,11 @@ export const createCustomTransaction = (accountId: string, overrides: Partial<Tr
  * @returns {Partial<Transaction>} Transaction data with specific date
  */
 export const createTransactionWithDate = (accountId: string, date: string, type: "Income" | "Expenses" = "Income"): Partial<Transaction> => ({
-  account_id: accountId,
-  amount: type === "Income" ? 1000.00 : -100.00,
-  type,
-  date,
-  description: `${type} Transaction-${Date.now()}`
+   account_id: accountId,
+   amount: type === "Income" ? 1000.00 : -100.00,
+   type,
+   date,
+   description: `${type} Transaction-${Date.now()}`
 });
 
 /**
@@ -92,10 +92,10 @@ export const createTransactionWithDate = (accountId: string, date: string, type:
  * @returns {Partial<Transaction>} Transaction data with budget category
  */
 export const createTransactionWithBudgetCategory = (accountId: string, budgetCategoryId: string): Partial<Transaction> => ({
-  account_id: accountId,
-  budget_category_id: budgetCategoryId,
-  amount: -200.00,
-  type: "Expenses",
-  date: new Date().toISOString(),
-  description: `Categorized Expense-${Date.now()}`
+   account_id: accountId,
+   budget_category_id: budgetCategoryId,
+   amount: -200.00,
+   type: "Expenses",
+   date: new Date().toISOString(),
+   description: `Categorized Expense-${Date.now()}`
 });

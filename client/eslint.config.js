@@ -28,6 +28,7 @@ export default [
       },
       rules: {
          "no-undef": "off",
+         "no-unused-vars": "off",
          "react/react-in-jsx-scope": "off",
          "@typescript-eslint/no-namespace": "off",
          "@typescript-eslint/no-explicit-any": "off",
@@ -78,13 +79,6 @@ export default [
          "no-multiple-empty-lines": ["error", { max: 1 }],
          "space-before-function-paren": ["error", "never"],
          "no-console": ["warn", { allow: ["warn", "error"] }],
-         "no-unused-vars": ["error", {
-            "argsIgnorePattern": "^_",
-            "varsIgnorePattern": "^_",
-            "caughtErrorsIgnorePattern": "^_",
-            "destructuredArrayIgnorePattern": "^_"
-         }
-         ],
 
          "react-hooks/rules-of-hooks": "error",
          "react-hooks/exhaustive-deps": "error",

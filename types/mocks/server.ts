@@ -1,6 +1,5 @@
-import type { ServerResponse } from "../server";
-import { HTTP_STATUS } from "../server";
-import { User } from "../user";
+import { HTTP_STATUS, type ServerResponse } from "../server";
+import { type User } from "../user";
 
 /**
  * Test constants for server testing
