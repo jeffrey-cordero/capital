@@ -18,10 +18,10 @@ stop_services() {
 }
 
 wait_for_services() {
-   local timeout="$1"
-   echo "Waiting for services to be ready (timeout: ${timeout}s)..."
-
    local elapsed=0
+   local timeout="$1"
+
+   echo "Waiting for services to be ready (timeout: ${timeout}s)..."
 
    start_time=$(date +%s)
    while (( $(date +%s) - start_time < timeout )); do
@@ -29,6 +29,7 @@ wait_for_services() {
          echo "Server is ready!"
          exit 0
       fi
+
       echo "Waiting for server..."
       sleep 5
    done
@@ -36,8 +37,10 @@ wait_for_services() {
    echo "ERROR: Server failed to start within ${timeout} seconds"
    echo "Final server logs:"
    docker compose logs server
+
    echo "Service status:"
    docker compose ps
+
    return 1
 }
 
@@ -53,11 +56,13 @@ health_check() {
       echo ""
       echo "Full service status:"
       docker compose ps
+
       return 1
    fi
 
    echo "All services are healthy"
    docker compose ps
+
    return 0
 }
 
@@ -65,17 +70,17 @@ setup_environment() {
    echo "Setting up environment variables..."
 
    if [[ ! -f client/.env.example || ! -f server/.env.example ]]; then
-      echo "ERROR: .env.example must be in both client and server folders"
+      echo "ERROR: .env.example must exist in both the client and server directories"
       return 1
    fi
 
    cp client/.env.example client/.env
    cp server/.env.example server/.env
 
-   # Disable rate limiting for end-to-end testing
+   # Disable rate limiting for end-to-end tests
    sed -i 's/^RATE_LIMITING_ENABLED=.*/RATE_LIMITING_ENABLED="false"/' server/.env
 
-   # Note the end-to-end testing environment is explicitly set to prevent external API calls
+   # Note the end-to-end test environment is explicitly set to prevent external API calls
    sed -i 's/^CI=.*/CI="true"/' server/.env
 
    echo "Environment configured for testing"

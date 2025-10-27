@@ -100,12 +100,23 @@ test.describe("API Error Handling", () => {
          await navigateToPath(page, LOGIN_ROUTE);
          await createUser(page);
 
-         // Reload to trigger the token refresh request
+        // Set up waitForResponse first
+         const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");
+
+         // Reload the page, which triggers the refresh request
          await page.reload();
 
-         const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
-         expect(refreshResponse.status()).toBe(HTTP_STATUS.OK);
-         expect(await refreshResponse.json()).toMatchObject({ data: { success: true } });
+         // Wait for the response and assert
+         const refreshResponse = await refreshPromise;
+
+         // Capture status and body immediately
+         const status = refreshResponse.status();
+         const bodyText = await refreshResponse.text();
+         const jsonBody = JSON.parse(bodyText);
+
+         // Assertions
+         expect(status).toBe(HTTP_STATUS.OK);
+         expect(jsonBody).toMatchObject({ data: { success: true } });
 
          // Verify the user is redirected to the dashboard after a successful token refresh
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
@@ -124,11 +135,20 @@ test.describe("API Error Handling", () => {
          // Clear the refresh token
          await removeRefreshTokenFromCookies(page);
 
+         // Set up waitForResponse first
+         const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");
+
          // Reload to trigger the token refresh request
          await page.reload();
 
-         const refreshResponse = await page.waitForResponse("**/api/v1/authentication/refresh");
-         expect(refreshResponse.status()).toBe(HTTP_STATUS.UNAUTHORIZED);
+         // Wait for the response and assert
+         const refreshResponse = await refreshPromise;
+
+         // Capture status immediately
+         const status = refreshResponse.status();
+
+         // Assertions
+         expect(status).toBe(HTTP_STATUS.UNAUTHORIZED);
 
          // Verify the user is redirected to the login page
          await expect(page).toHaveURL(LOGIN_ROUTE);
