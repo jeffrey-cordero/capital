@@ -124,36 +124,6 @@ export const submitForm = async(
 };
 
 /**
- * Waits for validation error indicators to appear on the form, checks for the
- * presence of MUI error helper text elements
- *
- * @param {Page} page - Playwright page instance
- * @returns {Promise<void>}
- */
-export const waitForErrorIndicators = async(page: Page): Promise<void> => {
-   await expect(page.locator(ERROR_INDICATOR_SELECTOR).first()).toBeVisible();
-};
-
-/**
- * Validates that a specific field displays the expected error message, locates
- * the FormHelperText element within the FormControl and verifies it contains
- * the expected validation error message
- *
- * @param {Page} page - Playwright page instance
- * @param {string} testId - The test id of the form field
- * @param {string} expectedMessage - The expected error message text
- * @returns {Promise<void>}
- */
-export const validateFieldErrorMessage = async(
-   page: Page,
-   testId: string,
-   expectedMessage: string
-): Promise<void> => {
-   const errorElement = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
-   await expect(errorElement).toContainText(expectedMessage);
-};
-
-/**
  * Expects a validation error for a specific field with the given message,
  * combines waiting for error indicators and validating the specific field
  * error message
@@ -168,20 +138,7 @@ export const expectValidationError = async(
    testId: string,
    expectedMessage: string
 ): Promise<void> => {
-   await waitForErrorIndicators(page);
-   await validateFieldErrorMessage(page, testId, expectedMessage);
-};
-
-/**
- * Clears all form fields to reset form state, useful for resetting forms
- * between test cases or validation checks
- *
- * @param {Page} page - Playwright page instance
- * @param {string[]} testIds - Array of test ids to clear
- * @returns {Promise<void>}
- */
-export const clearFormFields = async(page: Page, testIds: string[]): Promise<void> => {
-   for (const testId of testIds) {
-      await page.getByTestId(testId).clear();
-   }
+   await expect(page.locator(ERROR_INDICATOR_SELECTOR).first()).toBeVisible();
+   const errorElement = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
+   await expect(errorElement).toContainText(expectedMessage);
 };

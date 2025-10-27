@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import {
    DASHBOARD_ROUTE,
+   getRouteLinkTitle,
    LOGIN_ROUTE,
    SETTINGS_ROUTE,
    UNVERIFIED_ROUTES,
@@ -8,15 +9,36 @@ import {
 } from "@tests/utils/authentication";
 
 /**
- * Navigates to the specified path and waits for navigation to complete, waits
- * until network is idle to ensure all resources are loaded before proceeding
+ * Navigates to the specified path via sidebar navigation, simulates real user
+ * interaction by opening the sidebar and clicking the appropriate link
  *
  * @param {Page} page - Playwright page instance
- * @param {string} path - The route path to navigate to
+ * @param {string} path - The route path to navigate to (e.g., `"/dashboard/accounts"`)
  * @returns {Promise<void>}
  */
 export const navigateToPath = async(page: Page, path: string): Promise<void> => {
-   await page.goto(path, { waitUntil: "networkidle" });
+   const linkTitle = getRouteLinkTitle(path);
+
+   // Get current URL to check if we need initial navigation
+   const currentUrl = page.url();
+   const baseUrl = currentUrl.includes("localhost") ? currentUrl.split("/").slice(0, 3).join("/") : "";
+   const isInitialNavigation = !currentUrl.includes("localhost") || currentUrl === "about:blank";
+
+   // If this is the initial navigation, use page.goto first to load the app
+   if (isInitialNavigation || currentUrl === baseUrl) {
+      await page.goto(path, { waitUntil: "networkidle" });
+      return;
+   }
+
+   // Open the sidebar
+   await page.getByTestId("sidebar-toggle").click();
+
+   // Click the appropriate sidebar link
+   const link = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);
+   await link.click();
+
+   // Wait for navigation to complete
+   await page.waitForLoadState("networkidle");
 };
 
 /**
@@ -47,7 +69,7 @@ export const verifySidebarLinkActive = async(page: Page, linkTitle: string): Pro
  */
 export const testUnverifiedRouteRedirects = async(page: Page): Promise<void> => {
    for (const path of UNVERIFIED_ROUTES) {
-      await navigateToPath(page, path);
+      await page.goto(path, { waitUntil: "networkidle" });
       await expect(page).toHaveURL(DASHBOARD_ROUTE);
    }
 };
@@ -95,7 +117,7 @@ export const testRouteRedirects = async(page: Page, type: "verified" | "unverifi
    const redirectRoute = type === "verified" ? DASHBOARD_ROUTE : LOGIN_ROUTE;
 
    for (const path of routes) {
-      await navigateToPath(page, path);
+      await page.goto(path, { waitUntil: "networkidle" });
       await expect(page).toHaveURL(redirectRoute);
    }
 };

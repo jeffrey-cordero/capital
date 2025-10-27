@@ -22,16 +22,6 @@ export const SETTINGS_ROUTE = "/dashboard/settings";
 export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, SETTINGS_ROUTE] as const;
 
 /**
- * Checks if user is currently authenticated by verifying if the current URL includes the dashboard route
- *
- * @param {Page} page - Playwright page instance
- * @returns {Promise<boolean>} Promise resolving to true if user is authenticated, false otherwise
- */
-export const isUserAuthenticated = async(page: Page): Promise<boolean> => {
-   return page.url().includes(DASHBOARD_ROUTE);
-};
-
-/**
  * Derives the sidebar link title from a route path, extracts the last segment
  * after "/" and capitalizes it, special case: root route "/" returns "Home"
  *

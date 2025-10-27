@@ -1,4 +1,6 @@
+# Express.js
 /build/
-/logs/
 /node_modules/
+
+# Jest
 /coverage/

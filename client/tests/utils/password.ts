@@ -12,7 +12,7 @@ export const DEFAULT_TEST_PASSWORD = "TestPassword123!";
  * @param {string} testId - The test ID of the password field
  * @returns {Locator} Password input locator by test ID
  */
-export const getPasswordInput = (page: Page, testId: string): Locator => {
+const getPasswordInput = (page: Page, testId: string): Locator => {
    return page.getByTestId(testId);
 };
 
@@ -30,17 +30,6 @@ export const getPasswordToggleButton = (page: Page, testId: string): Locator => 
 };
 
 /**
- * Retrieves the current input type attribute of a password field
- *
- * @param {Page} page - Playwright page instance
- * @param {string} testId - The test ID of the password field
- * @returns {Promise<string | null>} Promise resolving to the input type ("password" or "text")
- */
-export const getPasswordInputType = async(page: Page, testId: string): Promise<string | null> => {
-   return await getPasswordInput(page, testId).getAttribute("type");
-};
-
-/**
  * Fills a password field with the specified value
  *
  * @param {Page} page - Playwright page instance
@@ -50,17 +39,6 @@ export const getPasswordInputType = async(page: Page, testId: string): Promise<s
  */
 export const fillPasswordField = async(page: Page, testId: string, password: string): Promise<void> => {
    await getPasswordInput(page, testId).fill(password);
-};
-
-/**
- * Clears a password field completely
- *
- * @param {Page} page - Playwright page instance
- * @param {string} testId - The test ID of the password field
- * @returns {Promise<void>}
- */
-export const clearPasswordField = async(page: Page, testId: string): Promise<void> => {
-   await getPasswordInput(page, testId).clear();
 };
 
 /**

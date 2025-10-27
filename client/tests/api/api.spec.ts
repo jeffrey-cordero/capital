@@ -100,7 +100,7 @@ test.describe("API Error Handling", () => {
          await navigateToPath(page, LOGIN_ROUTE);
          await createUser(page);
 
-        // Set up waitForResponse first
+         // Set up waitForResponse first
          const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");
 
          // Reload the page, which triggers the refresh request

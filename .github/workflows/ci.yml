@@ -68,7 +68,7 @@ jobs:
         uses: actions/cache@v4
         id: types-build-cache
         with:
-          path: types/dist
+          path: types/build
           key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-types-build-
@@ -173,7 +173,7 @@ jobs:
       - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
-          path: types/dist
+          path: types/build
           key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-types-build-
@@ -223,7 +223,7 @@ jobs:
       - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
-          path: types/dist
+          path: types/build
           key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-types-build-
@@ -281,7 +281,7 @@ jobs:
       - name: "Restore Types Build"
         uses: actions/cache@v4
         with:
-          path: types/dist
+          path: types/build
           key: ${{ runner.os }}-types-build-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-types-build-

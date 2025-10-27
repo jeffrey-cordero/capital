@@ -1,2 +1,3 @@
-**/dist/
-node_modules/**
+# Types & Mocks
+/build/
+/node_modules/

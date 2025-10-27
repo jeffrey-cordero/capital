@@ -49,7 +49,7 @@ test.describe("Routing and Navigation", () => {
 
       test("should handle direct navigation to root route", async({ page }) => {
          for (const route of UNVERIFIED_ROUTES) {
-            await navigateToPath(page, route);
+            await page.goto(route, { waitUntil: "networkidle" });
             await expect(page).toHaveURL(DASHBOARD_ROUTE);
          }
       });
@@ -66,7 +66,7 @@ test.describe("Routing and Navigation", () => {
       test("should allow access to public routes when unauthenticated", async({ page }) => {
          // Test root route access
          for (const route of UNVERIFIED_ROUTES) {
-            await navigateToPath(page, route);
+            await page.goto(route, { waitUntil: "networkidle" });
             await expect(page).toHaveURL(route);
          }
 
