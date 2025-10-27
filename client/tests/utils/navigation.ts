@@ -43,7 +43,7 @@ export async function navigateToPath(page: Page, path: string): Promise<void> {
    await link.click();
 
    // Wait for navigation to complete
-   await page.waitForLoadState("networkidle");
+   await expect(page).toHaveURL(path);
 }
 
 /**

@@ -103,9 +103,9 @@ capital/
      cp client/.env.example client/.env
      cp server/.env.example server/.env
      ```
-   * Fill in the required environment variables in each `.env` file (Database credentials, Session Secret, API Keys if using external data features, Client/Server URLs).
+   * Fill in the required environment variables in each `.env` file (Database credentials, Session Secret, API Keys, Client/Server URLs, etc.).
 4.  **Install Dependencies:**
-   * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces.
+   * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces:
    ```bash
    npm install
    ```
@@ -159,7 +159,7 @@ Run tests for the entire application:
 npm run test:all
 ```
 
-Run tests for individual components:
+Run tests for individual workspaces:
 
 ```bash
 # Server unit tests (Jest)

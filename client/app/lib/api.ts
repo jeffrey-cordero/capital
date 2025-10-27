@@ -34,19 +34,17 @@ interface ApiResponse<T> {
 }
 
 /**
- * Sends API request with authentication and error handling
- *
- * Automatically handles token refresh on `HTTP_STATUS.UNAUTHORIZED` responses with refreshable flag.
- * Retries the original request once after successful refresh.
+ * Sends API requests with automatic token refresh and retry logic, which may
+ * redirect an authenticated user to the login page if the refresh attempt fails
  *
  * @param {string} path - API endpoint path
- * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
+ * @param {string} method - HTTP method (`GET`, `POST`, `PUT`, `DELETE`)
  * @param {unknown} body - Request payload
  * @param {Dispatch<any>} dispatch - Redux dispatch function
  * @param {NavigateFunction} navigate - Router navigation function
  * @param {UseFormSetError<any>} [setError] - Optional form error setter
  * @param {boolean} [isRetrying=false] - Internal flag to prevent infinite refresh loops
- * @returns {Promise<T | number | null>} Response data, status code, or 0/null for server failures/errors
+ * @returns {Promise<T | number | null>} Response data, status code, or null for unexpected errors
  */
 export async function sendApiRequest<T>(
    path: string,
@@ -71,23 +69,21 @@ export async function sendApiRequest<T>(
 
       // Handle potential redirection cases
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
-         // Check if token is refreshable
+         // Check if we can attempt to refresh the access token
          const json: ApiResponse<{ refreshable?: boolean }> = await response.json();
 
          if (json.data?.refreshable && !isRetrying) {
-            // Attempt to refresh tokens
             const refreshResponse = await fetch(`${SERVER_URL}/authentication/refresh`, {
                method: "POST",
                credentials: "include"
             });
 
             if (refreshResponse.status === HTTP_STATUS.OK) {
-               // Refresh successful, retry the original request once
+               // Retry the original request once after a successful refresh attempt
                return sendApiRequest<T>(path, method, body, dispatch, navigate, setError, true);
             }
          }
 
-         // Refresh failed or not refreshable, redirect to login
          window.location.pathname = "/login";
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
@@ -128,23 +124,20 @@ export async function sendApiRequest<T>(
          return null;
       }
    } catch (error: any) {
-      // Log unexpected errors
-      const consoleMessage: string = error.message;
-      console.error("API request failed:", consoleMessage);
+      // Log unexpected error
+      const message: string = error.message;
+      console.error(`API request failed: ${message}`);
 
-      const isRatedLimited = consoleMessage.includes("Too many requests");
-      const alertMessage: string = !navigator.onLine ?
+      const isRatedLimited = message.includes("Too many requests");
+      const notificationMessage: string = !navigator.onLine ?
          "You are offline. Check your internet connection."
          :
          isRatedLimited ?
             "Too many requests. Please try again later."
             :
             "Internal Server Error";
+      dispatch(addNotification({ type: "error", message: notificationMessage }));
 
-      // Display error notification
-      dispatch(addNotification({ type: "error", message: alertMessage }));
-
-      // Server-side failure vs. error
-      return error.message === "Failed to fetch" || isRatedLimited ? 0 : null;
+      return null;
    }
 }

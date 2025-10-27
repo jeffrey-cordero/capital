@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
-import { verifySuccessNotification } from "@tests/utils/utils";
+import { dismissNotification, verifySuccessNotification } from "@tests/utils/utils";
 import { createValidLogin } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
@@ -18,8 +18,9 @@ test.describe("API Error Handling", () => {
          // Submit login form
          await submitForm(page, createValidLogin());
 
-         // Verify network error is displayed
+         // Verify network error is displayed and can be dismissed
          await verifySuccessNotification(page, "You are offline. Check your internet connection.", "error");
+         await dismissNotification(page);
 
          // Cleanup: Set browser back to online mode
          await page.context().setOffline(false);
@@ -41,8 +42,9 @@ test.describe("API Error Handling", () => {
          // Submit login form
          await submitForm(page, createValidLogin());
 
-         // Verify too many requests error is displayed
+         // Verify too many requests error is displayed and can be dismissed
          await verifySuccessNotification(page, message, "error");
+         await dismissNotification(page);
       });
    });
 
@@ -90,10 +92,14 @@ test.describe("API Error Handling", () => {
          await context.addCookies(cookies.filter((cookie: any) => cookie.name !== "refresh_token"));
       };
 
+      test.beforeEach(async({ page }) => {
+         // Mock the dashboard request to simulate token refresh scenarios
+         await mockDashboardWithTokenRefresh(page);
+      });
+
       test("should successfully refresh token and continue original request", async({ page }) => {
          // Set unique test ID for this test
          process.env.PLAYWRIGHT_TEST_ID = "successful_refresh";
-         await mockDashboardWithTokenRefresh(page);
 
          // Navigate to login page and login with a new user
          await navigateToPath(page, LOGIN_ROUTE);
@@ -125,7 +131,6 @@ test.describe("API Error Handling", () => {
       test("should redirect to login page when refresh token is missing", async({ page }) => {
          // Set unique test ID for this test
          process.env.PLAYWRIGHT_TEST_ID = "missing_refresh_token";
-         await mockDashboardWithTokenRefresh(page);
 
          // Navigate to login page and login with a new user
          await navigateToPath(page, LOGIN_ROUTE);
