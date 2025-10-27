@@ -15,7 +15,7 @@ env:
 
 jobs:
   setup:
-    name: "Setup Dependencies"
+    name: "Setup"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -25,10 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
-      - name: "Restore Node Modules (Client)"
+      - name: "Cache Node Modules (Client)"
         uses: actions/cache@v4
         id: node-cache-client
         with:
@@ -37,7 +37,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Node Modules (Server)"
+      - name: "Cache Node Modules (Server)"
         uses: actions/cache@v4
         id: node-cache-server
         with:
@@ -46,7 +46,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Node Modules (Types)"
+      - name: "Cache Node Modules (Types)"
         uses: actions/cache@v4
         id: node-cache-types
         with:
@@ -55,7 +55,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Node Modules (Root)"
+      - name: "Cache Node Modules (Root)"
         uses: actions/cache@v4
         id: node-cache-root
         with:
@@ -64,7 +64,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Restore Types Dist Cache"
+      - name: "Cache Types Dist"
         uses: actions/cache@v4
         id: types-dist-cache
         with:
@@ -82,7 +82,7 @@ jobs:
         run: npm --prefix types run build
 
   eslint:
-    name: "Lint Code"
+    name: "Lint"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -93,8 +93,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
       - name: "Restore Node Modules (Client)"
         uses: actions/cache@v4
@@ -132,7 +132,7 @@ jobs:
         run: npm run lint:all
 
   typecheck:
-    name: "Type Check"
+    name: "Typecheck"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -143,8 +143,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
       - name: "Restore Node Modules (Client)"
         uses: actions/cache@v4
@@ -186,11 +186,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
-      - name: "Run Type Check"
+      - name: "Run Typecheck"
         run: npm run typecheck:all
 
   unit:
-    name: "Unit Tests"
+    name: "Unit"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -201,8 +201,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
       - name: "Restore Node Modules (Server)"
         uses: actions/cache@v4
@@ -228,7 +228,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-types-dist-
 
-      - name: "Run Jest Unit Tests"
+      - name: "Run Unit Tests (Jest)"
         run: npm run test:server
 
       - name: "Upload Coverage Reports"
@@ -240,7 +240,7 @@ jobs:
           retention-days: 30
 
   client-e2e:
-    name: "End-to-End Tests"
+    name: "E2E"
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -251,8 +251,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
 
       - name: "Restore Node Modules (Client)"
         uses: actions/cache@v4
@@ -280,16 +280,11 @@ jobs:
 
       - name: "Restore Types Dist Cache"
         uses: actions/cache@v4
-        id: types-dist-cache-restore
         with:
           path: types/dist
           key: ${{ runner.os }}-types-dist-${{ hashFiles('types/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-types-dist-
-
-      - name: "Build Types if Needed"
-        if: steps.types-dist-cache-restore.outputs.cache-hit != 'true'
-        run: npm --prefix types run build
 
       - name: "Setup E2E Test Environment"
         run: ./.github/scripts/services.sh start
@@ -309,7 +304,7 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: "Run Playwright E2E Tests"
+      - name: "Run E2E Tests (Playwright)"
         working-directory: client
         env:
           VITE_CLIENT_PORT: 3000
