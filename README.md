@@ -98,15 +98,24 @@ capital/
     cd capital
     ```
 3.  **Environment Variables:**
-    * Copy the `.env.example` file to `.env`.
-    * Fill in the required environment variables in the `.env` file (Database credentials, Session Secret, API Keys if using external data features, Client/Server URLs).
+   * Copy environment-specific example files to `.env`:
+     ```bash
+     cp client/.env.example client/.env
+     cp server/.env.example server/.env
+     ```
+   * Fill in the required environment variables in each `.env` file (Database credentials, Session Secret, API Keys if using external data features, Client/Server URLs).
 4.  **Install Dependencies:**
-    * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces.
-    ```bash
-    npm install
-    ```
-5.  **Database Setup:**
-    * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
+   * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces.
+   ```bash
+   npm install
+   ```
+5.  **Build Application:**
+   * Build all workspaces (types, client, server):
+   ```bash
+   npm run build
+   ```
+6.  **Database Setup:**
+   * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
 
 ## Development
 
