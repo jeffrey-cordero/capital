@@ -9,7 +9,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
  */
 const getNotificationLocator = (page: Page): Locator => {
    return page.getByTestId("notification");
-}
+};
 
 /**
  * Verifies that a notification appears with the expected message and type

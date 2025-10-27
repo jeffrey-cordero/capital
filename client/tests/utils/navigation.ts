@@ -1,9 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import {
-   DASHBOARD_ROUTE,
-   LOGIN_ROUTE,
-   SETTINGS_ROUTE
-} from "@tests/utils/authentication";
+import { DASHBOARD_ROUTE, LOGIN_ROUTE, SETTINGS_ROUTE } from "@tests/utils/authentication";
 
 /**
  * Derives the sidebar link title from a route path
@@ -49,8 +45,6 @@ export async function navigateToPath(page: Page, path: string): Promise<void> {
    // Wait for navigation to complete
    await page.waitForLoadState("networkidle");
 }
-
-
 
 /**
  * Performs user logout operation through various interfaces

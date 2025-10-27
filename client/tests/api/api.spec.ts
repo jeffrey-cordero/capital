@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
+import { verifySuccessNotification } from "@tests/utils/utils";
 import { createValidLogin } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
@@ -18,8 +19,7 @@ test.describe("API Error Handling", () => {
          await submitForm(page, createValidLogin());
 
          // Verify network error is displayed
-         await expect(page.getByTestId("notification")).toBeVisible();
-         await expect(page.getByTestId("notification")).toContainText("You are offline. Check your internet connection.");
+         await verifySuccessNotification(page, "You are offline. Check your internet connection.", "error");
 
          // Cleanup: Set browser back to online mode
          await page.context().setOffline(false);
@@ -42,8 +42,7 @@ test.describe("API Error Handling", () => {
          await submitForm(page, createValidLogin());
 
          // Verify too many requests error is displayed
-         await expect(page.getByTestId("notification")).toBeVisible();
-         await expect(page.getByTestId("notification")).toContainText(message);
+         await verifySuccessNotification(page, message, "error");
       });
    });
 
