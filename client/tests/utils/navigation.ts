@@ -1,17 +1,18 @@
-import { expect, type Page } from "@playwright/test";
-import { DASHBOARD_ROUTE, LOGIN_ROUTE, SETTINGS_ROUTE } from "@tests/utils/authentication";
+import { type Page } from "@playwright/test";
+
+import { ROOT_ROUTE } from "./authentication";
 
 /**
  * Derives the sidebar link title from a route path
  *
- * @param {string} route - The route path
- * @returns {string} The expected sidebar link title
+ * @param {string} route - The route path (e.g. `"/dashboard"`, `"/login"`, `"/register"`, etc.)
+ * @returns {string} The expected sidebar link title (e.g. `"Dashboard"`, `"Login"`, `"Register"`, etc.)
  */
 export function getRouteLinkTitle(route: string): string {
-   if (route === "/") return "Home";
+   if (route === ROOT_ROUTE) return "Home";
 
-   const segments = route.split("/");
-   const lastSegment = segments[segments.length - 1];
+   const segments: string[] = route.split("/");
+   const lastSegment: string = segments[segments.length - 1];
    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
 }
 
@@ -22,48 +23,22 @@ export function getRouteLinkTitle(route: string): string {
  * @param {string} path - The route path to navigate to
  */
 export async function navigateToPath(page: Page, path: string): Promise<void> {
-   const linkTitle = getRouteLinkTitle(path);
+   const linkTitle: string = getRouteLinkTitle(path);
 
-   // Get current URL to check if we need initial navigation
-   const currentUrl = page.url();
-   const baseUrl = currentUrl.includes("localhost") ? currentUrl.split("/").slice(0, 3).join("/") : "";
-   const isInitialNavigation = !currentUrl.includes("localhost") || currentUrl === "about:blank";
+   // Get current URL to check if we need the initial navigation
+   const currentUrl: string = page.url();
+   const baseUrl: string = currentUrl.includes("localhost") ? currentUrl.split("/").slice(0, 3).join("/") : "";
+   const isInitialNavigation: boolean = currentUrl === "about:blank" || currentUrl === baseUrl || !currentUrl.includes("localhost");
 
-   // If this is the initial navigation, use page.goto first to load the app
-   if (isInitialNavigation || currentUrl === baseUrl) {
+   if (isInitialNavigation) {
+      // Use network-based navigation
       await page.goto(path, { waitUntil: "networkidle" });
-      return;
-   }
-
-   // Open the sidebar
-   await page.getByTestId("sidebar-toggle").click();
-
-   // Click the appropriate sidebar link
-   const link = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);
-   await link.click();
-
-   // Wait for navigation to complete
-   await expect(page).toHaveURL(path);
-}
-
-/**
- * Performs user logout operation through various interfaces
- *
- * @param {Page} page - Playwright page instance
- * @param {"sidebar" | "settings"} method - The logout method to use
- */
-export async function logoutUser(page: Page, method: "sidebar" | "settings"): Promise<void> {
-   // Ensure we are on the dashboard page before logging out
-   await expect(page).toHaveURL(DASHBOARD_ROUTE);
-
-   if (method === "sidebar") {
+   } else {
+      // Use sidebar-based navigation
       await page.getByTestId("sidebar-toggle").click();
-      await page.getByTestId("sidebar-logout").click();
-   } else if (method === "settings") {
-      await navigateToPath(page, SETTINGS_ROUTE);
-      await page.getByRole("button", { name: "Logout" }).click();
-      await page.getByTestId("settings-logout-confirm").click();
+      await page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`).click();
    }
 
-   await expect(page).toHaveURL(LOGIN_ROUTE);
+   // Wait for the navigation to fully complete before returning
+   await page.waitForURL(path, { waitUntil: "networkidle" });
 }

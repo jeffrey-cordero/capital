@@ -3,10 +3,11 @@ import {
    createUser,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
+   logoutUser,
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
-import { getRouteLinkTitle, logoutUser, navigateToPath } from "@tests/utils/navigation";
+import { getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
 
 test.describe("Routing and Navigation", () => {
    /**

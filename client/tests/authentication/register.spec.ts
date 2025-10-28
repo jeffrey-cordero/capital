@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
-import { expectValidationError, submitForm } from "@tests/utils/forms";
+import { assertValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle, getPasswordToggleButton } from "@tests/utils/password";
 import {
@@ -72,17 +72,17 @@ test.describe("User Registration", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await expectValidationError(page, "name", "Name is required");
-         await expectValidationError(page, "birthday", "Birthday is required");
-         await expectValidationError(page, "username", "Username is required");
-         await expectValidationError(page, "email", "Email is required");
-         await expectValidationError(page, "password", "Password is required");
-         await expectValidationError(page, "verifyPassword", "Password is required");
+         await assertValidationError(page, "name", "Name is required");
+         await assertValidationError(page, "birthday", "Birthday is required");
+         await assertValidationError(page, "username", "Username is required");
+         await assertValidationError(page, "email", "Email is required");
+         await assertValidationError(page, "password", "Password is required");
+         await assertValidationError(page, "verifyPassword", "Password is required");
       });
 
       test("should validate name field requirements", async({ page }) => {
          await submitForm(page, { name: "a" });
-         await expectValidationError(page, "name", "Name must be at least 2 characters");
+         await assertValidationError(page, "name", "Name must be at least 2 characters");
       });
 
       test("should validate email format", async({ page }) => {
@@ -91,7 +91,7 @@ test.describe("User Registration", () => {
          for (const invalidType of invalidEmailTypes) {
             const invalidUserData = createUserWithInvalidEmail(invalidType);
             await submitForm(page, invalidUserData);
-            await expectValidationError(page, "email", "Invalid email address");
+            await assertValidationError(page, "email", "Invalid email address");
          }
       });
 
@@ -99,23 +99,23 @@ test.describe("User Registration", () => {
          // Test missing uppercase
          const noUppercaseData = createUserWithWeakPassword("noUppercase");
          await submitForm(page, noUppercaseData);
-         await expectValidationError(page, "password", "Password must contain at least one uppercase letter");
+         await assertValidationError(page, "password", "Password must contain at least one uppercase letter");
 
          // Test missing lowercase
          const noLowercaseData = createUserWithWeakPassword("noLowercase");
          await submitForm(page, noLowercaseData);
-         await expectValidationError(page, "password", "Password must contain at least one lowercase letter");
+         await assertValidationError(page, "password", "Password must contain at least one lowercase letter");
 
          // Test missing number
          const noNumberData = createUserWithWeakPassword("noNumber");
          await submitForm(page, noNumberData);
-         await expectValidationError(page, "password", "Password must contain at least one number");
+         await assertValidationError(page, "password", "Password must contain at least one number");
       });
 
       test("should validate password confirmation matching", async({ page }) => {
          const mismatchedPasswordData = createUserWithMismatchedPasswords();
          await submitForm(page, mismatchedPasswordData);
-         await expectValidationError(page, "verifyPassword", "Passwords don't match");
+         await assertValidationError(page, "verifyPassword", "Passwords don't match");
       });
    });
 
@@ -142,7 +142,7 @@ test.describe("User Registration", () => {
             username: originalUsername.toUpperCase(),
             email: newEmail1
          });
-         await expectValidationError(page, "username", "Username already exists");
+         await assertValidationError(page, "username", "Username already exists");
 
          // Test 2: Email conflict with case sensitivity and whitespace
          await navigateToPath(page, REGISTER_ROUTE);
@@ -153,7 +153,7 @@ test.describe("User Registration", () => {
             username: newUsername2,
             email: emailWithWhitespace
          });
-         await expectValidationError(page, "email", "Email already exists");
+         await assertValidationError(page, "email", "Email already exists");
 
          // Test 3: Both username and email conflict with case variations
          await navigateToPath(page, REGISTER_ROUTE);
@@ -162,8 +162,8 @@ test.describe("User Registration", () => {
             username: `  ${originalUsername.toLowerCase()}  `,
             email: originalEmail.toUpperCase()
          });
-         await expectValidationError(page, "username", "Username already exists");
-         await expectValidationError(page, "email", "Email already exists");
+         await assertValidationError(page, "username", "Username already exists");
+         await assertValidationError(page, "email", "Email already exists");
       });
    });
 

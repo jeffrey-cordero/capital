@@ -2,41 +2,20 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { VALID_REGISTRATION } from "capital/mocks/user";
 
 /**
- * Default secure test password that meets complexity requirements
+ * Default secure test password that meets the application's complexity requirements
  */
 export const DEFAULT_TEST_PASSWORD = VALID_REGISTRATION.password;
 
 /**
- * Gets the password input element by test ID
+ * Gets the password visibility toggle icon for a specific password field by test ID
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test ID of the password field
- * @returns {Locator} Password input locator by test ID
- */
-function getPasswordInput(page: Page, testId: string): Locator {
-   return page.getByTestId(testId);
-}
-
-/**
- * Gets the password visibility toggle icon for a specific password field
- *
- * @param {Page} page - Playwright page instance
- * @param {string} testId - The test ID of the password field
- * @returns {Locator} Toggle icon locator
+ * @returns {Locator} Password visibility toggle icon locator
  */
 export function getPasswordToggleButton(page: Page, testId: string): Locator {
+   // Parent element will contain the password input and the visibility toggle icon as children nodes
    return page.getByTestId(testId).locator("..").locator("svg");
-}
-
-/**
- * Fills a password field with the specified value
- *
- * @param {Page} page - Playwright page instance
- * @param {string} testId - The test ID of the password field
- * @param {string} password - The password value to enter
- */
-export async function fillPasswordField(page: Page, testId: string, password: string): Promise<void> {
-   await getPasswordInput(page, testId).fill(password);
 }
 
 /**
@@ -61,7 +40,7 @@ export async function expectPasswordInputType(
    testId: string,
    expectedType: "password" | "text"
 ): Promise<void> {
-   await expect(getPasswordInput(page, testId)).toHaveAttribute("type", expectedType);
+   await expect(page.getByTestId(testId)).toHaveAttribute("type", expectedType);
 }
 
 /**
@@ -76,7 +55,7 @@ export async function expectPasswordInputValue(
    testId: string,
    expectedValue: string
 ): Promise<void> {
-   await expect(getPasswordInput(page, testId)).toHaveValue(expectedValue);
+   await expect(page.getByTestId(testId)).toHaveValue(expectedValue);
 }
 
 /**
@@ -84,26 +63,25 @@ export async function expectPasswordInputValue(
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test ID of the password field
- * @param {string} [testPassword=DEFAULT_TEST_PASSWORD] - Password to use for testing
+ * @param {string} [testPassword] - Test password to fill the password field with (defaults to `DEFAULT_TEST_PASSWORD`)
  */
 export async function assertPasswordVisibilityToggle(
    page: Page,
    testId: string,
    testPassword: string = DEFAULT_TEST_PASSWORD
 ): Promise<void> {
-   // Fill the password field with test password
-   await fillPasswordField(page, testId, testPassword);
+   await page.getByTestId(testId).fill(testPassword);
 
-   // Initially password should be hidden (type="password")
+   // Initially the password field should be hidden (type="password")
    await expectPasswordInputType(page, testId, "password");
    await expectPasswordInputValue(page, testId, testPassword);
 
-   // Toggle to show password (type="text")
+   // Toggle the password field to show the password (type="text")
    await togglePasswordVisibility(page, testId);
    await expectPasswordInputType(page, testId, "text");
    await expectPasswordInputValue(page, testId, testPassword);
 
-   // Toggle back to hide password (type="password")
+   // Toggle the password field to hide the password (type="password")
    await togglePasswordVisibility(page, testId);
    await expectPasswordInputType(page, testId, "password");
    await expectPasswordInputValue(page, testId, testPassword);

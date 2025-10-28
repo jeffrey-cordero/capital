@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
-import { expectValidationError, submitForm } from "@tests/utils/forms";
+import { assertValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle } from "@tests/utils/password";
 import { createValidLogin, VALID_LOGIN } from "capital/mocks/user";
@@ -31,13 +31,13 @@ test.describe("Login Authentication", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await expectValidationError(page, "username", "Username is required");
-         await expectValidationError(page, "password", "Password is required");
+         await assertValidationError(page, "username", "Username is required");
+         await assertValidationError(page, "password", "Password is required");
       });
 
       test("should validate username length requirement", async({ page }) => {
          await submitForm(page, { username: "a", password: "Password1!" });
-         await expectValidationError(page, "username", "Username must be at least 2 characters");
+         await assertValidationError(page, "username", "Username must be at least 2 characters");
       });
 
       test("should validate password length requirement", async({ page }) => {
@@ -46,7 +46,7 @@ test.describe("Login Authentication", () => {
             username,
             password: "short"
          });
-         await expectValidationError(page, "password", "Password must be at least 8 characters");
+         await assertValidationError(page, "password", "Password must be at least 8 characters");
       });
    });
 
@@ -58,8 +58,8 @@ test.describe("Login Authentication", () => {
             password: "WrongPassword123!"
          });
 
-         await expectValidationError(page, "username", "Invalid credentials");
-         await expectValidationError(page, "password", "Invalid credentials");
+         await assertValidationError(page, "username", "Invalid credentials");
+         await assertValidationError(page, "password", "Invalid credentials");
       });
 
       test("should successfully authenticate with valid credentials", async({ page }) => {

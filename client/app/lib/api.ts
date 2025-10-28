@@ -124,10 +124,11 @@ export async function sendApiRequest<T>(
          return null;
       }
    } catch (error: any) {
-      // Log unexpected error
+      // Log unexpected errors and display a general notification to the user
       const message: string = error.message;
       console.error(`API request failed: ${message}`);
 
+      // Determine the notification message based on the error type
       const isRatedLimited = message.includes("Too many requests");
       const notificationMessage: string = !navigator.onLine ?
          "You are offline. Check your internet connection."
