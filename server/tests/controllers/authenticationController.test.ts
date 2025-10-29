@@ -9,7 +9,6 @@ import {
    arrangeMockServiceValidationError,
    assertControllerErrorResponse,
    assertControllerSuccessResponse,
-   assertControllerValidationErrorResponse,
    callServiceMethod
 } from "@/tests/utils/controllers";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
@@ -99,7 +98,7 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication, [mockRes, mockReq.cookies.access_token]);
+         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication, [mockRes, mockReq.cookies.access_token], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       });
    });
 
@@ -128,8 +127,9 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockAuthenticateUser,
             [mockRes, mockReq.body.username, mockReq.body.password],
             HTTP_STATUS.UNAUTHORIZED,
@@ -148,8 +148,9 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockAuthenticateUser,
             [mockRes, undefined, mockReq.body.password],
             HTTP_STATUS.BAD_REQUEST,
@@ -167,8 +168,9 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockAuthenticateUser,
             [mockRes, mockReq.body.username, undefined],
             HTTP_STATUS.BAD_REQUEST,
@@ -187,8 +189,9 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockAuthenticateUser,
             [mockRes, mockReq.body.username, undefined],
             HTTP_STATUS.BAD_REQUEST,
@@ -206,7 +209,7 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password]);
+         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       });
    });
 
@@ -233,7 +236,7 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.REFRESH, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id]);
+         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       });
    });
 
@@ -258,7 +261,7 @@ describe("Authentication Controller", () => {
 
          await callServiceMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser, [mockRes]);
+         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser, [mockRes], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       });
 
       it("should return success for multiple logout calls", async() => {

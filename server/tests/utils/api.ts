@@ -4,18 +4,18 @@ import { Request, Response } from "express";
  * Mock Request/Response/NextFunction interfaces for unit testing purposes
  */
 export interface MockRequest extends Partial<Request> {
-   ip?: string;
-   body?: any;
-   params?: Record<string, string>;
-   query?: Record<string, string>;
-   locals?: Record<string, any>;
-   headers?: Record<string, string>;
-   cookies?: Record<string, string>;
+   ip: string;
+   body: any;
+   params: Record<string, string>;
+   query: Record<string, string>;
+   locals: Record<string, any>;
+   headers: Record<string, string>;
+   cookies: Record<string, string>;
 }
 
 export interface MockResponse extends Partial<Response> {
-   statusCode?: number;
-   jsonData?: any;
+   statusCode: number;
+   jsonData: any;
    status: jest.Mock;
    json: jest.Mock;
    end: jest.Mock;
@@ -51,6 +51,7 @@ type MockMiddleware = {
  * @returns {MockRequest} Mock request object
  */
 const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
+   ip: "127.0.0.1",
    cookies: options.cookies ?? {},
    body: options.body ?? {},
    params: options.params ?? {},

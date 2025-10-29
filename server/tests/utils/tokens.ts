@@ -1,5 +1,5 @@
 /**
- * Test token constants for authentication testing, used across middleware and controller tests for consistent token testing
+ * Test token constants for mocking authentication tokens used across middleware and authentication service tests
  */
 export const TEST_TOKENS = {
    VALID_ACCESS: "valid.access.token",

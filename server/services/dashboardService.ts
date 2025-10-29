@@ -185,10 +185,11 @@ export async function fetchNews(): Promise<News> {
  */
 export async function fetchEconomicalData(): Promise<ServerResponse> {
    try {
-      // For end-to-end testing, skip the external API calls
+      // For end-to-end testing environments, skip the external API calls
       if (process.env.CI === "true") {
          return sendServiceResponse(HTTP_STATUS.OK, backupEconomyData);
       }
+
       // First check if we have fresh data in Redis cache
       const cache = await getCacheValue("economy");
 

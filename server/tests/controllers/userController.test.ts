@@ -5,10 +5,11 @@ import { User } from "capital/user";
 import * as userController from "@/controllers/userController";
 import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 import {
+   arrangeMockServiceError,
    arrangeMockServiceSuccess,
    arrangeMockServiceValidationError,
+   assertControllerErrorResponse,
    assertControllerSuccessResponse,
-   assertControllerValidationErrorResponse,
    callServiceMethod
 } from "@/tests/utils/controllers";
 
@@ -54,8 +55,9 @@ describe("User Controller", () => {
 
          await callServiceMethod(userController.POST, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockCreateUser,
             [mockRes, mockReq.body],
             HTTP_STATUS.CONFLICT,
@@ -64,6 +66,16 @@ describe("User Controller", () => {
                email: "Email already exists"
             }
          );
+      });
+
+      it("should return internal server error for service errors", async() => {
+         mockReq.body = createMockUser();
+         const expectedError = new Error("Database connection failed");
+         const mockCreateUser = arrangeMockServiceError(userService, "createUser", expectedError);
+
+         await callServiceMethod(userController.POST, mockReq, mockRes, mockNext);
+
+         assertControllerErrorResponse(mockRes, expectedError, mockCreateUser, [mockRes, mockReq.body], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
       });
    });
 
@@ -111,8 +123,9 @@ describe("User Controller", () => {
 
          await callServiceMethod(userController.PUT, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockUpdateAccountDetails,
             [TEST_CONSTANTS.TEST_USER_ID, mockReq.body],
             HTTP_STATUS.CONFLICT,
@@ -147,8 +160,9 @@ describe("User Controller", () => {
 
          await callServiceMethod(userController.DELETE, mockReq, mockRes, mockNext);
 
-         assertControllerValidationErrorResponse(
+         assertControllerErrorResponse(
             mockRes,
+            undefined,
             mockDeleteAccount,
             [mockRes],
             HTTP_STATUS.NOT_FOUND,
