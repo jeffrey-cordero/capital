@@ -1,10 +1,5 @@
 import { expect, test } from "@tests/fixtures";
-import {
-   createUser,
-   DASHBOARD_ROUTE,
-   LOGIN_ROUTE,
-   REGISTER_ROUTE
-} from "@tests/utils/authentication";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle } from "@tests/utils/password";
@@ -17,14 +12,15 @@ test.describe("Login Authentication", () => {
 
    test.describe("UI Components and Layout", () => {
       test("should display login page with all required elements", async({ page }) => {
-         // Verify all form fields are present
+         // Assert that all form fields are present
          await expect(page.getByTestId("username")).toBeVisible();
          await expect(page.getByTestId("password")).toBeVisible();
          await expect(page.getByTestId("submit-button")).toBeVisible();
 
-         // Verify the navigation link to the registration page
-         await expect(page.getByTestId("register-link")).toBeVisible();
-         await page.getByTestId("register-link").click();
+         // Assert that the navigation link to the registration page is visible and clickable
+         const registerLink = page.getByTestId("register-link");
+         await expect(registerLink).toBeVisible();
+         await registerLink.click();
          await expect(page).toHaveURL(REGISTER_ROUTE);
       });
 
@@ -78,31 +74,25 @@ test.describe("Login Authentication", () => {
          // Register the test user using the default test credentials
          const { username } = await createUser(page, {}, false, usersRegistry);
 
-         // Login with the test user's credentials
-         await navigateToPath(page, LOGIN_ROUTE);
+         // Submit the login form with the test user's credentials
          await submitForm(page, { ...VALID_LOGIN, username });
 
-         // Verify successful authentication and automatic redirection to the dashboard
+         // Assert that the user is redirected to the dashboard and session persists after reloading the page
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
-
-         // Reload the page to verify session persistence
          await page.reload();
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
       });
 
-      test("should handle case-insensitive username login", async({ page, usersRegistry }) => {
-         // Register the test user with a lowercase username
+      test("should successfully authenticate with a case-insensitive username", async({ page, usersRegistry }) => {
+         // Create a test user with a lowercase username
          const { username: generatedUsername } = createValidLogin();
          const { username } = await createUser(page, { username: generatedUsername.toLowerCase() }, false, usersRegistry);
 
-         // Attempt to login with case-sensitive username mismatch
-         await navigateToPath(page, LOGIN_ROUTE);
+         // Submit the login form with the case-sensitive username
          await submitForm(page, { ...VALID_LOGIN, username: username.toUpperCase() });
 
-         // Verify successful authentication and automatic redirection to the dashboard
+         // Assert that the user is redirected to the dashboard and session persists after reloading the page
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
-
-         // Reload the page to verify session persistence
          await page.reload();
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
       });

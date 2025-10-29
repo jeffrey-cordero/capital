@@ -25,7 +25,6 @@ test.describe("Routing and Navigation", () => {
 
       // Assert that the link is visible and active
       const link: Locator = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);
-
       await expect(link).toBeVisible();
       await expect(link).toHaveAttribute("data-active", "true");
 

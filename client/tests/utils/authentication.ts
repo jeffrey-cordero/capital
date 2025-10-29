@@ -28,7 +28,7 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
- * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the test's final cleanup
+ * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
  * @returns {Promise<{ username: string; email: string }>} The unique credentials used for registration (username and email)
  */
 export async function createUser(
@@ -54,7 +54,7 @@ export async function createUser(
       await expect(page).toHaveURL(LOGIN_ROUTE);
    }
 
-   // Add the created user to the registry for the test's final cleanup
+   // Add the created user to the registry for the worker's final cleanup
    usersRegistry.add({ username: registrationData.username, password: registrationData.password });
 
    return {
@@ -114,7 +114,7 @@ async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRec
       await page.request.delete(`${serverUrl}/users`);
    }
 
-   // Remove all created test users from the registry for the test's final cleanup
+   // Remove all created test users from the registry for the worker's final cleanup
    usersToCleanup.clear();
 }
 

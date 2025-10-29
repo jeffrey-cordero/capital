@@ -1,29 +1,27 @@
 import { expect, test } from "@tests/fixtures";
-import {
-   createUser,
-   DASHBOARD_ROUTE,
-   LOGIN_ROUTE,
-   REGISTER_ROUTE
-} from "@tests/utils/authentication";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle, getPasswordToggleButton } from "@tests/utils/password";
 import {
    createUserWithInvalidEmail,
    createUserWithMismatchedPasswords,
+   createValidRegistration,
    generateTestCredentials,
-   INVALID_PASSWORD_CASES,
-   VALID_REGISTRATION
+   INVALID_PASSWORD_CASES
 } from "capital/mocks/user";
+import type { RegisterPayload } from "capital/user";
 
 test.describe("User Registration", () => {
+   const validRegistration: RegisterPayload = createValidRegistration();
+
    test.beforeEach(async({ page }) => {
       await navigateToPath(page, REGISTER_ROUTE);
    });
 
    test.describe("UI Components and Layout", () => {
       test("should display registration page with all required elements", async({ page }) => {
-         // Verify all form fields are present
+         // Assert that all form fields are present
          await expect(page.getByTestId("name")).toBeVisible();
          await expect(page.getByTestId("birthday")).toBeVisible();
          await expect(page.getByTestId("username")).toBeVisible();
@@ -32,9 +30,10 @@ test.describe("User Registration", () => {
          await expect(page.getByTestId("email")).toBeVisible();
          await expect(page.getByTestId("submit-button")).toBeVisible();
 
-         // Verify the navigation link to the login page
-         await expect(page.getByTestId("login-link")).toBeVisible();
-         await page.getByTestId("login-link").click();
+         // Assert that the navigation link to the login page is visible and clickable
+         const loginLink = page.getByTestId("login-link");
+         await expect(loginLink).toBeVisible();
+         await loginLink.click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });
 
@@ -62,12 +61,12 @@ test.describe("User Registration", () => {
          await expect(passwordInput).toHaveAttribute("type", "text");
          await expect(confirmPasswordInput).toHaveAttribute("type", "password");
 
-         // Show only confirm password field
+         // Show both password fields
          await confirmPasswordToggle.click();
          await expect(passwordInput).toHaveAttribute("type", "text");
          await expect(confirmPasswordInput).toHaveAttribute("type", "text");
 
-         // Hide password field, confirm password should remain visible
+         // Hide password field and keep confirm password visible
          await passwordToggle.click();
          await expect(passwordInput).toHaveAttribute("type", "password");
          await expect(confirmPasswordInput).toHaveAttribute("type", "text");
@@ -87,32 +86,59 @@ test.describe("User Registration", () => {
          });
       });
 
-      test("should validate name field requirements", async({ page }) => {
-         await submitForm(page, { name: "a" });
+      test("should validate username minimum length requirement", async({ page }) => {
+         await submitForm(page, { ...validRegistration, username: "a" });
+         await assertValidationErrors(page, { username: "Username must be at least 2 characters" });
+      });
+
+      test("should validate username maximum length requirement", async({ page }) => {
+         await submitForm(page, { ...validRegistration, username: "a".repeat(31) });
+         await assertValidationErrors(page, { username: "Username must be at most 30 characters" });
+      });
+
+      test("should validate name minimum length requirement", async({ page }) => {
+         await submitForm(page, { ...validRegistration, name: "a" });
          await assertValidationErrors(page, { name: "Name must be at least 2 characters" });
       });
 
+      test("should validate name maximum length requirement", async({ page }) => {
+         await submitForm(page, { ...validRegistration, name: "a".repeat(31) });
+         await assertValidationErrors(page, { name: "Name must be at most 30 characters" });
+      });
+
+      test("should validate birthday too early requirement", async({ page }) => {
+         await submitForm(page, { ...validRegistration, birthday: "1776-01-01" });
+         await assertValidationErrors(page, { birthday: "Birthday must be on or after 1800-01-01" });
+      });
+
+      test("should validate birthday too late requirement", async({ page }) => {
+         // Application constraints are based on the Pacific/Kiritimati timezone to avoid global timezone issues
+         const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+         const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+         const tomorrowString = tomorrow.toISOString().split("T")[0];
+
+         await submitForm(page, { ...validRegistration, birthday: tomorrowString });
+         await assertValidationErrors(page, { birthday: "Birthday cannot be in the future" });
+      });
+
       test("should validate email format", async({ page }) => {
-         const invalidEmailTypes: Array<"noAtSymbol" | "noDomain" | "noUsername"> = ["noAtSymbol", "noDomain", "noUsername"];
+         const invalidEmailTypes = ["noAtSymbol", "noDomain", "noUsername"] as const;
 
          for (const invalidType of invalidEmailTypes) {
-            const invalidUserData = createUserWithInvalidEmail(invalidType);
-            await submitForm(page, invalidUserData);
+            await submitForm(page, createUserWithInvalidEmail(invalidType));
             await assertValidationErrors(page, { email: "Invalid email address" });
          }
       });
 
       INVALID_PASSWORD_CASES.forEach(({ name, password, expected }: { name: string; password: string; expected: string }) => {
          test(`should enforce password complexity: ${name}`, async({ page }) => {
-            const userData = { ...VALID_REGISTRATION, ...generateTestCredentials(), password, verifyPassword: password };
-            await submitForm(page, userData);
+            await submitForm(page, { ...validRegistration, password, verifyPassword: password });
             await assertValidationErrors(page, { password: expected });
          });
       });
 
       test("should validate password confirmation matching", async({ page }) => {
-         const mismatchedPasswordData = createUserWithMismatchedPasswords();
-         await submitForm(page, mismatchedPasswordData);
+         await submitForm(page, createUserWithMismatchedPasswords());
          await assertValidationErrors(page, { verifyPassword: "Passwords don't match" });
       });
    });
@@ -121,7 +147,10 @@ test.describe("User Registration", () => {
       test("should maintain session after successful registration", async({ page, usersRegistry }) => {
          await createUser(page, {}, true, usersRegistry);
 
-         // Verify session persists across page reload
+         // Assert that the user is redirected to the dashboard
+         await expect(page).toHaveURL(DASHBOARD_ROUTE);
+
+         // Reload the page to assert session persistence
          await page.reload();
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
       });
@@ -129,36 +158,35 @@ test.describe("User Registration", () => {
 
    test.describe("Duplicate Registration Prevention", () => {
       test("should prevent conflicts with case sensitivity variations", async({ page, usersRegistry }) => {
-         // Create initial user
+         // Create the conflicting user and navigate to the registration page
          const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false, usersRegistry);
-
-         // Test 1: Username conflict with case sensitivity
          await navigateToPath(page, REGISTER_ROUTE);
+
+         // Submit the registration form with a username conflict including case sensitivity and whitespace
          const { email: newEmail1 } = generateTestCredentials();
+         const usernameWithWhitespace: string = `  ${originalUsername.toUpperCase()}  `;
          await submitForm(page, {
-            ...VALID_REGISTRATION,
-            username: originalUsername.toUpperCase(),
+            ...validRegistration,
+            username: usernameWithWhitespace,
             email: newEmail1
          });
          await assertValidationErrors(page, { username: "Username already exists" });
 
-         // Test 2: Email conflict with case sensitivity and whitespace
-         await navigateToPath(page, REGISTER_ROUTE);
+         // Submit the registration form with an email conflict including case sensitivity and whitespace
          const { username: newUsername2 } = generateTestCredentials();
          const emailWithWhitespace = `  ${originalEmail.toUpperCase()}  `;
          await submitForm(page, {
-            ...VALID_REGISTRATION,
+            ...validRegistration,
             username: newUsername2,
             email: emailWithWhitespace
          });
          await assertValidationErrors(page, { email: "Email already exists" });
 
-         // Test 3: Both username and email conflict with case variations
-         await navigateToPath(page, REGISTER_ROUTE);
+         // Submit the registration form with both username and email conflicts including case sensitivity and whitespace
          await submitForm(page, {
-            ...VALID_REGISTRATION,
-            username: `  ${originalUsername.toLowerCase()}  `,
-            email: originalEmail.toUpperCase()
+            ...validRegistration,
+            username: usernameWithWhitespace,
+            email: emailWithWhitespace
          });
          await assertValidationErrors(page, { username: "Username already exists", email: "Email already exists" });
       });

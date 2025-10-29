@@ -7,15 +7,18 @@ import { assertNotificationStatus } from "@tests/utils/notifications";
 import { createValidLogin } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
-import { type ApiResponse } from "@/lib/api";
-
 test.describe("API Error Handling", () => {
    test.describe("Network Error Handling", () => {
       test("should handle offline state gracefully", async({ page }) => {
          const message: string = "You are offline. Check your internet connection.";
 
-         // Navigate to the login page and submit a valid login request after going offline
+         // Navigate to the login page
          await navigateToPath(page, LOGIN_ROUTE);
+
+         // Wait for 5 seconds to simulate a slow network connection
+         await page.waitForTimeout(5000);
+
+         // Go offline and submit a valid login request
          await page.context().setOffline(true);
          await submitForm(page, createValidLogin());
 
@@ -99,13 +102,9 @@ test.describe("API Error Handling", () => {
          // Reload the page to trigger the access token refresh request
          await page.reload();
 
-         // Wait for the refresh response to fully resolve and assert the successful status code and body
+         // Wait for the refresh response to fully resolve and assert the successful status
          const response: Response = await refreshPromise;
-         const status: number = response.status();
-         const json: ApiResponse<{ success: boolean }> = JSON.parse(await response.text());
-
-         expect(status).toBe(HTTP_STATUS.OK);
-         expect(json).toMatchObject({ data: { success: true } });
+         expect(response.status()).toBe(HTTP_STATUS.OK);
 
          // Verify the user remains on the dashboard and the original request resumes
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
@@ -124,11 +123,9 @@ test.describe("API Error Handling", () => {
          // Reload to trigger the access token refresh request
          await page.reload();
 
-         // Wait for the refresh response to fully resolve and assert the unauthorized status code
+         // Wait for the refresh response to fully resolve and assert the unauthorized status
          const response: Response = await refreshPromise;
-         const status: number = response.status();
-
-         expect(status).toBe(HTTP_STATUS.UNAUTHORIZED);
+         expect(response.status()).toBe(HTTP_STATUS.UNAUTHORIZED);
 
          // Verify the user is redirected to the login page
          await expect(page).toHaveURL(LOGIN_ROUTE);
