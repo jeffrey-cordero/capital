@@ -7,7 +7,7 @@ import { removeCacheValue } from "@/lib/redis";
 import { sendErrors, sendSuccess } from "@/lib/response";
 
 /**
- * Formats validation errors with HTTP_STATUS.BAD_REQUEST based on Zod schema results.
+ * Formats validation errors with `HTTP_STATUS.BAD_REQUEST` based on Zod schema results.
  *
  * @param {SafeParseReturnType<any, any> | null} fields - Zod validation results or null
  * @param {Record<string, string>} [errors] - Optional prepared error messages (used when fields is null)

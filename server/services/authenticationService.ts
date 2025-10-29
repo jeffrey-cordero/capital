@@ -14,25 +14,24 @@ import { findByUsername } from "@/repository/userRepository";
  *
  * @param {Response} res - Express response object
  * @param {string} token - JWT token for authentication
- * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with authentication status
+ * @returns {ServerResponse} A server response of `HTTP_STATUS.OK` with authentication status
  */
-export async function getAuthentication(res: Response, token: string): Promise<ServerResponse> {
+export function getAuthentication(res: Response, token: string): ServerResponse {
    try {
-      // Verify the JWT token where errors are potentially thrown
+      // Verify the JWT token, potentially throwing errors
       jwt.verify(token, process.env.SESSION_SECRET || "");
 
       return sendServiceResponse(HTTP_STATUS.OK, { authenticated: true });
    } catch (error: any) {
-      // Handle specific JWT verification errors
       if (error instanceof jwt.TokenExpiredError) {
-         // Signal to the client that refresh is needed
+         // Signal to the client that a refresh is required
          return sendServiceResponse(HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
       } else if (error instanceof jwt.JsonWebTokenError) {
-         // Clear invalid tokens
+         // Clear invalid/expired authentication tokens
          clearTokens(res);
          return sendServiceResponse(HTTP_STATUS.OK, { authenticated: false });
       } else {
-         // For unexpected errors, log them and return server error status
+         // Log any unexpected errors
          logger.error(error.stack);
          return sendServiceResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, undefined, { server: "Internal Server Error" });
       }
@@ -48,7 +47,7 @@ export async function getAuthentication(res: Response, token: string): Promise<S
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status or `HTTP_STATUS.UNAUTHORIZED` with error details
  */
 export async function authenticateUser(res: Response, username: string, password: string): Promise<ServerResponse> {
-   // Look up the user by username
+   // Look up the user by username, which is case-insensitive
    const user: User | null = await findByUsername(username);
 
    // Check if user exists and password matches using argon2 verification
@@ -67,22 +66,18 @@ export async function authenticateUser(res: Response, username: string, password
 }
 
 /**
- * Refreshes authentication tokens using a valid refresh token
- *
- * Issues new access and refresh tokens, rotating both for security.
- * The user_id is extracted from the refresh token by middleware.
+ * Refreshes authentication tokens using a valid refresh token, which
+ * issues new access and refresh tokens for security purposes
  *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID from validated refresh token
- * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status
+ * @returns {ServerResponse} A server response of `HTTP_STATUS.OK` with success status
  */
-export async function refreshToken(res: Response, user_id: string): Promise<ServerResponse> {
-   // Determine the expiration time of the refresh token
-   const expirationTime: number = new Date(res.locals.refresh_token_expiration).getTime();
-   const now: number = Date.now();
-   const secondsUntilExpire: number = Math.max(0, Math.floor((expirationTime - now) / 1000));
+export function refreshToken(res: Response, user_id: string): ServerResponse {
+   // Determine the expiration time of the refresh token in seconds
+   const secondsUntilExpire: number = Math.max(0, Math.floor((new Date(res.locals.refresh_token_expiration).getTime() - Date.now()) / 1000));
 
-   // Rotate both tokens for security
+   // Rotate both tokens for security purposes
    configureToken(res, user_id, secondsUntilExpire);
 
    return sendServiceResponse(HTTP_STATUS.OK, { success: true });
@@ -92,10 +87,10 @@ export async function refreshToken(res: Response, user_id: string): Promise<Serv
  * Logs out a user by clearing their authentication tokens
  *
  * @param {Response} res - Express response object
- * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with success status
+ * @returns {ServerResponse} A server response of `HTTP_STATUS.OK` with success status
  */
-export async function logoutUser(res: Response): Promise<ServerResponse> {
-   // Clear both access and refresh tokens
+export function logoutUser(res: Response): ServerResponse {
+   // Clear both authentication tokens
    clearTokens(res);
 
    return sendServiceResponse(HTTP_STATUS.OK, { success: true });
