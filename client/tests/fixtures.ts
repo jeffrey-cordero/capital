@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test";
+import { type Fixtures, test as base } from "@playwright/test";
 
 /**
  * Record of a created user's credentials
@@ -16,16 +16,21 @@ type SharedFixtures = {
  * Extend the base test with the shared fixtures
  */
 export const test = base.extend<SharedFixtures>({
-   createdUsersRegistry: [async({}, use: any) => {
-   // Create the worker-scoped user registry to avoid race conditions across workers
-      const registry = new Set<CreatedUserRecord>();
+   createdUsersRegistry: [
+      // The first argument requires object destructuring pattern
+      // eslint-disable-next-line no-empty-pattern
+      async({}: Fixtures<SharedFixtures>, use: (value: Set<CreatedUserRecord>) => Promise<void>) => {
+         // Worker-scoped registry
+         const registry = new Set<CreatedUserRecord>();
 
-      // Use the registry throughout the worker lifecycle
-      await use(registry);
+         // Make the registry available to all tests in this worker
+         await use(registry);
 
-      // Clear the registry after the worker exists to avoid memory leaks
-      registry.clear();
-   }, { scope: "worker" }] as any
+         // Runs after worker exits
+         registry.clear();
+      },
+      { scope: "worker" }
+   ] as any
 });
 
 export { expect } from "@playwright/test";
