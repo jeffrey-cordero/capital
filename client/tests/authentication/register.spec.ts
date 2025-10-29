@@ -6,7 +6,7 @@ import {
    LOGIN_ROUTE,
    REGISTER_ROUTE
 } from "@tests/utils/authentication";
-import { assertValidationError, submitForm } from "@tests/utils/forms";
+import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle, getPasswordToggleButton } from "@tests/utils/password";
 import {
@@ -82,17 +82,19 @@ test.describe("User Registration", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await assertValidationError(page, "name", "Name is required");
-         await assertValidationError(page, "birthday", "Birthday is required");
-         await assertValidationError(page, "username", "Username is required");
-         await assertValidationError(page, "email", "Email is required");
-         await assertValidationError(page, "password", "Password is required");
-         await assertValidationError(page, "verifyPassword", "Password is required");
+         await assertValidationErrors(page, {
+            name: "Name is required",
+            birthday: "Birthday is required",
+            username: "Username is required",
+            email: "Email is required",
+            password: "Password is required",
+            verifyPassword: "Password is required"
+         });
       });
 
       test("should validate name field requirements", async({ page }) => {
          await submitForm(page, { name: "a" });
-         await assertValidationError(page, "name", "Name must be at least 2 characters");
+         await assertValidationErrors(page, { name: "Name must be at least 2 characters" });
       });
 
       test("should validate email format", async({ page }) => {
@@ -101,7 +103,7 @@ test.describe("User Registration", () => {
          for (const invalidType of invalidEmailTypes) {
             const invalidUserData = createUserWithInvalidEmail(invalidType);
             await submitForm(page, invalidUserData);
-            await assertValidationError(page, "email", "Invalid email address");
+            await assertValidationErrors(page, { email: "Invalid email address" });
          }
       });
 
@@ -109,14 +111,14 @@ test.describe("User Registration", () => {
          test(`should enforce password complexity: ${name}`, async({ page }) => {
             const userData = { ...VALID_REGISTRATION, ...generateTestCredentials(), password, verifyPassword: password };
             await submitForm(page, userData);
-            await assertValidationError(page, "password", expected);
+            await assertValidationErrors(page, { password: expected });
          });
       });
 
       test("should validate password confirmation matching", async({ page }) => {
          const mismatchedPasswordData = createUserWithMismatchedPasswords();
          await submitForm(page, mismatchedPasswordData);
-         await assertValidationError(page, "verifyPassword", "Passwords don't match");
+         await assertValidationErrors(page, { verifyPassword: "Passwords don't match" });
       });
    });
 
@@ -143,7 +145,7 @@ test.describe("User Registration", () => {
             username: originalUsername.toUpperCase(),
             email: newEmail1
          });
-         await assertValidationError(page, "username", "Username already exists");
+         await assertValidationErrors(page, { username: "Username already exists" });
 
          // Test 2: Email conflict with case sensitivity and whitespace
          await navigateToPath(page, REGISTER_ROUTE);
@@ -154,7 +156,7 @@ test.describe("User Registration", () => {
             username: newUsername2,
             email: emailWithWhitespace
          });
-         await assertValidationError(page, "email", "Email already exists");
+         await assertValidationErrors(page, { email: "Email already exists" });
 
          // Test 3: Both username and email conflict with case variations
          await navigateToPath(page, REGISTER_ROUTE);
@@ -163,8 +165,7 @@ test.describe("User Registration", () => {
             username: `  ${originalUsername.toLowerCase()}  `,
             email: originalEmail.toUpperCase()
          });
-         await assertValidationError(page, "username", "Username already exists");
-         await assertValidationError(page, "email", "Email already exists");
+         await assertValidationErrors(page, { username: "Username already exists", email: "Email already exists" });
       });
    });
 });

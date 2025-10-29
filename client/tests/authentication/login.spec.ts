@@ -6,7 +6,7 @@ import {
    LOGIN_ROUTE,
    REGISTER_ROUTE
 } from "@tests/utils/authentication";
-import { assertValidationError, submitForm } from "@tests/utils/forms";
+import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle } from "@tests/utils/password";
 import { createValidLogin, INVALID_PASSWORD_CASES, VALID_LOGIN } from "capital/mocks/user";
@@ -41,50 +41,42 @@ test.describe("Login Authentication", () => {
    test.describe("Form Validation", () => {
       test("should display validation errors for empty form submission", async({ page }) => {
          await submitForm(page, {});
-         await assertValidationError(page, "username", "Username is required");
-         await assertValidationError(page, "password", "Password is required");
+         await assertValidationErrors(page, {
+            username: "Username is required",
+            password: "Password is required"
+         });
       });
 
       test("should validate username minimum length requirement", async({ page }) => {
          await submitForm(page, { ...VALID_LOGIN, username: "a" });
-         await assertValidationError(page, "username", "Username must be at least 2 characters");
+         await assertValidationErrors(page, { username: "Username must be at least 2 characters" });
       });
 
       test("should validate username maximum length requirement", async({ page }) => {
          await submitForm(page, { ...VALID_LOGIN, username: "a".repeat(31) });
-         await assertValidationError(page, "username", "Username must be at most 30 characters");
+         await assertValidationErrors(page, { username: "Username must be at most 30 characters" });
       });
 
       test("should validate username allowed characters requirement", async({ page }) => {
          await submitForm(page, { ...VALID_LOGIN, username: "invalid@user!" });
-         await assertValidationError(page, "username", "Username may only contain letters, numbers, underscores, and hyphens");
+         await assertValidationErrors(page, { username: "Username may only contain letters, numbers, underscores, and hyphens" });
       });
    });
 
    INVALID_PASSWORD_CASES.forEach(({ name, password, expected }: { name: string; password: string; expected: string }) => {
       test(`should validate password complexity: ${name}`, async({ page }) => {
          await submitForm(page, { ...VALID_LOGIN, password });
-         await assertValidationError(page, "password", expected);
+         await assertValidationErrors(page, { password: expected });
       });
    });
 
    test.describe("Authentication Flow", () => {
       test("should reject invalid credentials", async({ page }) => {
          await submitForm(page, { username: "missingUsername", password: "WrongPassword123!" });
-         await assertValidationError(page, "username", "Invalid credentials");
-         await assertValidationError(page, "password", "Invalid credentials");
-      });
-
-      test("should handle case-sensitive username login", async({ page, createdUsersRegistry }) => {
-         // Register the test user with a lowercase username
-         const { username: generatedUsername } = createValidLogin();
-         const { username } = await createUser(page, { username: generatedUsername.toLowerCase() }, false, createdUsersRegistry);
-
-         // Attempt to login with case-sensitive username mismatch
-         await navigateToPath(page, LOGIN_ROUTE);
-         await submitForm(page, { ...VALID_LOGIN, username: username.toUpperCase() });
-         await assertValidationError(page, "username", "Invalid credentials");
-         await assertValidationError(page, "password", "Invalid credentials");
+         await assertValidationErrors(page, {
+            username: "Invalid credentials",
+            password: "Invalid credentials"
+         });
       });
 
       test("should successfully authenticate with valid credentials and session persistence", async({ page, createdUsersRegistry }) => {
@@ -94,6 +86,23 @@ test.describe("Login Authentication", () => {
          // Login with the test user's credentials
          await navigateToPath(page, LOGIN_ROUTE);
          await submitForm(page, { ...VALID_LOGIN, username });
+
+         // Verify successful authentication and automatic redirection to the dashboard
+         await expect(page).toHaveURL(DASHBOARD_ROUTE);
+
+         // Reload the page to verify session persistence
+         await page.reload();
+         await expect(page).toHaveURL(DASHBOARD_ROUTE);
+      });
+
+      test("should handle case-insensitive username login", async({ page, createdUsersRegistry }) => {
+         // Register the test user with a lowercase username
+         const { username: generatedUsername } = createValidLogin();
+         const { username } = await createUser(page, { username: generatedUsername.toLowerCase() }, false, createdUsersRegistry);
+
+         // Attempt to login with case-sensitive username mismatch
+         await navigateToPath(page, LOGIN_ROUTE);
+         await submitForm(page, { ...VALID_LOGIN, username: username.toUpperCase() });
 
          // Verify successful authentication and automatic redirection to the dashboard
          await expect(page).toHaveURL(DASHBOARD_ROUTE);

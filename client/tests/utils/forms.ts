@@ -94,22 +94,29 @@ export async function submitForm(
    }
 }
 
+
 /**
- * Asserts a validation error for a specific field with the given message is displayed
+ * Asserts validation errors for multiple fields
  *
  * @param {Page} page - Playwright page instance
- * @param {string} testId - The test id of the form field
- * @param {string} expectedMessage - The expected error message text
+ * @param {Record<string, string | string[]>} errors - Map of test ids to expected error message(s)
  */
-export async function assertValidationError(
+export async function assertValidationErrors(
    page: Page,
-   testId: string,
-   expectedMessage: string
+   errors: Record<string, string | string[]>
 ): Promise<void> {
-   // Assert the error indicator is visible
+   // Ensure at least one error indicator is visible
    await expect(page.locator(ERROR_INDICATOR_SELECTOR).first()).toBeVisible();
 
-   // Assert the error message is displayed for the specific field
-   const errorElement: Locator = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
-   await expect(errorElement).toContainText(expectedMessage);
+   for (const [testId, expected] of Object.entries(errors)) {
+      const errorElement: Locator = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
+
+      if (Array.isArray(expected)) {
+         for (const message of expected) {
+            await expect(errorElement).toContainText(message);
+         }
+      } else {
+         await expect(errorElement).toContainText(expected);
+      }
+   }
 }

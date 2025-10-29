@@ -113,8 +113,9 @@ describe("User Repository", () => {
       const assertUsernameLookupStructure = (): void => {
          assertQueryCalledWithKeyPhrases([
             "SELECT user_id, username, password",
-            "FROM users"
-         ], [username], 0, mockPool);
+            "FROM users",
+            "WHERE username_normalized = $1"
+         ], [username.toLowerCase().trim()], 0, mockPool);
       };
 
       it("should return user data when username exists", async() => {
@@ -124,8 +125,22 @@ describe("User Repository", () => {
          const result: User | null = await userRepository.findByUsername(username);
 
          assertUsernameLookupStructure();
+
          // Only the user ID, username, and password should be returned
          assertObjectProperties(result!, ["user_id", "username", "password"], ["email", "name", "birthday"]);
+         assertQueryResult(result, mockUser);
+      });
+
+      it("should perform case-insensitive username lookup", async() => {
+         const mockUser = { user_id: userId, username, password };
+         arrangeMockQuery([mockUser], mockPool);
+
+         // Provide uppercase and surrounding whitespace to verify normalization in repository layer
+         const mixedCaseUsername = `  ${username.toUpperCase()}  `;
+         const result: User | null = await userRepository.findByUsername(mixedCaseUsername);
+
+         // Query should still use normalized (lowercased/trimmed) username
+         assertUsernameLookupStructure();
          assertQueryResult(result, mockUser);
       });
 

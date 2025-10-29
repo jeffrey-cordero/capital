@@ -30,7 +30,7 @@ export async function findConflictingUsers(username: string, email: string, user
 }
 
 /**
- * Finds user by username
+ * Finds user by username (case-insensitive)
  *
  * @param {string} username - Username to find
  * @returns {Promise<User | null>} Matching user or null
@@ -39,9 +39,9 @@ export async function findByUsername(username: string): Promise<User | null> {
    const search = `
       SELECT user_id, username, password
       FROM users
-      WHERE username = $1;
+      WHERE username_normalized = $1;
    `;
-   const result = await query(search, [username]);
+   const result = await query(search, [username.toLowerCase().trim()]);
 
    return result.length > 0 ? result[0] : null;
 }
