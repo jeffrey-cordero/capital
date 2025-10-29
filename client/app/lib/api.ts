@@ -28,7 +28,7 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
  * @property {T} [data] - Response data payload
  * @property {Record<string, string>} [errors] - Error messages by field
  */
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
    data?: T;
    errors?: Record<string, string>;
 }

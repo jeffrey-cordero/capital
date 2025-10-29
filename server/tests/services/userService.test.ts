@@ -6,8 +6,8 @@ import {
    createMockUserWithDetails,
    createUserUpdatesWithPasswordChange,
    createUserWithCaseVariation,
-   createUserWithWeakPassword,
-   createValidRegistration
+   createValidRegistration,
+   INVALID_PASSWORD_CASES
 } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { RegisterPayload, User, UserDetails, UserUpdates } from "capital/user";
@@ -379,24 +379,21 @@ describe("User Service", () => {
          );
       });
 
-      const invalidPasswordCases = [
-         { type: "tooShort" as const, expectedError: "Password must be at least 8 characters" },
-         { type: "noUppercase" as const, expectedError: "Password must contain at least one uppercase letter" },
-         { type: "noLowercase" as const, expectedError: "Password must contain at least one lowercase letter" },
-         { type: "noNumber" as const, expectedError: "Password must contain at least one number" }
-      ];
-
-      invalidPasswordCases.forEach(({ type, expectedError }) => {
-         it(`should return validation error for invalid password: ${type}`, async() => {
-            const invalidPasswordUser: RegisterPayload = createUserWithWeakPassword(type);
+      INVALID_PASSWORD_CASES.forEach(({ name, password, expected }) => {
+         it(`should return validation error for invalid password: ${name}`, async() => {
+            const invalidPasswordUser: RegisterPayload = {
+               ...createValidRegistration(),
+               password,
+               verifyPassword: password
+            };
 
             const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidPasswordUser);
 
             assertUserValidationErrorResponse(
                result,
                {
-                  password: expectedError,
-                  verifyPassword: expectedError
+                  password: expected,
+                  verifyPassword: expected
                }
             );
          });

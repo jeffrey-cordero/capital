@@ -1,67 +1,66 @@
-import { expect, test } from "@playwright/test";
-import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
+import { type Cookie, type Page, type Response, type Route } from "@playwright/test";
+import { expect, test } from "@tests/fixtures";
+import { cleanupUsersWithIsolatedBrowser, createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertNotificationStatus } from "@tests/utils/notifications";
 import { createValidLogin } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
+import { type ApiResponse } from "@/lib/api";
+
 test.describe("API Error Handling", () => {
+   test.afterAll(async({ createdUsersRegistry }) => {
+      await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
+   });
+
    test.describe("Network Error Handling", () => {
       test("should handle offline state gracefully", async({ page }) => {
-         // Setup: Navigate to login page
+         const message: string = "You are offline. Check your internet connection.";
+
+         // Navigate to the login page and submit a valid login request after going offline
          await navigateToPath(page, LOGIN_ROUTE);
-
-         // Set browser to offline mode
          await page.context().setOffline(true);
-
-         // Submit login form
          await submitForm(page, createValidLogin());
 
-         // Verify network error is displayed and can be dismissed
-         await assertNotificationStatus(page, "You are offline. Check your internet connection.", "error");
-
-         // Cleanup: Set browser back to online mode
-         await page.context().setOffline(false);
+         await assertNotificationStatus(page, message, "error");
       });
 
       test("should handle too many requests gracefully", async({ page }) => {
-         const message = "Too many requests. Please try again later.";
-         // Mock API to return too many requests error
-         await page.route("**/api/v1/authentication/login", route => {
-            route.fulfill({
+         const message: string = "Too many requests. Please try again later.";
+
+         // Mock the login endpoint to return a too many requests error
+         await page.route("**/api/v1/authentication/login", async(route: Route) => {
+            await route.fulfill({
                status: HTTP_STATUS.TOO_MANY_REQUESTS,
                body: JSON.stringify({ errors: { server: message } })
             });
          });
 
-         // Setup: Navigate to login page
+         // Navigate to the login page and submit a valid login request
          await navigateToPath(page, LOGIN_ROUTE);
-
-         // Submit login form
          await submitForm(page, createValidLogin());
 
-         // Verify too many requests error is displayed and can be dismissed
          await assertNotificationStatus(page, message, "error");
       });
    });
 
    test.describe("Token Refresh Handling", () => {
       /**
-       * Mocks the dashboard request to simulate token refresh scenarios using Playwright environment
-       * variable to track refresh attempts per test
+       * Arranges the dashboard request to simulate token refresh scenarios using an environment
+       * variable to track refresh attempts per test (`PLAYWRIGHT_TEST_ID` environment variable)
        *
-       * @param {any} page - Playwright page object
+       * @param {Page} page - Playwright page instance
        */
-      const mockDashboardWithTokenRefresh = async(page: any): Promise<void> => {
-         const testId = process.env.PLAYWRIGHT_TEST_ID || "default";
-         const refreshKey = `refreshAttempted_${testId}`;
+      const arrangeDashboardWithTokenRefresh = async(page: Page): Promise<void> => {
+         const testId: string = process.env.PLAYWRIGHT_TEST_ID || "default";
+         const refreshKey: string = `refreshAttempted_${testId}`;
 
-         await page.route("**/api/v1/dashboard", async(route: any) => {
-            const refreshAttempted = (global as any)[refreshKey];
+         await page.route("**/api/v1/dashboard", async(route: Route) => {
+            const refreshAttempted: boolean = (global as any)[refreshKey];
 
             if (!refreshAttempted) {
-               // Mock the expiration of the access token while fetching the dashboard data to indicate a need for a refresh token request
+               // Mock the expiration of the access token while fetching the dashboard data
                (global as any)[refreshKey] = true;
 
                await route.fulfill({
@@ -69,7 +68,7 @@ test.describe("API Error Handling", () => {
                   body: JSON.stringify({ data: { refreshable: true } })
                });
             } else {
-               // A valid refresh request should continue the dashboard data request
+               // A valid refresh request should continue the original dashboard data request
                await route.continue();
             }
          });
@@ -78,78 +77,61 @@ test.describe("API Error Handling", () => {
       /**
        * Removes the refresh token from browser cookies while preserving other cookies
        *
-       * @param {any} page - Playwright page object
+       * @param {Page} page - Playwright page instance
        */
-      const removeRefreshTokenFromCookies = async(page: any): Promise<void> => {
-         // Get all cookies
+      const removeRefreshTokenFromCookies = async(page: Page): Promise<void> => {
+         // Get all of the cookies from the page context
          const context = page.context();
          const cookies = await context.cookies();
 
-         // Clear all cookies and re-add only the filtered cookies
+         // Clear all cookies and re-add all of the cookies except for the refresh token
          await context.clearCookies();
-         await context.addCookies(cookies.filter((cookie: any) => cookie.name !== "refresh_token"));
+         await context.addCookies(cookies.filter((cookie: Cookie) => cookie.name !== "refresh_token"));
       };
 
-      test.beforeEach(async({ page }) => {
-         // Mock the dashboard request to simulate token refresh scenarios
-         await mockDashboardWithTokenRefresh(page);
+      test.beforeEach(async({ page, createdUsersRegistry }) => {
+         await createUser(page, {}, true, createdUsersRegistry);
+         await arrangeDashboardWithTokenRefresh(page);
       });
 
-      test("should successfully refresh token and continue original request", async({ page }) => {
-         // Set unique test ID for this test
+      test("should successfully refresh access token and continue original request", async({ page }) => {
          process.env.PLAYWRIGHT_TEST_ID = "successful_refresh";
 
-         // Navigate to login page and login with a new user
-         await navigateToPath(page, LOGIN_ROUTE);
-         await createUser(page);
-
-         // Set up waitForResponse first
+         // Store the promise for the refresh response
          const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");
 
-         // Reload the page, which triggers the refresh request
+         // Reload the page to trigger the access token refresh request
          await page.reload();
 
-         // Wait for the response and assert
-         const refreshResponse = await refreshPromise;
+         // Wait for the refresh response to fully resolve and assert the successful status code and body
+         const response: Response = await refreshPromise;
+         const status: number = response.status();
+         const json: ApiResponse<{ success: boolean }> = JSON.parse(await response.text());
 
-         // Capture status and body immediately
-         const status = refreshResponse.status();
-         const bodyText = await refreshResponse.text();
-         const jsonBody = JSON.parse(bodyText);
-
-         // Assertions
          expect(status).toBe(HTTP_STATUS.OK);
-         expect(jsonBody).toMatchObject({ data: { success: true } });
+         expect(json).toMatchObject({ data: { success: true } });
 
-         // Verify the user is redirected to the dashboard after a successful token refresh
+         // Verify the user remains on the dashboard and the original request resumes
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
          await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
       });
 
-      test("should redirect to login page when refresh token is missing", async({ page }) => {
-         // Set unique test ID for this test
+      test("should redirect to login page when refresh token is missing during a token refresh attempt", async({ page }) => {
          process.env.PLAYWRIGHT_TEST_ID = "missing_refresh_token";
-
-         // Navigate to login page and login with a new user
-         await navigateToPath(page, LOGIN_ROUTE);
-         await createUser(page);
 
          // Clear the refresh token
          await removeRefreshTokenFromCookies(page);
 
-         // Set up waitForResponse first
+         // Store the promise for the refresh response
          const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");
 
-         // Reload to trigger the token refresh request
+         // Reload to trigger the access token refresh request
          await page.reload();
 
-         // Wait for the response and assert
-         const refreshResponse = await refreshPromise;
+         // Wait for the refresh response to fully resolve and assert the unauthorized status code
+         const response: Response = await refreshPromise;
+         const status: number = response.status();
 
-         // Capture status immediately
-         const status = refreshResponse.status();
-
-         // Assertions
          expect(status).toBe(HTTP_STATUS.UNAUTHORIZED);
 
          // Verify the user is redirected to the login page

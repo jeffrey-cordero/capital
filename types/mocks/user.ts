@@ -36,6 +36,16 @@ export const VALID_LOGIN: LoginPayload = {
 };
 
 /**
+ * Shared invalid password cases for tests
+ */
+export const INVALID_PASSWORD_CASES = [
+   { name: "too short", password: "Short1!", expected: "Password must be at least 8 characters" },
+   { name: "no uppercase", password: "password1!", expected: "Password must contain at least one uppercase letter" },
+   { name: "no lowercase", password: "PASSWORD1!", expected: "Password must contain at least one lowercase letter" },
+   { name: "no number", password: "Password!", expected: "Password must contain at least one number" }
+] as const;
+
+/**
  * Generates unique test credentials for username and email
  *
  * @returns {{ username: string; email: string }} Object containing unique username and email

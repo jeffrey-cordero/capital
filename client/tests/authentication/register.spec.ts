@@ -1,13 +1,19 @@
-import { expect, test } from "@playwright/test";
-import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
+import { expect, test } from "@tests/fixtures";
+import {
+   cleanupUsersWithIsolatedBrowser,
+   createUser,
+   DASHBOARD_ROUTE,
+   LOGIN_ROUTE,
+   REGISTER_ROUTE
+} from "@tests/utils/authentication";
 import { assertValidationError, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertPasswordVisibilityToggle, getPasswordToggleButton } from "@tests/utils/password";
 import {
    createUserWithInvalidEmail,
    createUserWithMismatchedPasswords,
-   createUserWithWeakPassword,
    generateTestCredentials,
+   INVALID_PASSWORD_CASES,
    VALID_REGISTRATION
 } from "capital/mocks/user";
 
@@ -16,9 +22,13 @@ test.describe("User Registration", () => {
       await navigateToPath(page, REGISTER_ROUTE);
    });
 
+   test.afterAll(async({ createdUsersRegistry }) => {
+      await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
+   });
+
    test.describe("UI Components and Layout", () => {
       test("should display registration page with all required elements", async({ page }) => {
-         // Verify essential form fields are present
+         // Verify all form fields are present
          await expect(page.getByTestId("name")).toBeVisible();
          await expect(page.getByTestId("birthday")).toBeVisible();
          await expect(page.getByTestId("username")).toBeVisible();
@@ -27,7 +37,7 @@ test.describe("User Registration", () => {
          await expect(page.getByTestId("email")).toBeVisible();
          await expect(page.getByTestId("submit-button")).toBeVisible();
 
-         // Verify navigation link to login
+         // Verify the navigation link to the login page
          await expect(page.getByTestId("login-link")).toBeVisible();
          await page.getByTestId("login-link").click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
@@ -95,21 +105,12 @@ test.describe("User Registration", () => {
          }
       });
 
-      test("should enforce password complexity requirements", async({ page }) => {
-         // Test missing uppercase
-         const noUppercaseData = createUserWithWeakPassword("noUppercase");
-         await submitForm(page, noUppercaseData);
-         await assertValidationError(page, "password", "Password must contain at least one uppercase letter");
-
-         // Test missing lowercase
-         const noLowercaseData = createUserWithWeakPassword("noLowercase");
-         await submitForm(page, noLowercaseData);
-         await assertValidationError(page, "password", "Password must contain at least one lowercase letter");
-
-         // Test missing number
-         const noNumberData = createUserWithWeakPassword("noNumber");
-         await submitForm(page, noNumberData);
-         await assertValidationError(page, "password", "Password must contain at least one number");
+      INVALID_PASSWORD_CASES.forEach(({ name, password, expected }: { name: string; password: string; expected: string }) => {
+         test(`should enforce password complexity: ${name}`, async({ page }) => {
+            const userData = { ...VALID_REGISTRATION, ...generateTestCredentials(), password, verifyPassword: password };
+            await submitForm(page, userData);
+            await assertValidationError(page, "password", expected);
+         });
       });
 
       test("should validate password confirmation matching", async({ page }) => {
@@ -120,8 +121,8 @@ test.describe("User Registration", () => {
    });
 
    test.describe("Registration Flow", () => {
-      test("should maintain session after successful registration", async({ page }) => {
-         await createUser(page);
+      test("should maintain session after successful registration", async({ page, createdUsersRegistry }) => {
+         await createUser(page, {}, true, createdUsersRegistry);
 
          // Verify session persists across page reload
          await page.reload();
@@ -130,9 +131,9 @@ test.describe("User Registration", () => {
    });
 
    test.describe("Duplicate Registration Prevention", () => {
-      test("should prevent conflicts with case sensitivity variations", async({ page }) => {
+      test("should prevent conflicts with case sensitivity variations", async({ page, createdUsersRegistry }) => {
          // Create initial user
-         const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false);
+         const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false, createdUsersRegistry);
 
          // Test 1: Username conflict with case sensitivity
          await navigateToPath(page, REGISTER_ROUTE);
@@ -166,5 +167,4 @@ test.describe("User Registration", () => {
          await assertValidationError(page, "email", "Email already exists");
       });
    });
-
 });
