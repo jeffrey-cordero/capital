@@ -43,7 +43,7 @@ export async function query(query: string, parameters: any[]): Promise<any[]> {
 
 /**
  * Executes multiple database operations within a transaction and automatically handles
- * `BEGIN`, `COMMIT`, and `ROLLBACK` statements for non-external database clients to avoid nested transactions.
+ * `BEGIN`, `COMMIT`, and `ROLLBACK` statements for non-external database clients to avoid nested transactions
  *
  * @param {(client: PoolClient) => Promise<T>} operations - Function containing database operations
  * @param {string} [isolationLevel] - Transaction isolation level
@@ -60,10 +60,10 @@ export async function transaction<T>(
 
    try {
       if (externalClient) {
-         // Use provided client for ongoing transactions to just run a series of statements
+         // Use the provided client for ongoing transactions
          client = externalClient;
       } else {
-         // Start a new internal transaction with specified isolation
+         // Start a new internal transaction with the specified isolation level
          client = await pool.connect();
          await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
       }
@@ -71,16 +71,17 @@ export async function transaction<T>(
       // Execute the series of database operations
       const result = await operations(client);
 
-      // Commit changes
+      // Commit the transaction
       if (!externalClient) await client.query("COMMIT;");
 
       return result;
    } catch (error: any) {
-      // Rollback on error
+      // Rollback the transaction on any errors to ensure data integrity
       if (!externalClient) await client?.query("ROLLBACK;");
+
       throw error;
    } finally {
-      // Return client to pool
+      // Return the client to the pool
       if (!externalClient) client?.release();
    }
 }

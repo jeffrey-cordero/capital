@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from "capital/server";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
 
 import { logger } from "@/lib/logger";
@@ -16,29 +16,25 @@ export const TOKEN_EXPIRATIONS = {
 /**
  * Sets JWT access and refresh tokens in HTTP-only cookies
  *
- * Access token expires in 24 hours, refresh token in 7 days.
- * Tokens are rotated on each refresh for security.
- *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID to include in token
  * @param {number} secondsUntilExpire - Seconds until refresh token expires
  */
 export function configureToken(res: Response, user_id: string, secondsUntilExpire?: number): void {
-   // Store access and refresh tokens in HTTP-only cookies
-   const access_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: "60min" });
+   const access_token = jwt.sign({ user_id }, process.env.SESSION_SECRET || "", { expiresIn: "60min" });
    res.cookie("access_token", access_token, {
       httpOnly: true,
       sameSite: "none",
-      // Use a long cookie lifetime and short JWT expiration for simpler token refresh handling
+      // Use a long cookie lifetime (1 week) and short JWT expiration (60 minutes) for token refresh simplicity
       maxAge: TOKEN_EXPIRATIONS.REFRESH_TOKEN,
       secure: true
    });
 
-   const refresh_token = jwt.sign({ user_id: user_id }, process.env.SESSION_SECRET || "", { expiresIn: secondsUntilExpire || "7d" });
+   const refresh_token = jwt.sign({ user_id }, process.env.SESSION_SECRET || "", { expiresIn: secondsUntilExpire || "7d" });
    res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       sameSite: "none",
-      // Set cookie lifetime to the remaining time (if provided) or the default refresh token duration
+      // Set the cookie lifetime to the remaining time in seconds or the default refresh token duration (1 week)
       maxAge: (secondsUntilExpire || TOKEN_EXPIRATIONS.REFRESH_TOKEN),
       secure: true,
       path: "/api/v1/authentication/refresh"
@@ -46,9 +42,7 @@ export function configureToken(res: Response, user_id: string, secondsUntilExpir
 }
 
 /**
- * Clears both access and refresh token cookies
- *
- * Used during logout to remove authentication tokens
+ * Clears both access and refresh tokens from HTTP-only cookies
  *
  * @param {Response} res - Express response object
  */
@@ -68,19 +62,17 @@ export function clearTokens(res: Response): void {
 }
 
 /**
- * Authenticates requests using the JWT access token from HTTP-only cookie
- *
- * Attaches user_id to res.locals on successful authentication.
- * Returns `HTTP_STATUS.UNAUTHORIZED` with `refreshable` flag for expired tokens.
+ * Middleware to authenticate requests using the JWT access token from cookies, which
+ * attaches `user_id` to `res.locals` if valid or clears invalid/expired authentication tokens,
+ * where all unauthorized, redirection, forbidden, and refreshable responses are handled internally
  *
  * @param {boolean} required - Whether authentication is required for this endpoint
- * @returns {Function} Express middleware function
+ * @returns {RequestHandler} Express request handler function
  */
-export function authenticateToken(required: boolean) {
+export function authenticateToken(required: boolean): RequestHandler {
    // eslint-disable-next-line consistent-return
-   return (req: Request, res: Response, next: NextFunction) => {
-      // Get token from cookies
-      const token = req.cookies.access_token;
+   return (req: Request, res: Response, next: NextFunction): void => {
+      const token: string = req.cookies.access_token;
 
       if (!token && required) {
          return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
@@ -88,71 +80,72 @@ export function authenticateToken(required: boolean) {
          return sendErrors(res, HTTP_STATUS.REDIRECT);
       } else if (required) {
          try {
-            // Verify token
+            // Verify the JWT token, potentially throwing errors
             const user = jwt.verify(token, process.env.SESSION_SECRET || "") as any;
 
-            // Ensure user_id exists in token payload
+            // Ensure the `user_id` exists in the token payload
             if (!user.user_id) {
+               // Malformed access token, clear both authentication tokens
                clearTokens(res);
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             }
 
-            // Make user ID available to further route handlers
+            // Make the `user_id` available to further route handlers
             res.locals.user_id = user.user_id;
             next();
          } catch (error: any) {
             if (error instanceof jwt.TokenExpiredError) {
-               // Signal to the client that refresh is needed
+               // Signal to the client that a refresh is required
                return sendSuccess(res, HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
             } else if (error instanceof jwt.JsonWebTokenError) {
-               // Clear invalid token
+               // Invalid/expired access token, clear both authentication tokens
                clearTokens(res);
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             } else {
-               // Log unexpected errors
+               // Log any unexpected errors
                logger.error(error.stack);
                return sendErrors(res, HTTP_STATUS.FORBIDDEN);
             }
          }
       } else {
-         // Authentication not required
+         // Authentication is not required, proceed to the next middleware in the chain
          next();
       }
    };
 }
 
 /**
- * Authenticates requests using the JWT refresh token from HTTP-only cookie
+ * Middleware to authenticate requests using the JWT refresh token from cookies, which
+ * attaches `user_id` and `refresh_token_expiration` to `res.locals` if valid or clears
+ * invalid/expired authentication tokens, where all unauthorized and forbidden responses
+ * are handled internally
  *
- * Validates refresh token and attaches user_id to res.locals for token rotation.
- * Used exclusively for the refresh endpoint.
- *
- * @returns {Function} Express middleware function
+ * @returns {RequestHandler} Express request handler function
  */
-export function authenticateRefreshToken() {
+export function authenticateRefreshToken(): RequestHandler {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
-      // Get refresh token from cookies
-      const token = req.cookies.refresh_token;
+      // Get the refresh token from the HTTP-only cookie
+      const token: string = req.cookies.refresh_token;
 
       if (!token) {
-         // Missing refresh token, clear both tokens
+         // Missing refresh token, clear both authentication tokens
          clearTokens(res);
          return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
       }
 
       try {
-         // Verify refresh token
+         // Verify the JWT refresh token, potentially throwing errors
          const user = jwt.verify(token, process.env.SESSION_SECRET || "") as any;
 
-         // Ensure user_id exists in token payload
+         // Ensure the `user_id` exists in the token payload
          if (!user.user_id) {
-            // User ID missing from token payload, clear both tokens
+            // The `user_id` is missing from the token payload, clear both authentication tokens
             clearTokens(res);
             return sendErrors(res, HTTP_STATUS.FORBIDDEN);
          }
 
-         // Make user ID available to refresh handler
+         // Make the `user_id` available to the refresh handler
          res.locals.user_id = user.user_id;
 
          // Make token available to refresh handler to limit the expiration time of the refresh token
@@ -161,11 +154,11 @@ export function authenticateRefreshToken() {
          next();
       } catch (error: any) {
          if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
-            // Invalid/expired refresh token, clear both tokens
+            // Invalid/expired refresh token, clear both authentication tokens
             clearTokens(res);
             return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
          } else {
-            // Log unexpected errors
+            // Log any unexpected errors
             logger.error(error.stack);
             return sendErrors(res, HTTP_STATUS.FORBIDDEN);
          }

@@ -3,5 +3,8 @@
 *.env.local
 *.env.staging
 **/node_modules/
+**/test-results/
+**/coverage/
+**/.artifacts/
 .DS_Store
 .vercel
