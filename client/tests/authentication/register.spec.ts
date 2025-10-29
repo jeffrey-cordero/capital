@@ -1,6 +1,5 @@
 import { expect, test } from "@tests/fixtures";
 import {
-   cleanupUsersWithIsolatedBrowser,
    createUser,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
@@ -20,10 +19,6 @@ import {
 test.describe("User Registration", () => {
    test.beforeEach(async({ page }) => {
       await navigateToPath(page, REGISTER_ROUTE);
-   });
-
-   test.afterAll(async({ createdUsersRegistry }) => {
-      await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
    });
 
    test.describe("UI Components and Layout", () => {
@@ -123,8 +118,8 @@ test.describe("User Registration", () => {
    });
 
    test.describe("Registration Flow", () => {
-      test("should maintain session after successful registration", async({ page, createdUsersRegistry }) => {
-         await createUser(page, {}, true, createdUsersRegistry);
+      test("should maintain session after successful registration", async({ page, usersRegistry }) => {
+         await createUser(page, {}, true, usersRegistry);
 
          // Verify session persists across page reload
          await page.reload();
@@ -133,9 +128,9 @@ test.describe("User Registration", () => {
    });
 
    test.describe("Duplicate Registration Prevention", () => {
-      test("should prevent conflicts with case sensitivity variations", async({ page, createdUsersRegistry }) => {
+      test("should prevent conflicts with case sensitivity variations", async({ page, usersRegistry }) => {
          // Create initial user
-         const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false, createdUsersRegistry);
+         const { username: originalUsername, email: originalEmail } = await createUser(page, {}, false, usersRegistry);
 
          // Test 1: Username conflict with case sensitivity
          await navigateToPath(page, REGISTER_ROUTE);

@@ -1,6 +1,5 @@
 import { expect, test } from "@tests/fixtures";
 import {
-   cleanupUsersWithIsolatedBrowser,
    createUser,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
@@ -14,10 +13,6 @@ import { createValidLogin, INVALID_PASSWORD_CASES, VALID_LOGIN } from "capital/m
 test.describe("Login Authentication", () => {
    test.beforeEach(async({ page }) => {
       await navigateToPath(page, LOGIN_ROUTE);
-   });
-
-   test.afterAll(async({ createdUsersRegistry }) => {
-      await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
    });
 
    test.describe("UI Components and Layout", () => {
@@ -79,9 +74,9 @@ test.describe("Login Authentication", () => {
          });
       });
 
-      test("should successfully authenticate with valid credentials and session persistence", async({ page, createdUsersRegistry }) => {
+      test("should successfully authenticate with valid credentials and session persistence", async({ page, usersRegistry }) => {
          // Register the test user using the default test credentials
-         const { username } = await createUser(page, {}, false, createdUsersRegistry);
+         const { username } = await createUser(page, {}, false, usersRegistry);
 
          // Login with the test user's credentials
          await navigateToPath(page, LOGIN_ROUTE);
@@ -95,10 +90,10 @@ test.describe("Login Authentication", () => {
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
       });
 
-      test("should handle case-insensitive username login", async({ page, createdUsersRegistry }) => {
+      test("should handle case-insensitive username login", async({ page, usersRegistry }) => {
          // Register the test user with a lowercase username
          const { username: generatedUsername } = createValidLogin();
-         const { username } = await createUser(page, { username: generatedUsername.toLowerCase() }, false, createdUsersRegistry);
+         const { username } = await createUser(page, { username: generatedUsername.toLowerCase() }, false, usersRegistry);
 
          // Attempt to login with case-sensitive username mismatch
          await navigateToPath(page, LOGIN_ROUTE);

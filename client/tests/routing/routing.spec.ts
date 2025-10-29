@@ -1,7 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import {
-   cleanupUsersWithIsolatedBrowser,
    createUser,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
@@ -81,12 +80,8 @@ test.describe("Routing and Navigation", () => {
    };
 
    test.describe("Authenticated User Routing", () => {
-      test.beforeEach(async({ page, createdUsersRegistry }) => {
-         await createUser(page, {}, true, createdUsersRegistry);
-      });
-
-      test.afterAll(async({ createdUsersRegistry }) => {
-         await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
+      test.beforeEach(async({ page, usersRegistry }) => {
+         await createUser(page, {}, true, usersRegistry);
       });
 
       test("should highlight the sidebar link for all protected routes", async({ page }) => {

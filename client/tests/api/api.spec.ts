@@ -1,6 +1,6 @@
 import { type Cookie, type Page, type Response, type Route } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { cleanupUsersWithIsolatedBrowser, createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
+import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertNotificationStatus } from "@tests/utils/notifications";
@@ -10,10 +10,6 @@ import { HTTP_STATUS } from "capital/server";
 import { type ApiResponse } from "@/lib/api";
 
 test.describe("API Error Handling", () => {
-   test.afterAll(async({ createdUsersRegistry }) => {
-      await cleanupUsersWithIsolatedBrowser(createdUsersRegistry);
-   });
-
    test.describe("Network Error Handling", () => {
       test("should handle offline state gracefully", async({ page }) => {
          const message: string = "You are offline. Check your internet connection.";
@@ -89,8 +85,8 @@ test.describe("API Error Handling", () => {
          await context.addCookies(cookies.filter((cookie: Cookie) => cookie.name !== "refresh_token"));
       };
 
-      test.beforeEach(async({ page, createdUsersRegistry }) => {
-         await createUser(page, {}, true, createdUsersRegistry);
+      test.beforeEach(async({ page, usersRegistry }) => {
+         await createUser(page, {}, true, usersRegistry);
          await arrangeDashboardWithTokenRefresh(page);
       });
 

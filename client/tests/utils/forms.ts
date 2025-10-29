@@ -41,12 +41,12 @@ export async function submitForm(
    data: Record<string, any>,
    options: FormSubmitOptions = DEFAULT_FORM_OPTIONS
 ): Promise<void> {
-   // Merge with default options
+   // Merge the provided options with the default options
    const opts: FormSubmitOptions = { ...DEFAULT_FORM_OPTIONS, ...options };
 
    // Fill all form fields with the provided data
    for (const [testId, value] of Object.entries(data)) {
-      // Skip undefined or null values
+      // Skip undefined and null values
       if (value !== undefined && value !== null) {
          const element: Locator = page.getByTestId(testId);
          const tagName: string = await element.evaluate(el => el.tagName.toLowerCase());
@@ -94,7 +94,6 @@ export async function submitForm(
    }
 }
 
-
 /**
  * Asserts validation errors for multiple fields
  *
@@ -108,15 +107,15 @@ export async function assertValidationErrors(
    // Ensure at least one error indicator is visible
    await expect(page.locator(ERROR_INDICATOR_SELECTOR).first()).toBeVisible();
 
-   for (const [testId, expected] of Object.entries(errors)) {
+   for (const [testId, expectedError] of Object.entries(errors)) {
       const errorElement: Locator = page.locator(`.MuiFormControl-root:has([data-testid="${testId}"]) ${ERROR_INDICATOR_SELECTOR}`);
 
-      if (Array.isArray(expected)) {
-         for (const message of expected) {
+      if (Array.isArray(expectedError)) {
+         for (const message of expectedError) {
             await expect(errorElement).toContainText(message);
          }
       } else {
-         await expect(errorElement).toContainText(expected);
+         await expect(errorElement).toContainText(expectedError);
       }
    }
 }

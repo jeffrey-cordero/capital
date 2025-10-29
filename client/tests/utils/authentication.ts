@@ -23,19 +23,19 @@ export const SETTINGS_ROUTE = "/dashboard/settings";
 export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, SETTINGS_ROUTE] as const;
 
 /**
- * Creates a test user by registering one with unique credentials
+ * Creates a test user by registering them with unique credentials
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
- * @param {Set<{ username: string; password: string; }>} registry - Registry to auto-collect created users for final cleanup
+ * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the test's final cleanup
  * @returns {Promise<{ username: string; email: string }>} The unique credentials used for registration (username and email)
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
-   registry: Set<CreatedUserRecord>
+   usersRegistry: Set<CreatedUserRecord>
 ): Promise<{ username: string; email: string }> {
    await navigateToPath(page, REGISTER_ROUTE);
 
@@ -48,14 +48,14 @@ export async function createUser(
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
 
    if (!keepLoggedIn) {
-      // Logout the user, which is typically used for intermediate mock users
+      // Logout the created user, which is typically used for intermediate test users
       await page.getByTestId("sidebar-toggle").click();
       await page.getByTestId("sidebar-logout").click();
       await expect(page).toHaveURL(LOGIN_ROUTE);
    }
 
-   // Auto-register created user for final cleanup
-   registry.add({ username: registrationData.username, password: registrationData.password });
+   // Add the created user to the registry for the test's final cleanup
+   usersRegistry.add({ username: registrationData.username, password: registrationData.password });
 
    return {
       username: registrationData.username,
@@ -70,7 +70,7 @@ export async function createUser(
  * @param {"sidebar" | "settings"} method - The logout method to use (`"sidebar"` or `"settings"`)
  */
 export async function logoutUser(page: Page, method: "sidebar" | "settings"): Promise<void> {
-   // Ensure the user is currently within a protected route before logging out
+   // Ensure the current user is within a protected route before attempting to logout
    expect(page.url()).toContain(DASHBOARD_ROUTE);
 
    if (method === "sidebar") {
@@ -86,55 +86,52 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
 }
 
 /**
- * Cleans up users from a worker-scoped registry using an isolated browser for final cleanup
- *
- * @param {Set<CreatedUserRecord>} registry - Worker-scoped set of created users
- */
-export async function cleanupUsersWithIsolatedBrowser(registry: Set<CreatedUserRecord>): Promise<void> {
-   const users: Array<CreatedUserRecord> = Array.from(registry);
-
-   // Create the isolated browser for final cleanup
-   const { chromium } = await import("@playwright/test");
-   const browser = await chromium.launch();
-   const page = await browser.newPage();
-
-   // Cleanup the users using the isolated browser
-   try {
-      await cleanupCreatedUsers(page, users);
-   } finally {
-      // Close the isolated browser and remove all created users from the registry
-      await browser.close();
-      registry.clear();
-   }
-}
-
-/**
- * Deletes users created during tests via API calls
- * Call this in test.afterAll with the array of users to clean up
+ * Deletes created test users via API calls
  *
  * @param {Page} page - Playwright page instance for API requests
- * @param {Array<{ username: string; password: string; }>} usersToCleanup - Array of user credentials to delete
+ * @param {Set<CreatedUserRecord>} usersToCleanup - Set of created test users to delete
  */
-export async function cleanupCreatedUsers(page: Page, usersToCleanup: Array<CreatedUserRecord>): Promise<void> {
-   // If no users were created, skip cleanup
-   if (usersToCleanup.length === 0) {
+async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRecord>): Promise<void> {
+   // If no test users were created, skip the cleanup process
+   if (usersToCleanup.size === 0) {
       return;
    }
 
-   // Use VITE_SERVER_URL environment variable for API calls
-   const serverUrl = process.env.VITE_SERVER_URL || "http://localhost:8000/api/v1";
+   // Fetch the server URL from the environment variable
+   const serverUrl: string = process.env.VITE_SERVER_URL || "http://localhost:8000/api/v1";
 
    for (const user of usersToCleanup) {
-      // Clear cookies before each attempt to ensure clean state
+      // Clear cookies before each attempt to ensure an isolated state for the browser
       await page.context().clearCookies();
       await page.reload();
 
-      // Login via API to get session cookie
+      // Login via the API to initiate a session
       await page.request.post(`${serverUrl}/authentication/login`, {
          data: { username: user.username, password: user.password }
       });
 
-      // Delete user via API
+      // Delete the test user via the API
       await page.request.delete(`${serverUrl}/users`);
    }
+
+   // Remove all created test users from the registry for the test's final cleanup
+   usersToCleanup.clear();
+}
+
+/**
+ * Cleans up created users from a worker-scoped registry using an isolated browser
+ *
+ * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to clean up
+ */
+export async function cleanupCreatedTestUsers(usersRegistry: Set<CreatedUserRecord>): Promise<void> {
+   // Create the isolated browser environment
+   const { chromium } = await import("@playwright/test");
+   const browser = await chromium.launch({ headless: true });
+   const page = await browser.newPage();
+
+   // Remove the created test users from the database
+   await deleteCreatedUsers(page, usersRegistry);
+
+   // Close the isolated browser environment
+   await browser.close();
 }
