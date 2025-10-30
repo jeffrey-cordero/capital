@@ -1,3 +1,5 @@
+import { TEST_USER_ID } from "capital/mocks/user";
+
 /**
  * Test token constants for mocking authentication tokens used across middleware and authentication service tests
  */
@@ -11,11 +13,6 @@ export const TEST_TOKENS = {
    EXPIRED_REFRESH: "expired.refresh.token",
    MALFORMED_REFRESH: "malformed.refresh.token"
 } as const;
-
-/**
- * Test user ID constant
- */
-export const TEST_USER_ID = "test-user-123";
 
 /**
  * Test secret key constant

@@ -1,3 +1,4 @@
+import { TEST_USER_ID } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 import { RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
@@ -11,7 +12,7 @@ import {
    TOKEN_EXPIRATIONS
 } from "@/lib/middleware";
 import { createMockMiddleware, MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
-import { TEST_SECRET, TEST_USER_ID, TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
+import { TEST_SECRET, TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
 
 /**
  * Mock the logger to minimize the error output during middleware tests

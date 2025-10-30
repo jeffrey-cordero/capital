@@ -1,4 +1,4 @@
-import { createLoginCredentials, VALID_LOGIN } from "capital/mocks/user";
+import { createLoginCredentials, TEST_USER_ID, VALID_LOGIN } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
 import * as authenticationController from "@/controllers/authenticationController";
@@ -11,7 +11,7 @@ import {
    assertControllerSuccessResponse,
    callControllerMethod
 } from "@/tests/utils/controllers";
-import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
+import { TEST_TOKENS } from "@/tests/utils/tokens";
 
 jest.mock("@/services/authenticationService");
 jest.mock("@/lib/services", () => ({

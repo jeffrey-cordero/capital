@@ -1,6 +1,5 @@
 import { jest } from "@jest/globals";
-import { createMockUser, TEST_CONSTANTS } from "capital/mocks/server";
-import { createConflictingUser } from "capital/mocks/user";
+import { createConflictingUser, createMockUser, TEST_USER_ID } from "capital/mocks/user";
 import { User } from "capital/user";
 
 import {
@@ -38,7 +37,7 @@ describe("User Repository", () => {
       username: "testuser",
       email: "test@example.com",
       password: "hashed_password_123",
-      userId: TEST_CONSTANTS.TEST_USER_ID
+      userId: TEST_USER_ID
    };
 
    let mockPool: MockPool;

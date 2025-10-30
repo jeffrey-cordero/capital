@@ -15,11 +15,7 @@
     "./economy": "./build/economy.js",
     "./dashboard": "./build/dashboard.js",
     "./numerics": "./build/numerics.js",
-    "./mocks/user": "./build/mocks/user.js",
-    "./mocks/accounts": "./build/mocks/accounts.js",
-    "./mocks/budgets": "./build/mocks/budgets.js",
-    "./mocks/transactions": "./build/mocks/transactions.js",
-    "./mocks/server": "./build/mocks/server.js"
+    "./mocks/user": "./build/mocks/user.js"
   },
   "scripts": {
     "build": "npx tsc && npx tsc-alias --resolve-full-paths",

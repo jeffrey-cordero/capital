@@ -1,4 +1,3 @@
-import { TEST_CONSTANTS } from "capital/mocks/server";
 import {
    createConflictingUser,
    createMockUserDetails,
@@ -7,7 +6,8 @@ import {
    createUserUpdatesWithPasswordChange,
    createUserWithCaseVariation,
    createValidRegistration,
-   INVALID_PASSWORD_CASES
+   INVALID_PASSWORD_CASES,
+   TEST_USER_ID
 } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import { RegisterPayload, User, UserDetails, UserUpdates } from "capital/user";
@@ -42,7 +42,7 @@ jest.mock("@/repository/userRepository");
 jest.mock("@/services/authenticationService");
 
 describe("User Service", () => {
-   const userId: string = TEST_CONSTANTS.TEST_USER_ID;
+   const userId: string = TEST_USER_ID;
    const userDetailsCacheKey: string = `user:${userId}`;
    const validRegistration: RegisterPayload = createValidRegistration();
 
@@ -56,11 +56,11 @@ describe("User Service", () => {
    /**
     * Asserts user validation error response for create/update operations
     *
-    * @param {any} result - Service response result
-    * @param {any} expectedErrors - Expected validation errors
+    * @param {ServerResponse} result - Service response result
+    * @param {Record<string, string>} expectedErrors - Expected validation errors
     * @param {boolean} isUpdate - Whether this is for update operations (default: false)
     */
-   const assertUserValidationErrorResponse = (result: any, expectedErrors: any, isUpdate: boolean = false): void => {
+   const assertUserValidationErrorResponse = (result: ServerResponse, expectedErrors: Record<string, string>, isUpdate: boolean = false): void => {
       if (isUpdate) {
          assertMethodsNotCalled([
             { module: argon2, methods: ["verify", "hash"] },
@@ -108,7 +108,7 @@ describe("User Service", () => {
       authenticationService = await import("@/services/authenticationService");
 
       arrangeDefaultRedisCacheBehavior(redis);
-      ({ mockRes } = createMockMiddleware({ locals: { userId: TEST_CONSTANTS.TEST_USER_ID } }));
+      ({ mockRes } = createMockMiddleware({ locals: { userId: TEST_USER_ID } }));
    });
 
    describe("fetchUserDetails", () => {

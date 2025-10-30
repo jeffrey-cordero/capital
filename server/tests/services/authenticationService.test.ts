@@ -1,4 +1,4 @@
-import { createMockUser } from "capital/mocks/server";
+import { createMockUser, TEST_USER_ID } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 
 import * as authenticationService from "@/services/authenticationService";
@@ -16,7 +16,7 @@ import {
    assertServiceThrows,
    callServiceMethodWithMockRes
 } from "@/tests/utils/services";
-import { TEST_SECRET, TEST_TOKENS, TEST_USER_ID, TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
+import { TEST_SECRET, TEST_TOKENS, TEST_USER_PAYLOAD } from "@/tests/utils/tokens";
 
 jest.mock("argon2");
 jest.mock("jsonwebtoken");

@@ -1,4 +1,4 @@
-import { createMockUser, TEST_CONSTANTS } from "capital/mocks/server";
+import { createMockUser, TEST_USER_ID } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 import { User } from "capital/user";
 
@@ -99,7 +99,7 @@ describe("User Controller", () => {
    describe("GET /users", () => {
       it("should return user details for valid user ID", async() => {
          const mockUser: User = createMockUser();
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const mockFetchUserDetails = arrangeMockServiceSuccess(
             userService,
             "fetchUserDetails",
@@ -140,7 +140,7 @@ describe("User Controller", () => {
       });
 
       it("should return internal server error for service errors", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const expectedError = new Error("Database connection failed");
          const mockFetchUserDetails = arrangeMockServiceError(userService, "fetchUserDetails", expectedError);
 
@@ -159,7 +159,7 @@ describe("User Controller", () => {
 
    describe("PUT /users", () => {
       it("should return success for valid user account details update", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          mockReq.body = { username: "newusername", email: "newemail@example.com" };
          const mockUpdateAccountDetails = arrangeMockServiceSuccess(
             userService,
@@ -173,14 +173,14 @@ describe("User Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockUpdateAccountDetails,
-            [TEST_CONSTANTS.TEST_USER_ID, mockReq.body],
+            [TEST_USER_ID, mockReq.body],
             HTTP_STATUS.OK,
             { success: true }
          );
       });
 
       it("should return validation errors for user update conflicts", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          mockReq.body = { username: "newusername" };
          const mockUpdateAccountDetails = arrangeMockServiceValidationError(
             userService,
@@ -197,7 +197,7 @@ describe("User Controller", () => {
             mockRes,
             undefined,
             mockUpdateAccountDetails,
-            [TEST_CONSTANTS.TEST_USER_ID, mockReq.body],
+            [TEST_USER_ID, mockReq.body],
             HTTP_STATUS.CONFLICT,
             {
                username: "Username already exists"
@@ -206,7 +206,7 @@ describe("User Controller", () => {
       });
 
       it("should return internal server error for service errors", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const expectedError = new Error("Database connection failed");
          const mockUpdateAccountDetails = arrangeMockServiceError(userService, "updateAccountDetails", expectedError);
 
@@ -216,7 +216,7 @@ describe("User Controller", () => {
             mockRes,
             expectedError,
             mockUpdateAccountDetails,
-            [TEST_CONSTANTS.TEST_USER_ID, mockReq.body],
+            [TEST_USER_ID, mockReq.body],
             HTTP_STATUS.INTERNAL_SERVER_ERROR,
             { server: "Internal Server Error" }
          );
@@ -225,7 +225,7 @@ describe("User Controller", () => {
 
    describe("DELETE /users", () => {
       it("should return success for valid user account deletion", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const mockDeleteAccount = arrangeMockServiceSuccess(
             userService,
             "deleteAccount",
@@ -245,7 +245,7 @@ describe("User Controller", () => {
       });
 
       it("should return validation errors for user not found", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const mockDeleteAccount = arrangeMockServiceValidationError(
             userService,
             "deleteAccount",
@@ -270,7 +270,7 @@ describe("User Controller", () => {
       });
 
       it("should return internal server error for service errors", async() => {
-         mockRes.locals = { user_id: TEST_CONSTANTS.TEST_USER_ID };
+         mockRes.locals = { user_id: TEST_USER_ID };
          const expectedError = new Error("Database connection failed");
          const mockDeleteAccount = arrangeMockServiceError(userService, "deleteAccount", expectedError);
 
