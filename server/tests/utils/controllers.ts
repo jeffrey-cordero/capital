@@ -106,23 +106,23 @@ export function arrangeMockServiceError(
 /**
  * Call a controller method with typed mocks
  *
- * @param {RequestHandler} serviceMethod - Controller method to call
+ * @param {RequestHandler} controllerMethod - Controller method to call
  * @param {MockRequest} mockReq - Mock Request
  * @param {MockResponse} mockRes - Mock Response
  * @param {MockNextFunction} mockNext - Mock NextFunction
  * @returns {Promise<ServerResponse>} Result
  */
-export async function callServiceMethod(
-   serviceMethod: RequestHandler,
+export async function callControllerMethod(
+   controllerMethod: RequestHandler,
    mockReq: MockRequest,
    mockRes: MockResponse,
    mockNext: MockNextFunction
 ): Promise<ServerResponse> {
-   return await serviceMethod(mockReq as any, mockRes as any, mockNext as any) as ServerResponse;
+   return await controllerMethod(mockReq as any, mockRes as any, mockNext as any) as ServerResponse;
 }
 
 /**
- * Assert controller handled a service success
+ * Assert controller handled a success response
  *
  * @param {MockResponse} mockRes - Mock response
  * @param {MockedServiceFunction<any>} mockServiceFunction - Mocked service function called

@@ -9,15 +9,14 @@ import {
    arrangeMockServiceValidationError,
    assertControllerErrorResponse,
    assertControllerSuccessResponse,
-   callServiceMethod
+   callControllerMethod
 } from "@/tests/utils/controllers";
 import { TEST_TOKENS, TEST_USER_ID } from "@/tests/utils/tokens";
 
+jest.mock("@/services/authenticationService");
 jest.mock("@/lib/services", () => ({
    submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
 }));
-
-jest.mock("@/services/authenticationService");
 
 describe("Authentication Controller", () => {
    let mockReq: MockRequest;
@@ -33,9 +32,14 @@ describe("Authentication Controller", () => {
    describe("GET /authentication", () => {
       it("should return authenticated for valid token", async() => {
          mockReq.cookies = { access_token: TEST_TOKENS.VALID_ACCESS };
-         const mockGetAuthentication = arrangeMockServiceSuccess(authenticationService, "getAuthentication", HTTP_STATUS.OK, { authenticated: true });
+         const mockGetAuthentication = arrangeMockServiceSuccess(
+            authenticationService,
+            "getAuthentication",
+            HTTP_STATUS.OK,
+            { authenticated: true }
+         );
 
-         await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -48,9 +52,14 @@ describe("Authentication Controller", () => {
 
       it("should return refreshable for expired token", async() => {
          mockReq.cookies = { access_token: TEST_TOKENS.EXPIRED_ACCESS };
-         const mockGetAuthentication = arrangeMockServiceSuccess(authenticationService, "getAuthentication", HTTP_STATUS.UNAUTHORIZED, { refreshable: true });
+         const mockGetAuthentication = arrangeMockServiceSuccess(
+            authenticationService,
+            "getAuthentication",
+            HTTP_STATUS.UNAUTHORIZED,
+            { refreshable: true }
+         );
 
-         await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -63,9 +72,14 @@ describe("Authentication Controller", () => {
 
       it("should return unauthenticated for invalid access token", async() => {
          mockReq.cookies = { access_token: TEST_TOKENS.INVALID_ACCESS };
-         const mockGetAuthentication = arrangeMockServiceSuccess(authenticationService, "getAuthentication", HTTP_STATUS.OK, { authenticated: false });
+         const mockGetAuthentication = arrangeMockServiceSuccess(
+            authenticationService,
+            "getAuthentication",
+            HTTP_STATUS.OK,
+            { authenticated: false }
+         );
 
-         await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -78,9 +92,14 @@ describe("Authentication Controller", () => {
 
       it("should return unauthenticated for missing access token in cookies", async() => {
          mockReq.cookies = {};
-         const mockGetAuthentication = arrangeMockServiceSuccess(authenticationService, "getAuthentication", HTTP_STATUS.OK, { authenticated: false });
+         const mockGetAuthentication = arrangeMockServiceSuccess(
+            authenticationService,
+            "getAuthentication",
+            HTTP_STATUS.OK,
+            { authenticated: false }
+         );
 
-         await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -96,18 +115,30 @@ describe("Authentication Controller", () => {
          const expectedError = new Error("Database connection failed");
          const mockGetAuthentication = arrangeMockServiceError(authenticationService, "getAuthentication", expectedError);
 
-         await callServiceMethod(authenticationController.GET, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.GET, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockGetAuthentication, [mockRes, mockReq.cookies.access_token], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         assertControllerErrorResponse(
+            mockRes,
+            expectedError,
+            mockGetAuthentication,
+            [mockRes, mockReq.cookies.access_token],
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            { server: "Internal Server Error" }
+         );
       });
    });
 
    describe("POST /authentication/login", () => {
       it("should authenticate user with valid credentials", async() => {
          mockReq.body = createLoginCredentials("TestUser");
-         const mockAuthenticateUser = arrangeMockServiceSuccess(authenticationService, "authenticateUser", HTTP_STATUS.OK, { success: true });
+         const mockAuthenticateUser = arrangeMockServiceSuccess(
+            authenticationService,
+            "authenticateUser",
+            HTTP_STATUS.OK,
+            { success: true }
+         );
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -120,12 +151,17 @@ describe("Authentication Controller", () => {
 
       it("should return validation errors for invalid credentials", async() => {
          mockReq.body = createLoginCredentials("TestUser");
-         const mockAuthenticateUser = arrangeMockServiceValidationError(authenticationService, "authenticateUser", HTTP_STATUS.UNAUTHORIZED, {
-            username: "Invalid credentials",
-            password: "Invalid credentials"
-         });
+         const mockAuthenticateUser = arrangeMockServiceValidationError(
+            authenticationService,
+            "authenticateUser",
+            HTTP_STATUS.UNAUTHORIZED,
+            {
+               username: "Invalid credentials",
+               password: "Invalid credentials"
+            }
+         );
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
          assertControllerErrorResponse(
             mockRes,
@@ -142,11 +178,16 @@ describe("Authentication Controller", () => {
 
       it("should return validation error for missing username", async() => {
          mockReq.body = { password: VALID_LOGIN.password };
-         const mockAuthenticateUser = arrangeMockServiceValidationError(authenticationService, "authenticateUser", HTTP_STATUS.BAD_REQUEST, {
-            username: "Required"
-         });
+         const mockAuthenticateUser = arrangeMockServiceValidationError(
+            authenticationService,
+            "authenticateUser",
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               username: "Required"
+            }
+         );
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
          assertControllerErrorResponse(
             mockRes,
@@ -162,11 +203,16 @@ describe("Authentication Controller", () => {
 
       it("should return validation error for missing password", async() => {
          mockReq.body = { username: VALID_LOGIN.username };
-         const mockAuthenticateUser = arrangeMockServiceValidationError(authenticationService, "authenticateUser", HTTP_STATUS.BAD_REQUEST, {
-            password: "Required"
-         });
+         const mockAuthenticateUser = arrangeMockServiceValidationError(
+            authenticationService,
+            "authenticateUser",
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               password: "Required"
+            }
+         );
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
          assertControllerErrorResponse(
             mockRes,
@@ -182,12 +228,17 @@ describe("Authentication Controller", () => {
 
       it("should handle missing username and password", async() => {
          mockReq.body = {};
-         const mockAuthenticateUser = arrangeMockServiceValidationError(authenticationService, "authenticateUser", HTTP_STATUS.BAD_REQUEST, {
-            username: "Required",
-            password: "Required"
-         });
+         const mockAuthenticateUser = arrangeMockServiceValidationError(
+            authenticationService,
+            "authenticateUser",
+            HTTP_STATUS.BAD_REQUEST,
+            {
+               username: "Required",
+               password: "Required"
+            }
+         );
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
          assertControllerErrorResponse(
             mockRes,
@@ -207,18 +258,30 @@ describe("Authentication Controller", () => {
          const expectedError = new Error("Database connection failed");
          const mockAuthenticateUser = arrangeMockServiceError(authenticationService, "authenticateUser", expectedError);
 
-         await callServiceMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGIN, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockAuthenticateUser, [mockRes, mockReq.body.username, mockReq.body.password], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         assertControllerErrorResponse(
+            mockRes,
+            expectedError,
+            mockAuthenticateUser,
+            [mockRes, mockReq.body.username, mockReq.body.password],
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            { server: "Internal Server Error" }
+         );
       });
    });
 
    describe("POST /authentication/refresh", () => {
       it("should return success for valid refresh token", async() => {
          mockRes.locals = { user_id: TEST_USER_ID };
-         const mockRefreshToken = arrangeMockServiceSuccess(authenticationService, "refreshToken", HTTP_STATUS.OK, { success: true });
+         const mockRefreshToken = arrangeMockServiceSuccess(
+            authenticationService,
+            "refreshToken",
+            HTTP_STATUS.OK,
+            { success: true }
+         );
 
-         await callServiceMethod(authenticationController.REFRESH, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.REFRESH, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -234,17 +297,29 @@ describe("Authentication Controller", () => {
          const expectedError = new Error("Internal server error");
          const mockRefreshToken = arrangeMockServiceError(authenticationService, "refreshToken", expectedError);
 
-         await callServiceMethod(authenticationController.REFRESH, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.REFRESH, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockRefreshToken, [mockRes, mockRes.locals.user_id], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         assertControllerErrorResponse(
+            mockRes,
+            expectedError,
+            mockRefreshToken,
+            [mockRes, mockRes.locals.user_id],
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            { server: "Internal Server Error" }
+         );
       });
    });
 
    describe("POST /authentication/logout", () => {
       it("should return success for valid access token", async() => {
-         const mockLogoutUser = arrangeMockServiceSuccess(authenticationService, "logoutUser", HTTP_STATUS.OK, { success: true });
+         const mockLogoutUser = arrangeMockServiceSuccess(
+            authenticationService,
+            "logoutUser",
+            HTTP_STATUS.OK,
+            { success: true }
+         );
 
-         await callServiceMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
 
          assertControllerSuccessResponse(
             mockRes,
@@ -259,19 +334,31 @@ describe("Authentication Controller", () => {
          const expectedError = new Error("Internal server error");
          const mockLogoutUser = arrangeMockServiceError(authenticationService, "logoutUser", expectedError);
 
-         await callServiceMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
+         await callControllerMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
 
-         assertControllerErrorResponse(mockRes, expectedError, mockLogoutUser, [mockRes], HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
+         assertControllerErrorResponse(
+            mockRes,
+            expectedError,
+            mockLogoutUser,
+            [mockRes],
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            { server: "Internal Server Error" }
+         );
       });
 
       it("should return success for multiple logout calls", async() => {
-         // Clear all of the prior mock service method calls to reset the counter
+         // Clear all of the prior mocked service function calls to reset the mock counter
          jest.clearAllMocks();
 
-         const mockLogoutUser = arrangeMockServiceSuccess(authenticationService, "logoutUser", HTTP_STATUS.OK, { success: true });
+         const mockLogoutUser = arrangeMockServiceSuccess(
+            authenticationService,
+            "logoutUser",
+            HTTP_STATUS.OK,
+            { success: true }
+         );
 
          for (let i = 0; i < 3; i++) {
-            await callServiceMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
+            await callControllerMethod(authenticationController.LOGOUT, mockReq, mockRes, mockNext);
             expect(mockLogoutUser).toHaveBeenCalledTimes(i + 1);
             assertControllerSuccessResponse(
                mockRes,
