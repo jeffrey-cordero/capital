@@ -50,6 +50,7 @@ describe("User Repository", () => {
     */
    const importTrueBudgetsRepository = (): void => {
       jest.unmock("@/repository/budgetsRepository");
+
       const realBudgetsRepository: typeof import("@/repository/budgetsRepository") = jest.requireActual("@/repository/budgetsRepository");
       budgetsRepository.createCategory = realBudgetsRepository.createCategory;
    };
@@ -108,7 +109,8 @@ describe("User Repository", () => {
 
    describe("findByUsername", () => {
       /**
-       * Asserts the username lookup query was called with the proper structure and exact parameters
+       * Asserts the username lookup query was called with the proper structure and exact parameters,
+       * where the username should be case-insensitive and trimmed
        */
       const assertUsernameLookupStructure = (): void => {
          assertQueryCalledWithKeyPhrases([
@@ -288,12 +290,12 @@ describe("User Repository", () => {
          const expectedMonth = today.getUTCMonth() + 1;
          const expectedYear = today.getUTCFullYear();
 
-         // Verify the start of the transaction (1st call)
+         // Assert the start of the transaction (1st call)
          assertQueryCalledWithKeyPhrases([
             "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED"
          ], [], 0, mockPool);
 
-         // Verify the user insertion (2nd call)
+         // Assert the user insertion (2nd call)
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO users (username, name, password, email, birthday)",
             "VALUES ($1, $2, $3, $4, $5)",
@@ -306,33 +308,33 @@ describe("User Repository", () => {
             userData.birthday
          ], 1, mockPool);
 
-         // Verify the income category insertion (3rd call)
+         // Assert the income category insertion (3rd call)
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO budget_categories (user_id, type, name, category_order)",
             "VALUES ($1, $2, $3, $4)",
             "RETURNING budget_category_id"
          ], [expectedUserId, "Income", null, null], 2, mockPool);
 
-         // Verify the income budget insertion (4th call)
+         // Assert the income budget insertion (4th call)
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO budgets (budget_category_id, goal, year, month)",
             "VALUES ($1, $2, $3, $4)"
          ], ["income-category-id", 2000, expectedYear, expectedMonth], 3, mockPool);
 
-         // Verify the expenses category insertion (5th call)
+         // Assert the expenses category insertion (5th call)
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO budget_categories (user_id, type, name, category_order)",
             "VALUES ($1, $2, $3, $4)",
             "RETURNING budget_category_id"
          ], [expectedUserId, "Expenses", null, null], 4, mockPool);
 
-         // Verify the expenses budget insertion (6th call)
+         // Assert the expenses budget insertion (6th call)
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO budgets (budget_category_id, goal, year, month)",
             "VALUES ($1, $2, $3, $4)"
          ], ["expenses-category-id", 2000, expectedYear, expectedMonth], 5, mockPool);
 
-         // Verify the transaction commits successfully (7th call)
+         // Assert the transaction commits successfully (7th call)
          assertQueryCalledWithKeyPhrases([
             "COMMIT"
          ], [], 6, mockPool);
@@ -355,8 +357,6 @@ describe("User Repository", () => {
             () => userRepository.create(userData),
             "Database connection failed"
          );
-
-         // No statements should be called
          assertTransactionRollback(mockClient, 0);
       });
 
@@ -367,8 +367,6 @@ describe("User Repository", () => {
             () => userRepository.create(userData),
             "User creation failed"
          );
-
-         // User insertion query should be called
          assertTransactionRollback(mockClient, 1);
       });
 
@@ -379,8 +377,6 @@ describe("User Repository", () => {
             () => userRepository.create(userData),
             "Income budget creation failed"
          );
-
-         // Income category and budget insertion queries should be called after the user creation queries
          assertTransactionRollback(mockClient, 3);
       });
 
@@ -391,8 +387,6 @@ describe("User Repository", () => {
             () => userRepository.create(userData),
             "Expenses budget creation failed"
          );
-
-         // Expenses category and budget insertion queries should be called after the income budget and category queries
          assertTransactionRollback(mockClient, 5);
       });
    });
@@ -468,7 +462,7 @@ describe("User Repository", () => {
 
          assertQueryResult(result, true);
 
-         // Verify only valid fields are included in the query
+         // Assert only valid fields are included in the query
          const expectedParams = [mockUpdateData.username, userId];
          assertQueryCalledWithKeyPhrases([
             "UPDATE users",
@@ -541,28 +535,28 @@ describe("User Repository", () => {
        * @param {string} userId - Expected user ID
        */
       const assertUserDeletionFlow = (userId: string): void => {
-         // Verify the start of the transaction (1st call)
+         // Assert the start of the transaction (1st call)
          assertQueryCalledWithKeyPhrases([
             "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE"
          ], [], 0, mockPool);
 
-         // Verify the disable of the database trigger (2nd call)
+         // Assert the disable of the database trigger (2nd call)
          assertQueryCalledWithKeyPhrases([
             "ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger"
          ], [], 1, mockPool);
 
-         // Verify the user deletion (3rd call)
+         // Assert the user deletion (3rd call)
          assertQueryCalledWithKeyPhrases([
             "DELETE FROM users",
             "WHERE user_id = $1"
          ], [userId], 2, mockPool);
 
-         // Verify the enable of the database trigger (4th call)
+         // Assert the enable of the database trigger (4th call)
          assertQueryCalledWithKeyPhrases([
             "ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger"
          ], [], 3, mockPool);
 
-         // Verify the transaction commits successfully (5th call)
+         // Assert the transaction commits successfully (5th call)
          assertQueryCalledWithKeyPhrases([
             "COMMIT"
          ], [], 4, mockPool);
@@ -612,7 +606,6 @@ describe("User Repository", () => {
             () => userRepository.deleteUser(userId),
             "Database connection failed"
          );
-
          assertTransactionRollback(mockClient, 2);
       });
 

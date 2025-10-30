@@ -27,7 +27,6 @@ import {
    assertCacheInvalidation,
    assertCacheInvalidationNotCalled,
    assertCacheMissBehavior,
-   assertMethodNotCalled,
    assertMethodsNotCalled,
    assertRepositoryCall,
    assertServiceErrorResponse,
@@ -60,14 +59,15 @@ describe("User Service", () => {
     * @param {boolean} isUpdate - Whether this is for update operations (default: false)
     */
    const assertUserValidationErrorResponse = (result: any, expectedErrors: any, isUpdate: boolean = false): void => {
-      assertArgon2Calls(argon2);
       if (isUpdate) {
          assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
             { module: userRepository, methods: ["findConflictingUsers", "findByUserId", "update"] },
             { module: redis, methods: ["removeCacheValue"] }
          ]);
       } else {
          assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
             { module: userRepository, methods: ["findConflictingUsers", "create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
@@ -482,8 +482,10 @@ describe("User Service", () => {
             mockUser.username,
             mockUser.email
          ]);
-         assertArgon2Calls(argon2);
-         assertMethodNotCalled(userRepository, "create");
+         assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
+            { module: userRepository, methods: ["create"] }
+         ]);
       });
 
    });
@@ -780,7 +782,7 @@ describe("User Service", () => {
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
          assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertArgon2Calls(argon2);
+         assertMethodsNotCalled([{ module: argon2, methods: ["verify", "hash"] }]);
          assertUpdateOperationsNotCalled();
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });

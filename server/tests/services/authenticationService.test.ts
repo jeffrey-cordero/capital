@@ -10,6 +10,7 @@ import {
    arrangeMockRepositorySuccess,
    assertArgon2Calls,
    assertMethodNotCalled,
+   assertMethodsNotCalled,
    assertServiceErrorResponse,
    assertServiceSuccessResponse,
    assertServiceThrows,
@@ -192,8 +193,8 @@ describe("Authentication Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", validUsername, validPassword);
 
-         assertArgon2Calls(argon2, hashedPassword, validPassword);
          assertTokenConfigured(mockUser.user_id!);
+         assertArgon2Calls(argon2, hashedPassword, validPassword);
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
@@ -202,9 +203,10 @@ describe("Authentication Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", "nonexistent", validPassword);
 
-         // Empty arguments implies no password verification method was invoked
-         assertArgon2Calls(argon2);
-         assertMethodNotCalled(middleware, "configureToken");
+         assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
+            { module: middleware, methods: ["configureToken"] }
+         ]);
          assertServiceErrorResponse(result, HTTP_STATUS.UNAUTHORIZED, {
             username: "Invalid credentials",
             password: "Invalid credentials"
@@ -232,8 +234,10 @@ describe("Authentication Service", () => {
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "authenticateUser", "", validPassword);
 
-         assertArgon2Calls(argon2);
-         assertMethodNotCalled(middleware, "configureToken");
+         assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
+            { module: middleware, methods: ["configureToken"] }
+         ]);
          assertServiceErrorResponse(result, HTTP_STATUS.UNAUTHORIZED, {
             username: "Invalid credentials",
             password: "Invalid credentials"
@@ -263,13 +267,16 @@ describe("Authentication Service", () => {
             "Database connection failed"
          );
 
-         assertArgon2Calls(argon2);
-         assertMethodNotCalled(middleware, "configureToken");
+         assertMethodsNotCalled([
+            { module: argon2, methods: ["verify", "hash"] },
+            { module: middleware, methods: ["configureToken"] }
+         ]);
       });
 
       it("should handle argon2.verify error", async() => {
          const mockUser = createMockUser({ username: validUsername, password: hashedPassword });
          arrangeMockRepositorySuccess(userRepository, "findByUsername", mockUser);
+
          const argon2Error = new Error("Argon2 verification failed");
          arrangeArgon2Error(argon2, argon2Error);
 
@@ -306,7 +313,7 @@ describe("Authentication Service", () => {
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
       });
 
-      it("should handle expired refresh token during the refresh request to be configured to 0 seconds", async() => {
+      it("should handle expired refresh token during the refresh request to be configured to 0 seconds for expired refresh tokens", async() => {
          const expirationDate = new Date(Date.now() - 25000);
          mockRes.locals.refresh_token_expiration = expirationDate;
 
