@@ -44,6 +44,7 @@ jest.mock("@/services/authenticationService");
 describe("User Service", () => {
    const userId: string = TEST_CONSTANTS.TEST_USER_ID;
    const userDetailsCacheKey: string = `user:${userId}`;
+   const validRegistration: RegisterPayload = createValidRegistration();
 
    let mockRes: MockResponse;
    let userRepository: typeof import("@/repository/userRepository");
@@ -54,6 +55,7 @@ describe("User Service", () => {
 
    /**
     * Asserts user validation error response for create/update operations
+    *
     * @param {any} result - Service response result
     * @param {any} expectedErrors - Expected validation errors
     * @param {boolean} isUpdate - Whether this is for update operations (default: false)
@@ -111,7 +113,8 @@ describe("User Service", () => {
 
    describe("fetchUserDetails", () => {
       /**
-       * Asserts user not found behavior - repository called, cache not set.
+       * Asserts user not found behavior - repository called, cache not set
+       *
        * @param {string} repositoryMethod - Repository method name (e.g., "findByUserId")
        * @param {string} repositoryParam - Expected parameter for repository call
        */
@@ -164,32 +167,34 @@ describe("User Service", () => {
    });
 
    describe("createUser", () => {
-      const requiredFields = ["username", "email", "name", "birthday", "password", "verifyPassword"];
       const validationTypes: string[] = ["short", "long"];
       const lengthValidationFields: (keyof RegisterPayload)[] = ["username", "name"];
+      const requiredFields: (keyof RegisterPayload)[] = ["username", "email", "name", "birthday", "password", "verifyPassword"];
 
       /**
-       * Asserts user creation success behavior - conflict check, hash, create, token config.
+       * Asserts user creation success behavior - conflict check, hash, create, token configuration
+       *
        * @param {string} password - Expected password for hashing
-       * @param {Record<string, any>} expectedUserData - Expected user data for creation including the hashed password
+       * @param {RegisterPayload} expectedUserData - Expected user data for creation including the hashed password
        * @param {string} userId - Expected user ID for token config
        */
-      const assertUserCreationSuccessBehavior = (password: string, expectedUserData: Record<string, any>, userId: string): void => {
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(expectedUserData.username, expectedUserData.email);
-         expect(argon2.hash).toHaveBeenCalledWith(password);
-         expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining(expectedUserData));
+      const assertUserCreationSuccessBehavior = (password: string, expectedUserData: RegisterPayload, userId: string): void => {
+         assertRepositoryCall(userRepository, "findConflictingUsers", [expectedUserData.username, expectedUserData.email]);
+         assertArgon2Calls(argon2, undefined, undefined, password);
+         assertRepositoryCall(userRepository, "create", [expect.objectContaining(expectedUserData)]);
          expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId);
       };
 
       /**
-       * Asserts user creation conflict behavior - conflict check, no hash, no create, no token.
+       * Asserts user creation conflict behavior - conflict check, no hash, no create, no token configuration
+       *
        * @param {string} username - Expected username for conflict check
        * @param {string} email - Expected email for conflict check
        */
       const assertUserCreationConflictBehavior = (username: string, email: string): void => {
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(username, email);
+         assertRepositoryCall(userRepository, "findConflictingUsers", [username, email]);
          assertMethodsNotCalled([
-            { module: argon2, methods: ["hash"] },
+            { module: argon2, methods: ["verify", "hash"] },
             { module: userRepository, methods: ["create"] },
             { module: middleware, methods: ["configureToken"] }
          ]);
@@ -200,9 +205,9 @@ describe("User Service", () => {
          const hashedPassword: string = "hashed_password_123";
          const validUser: RegisterPayload = createValidRegistration();
 
-         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
          arrangeArgon2Mocks(argon2, hashedPassword);
          arrangeMockRepositorySuccess(userRepository, "create", userId);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", validUser);
 
@@ -254,7 +259,7 @@ describe("User Service", () => {
 
             const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
-            // Special case for password verification field, which has the same error as password for simplicity
+            // Special case for the password verification field, which has the same error as the password field for simplicity
             const identifier: string = field === "verifyPassword" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
             const expectedError: string = `${identifier} is required`;
 
@@ -265,16 +270,18 @@ describe("User Service", () => {
          });
       });
 
-      // Fields that have [2, 30] character length validation
+      // Fields that have [2, 30] character length validation (name and username)
       lengthValidationFields.forEach((field) => {
          const fieldName: string = field.charAt(0).toUpperCase() + field.slice(1);
 
          validationTypes.forEach((type) => {
             it(`should return validation errors for ${field} too ${type}`, async() => {
-               const invalidUser: RegisterPayload = createValidRegistration();
                const value: string = type === "short" ? "a" : "a".repeat(31);
                const errorSuffix: string = type === "short" ? "must be at least 2 characters" : "must be at most 30 characters";
-               invalidUser[field] = value;
+               const invalidUser: RegisterPayload = {
+                  ...validRegistration,
+                  [field]: value
+               };
 
                const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -287,8 +294,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for username with invalid characters", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.username = "test@user!";
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            username: "test@user!"
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -299,8 +308,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for email too long", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.email = "a".repeat(250) + "@example.com";
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            email: "a".repeat(250) + "@example.com"
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -311,8 +322,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for birthday too early", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = "1799-12-31";
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            birthday: "1799-12-31"
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -327,8 +340,10 @@ describe("User Service", () => {
          const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
          const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = tomorrow.toISOString();
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            birthday: tomorrow.toISOString()
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -338,23 +353,13 @@ describe("User Service", () => {
          );
       });
 
-      it("should return validation errors for empty birthday", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.birthday = "";
-
-         const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
-
-         assertUserValidationErrorResponse(
-            result,
-            { birthday: "Birthday is required" }
-         );
-      });
-
       it("should return validation errors for password too long", async() => {
          const longPassword: string = "a".repeat(256);
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.password = longPassword;
-         invalidUser.verifyPassword = longPassword;
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            password: longPassword,
+            verifyPassword: longPassword
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -368,8 +373,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for mismatched passwords", async() => {
-         const invalidUser: RegisterPayload = createValidRegistration();
-         invalidUser.verifyPassword = "Password2!";
+         const invalidUser: RegisterPayload = {
+            ...validRegistration,
+            verifyPassword: "Password2!"
+         };
 
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, userService, "createUser", invalidUser);
 
@@ -487,24 +494,52 @@ describe("User Service", () => {
             { module: userRepository, methods: ["create"] }
          ]);
       });
-
    });
 
    describe("updateAccountDetails", () => {
       const updateValidationTypes: string[] = ["short", "long"];
       const updateLengthValidationFields: (keyof UserUpdates)[] = ["username", "name"];
+      const validUpdates: Partial<UserUpdates> = createMockUserUpdates();
+      const validPasswordChangeUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
 
       /**
-       * Asserts user update success behavior - conflict check, update, cache clear.
+       * Asserts user update success behavior - conflict check, update, cache clear
+       *
        * @param {string} username - Expected username for conflict check
        * @param {string} email - Expected email for conflict check
        * @param {string} userId - Expected user ID
-       * @param {Record<string, any>} expectedUpdates - Expected updates data
+       * @param {Partial<UserUpdates>} expectedUpdates - Expected updates data
        * @param {string} cacheKey - Expected cache key to clear
        */
-      const assertUserUpdateSuccessBehavior = (username: string, email: string, userId: string, expectedUpdates: Record<string, any>, cacheKey: string): void => {
-         expect(userRepository.findConflictingUsers).toHaveBeenCalledWith(username, email, userId);
-         expect(userRepository.update).toHaveBeenCalledWith(userId, expect.objectContaining(expectedUpdates));
+      const assertUserUpdateSuccessBehavior = (username: string, email: string, userId: string, expectedUpdates: Partial<UserUpdates>, cacheKey: string): void => {
+         assertRepositoryCall(userRepository, "findConflictingUsers", [username, email, userId]);
+         assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(expectedUpdates)]);
+         assertCacheInvalidation(redis, cacheKey);
+      };
+
+      /**
+       * Asserts password update success behavior - user lookup, password verification, hash, update, cache clear
+       *
+       * @param {string} userId - Expected user ID
+       * @param {string} currentPasswordHash - Current hashed password from database
+       * @param {string} currentPassword - Current password provided by user
+       * @param {string} newPassword - New password to be set
+       * @param {Partial<UserUpdates>} updates - Update payload
+       * @param {string} hashedNewPassword - Expected hashed new password
+       * @param {string} cacheKey - Expected cache key to clear
+       */
+      const assertPasswordUpdateSuccessBehavior = (
+         userId: string,
+         currentPasswordHash: string,
+         currentPassword: string,
+         newPassword: string,
+         updates: Partial<UserUpdates>,
+         hashedNewPassword: string,
+         cacheKey: string
+      ): void => {
+         assertRepositoryCall(userRepository, "findByUserId", [userId]);
+         assertArgon2Calls(argon2, currentPasswordHash, currentPassword, newPassword);
+         assertRepositoryCall(userRepository, "update", [userId, { ...updates, password: hashedNewPassword }]);
          assertCacheInvalidation(redis, cacheKey);
       };
 
@@ -516,8 +551,8 @@ describe("User Service", () => {
             birthday: new Date("1990-01-01").toISOString()
          };
 
-         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
          arrangeMockRepositorySuccess(userRepository, "update", true);
+         arrangeMockRepositorySuccess(userRepository, "findConflictingUsers", []);
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
@@ -547,13 +582,15 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
-         assertRepositoryCall(userRepository, "findByUserId", [userId]);
-         assertArgon2Calls(argon2, currentUser.password, updates.password, updates.newPassword);
-         assertRepositoryCall(userRepository, "update", [userId, {
-            ...updates,
-            password: hashedNewPassword
-         }]);
-         assertCacheInvalidation(redis, userDetailsCacheKey);
+         assertPasswordUpdateSuccessBehavior(
+            userId,
+            currentUser.password,
+            updates.password!,
+            updates.newPassword!,
+            updates,
+            hashedNewPassword,
+            userDetailsCacheKey
+         );
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -582,11 +619,12 @@ describe("User Service", () => {
 
          updateValidationTypes.forEach((type) => {
             it(`should return validation errors for ${field} too ${type}`, async() => {
-               const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
                const value: string = type === "short" ? "a" : "a".repeat(31);
                const errorSuffix: string = type === "short" ? "must be at least 2 characters" : "must be at most 30 characters";
-
-               invalidUpdates[field] = value;
+               const invalidUpdates: Partial<UserUpdates> = {
+                  ...validUpdates,
+                  [field]: value
+               };
 
                const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -600,8 +638,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for username with invalid characters", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.username = "test@user!";
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validUpdates,
+            username: "test@user!"
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -613,8 +653,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for email too long", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.email = "a".repeat(250) + "@example.com";
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validUpdates,
+            email: "a".repeat(250) + "@example.com"
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -626,8 +668,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for birthday too early", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.birthday = "1799-12-31";
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validUpdates,
+            birthday: "1799-12-31"
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -643,8 +687,10 @@ describe("User Service", () => {
          futureDate.setFullYear(futureDate.getFullYear() + 1);
          const futureDateString = futureDate.toISOString().split("T")[0];
 
-         const invalidUpdates: Partial<UserUpdates> = createMockUserUpdates();
-         invalidUpdates.birthday = futureDateString;
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validUpdates,
+            birthday: futureDateString
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -657,9 +703,11 @@ describe("User Service", () => {
 
       it("should return validation errors for password too long", async() => {
          const longPassword = "a".repeat(256);
-         const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         invalidUpdates.newPassword = longPassword;
-         invalidUpdates.verifyPassword = longPassword;
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validPasswordChangeUpdates,
+            newPassword: longPassword,
+            verifyPassword: longPassword
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -674,8 +722,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for mismatched new passwords", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         invalidUpdates.verifyPassword = "DifferentPassword1!";
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validPasswordChangeUpdates,
+            verifyPassword: "DifferentPassword1!"
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -687,9 +737,11 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for new password same as old password", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         invalidUpdates.newPassword = "Password1!";
-         invalidUpdates.verifyPassword = "Password1!";
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validPasswordChangeUpdates,
+            newPassword: "Password1!",
+            verifyPassword: "Password1!"
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -701,8 +753,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for missing new password", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         delete invalidUpdates.newPassword;
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validPasswordChangeUpdates,
+            newPassword: undefined
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -717,8 +771,10 @@ describe("User Service", () => {
       });
 
       it("should return validation errors for missing password verification", async() => {
-         const invalidUpdates: Partial<UserUpdates> = createUserUpdatesWithPasswordChange();
-         delete invalidUpdates.verifyPassword;
+         const invalidUpdates: Partial<UserUpdates> = {
+            ...validPasswordChangeUpdates,
+            verifyPassword: undefined
+         };
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, invalidUpdates);
 
@@ -853,12 +909,14 @@ describe("User Service", () => {
 
    describe("deleteAccount", () => {
       /**
-       * Asserts user deletion success behavior - delete, logout, cache clear.
+       * Asserts user deletion success behavior - delete, logout, cache clear
+       *
        * @param {string} user_id - Expected user ID
        */
       const assertUserDeletionSuccessBehavior = (user_id: string): void => {
          expect(userRepository.deleteUser).toHaveBeenCalledWith(user_id);
          expect(authenticationService.logoutUser).toHaveBeenCalledWith(mockRes);
+
          // All applicable cache regions should be cleared for the given user_id
          ["accounts", "budgets", "transactions", "user"].forEach(key => {
             assertCacheInvalidation(redis, `${key}:${user_id}`);
