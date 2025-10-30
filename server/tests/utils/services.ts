@@ -7,17 +7,17 @@ import { MockedServiceFunction } from "@/tests/utils/controllers";
 /**
  * Mocked repository function type
  *
- * @template T - The type of the repository function
- * @returns {jest.MockedFunction<T>} The mocked repository function
+ * @template T - Repository function type
+ * @returns {jest.MockedFunction<T>} Mocked function
  */
 export type MockedRepositoryFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 /**
- * Arranges argon2 mocks for password verification and hashing
+ * Arrange argon2 mocks for verify and hash
  *
- * @param {jest.Mocked<any>} argon2Module - The argon2 module to mock
- * @param {string} hashedPassword - The hashed password to return from the hash operation
- * @param {boolean} [verifyResult] - The result to return from the verify operation (defaults to `false`)
+ * @param {jest.Mocked<any>} argon2Module - argon2 module mock
+ * @param {string} hashedPassword - Hashed password returned by hash
+ * @param {boolean} [verifyResult] - Verify result (`false` by default)
  */
 export function arrangeArgon2Mocks(argon2Module: jest.Mocked<any>, hashedPassword: string, verifyResult: boolean = false): void {
    argon2Module.hash.mockResolvedValue(hashedPassword);
@@ -26,13 +26,13 @@ export function arrangeArgon2Mocks(argon2Module: jest.Mocked<any>, hashedPasswor
 
 /**
  * Asserts argon2 method calls, where a missing hashed/plain password implies
- * the respective verify method should not have been called and a missing hashing password implies
- * the hash method should not have been called
+ * the respective verify method should not have been called and a missing hashing
+ * password implies the hash method should not have been called
  *
- * @param {jest.Mocked<any>} argon2Module - The argon2 module to assert
- * @param {string} [hashedPassword] - If provided, asserts verify was called with this hashed password
- * @param {string} [plainPassword] - If provided, asserts verify was called with this password to verify
- * @param {string} [hashingPassword] - If provided, asserts hash was called with this password to hash
+ * @param {jest.Mocked<any>} argon2Module - argon2 module mock
+ * @param {string} [hashedPassword] - Expected hashed password for verify
+ * @param {string} [plainPassword] - Expected plain password for verify
+ * @param {string} [hashingPassword] - Expected password for hash
  */
 export function assertArgon2Calls(
    argon2Module: jest.Mocked<any>,
@@ -54,22 +54,22 @@ export function assertArgon2Calls(
 }
 
 /**
- * Arranges argon2 mock to throw an error
+ * Arrange argon2 verify to throw an error
  *
- * @param {jest.Mocked<any>} argon2Module - The argon2 module to mock
- * @param {Error} error - Error to throw from argon2.verify
+ * @param {jest.Mocked<any>} argon2Module - argon2 module mock
+ * @param {Error} error - Error to throw from verify
  */
 export function arrangeArgon2Error(argon2Module: jest.Mocked<any>, error: Error): void {
    argon2Module.verify.mockRejectedValue(error);
 }
 
 /**
- * Arranges a mock repository method to return data successfully
+ * Arrange a mock repository method to resolve with data
  *
- * @param {jest.Mocked<any>} repositoryModule - The repository module to mock
- * @param {string} methodName - The method name of the repository method to mock
- * @param {any} data - Data to return from the repository method
- * @returns {MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>} The mocked repository function
+ * @param {jest.Mocked<any>} repositoryModule - Repository module to mock
+ * @param {string} methodName - Repository method name
+ * @param {any} data - Data to return
+ * @returns {MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>} Mocked function
  */
 export function arrangeMockRepositorySuccess(
    repositoryModule: jest.Mocked<any>,
@@ -83,12 +83,12 @@ export function arrangeMockRepositorySuccess(
 }
 
 /**
- * Arranges a mock repository method to throw an error
+ * Arrange a mock repository method to throw an error
  *
- * @param {jest.Mocked<any>} repositoryModule - The repository module to mock
- * @param {string} methodName - The method name of the repository method to mock
- * @param {string} errorMessage - Error message to throw
- * @returns {MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>} The mocked repository method
+ * @param {jest.Mocked<any>} repositoryModule - Repository module to mock
+ * @param {string} methodName - Repository method name
+ * @param {string} errorMessage - Error message
+ * @returns {MockedRepositoryFunction<typeof repositoryModule[typeof methodName]>} Mocked function
  */
 export function arrangeMockRepositoryError(
    repositoryModule: jest.Mocked<any>,
@@ -105,7 +105,7 @@ export function arrangeMockRepositoryError(
  * Arranges default Redis cache behavior for all cache methods to return `null`
  * for cache reads, `undefined` for cache writes, and `undefined` for cache invalidations
  *
- * @param {jest.Mocked<any>} cacheModule - The cache module to mock
+ * @param {jest.Mocked<any>} cacheModule - Cache module mock
  */
 export function arrangeDefaultRedisCacheBehavior(cacheModule: jest.Mocked<any>): void {
    cacheModule.getCacheValue.mockResolvedValue(null);
@@ -116,9 +116,9 @@ export function arrangeDefaultRedisCacheBehavior(cacheModule: jest.Mocked<any>):
 /**
  * Arranges a mock cache read operation to return data successfully
  *
- * @param {jest.Mocked<any>} cacheModule - The cache module to mock
- * @param {string} data - Cached data to return
- * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} The mocked cache read operation
+ * @param {jest.Mocked<any>} cacheModule - Cache module mock
+ * @param {string} data - Cached data
+ * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} Mocked function
  */
 export function arrangeMockCacheHit(
    cacheModule: jest.Mocked<any>,
@@ -133,8 +133,8 @@ export function arrangeMockCacheHit(
 /**
  * Arranges a mock cache read operation to return `null`, implying a cache miss
  *
- * @param {jest.Mocked<any>} cacheModule - The cache module to mock
- * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} The mocked cache read operation
+ * @param {jest.Mocked<any>} cacheModule - Cache module mock
+ * @returns {MockedServiceFunction<typeof cacheModule.getCacheValue>} Mocked function
  */
 export function arrangeMockCacheMiss(
    cacheModule: jest.Mocked<any>
@@ -146,11 +146,11 @@ export function arrangeMockCacheMiss(
 }
 
 /**
- * Asserts that a service method properly handled a successful response
+ * Assert a service method returned a success response
  *
- * @param {ServerResponse} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
- * @param {Record<string, any> | undefined} expectedData - Expected data in the response (defaults to `undefined` for `HTTP_STATUS.NO_CONTENT`)
+ * @param {ServerResponse} result - Service response
+ * @param {number} expectedStatusCode - Expected HTTP status
+ * @param {Record<string, any> | undefined} expectedData - Expected data (undefined for NO_CONTENT)
  */
 export function assertServiceSuccessResponse(
    result: ServerResponse,
@@ -168,7 +168,7 @@ export function assertServiceSuccessResponse(
 }
 
 /**
- * Asserts that a cache invalidation operation was not called during error scenarios
+ * Assert cache invalidation was not called during error scenarios
  *
  * @param {jest.Mocked<any>} redis - Redis mock module
  */
@@ -179,10 +179,10 @@ export function assertCacheInvalidationNotCalled(
 }
 
 /**
- * Asserts that a service method properly handled an unsuccessful response
+ * Assert a service method returned an error response
  *
- * @param {ServerResponse} result - Service response result
- * @param {number} expectedStatusCode - Expected HTTP status code
+ * @param {ServerResponse} result - Service response
+ * @param {number} expectedStatusCode - Expected HTTP status
  * @param {Record<string, any>} expectedErrors - Expected error object or pattern
  */
 export function assertServiceErrorResponse(
@@ -229,9 +229,9 @@ export function assertCacheHitBehavior(
  * @param {jest.Mocked<any>} repositoryModule - Repository module mock
  * @param {string} repositoryMethod - Repository method name
  * @param {string} cacheKey - Expected cache key
- * @param {string} repositoryParam - Expected parameter for repository call
- * @param {any} expectedData - Expected data to be cached
- * @param {number} cacheDuration - Expected cache duration in seconds (in seconds)
+ * @param {string} repositoryParam - Expected repository parameter
+ * @param {any} expectedData - Expected data to cache
+ * @param {number} cacheDuration - Cache duration in seconds
  */
 export function assertCacheMissBehavior(
    cacheModule: jest.Mocked<any>,
@@ -248,23 +248,22 @@ export function assertCacheMissBehavior(
 }
 
 /**
- * Asserts that a cache invalidation operation was called with the expected cache key
+ * Assert cache invalidation call
  *
  * @param {jest.Mocked<any>} cacheModule - Cache module mock
- * @param {string} cacheKey - Expected cache key to be invalidated
+ * @param {string} cacheKey - Cache key to invalidate
  */
 export function assertCacheInvalidation(cacheModule: jest.Mocked<any>, cacheKey: string): void {
    expect(cacheModule.removeCacheValue).toHaveBeenCalledWith(cacheKey);
 }
 
 /**
- * Asserts that a repository method was called with expected parameters and optionally
- * verifies the return value, if applicable
+ * Assert a repository method call and optional return value
  *
  * @param {jest.Mocked<any>} repositoryModule - Repository module mock
  * @param {string} repositoryMethod - Repository method name
- * @param {any[]} expectedParams - Expected parameters passed to the repository method
- * @param {any | undefined} expectedReturnValue - Optional expected return value from the repository method (defaults to `undefined`)
+ * @param {any[]} expectedParams - Expected parameters
+ * @param {any | undefined} expectedReturnValue - Optional expected return value
  */
 export function assertRepositoryCall(
    repositoryModule: jest.Mocked<any>,
@@ -280,14 +279,13 @@ export function assertRepositoryCall(
 }
 
 /**
- * Calls a service method with proper type casting for Express middleware/controller
- * functions to avoid type errors when calling service methods in unit tests
+ * Call a service method with a mocked response
  *
- * @param {MockResponse} mockRes - Mock response object
- * @param {jest.Mocked<any>} serviceModule - The service module to call the method on
- * @param {string} methodName - The method name of the service method to call
- * @param {...unknown} args - Additional arguments to pass to the service method
- * @returns {Promise<ServerResponse>} The result of the service method call
+ * @param {MockResponse} mockRes - Mock response
+ * @param {jest.Mocked<any>} serviceModule - Service module to call
+ * @param {string} methodName - Service method name
+ * @param {...unknown} args - Additional arguments
+ * @returns {Promise<ServerResponse>} Result
  */
 export async function callServiceMethodWithMockRes(
    mockRes: MockResponse,
@@ -299,9 +297,9 @@ export async function callServiceMethodWithMockRes(
 }
 
 /**
- * Asserts that multiple methods were not called during error scenarios
+ * Assert multiple methods were not called during error scenarios
  *
- * @param {Array<{module: jest.Mocked<any>, methods: string[]}>} moduleMethods - Array of modules with their method names to assert were not called
+ * @param {Array<{module: jest.Mocked<any>, methods: string[]}>} moduleMethods - Modules and methods to assert
  */
 export function assertMethodsNotCalled(moduleMethods: Array<{module: jest.Mocked<any>, methods: string[]}>): void {
    moduleMethods.forEach(({ module, methods }) => {
@@ -310,21 +308,21 @@ export function assertMethodsNotCalled(moduleMethods: Array<{module: jest.Mocked
 }
 
 /**
- * Asserts that a single method was not called during error scenarios
+ * Assert a single method was not called during error scenarios
  *
- * @param {jest.Mocked<any>} module - The module to assert
- * @param {string} method - The method name to assert was not called
+ * @param {jest.Mocked<any>} module - Module to assert
+ * @param {string} method - Method name
  */
 export function assertMethodNotCalled(module: jest.Mocked<any>, method: string): void {
    expect(module[method]).not.toHaveBeenCalled();
 }
 
 /**
- * Asserts that a service method throws the expected error and logs the error stack
+ * Assert a service method throws the expected error and logs the stack
  *
- * @param {() => Promise<ServerResponse>} serviceCall - The service method call (should be a function that returns a promise)
- * @param {string} expectedErrorMessage - The expected error message to throw
- * @returns {Promise<void>} A promise that resolves when the service method throws the expected error and logs the error stack
+ * @param {() => Promise<ServerResponse>} serviceCall - Service call function
+ * @param {string} expectedErrorMessage - Expected error message
+ * @returns {Promise<void>} Void
  */
 export async function assertServiceThrows(serviceCall: () => Promise<ServerResponse>, expectedErrorMessage: string): Promise<void> {
    try {

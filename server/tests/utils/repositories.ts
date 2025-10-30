@@ -1,7 +1,7 @@
 import { parse } from "pgsql-ast-parser";
 
 /**
- * Set of SQL queries that are not valid and should be excluded from validation
+ * SQL statements intentionally excluded from syntax validation due to missing parse support
  */
 const sqlValidationExceptions = new Set([
    "ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger",
@@ -9,7 +9,7 @@ const sqlValidationExceptions = new Set([
 ]);
 
 /**
- * Mock database pool type for testing
+ * Mock database pool for repository unit tests
  */
 export interface MockPool {
    query: jest.Mock;
@@ -19,7 +19,7 @@ export interface MockPool {
 }
 
 /**
- * Mock database client type for testing
+ * Mock database client for repository unit tests
  */
 export interface MockClient {
    query: jest.Mock;
@@ -28,7 +28,7 @@ export interface MockClient {
 }
 
 /**
- * Mock database query result type for testing
+ * Mock database query result for repository unit tests
  */
 export interface MockQueryResult {
    rows: any[];
@@ -39,7 +39,7 @@ export interface MockQueryResult {
 }
 
 /**
- * Create a fresh mock database pool for testing
+ * Create a mock database pool for repository unit tests
  */
 export function createMockPool(): MockPool {
    return {
@@ -51,7 +51,7 @@ export function createMockPool(): MockPool {
 }
 
 /**
- * Create a fresh mock database client for testing
+ * Create a mock database client for repository unit tests
  */
 export function createMockClient(): MockClient {
    return {
@@ -62,7 +62,7 @@ export function createMockClient(): MockClient {
 }
 
 /**
- * Mock database query result
+ * Create a mock query result for repository unit tests
  */
 export function createMockQueryResult(rows: any[] = []): MockQueryResult {
    return {
@@ -75,72 +75,73 @@ export function createMockQueryResult(rows: any[] = []): MockQueryResult {
 }
 
 /**
- * Arrange mock pool query to return specific data
+ * Arranges the mock pool `query` to resolve with given rows
  *
- * @param {any[]} rows - Array of rows to return
- * @param {MockPool} mockPool - Mock pool instance
+ * @param {any[]} rows - Rows to return
+ * @param {MockPool} mockPool - Mock pool
  */
 export function arrangeMockQuery(rows: any[] = [], mockPool: MockPool): void {
    mockPool.query.mockResolvedValue(createMockQueryResult(rows));
 }
 
 /**
- * Arrange mock pool query to throw an error
+ * Arranges the mock pool `query` to reject with an error once
  *
- * @param {string} errorMessage - Error message to throw
- * @param {MockPool} mockPool - Mock pool instance
+ * @param {string} errorMessage - Error message
+ * @param {MockPool} mockPool - Mock pool
  */
 export function arrangeMockQueryError(errorMessage: string, mockPool: MockPool): void {
    mockPool.query.mockRejectedValueOnce(new Error(errorMessage));
 }
 
 /**
- * Arranges a mock transaction flow with a sequence of query results or errors, where
- * an error should be the final step in the flow if an error is expected.
+ * Arranges a sequence of results/errors for a transaction flow, where
+ * if an error is expected, it should be the final step in the sequence
  *
- * @param {jest.MockedFunction} mockQuery - The mock query function to configure
- * @param {Array<any | Error>} steps - Array of query results or error items
+ * @param {jest.MockedFunction} mockQuery - Mock `query` function
+ * @param {Array<any | Error>} steps - Results or errors in order
  */
 export function arrangeMockTransactionFlow(mockQuery: jest.MockedFunction<any>, steps: Array<any | Error>): void {
    for (const step of steps) {
       if (step instanceof Error) {
          mockQuery.mockRejectedValueOnce(step);
       } else {
-         mockQuery.mockResolvedValueOnce(step ?? {});
+         mockQuery.mockResolvedValueOnce(step || {});
       }
    }
 }
 
 /**
- * Reset all Jest mocks and normalizes all current database mocks to the same mock client
+ * Resets all Jest mocks and normalizes database mocks to a shared
+ * test-scoped mock client
  *
- * @param {MockPool} globalMockPool - Global mock pool instance
- * @param {MockPool} mockPool - Mock pool instance
- * @param {MockClient} mockClient - Mock client instance
+ * @param {MockPool} globalMockPool - Global mock pool
+ * @param {MockPool} mockPool - Test-scoped mock pool for the current test
+ * @param {MockClient} mockClient - Shared test-scoped mock client for the current test
  */
 export function resetDatabaseMocks(globalMockPool: MockPool, mockPool: MockPool, mockClient: MockClient): void {
    jest.clearAllMocks();
 
-   // Both query execution and connection mocks should point to the same mock client for all tests
+   // Both query execution and pool connection mocks should point to the same test-scoped mock client
    mockPool.query = mockClient.query;
    mockPool.connect.mockResolvedValue(mockClient);
 
-   // Global mock pool should point to the same mock pool for all tests
+   // Global mock pool should point to the same test-scoped mock pool
    globalMockPool.query = mockPool.query;
    globalMockPool.connect = mockPool.connect;
 }
 
 /**
- * Assert that query was not called
+ * Asserts the test-scoped mock pool `query` was not called
  *
- * @param {MockPool} mockPool - Mock pool instance
+ * @param {MockPool} mockPool - Test-scoped mock pool for the current test
  */
 export function assertQueryNotCalled(mockPool: MockPool): void {
    expect(mockPool.query).not.toHaveBeenCalled();
 }
 
 /**
- * Assert a mock query result matches the expected data
+ * Asserts a query result equals expected data
  *
  * @param {any} result - Actual query result
  * @param {any} expectedData - Expected data
@@ -150,45 +151,45 @@ export function assertQueryResult(result: any, expectedData: any): void {
 }
 
 /**
- * Assert that client was released
+ * Asserts the client was released
  *
- * @param {MockClient} mockClient - Mock client instance
+ * @param {MockClient} mockClient - Test-scoped mock client for the current test
  */
 export function assertClientReleased(mockClient: MockClient): void {
    expect(mockClient.release).toHaveBeenCalled();
 }
 
 /**
- * Assert that a rollback was called with the proper number of statements
+ * Asserts a rollback occurred with the expected number of statements
  *
- * @param {MockClient} mockClient - Mock client instance
- * @param {number} expectedStatements - Expected number of statements to be called not including BEGIN/ROLLBACK
+ * @param {MockClient} mockClient - Test-scoped mock client for the current test
+ * @param {number} expectedStatements - Statements executed excluding `BEGIN` and `ROLLBACK`
  */
 export function assertTransactionRollback(mockClient: MockClient, expectedStatements: number): void {
    const mockClientQueries: any[] = mockClient.query.mock.calls;
    const totalQueries: number = mockClientQueries.length;
 
-   // BEGIN, ROLLBACK, and the expected number of statements must be called
+   // Assert that BEGIN, ROLLBACK, and the expected number of statements are in the sequence
    expect(totalQueries).toBe(expectedStatements + 2);
 
-   // BEGIN must be called with the proper isolation level
+   // Assert that BEGIN is assigned to a proper isolation level
    expect(mockClientQueries[0][0]).toMatch(
       /^BEGIN TRANSACTION ISOLATION LEVEL (READ UNCOMMITTED|READ COMMITTED|REPEATABLE READ|SERIALIZABLE);?$/
    );
    expect(mockClient.query).not.toHaveBeenCalledWith("COMMIT;");
    expect(mockClientQueries[totalQueries - 1][0]).toBe("ROLLBACK;");
 
-   // The client should always be released after the rollback
+   // Assert that the test-scoped mock client is released back to the mock pool
    assertClientReleased(mockClient);
 }
 
 /**
- * Assert a mock query result matches the expected data and the client was released
- * for transaction-based operations
+ * Asserts a transaction result equals expected data and the test-scoped
+ * mock client is released back to the mock pool
  *
- * @param {any} result - Actual query result
- * @param {any} expectedData - Expected data
- * @param {MockClient} mockClient - Mock client instance
+ * @param {any} result - Actual transaction result
+ * @param {any} expectedData - Expected transaction result
+ * @param {MockClient} mockClient - Test-scoped mock client for the current test
  */
 export function assertTransactionResult(result: any, expectedData: any, mockClient: MockClient): void {
    assertQueryResult(result, expectedData);
@@ -196,9 +197,10 @@ export function assertTransactionResult(result: any, expectedData: any, mockClie
 }
 
 /**
- * Assert that SQL query is valid by parsing it with exceptions for database triggers
+ * Asserts SQL parses successfully with configured exceptions due to
+ * missing parse support for certain SQL statements
  *
- * @param {string} sql - SQL query string to validate
+ * @param {string} sql - SQL to validate
  */
 export function assertValidSQL(sql: string): void {
    if (sqlValidationExceptions.has(sql)) return;
@@ -207,12 +209,13 @@ export function assertValidSQL(sql: string): void {
 }
 
 /**
- * Assert that a mock query was called with valid SQL syntax, expected key phrases, and expected parameters
+ * Asserts a test-scoped mock query call had valid SQL, key phrases, and
+ * parameters in the SQL query
  *
- * @param {string[]} keyPhrases - Key phrases that should be present in the SQL
- * @param {any[]} expectedParams - Expected parameters array
- * @param {number} callIndex - Index of the query call to check for matching key phrases and expected parameters
- * @param {MockPool} mockPool - Mock pool instance
+ * @param {string[]} keyPhrases - Required SQL fragments
+ * @param {any[]} expectedParams - Expected parameters
+ * @param {number} callIndex - Call index to check
+ * @param {MockPool} mockPool - Test-scoped mock pool for the current test
  */
 export function assertQueryCalledWithKeyPhrases(
    keyPhrases: string[],
@@ -220,33 +223,32 @@ export function assertQueryCalledWithKeyPhrases(
    callIndex: number,
    mockPool: MockPool
 ): void {
-   // Ensure the specific call index exists
+   // Assert that the specific call index exists
    expect(mockPool.query.mock.calls.length).toBeGreaterThanOrEqual(callIndex + 1);
 
    const [actualSql, actualParams] = mockPool.query.mock.calls[callIndex];
 
-   // Validate that the SQL is syntactically correct
+   // Validate that the SQL is syntactically correct with configured exceptions
    assertValidSQL(actualSql);
 
-   // Check that all expected key phrases are present in the actual SQL query
+   // Assert that all expected key phrases are present in the actual SQL query
    keyPhrases.forEach(phrase => {
       expect(actualSql).toContain(phrase);
    });
 
-   // Check that the actual parameters match the expected parameters
+   // Assert that the actual parameters match the expected parameters in the SQL query
    expect(expectedParams).toEqual(actualParams || []);
 }
 
 /**
- * Arrange the UPDATE query structure for single or multiple fields and assert it was called
- * with the proper structure and expected parameters
+ * Arranges and asserts an UPDATE query (single or multiple fields) in the SQL query
  *
- * @param {string} tableName - Name of the table to update
- * @param {Record<string, any>} updates - Updates object (single or multiple fields)
- * @param {string} idField - ID field name (e.g., `"user_id"`, `"account_id"`)
+ * @param {string} tableName - Table name
+ * @param {Record<string, any>} updates - Fields to update
+ * @param {string} idField - ID field name
  * @param {string} idValue - ID value
- * @param {() => Promise<boolean>} updateFn - Repository update function
- * @param {MockPool} mockPool - Mock pool instance
+ * @param {(id: string, updates: Record<string, any>) => Promise<boolean>} updateFn - Repository update function
+ * @param {MockPool} mockPool - Test-scoped mock pool for the current test
  */
 export async function arrangeAndAssertUpdateQueries(
    tableName: string,
@@ -256,27 +258,22 @@ export async function arrangeAndAssertUpdateQueries(
    updateFn: (id: string, updates: Record<string, any>) => Promise<boolean>,
    mockPool: MockPool
 ): Promise<void> {
-   // Arrange a successful response to prevent the actual database call
+   // Arrange a successful response to the database query call
    arrangeMockQuery([{ [idField]: idValue }], mockPool);
 
-   // Execute the provided update function
+   // Execute the provided update function to update the database
    await updateFn(idValue, updates);
 
-   // Get the fields and values in the order they appear in the updates object
+   // Get fields and values in the order they appear in the updates object in the SQL query
    const fields: string[] = Object.keys(updates);
    const values: any[] = Object.values(updates);
-
-   const keyPhrases: string[] = [
-      `UPDATE ${tableName}`,
-      "SET",
-      "RETURNING"
-   ];
+   const keyPhrases: string[] = [`UPDATE ${tableName}`, "SET", "RETURNING"];
 
    if (fields.length === 1) {
-      // For a single field, the single parameter should be at index 1
+      // For a single field, the parameter should be at index 1 in the SQL query
       keyPhrases.push(`${fields[0]} = $1`);
    } else {
-      // For multiple fields, they should be joined with commas
+      // For multiple fields, join with commas
       const fieldAssignments = fields.map((field, index) => `${field} = $${index + 1}`).join(", ");
       keyPhrases.push(fieldAssignments);
    }
@@ -289,11 +286,10 @@ export async function arrangeAndAssertUpdateQueries(
 }
 
 /**
- * Asserts that a repository function throws the expected error
+ * Asserts a repository function throws the expected error and logs the stack
  *
- * @param {Function} repositoryFunction - Repository function to test
+ * @param {() => Promise<any>} repositoryFunction - Repository function under test
  * @param {string} expectedErrorMessage - Expected error message
- * @returns {Promise<void>}
  */
 export async function assertRepositoryThrows(
    repositoryFunction: () => Promise<any>,
@@ -301,18 +297,18 @@ export async function assertRepositoryThrows(
 ): Promise<void> {
    try {
       await repositoryFunction();
-      throw new Error(`Expected repository to throw "${expectedErrorMessage}" but it succeeded`);
+      throw new Error(`Expected repository to throw "${expectedErrorMessage}" but it succeeded instead...`);
    } catch (error: any) {
       expect(error.message).toBe(expectedErrorMessage);
    }
 }
 
 /**
- * Assert object has specific properties and does not have others
+ * Asserts an object has required properties and omits excluded ones
  *
- * @param {Record<string, any>} obj - Object to validate
- * @param {string[]} requiredProperties - Properties that should exist
- * @param {string[]} excludedProperties - Properties that should not exist
+ * @param {Record<string, any>} obj - Object to assert properties of
+ * @param {string[]} requiredProperties - Properties that must exist
+ * @param {string[]} [excludedProperties] - Properties that must not exist in the object
  */
 export function assertObjectProperties(obj: Record<string, any>, requiredProperties: string[], excludedProperties: string[] = []): void {
    requiredProperties.forEach(prop => expect(obj).toHaveProperty(prop));

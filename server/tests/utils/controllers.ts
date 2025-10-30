@@ -6,22 +6,21 @@ import { sendErrors, sendSuccess } from "@/lib/response";
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
- * Mocked service function type for type casting purposes
+ * Mocked service function type
  *
- * @template T - The type of the service function
- * @returns {jest.MockedFunction<T>} The mocked service function
+ * @template T - Service function type
+ * @returns {jest.MockedFunction<T>} Mocked function
  */
 export type MockedServiceFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 /**
- * Arranges a mock submit service request function as all services are mocked to test
- * the controller flow in isolation
+ * Create a mock submit service request function
  *
- * @returns {jest.Mock} Mock submit service request function
+ * @returns {jest.Mock} Mock submit service request
  */
 export function createMockSubmitServiceRequest(): jest.Mock {
    return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
-      // Make sure error logging is mocked for all service requests
+      // Ensure error logging is mocked for all service requests
       logger.error = jest.fn();
 
       try {
@@ -44,13 +43,13 @@ export function createMockSubmitServiceRequest(): jest.Mock {
 }
 
 /**
- * Arranges a mock service function to return a successful response
+ * Arrange a mock service function to return a success response
  *
- * @param {jest.Mocked<any>} serviceModule - The service module to mock
- * @param {string} methodName - The method name of the service to mock
- * @param {number} statusCode - HTTP status code of the response
- * @param {Object | undefined} data - Response data, if applicable
- * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ * @param {jest.Mocked<any>} serviceModule - Service module to mock
+ * @param {string} methodName - Service method name
+ * @param {number} statusCode - HTTP status code
+ * @param {Object | undefined} data - Response data if any
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} Mocked function
  */
 export function arrangeMockServiceSuccess(
    serviceModule: jest.Mocked<any>,
@@ -65,13 +64,13 @@ export function arrangeMockServiceSuccess(
 }
 
 /**
- * Arranges a mock service function to return a validation error response
+ * Arrange a mock service function to return a validation error
  *
- * @param {jest.Mocked<any>} serviceModule - The service module to mock
- * @param {string} methodName - The method name of the service to mock
+ * @param {jest.Mocked<any>} serviceModule - Service module to mock
+ * @param {string} methodName - Service method name
  * @param {number} statusCode - HTTP status code
  * @param {Record<string, string>} errors - Validation errors
- * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} Mocked function
  */
 export function arrangeMockServiceValidationError(
    serviceModule: jest.Mocked<any>,
@@ -86,12 +85,12 @@ export function arrangeMockServiceValidationError(
 }
 
 /**
- * Arranges a mock service function to throw an error
+ * Arrange a mock service function to throw an error
  *
- * @param {jest.Mocked<any>} serviceModule - The service module to mock
- * @param {string} methodName - The method name of the service to mock
+ * @param {jest.Mocked<any>} serviceModule - Service module to mock
+ * @param {string} methodName - Service method name
  * @param {Error} error - Error to throw
- * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} The mocked service function
+ * @returns {MockedServiceFunction<typeof serviceModule[typeof methodName]>} Mocked function
  */
 export function arrangeMockServiceError(
    serviceModule: jest.Mocked<any>,
@@ -105,14 +104,13 @@ export function arrangeMockServiceError(
 }
 
 /**
- * Calls a mocked service method with proper type casting for Express middleware/controller
- * functions to avoid type errors when calling service methods in unit tests
+ * Call a controller method with typed mocks
  *
- * @param {RequestHandler} serviceMethod - The Express RequestHandler (controller method) to call
- * @param {MockRequest} mockReq - Mock Express Request object
- * @param {MockResponse} mockRes - Mock Express Response object
- * @param {MockNextFunction} mockNext - Mock Express NextFunction
- * @returns {Promise<ServerResponse>} The result of the mocked service method call
+ * @param {RequestHandler} serviceMethod - Controller method to call
+ * @param {MockRequest} mockReq - Mock Request
+ * @param {MockResponse} mockRes - Mock Response
+ * @param {MockNextFunction} mockNext - Mock NextFunction
+ * @returns {Promise<ServerResponse>} Result
  */
 export async function callServiceMethod(
    serviceMethod: RequestHandler,
@@ -124,14 +122,13 @@ export async function callServiceMethod(
 }
 
 /**
- * Asserts that a controller properly handled a service success by verifying both
- * the mocked service call and the success response
+ * Assert controller handled a service success
  *
- * @param {MockResponse} mockRes - Mock response object
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function that was called
- * @param {any[]} expectedServiceArgs - Expected arguments passed to the mocked service function that was called
- * @param {number} expectedStatusCode - Expected HTTP status code (`200`, `201`, or `204`)
- * @param {any} expectedData - Expected data to be sent in the mocked response body that was called
+ * @param {MockResponse} mockRes - Mock response
+ * @param {MockedServiceFunction<any>} mockServiceFunction - Mocked service function called
+ * @param {any[]} expectedServiceArgs - Expected service args
+ * @param {number} expectedStatusCode - Expected HTTP status (`200`, `201`, `204`)
+ * @param {any} expectedData - Expected response data
  */
 export function assertControllerSuccessResponse(
    mockRes: MockResponse,
@@ -159,15 +156,14 @@ export function assertControllerSuccessResponse(
 }
 
 /**
- * Asserts that a controller properly handled an error response by verifying both the
- * mocked service call and the error response, handles both thrown errors and validation errors
+ * Assert controller handled an error response, handling both thrown errors and validation errors
  *
- * @param {MockResponse} mockRes - Mock response object
- * @param {Error | undefined} expectedError - Expected error that should be thrown by the mocked service function that was called
- * @param {MockedServiceFunction<any>} mockServiceFunction - The mocked service function
- * @param {any[]} expectedServiceArgs - Expected arguments passed to the mocked service function that was called
- * @param {number} expectedStatusCode - Expected HTTP status code (defaults to mocked `HTTP_STATUS.INTERNAL_SERVER_ERROR`)
- * @param {Record<string, string>} expectedErrors - Expected error object (defaults to mocked `{ server: "Internal Server Error" }`)
+ * @param {MockResponse} mockRes - Mock response
+ * @param {Error | undefined} expectedError - Expected thrown error
+ * @param {MockedServiceFunction<any>} mockServiceFunction - Mocked service function
+ * @param {any[]} expectedServiceArgs - Expected service args
+ * @param {number} expectedStatusCode - Expected HTTP status
+ * @param {Record<string, string>} expectedErrors - Expected error object
  */
 export function assertControllerErrorResponse(
    mockRes: MockResponse,
