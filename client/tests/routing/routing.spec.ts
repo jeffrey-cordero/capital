@@ -8,7 +8,7 @@ import {
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
-import { getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
+import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
 
 test.describe("Routing and Navigation", () => {
    /**
@@ -19,9 +19,7 @@ test.describe("Routing and Navigation", () => {
     */
    const assertSidebarLinkActive = async(page: Page, route: string): Promise<void> => {
       const linkTitle: string = getRouteLinkTitle(route);
-
-      // Open the sidebar
-      await page.getByTestId("sidebar-toggle").click();
+      await clickSidebarLink(page, `sidebar-link-${linkTitle.toLowerCase()}`);
 
       // Assert that the link is visible and active
       const link: Locator = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);

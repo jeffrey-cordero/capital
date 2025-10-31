@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
 import { submitForm } from "@tests/utils/forms";
-import { navigateToPath } from "@tests/utils/navigation";
+import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
 import type { RegisterPayload } from "capital/user";
 
@@ -46,12 +46,13 @@ export async function createUser(
    await page.getByTestId("submit-button").waitFor({ state: "visible" });
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
+   await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
 
    if (!keepLoggedIn) {
       // Logout the created user, which is typically used for intermediate test users
-      await page.getByTestId("sidebar-toggle").click();
-      await page.getByTestId("sidebar-logout").click();
+      await clickSidebarLink(page, "sidebar-logout");
       await expect(page).toHaveURL(LOGIN_ROUTE);
+      await page.getByTestId("username").waitFor({ state: "visible" });
    }
 
    // Add the created user to the registry for the worker's final cleanup
@@ -74,8 +75,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    expect(page.url()).toContain(DASHBOARD_ROUTE);
 
    if (method === "sidebar") {
-      await page.getByTestId("sidebar-toggle").click();
-      await page.getByTestId("sidebar-logout").click();
+      await clickSidebarLink(page, "sidebar-logout");
    } else if (method === "settings") {
       await navigateToPath(page, SETTINGS_ROUTE);
       await page.getByRole("button", { name: "Logout" }).click();
@@ -83,6 +83,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
+   await page.getByTestId("username").waitFor({ state: "visible" });
 }
 
 /**

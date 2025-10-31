@@ -1,4 +1,4 @@
-import { type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { ROOT_ROUTE } from "./authentication";
 
@@ -14,6 +14,24 @@ export function getRouteLinkTitle(route: string): string {
    const segments: string[] = route.split("/");
    const lastSegment: string = segments[segments.length - 1];
    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
+}
+
+/**
+ * Opens the sidebar if it's not already open and waits for a specific element to be visible before clicking it
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} testId - The test ID of the element to click after opening the sidebar
+ */
+export async function clickSidebarLink(page: Page, testId: string): Promise<void> {
+   const sidebarToggle = page.getByTestId("sidebar-toggle");
+
+   if (await sidebarToggle.isVisible()) {
+      // Open the closed sidebar
+      await sidebarToggle.click();
+   }
+
+   await expect(page.getByTestId(testId)).toBeVisible();
+   await page.getByTestId(testId).click();
 }
 
 /**
@@ -35,8 +53,7 @@ export async function navigateToPath(page: Page, path: string): Promise<void> {
       await page.goto(path, { waitUntil: "networkidle" });
    } else {
       // Use sidebar-based navigation
-      await page.getByTestId("sidebar-toggle").click();
-      await page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`).click();
+      await clickSidebarLink(page, `sidebar-link-${linkTitle.toLowerCase()}`);
    }
 
    // Wait for the navigation to fully complete before returning
