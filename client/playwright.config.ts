@@ -9,7 +9,7 @@ const PORT = process.env.VITE_SERVER_PORT || 3000;
 const webServer = {
    command: "npm run dev",
    url: `http://localhost:${PORT}`,
-   timeout: 120 * 1000,
+   timeout: 240 * 1000,
    reuseExistingServer: !process.env.CI
 };
 
