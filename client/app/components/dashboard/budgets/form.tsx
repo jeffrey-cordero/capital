@@ -8,6 +8,7 @@ import {
    Stack
 } from "@mui/material";
 import { budgetSchema, type OrganizedBudget } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback, useEffect } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -33,14 +34,14 @@ const updateBudgetGoalSchema = budgetSchema.innerType().pick({ goal: true });
  * Props for the BudgetForm component
  *
  * @property {"Income" | "Expenses"} type - Budget type
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - Dirty fields tracker
+ * @property {(fields: object, field: string) => void} updateDirtyFields - Dirty fields tracker
  * @property {boolean} displayWarning - Warning display flag
  * @property {boolean} open - Modal visibility state
  * @property {() => void} onClose - Modal close handler
  */
 interface BudgetFormProps {
    type: "Income" | "Expenses";
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
    displayWarning: boolean;
    open: boolean;
    onClose: () => void;
@@ -116,7 +117,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             `dashboard/budgets/budget/${budget.budget_category_id}`, method, payload, dispatch, navigate, setError
          );
 
-         if (result === 204 || (typeof result === "object" && result?.success)) {
+         if (result === HTTP_STATUS.NO_CONTENT || (typeof result === "object" && result?.success)) {
             // Update Redux store and reset form
             dispatch(updateBudget({
                type,
@@ -195,16 +196,12 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                   updateDirtyFields = { updateDirtyFields }
                />
             </Section>
-            {
-               open && (
-                  <Section icon = { faMoneyBillTransfer }>
-                     <Transactions
-                        filter = "budget"
-                        identifier = { type }
-                     />
-                  </Section>
-               )
-            }
+            <Section icon = { faMoneyBillTransfer }>
+               <Transactions
+                  filter = "budget"
+                  identifier = { type }
+               />
+            </Section>
          </Stack>
       </Modal>
    );

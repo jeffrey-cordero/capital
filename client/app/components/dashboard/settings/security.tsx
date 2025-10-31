@@ -8,6 +8,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
+import { HTTP_STATUS } from "capital/server";
 import { updateUserSchema, type UserUpdates } from "capital/user";
 import { useCallback, useState } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
@@ -98,7 +99,7 @@ export default function Security(): React.ReactNode {
             "users", "PUT", updates, dispatch, navigate, setError
          );
 
-         if (response === 204) {
+         if (response === HTTP_STATUS.NO_CONTENT) {
             // Update Redux store with the provided changes
             dispatch(updateDetails({
                username: updates.username || settings.username,

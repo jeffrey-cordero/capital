@@ -12,7 +12,7 @@ import * as authenticationService from "@/services/authenticationService";
  * @returns {Promise<Response>} Service response with authentication status
  */
 export const GET = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.token));
+   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.access_token));
 });
 
 /**
@@ -29,12 +29,23 @@ export const LOGIN = asyncHandler(async(req: Request, res: Response) => {
 });
 
 /**
+ * Refreshes authentication tokens using a valid refresh token
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object with user_id in locals
+ * @returns {Promise<Response>} Service response with refresh confirmation
+ */
+export const REFRESH = asyncHandler(async(_: Request, res: Response) => {
+   return submitServiceRequest(res, async() => authenticationService.refreshToken(res, res.locals.user_id));
+});
+
+/**
  * Logs out the current user
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with logout confirmation
  */
-export const LOGOUT = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => authenticationService.logoutUser(req, res));
+export const LOGOUT = asyncHandler(async(_: Request, res: Response) => {
+   return submitServiceRequest(res, async() => authenticationService.logoutUser(res));
 });

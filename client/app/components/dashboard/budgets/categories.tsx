@@ -28,6 +28,7 @@ import {
    useTheme
 } from "@mui/material";
 import { type BudgetCategory, type OrganizedBudget } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -48,7 +49,7 @@ import type { RootState } from "@/redux/store";
  */
 interface BudgetCategoriesProps {
    type: "Income" | "Expenses";
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
 }
 
 /**
@@ -246,7 +247,7 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                   "dashboard/budgets/category/ordering", "PUT", { categoryIds }, dispatch, navigate
                );
 
-               if (result !== 204) {
+               if (result !== HTTP_STATUS.NO_CONTENT) {
                   throw new Error("Failed to update category order");
                }
             } catch (error) {

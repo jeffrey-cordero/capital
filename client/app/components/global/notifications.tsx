@@ -33,6 +33,8 @@ export default function Notifications(): React.ReactNode {
                      sx = { { mt: index * 9 } }
                   >
                      <Alert
+                        data-testid = "notification"
+                        data-type = { notification.type }
                         onClose = { () => remove(index) }
                         severity = { notification.type }
                         sx = { { width: "100%", justifyContent: "center", alignItems: "center", fontWeight: "bold", color: "white" } }

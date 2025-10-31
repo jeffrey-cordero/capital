@@ -2,7 +2,40 @@
   "name": "capital-types",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": "./build/index.js",
+    "./server": "./build/server.js",
+    "./accounts": "./build/accounts.js",
+    "./budgets": "./build/budgets.js",
+    "./transactions": "./build/transactions.js",
+    "./user": "./build/user.js",
+    "./economy": "./build/economy.js",
+    "./dashboard": "./build/dashboard.js",
+    "./numerics": "./build/numerics.js",
+    "./mocks/user": "./build/mocks/user.js"
+  },
+  "scripts": {
+    "build": "npx tsc && npx tsc-alias --resolve-full-paths",
+    "lint": "npx eslint '**/*.ts'",
+    "lint:fix": "npx eslint '**/*.ts' --fix",
+    "typecheck": "npx tsc --noEmit"
+  },
   "dependencies": {
+    "tsc-alias": "^1.8.15",
+    "typescript": "^5.9.3",
     "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-plugin-import-newlines": "^1.4.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-spellcheck": "^0.0.20",
+    "typescript-eslint": "^8.46.2"
   }
 }

@@ -13,6 +13,7 @@ export const HTTP_STATUS = {
    FORBIDDEN: 403,
    NOT_FOUND: 404,
    CONFLICT: 409,
+   TOO_MANY_REQUESTS: 429,
    INTERNAL_SERVER_ERROR: 500
 } as const;
 
@@ -23,7 +24,7 @@ export const HTTP_STATUS = {
  */
 export type ServerResponse = {
    /* HTTP status code */
-   code: number;
+   statusCode: number;
    /* Optional data payload */
    data?: any;
    /* Optional errors payload */

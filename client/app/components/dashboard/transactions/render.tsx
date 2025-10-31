@@ -125,11 +125,11 @@ export function RenderCategoryChip({ budget_category_id, type }: { budget_catego
  * Props for actions column rendering
  *
  * @property {GridRenderCellParams<TransactionRowModel>} params - DataGrid cell parameters
- * @property {(_index: number) => void} onEdit - Callback for edit action
+ * @property {(index: number) => void} onEdit - Callback for edit action
  */
 interface RenderActionsColumnProps {
    params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>;
-   onEdit: (_index: number) => void;
+   onEdit: (index: number) => void;
 }
 
 /**

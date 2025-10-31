@@ -1,4 +1,5 @@
-require("dotenv").config();
+import { config } from "dotenv";
+config();
 
 import { Pool, PoolClient } from "pg";
 
@@ -14,7 +15,7 @@ const pool = new Pool({
    database: process.env.DB_NAME,
    port: Number(process.env.DB_PORT) || 5432,
    max: 50,
-   ssl: { rejectUnauthorized: false }
+   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
 /**
@@ -42,40 +43,45 @@ export async function query(query: string, parameters: any[]): Promise<any[]> {
 
 /**
  * Executes multiple database operations within a transaction and automatically handles
- * `BEGIN`, `COMMIT`, and `ROLLBACK` statements.
+ * `BEGIN`, `COMMIT`, and `ROLLBACK` statements for non-external database clients to avoid nested transactions
  *
- * @param {(client: PoolClient) => Promise<any>} statements - Function containing database operations
+ * @param {(client: PoolClient) => Promise<T>} operations - Function containing database operations
  * @param {string} [isolationLevel] - Transaction isolation level
- * @returns {Promise<unknown>} Result of the transaction
+ * @param {PoolClient | null} [externalClient] - Optional client for ongoing transactions to avoid nested transactions
+ * @returns {Promise<T>} Result of the transaction
  * @throws {Error} If transaction fails
  */
-export async function transaction(
-   statements: (client: PoolClient) => Promise<any>,
-   isolationLevel: "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" = "READ COMMITTED"
-): Promise<unknown> {
+export async function transaction<T>(
+   operations: (client: PoolClient) => Promise<T>,
+   isolationLevel: "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE" = "READ COMMITTED",
+   externalClient: PoolClient | null = null
+): Promise<T> {
    let client: PoolClient | null = null;
 
    try {
-      // Get a client from the pool
-      client = await pool.connect();
+      if (externalClient) {
+         // Use the provided client for ongoing transactions
+         client = externalClient;
+      } else {
+         // Start a new internal transaction with the specified isolation level
+         client = await pool.connect();
+         await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
+      }
 
-      // Start transaction with specified isolation
-      await client.query(`BEGIN TRANSACTION ISOLATION LEVEL ${isolationLevel};`);
+      // Execute the series of database operations
+      const result = await operations(client);
 
-      // Execute the transaction statements
-      const result = await statements(client) as unknown;
-
-      // Commit changes
-      await client.query("COMMIT;");
+      // Commit the transaction
+      if (!externalClient) await client.query("COMMIT;");
 
       return result;
    } catch (error: any) {
-      // Rollback on error
-      await client?.query("ROLLBACK;");
+      // Rollback the transaction on any errors to ensure data integrity
+      if (!externalClient) await client?.query("ROLLBACK;");
 
       throw error;
    } finally {
-      // Return client to pool
-      client?.release();
+      // Return the client to the pool
+      if (!externalClient) client?.release();
    }
 }

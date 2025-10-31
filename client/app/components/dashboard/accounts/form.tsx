@@ -10,6 +10,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Account, accountSchema, types } from "capital/accounts";
+import { HTTP_STATUS } from "capital/server";
 import type { Transaction } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
@@ -110,7 +111,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                   `dashboard/accounts/${account.account_id}`, "PUT", updatedFields, dispatch, navigate
                );
 
-               if (result === 204) {
+               if (result === HTTP_STATUS.NO_CONTENT) {
                   // Update local state after successful API call
                   dispatch(updateAccount({
                      ...updatedFields,
@@ -145,9 +146,6 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
 
    // Generate account balance history data for visualization
    const history = useMemo(() => {
-      // Skip processing when modal is closed for performance purposes
-      if (!open) return [];
-
       // Initialize with the current account balance
       let balance: number = Number(account?.balance) || 0;
       const data: { date: string, value: number }[] = [{
@@ -189,7 +187,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       data.reverse();
 
       return { [account?.account_id || ""]: data };
-   }, [account?.account_id, account?.balance, transactions, open]);
+   }, [account?.account_id, account?.balance, transactions]);
 
    return (
       <Modal
@@ -336,7 +334,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                </Box>
             </Section>
             {
-               open && isUpdating && (
+               isUpdating && (
                   <>
                      <Box sx = { { mb: "-25px !important" } }>
                         <Section

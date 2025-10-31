@@ -83,15 +83,15 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
  *
  * @param {string} user_id - User identifier
  * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - Category details
- * @param {PoolClient} [externalClient] - Optional client for transactions
+ * @param {PoolClient | null} [externalClient] - Optional client for ongoing transactions (i.e. user creation transaction)
  * @returns {Promise<string>} Created category ID
  */
 export async function createCategory(
    user_id: string,
    category: Omit<Budget & BudgetCategory, "budget_category_id">,
-   externalClient?: PoolClient
+   externalClient: PoolClient | null = null
 ): Promise<string> {
-   return await transaction(async(internalClient: PoolClient) => {
+   return await transaction<string>(async(internalClient: PoolClient) => {
       // Use provided client or internal transaction client
       const client: PoolClient = externalClient || internalClient;
 
@@ -123,7 +123,7 @@ export async function createCategory(
       ]);
 
       return budget_category_id;
-   }) as string;
+   }, undefined, externalClient || null);
 }
 
 /**
@@ -256,7 +256,7 @@ async function verifyCategoryOwnership(client: PoolClient, user_id: string, budg
  * @returns {Promise<boolean>} Creation result
  */
 export async function createBudget(user_id: string, budget: Budget): Promise<boolean> {
-   return await transaction(async(client: PoolClient): Promise<boolean> => {
+   return await transaction<boolean>(async(client: PoolClient): Promise<boolean> => {
       if (!await verifyCategoryOwnership(client, user_id, budget.budget_category_id)) {
          return false;
       }
@@ -275,7 +275,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
       ]);
 
       return result.rows.length > 0;
-   }) as boolean;
+   });
 }
 
 /**
@@ -287,7 +287,7 @@ export async function createBudget(user_id: string, budget: Budget): Promise<boo
  * @returns {Promise<boolean>} Success status
  */
 export async function updateBudget(user_id: string, budget_category_id: string, updates: Budget): Promise<boolean> {
-   return await transaction(async(client: PoolClient): Promise<boolean> => {
+   return await transaction<boolean>(async(client: PoolClient): Promise<boolean> => {
       if (!await verifyCategoryOwnership(client, user_id, budget_category_id)) {
          return false;
       }
@@ -309,5 +309,5 @@ export async function updateBudget(user_id: string, budget_category_id: string, 
       ]);
 
       return result.rows.length > 0;
-   }) as boolean;
+   });
 }

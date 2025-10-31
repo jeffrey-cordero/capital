@@ -72,7 +72,7 @@ interface TransactionsTableProps {
    identifier: string | undefined;
    accountsMap: Record<string, Account>;
    budgetsMap: Record<string, BudgetType>;
-   onEdit: (_index: number) => void;
+   onEdit: (index: number) => void;
 }
 
 /**

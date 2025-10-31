@@ -1,6 +1,6 @@
-require("dotenv").config();
-require("module-alias/register");
+import "dotenv/config";
 
+import { HTTP_STATUS } from "capital/server";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -23,13 +23,13 @@ const port = process.env.PORT || 8000;
  * Rate limiting with logging measures
  */
 app.use(rateLimit({
-   max: 500,
+   max: process.env.RATE_LIMITING_ENABLED == "true" ? 500 : Infinity,
    windowMs: 5 * 60 * 1000,
    message: "Too many requests from this IP. Please try again later.",
    handler: (req: Request, res: Response) => {
       logger.info(`Rate limited request from IP: ${req.ip}`);
 
-      return sendErrors(res, 429, {
+      return sendErrors(res, HTTP_STATUS.TOO_MANY_REQUESTS, {
          server: "Too many requests. Please try again later."
       });
    }
@@ -54,7 +54,7 @@ app.use(compression());
  * CORS middleware for cross-origin resource sharing configuration
  */
 app.use(cors({
-   origin: [process.env.CLIENT_URL || "http://localhost:3000"],
+   origin: process.env.CORS_ALLOWED_ORIGINS?.split(",") || "*",
    methods: ["GET", "POST", "PUT", "DELETE"],
    allowedHeaders: ["Content-Type", "Authorization"],
    credentials: true
@@ -84,27 +84,31 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * Routers for handling requests
  */
-app.use("/", indexRouter);
-app.use("/users", userRouter);
-app.use("/dashboard", dashboardRouter);
-app.use("/authentication", authenticationRouter);
+const v1 = express.Router();
+
+v1.use("/", indexRouter);
+v1.use("/users", userRouter);
+v1.use("/dashboard", dashboardRouter);
+v1.use("/authentication", authenticationRouter);
+
+app.use("/api/v1", v1);
 
 /**
- * 404 error handler
+ * Resource Not Found Error Handler
  */
-app.use(function(req: Request, res: Response) {
-   return sendErrors(res, 404, {
+app.use(function(_: Request, res: Response) {
+   return sendErrors(res, HTTP_STATUS.NOT_FOUND, {
       server: "The requested resource could not be found"
    });
 });
 
 /**
- * 500 error handler
+ * Global Error Handler
  */
-app.use(function(error: any, req: Request, res: Response) {
+app.use(function(error: any, _: Request, res: Response) {
    logger.error(error.stack || "An unknown error occurred");
 
-   return sendErrors(res, error.status || 500, {
+   return sendErrors(res, error.status || HTTP_STATUS.INTERNAL_SERVER_ERROR, {
       server: "Internal Server Error"
    });
 });
@@ -112,6 +116,8 @@ app.use(function(error: any, req: Request, res: Response) {
 /**
  * Start the web server
  */
-app.listen(port);
+app.listen(port, () => {
+   logger.info(`Started Capital on port ${port}`);
+});
 
-module.exports = app;
+export default app;

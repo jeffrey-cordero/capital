@@ -7,8 +7,11 @@
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
-    "lint": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' && npx stylelint npx stylelint '**/*.scss' --fix",
-    "typecheck": "react-router typegen && tsc"
+    "lint": "npx eslint . --ignore-pattern '.react-router/' --ignore-pattern 'build/' --ignore-pattern 'playwright-report/' && npx stylelint '**/*.scss'",
+    "lint:fix": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' --ignore-pattern 'playwright-report/' && npx stylelint '**/*.scss' --fix",
+    "typecheck": "react-router typegen && tsc",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.25.9",
@@ -22,6 +25,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mui/icons-material": "^6.4.1",
     "@mui/material": "^6.4.1",
+    "@mui/system": "^7.3.3",
     "@mui/x-charts": "^7.24.0",
     "@mui/x-data-grid": "^7.28.2",
     "@react-router/node": "^7.1.1",
@@ -31,6 +35,7 @@
     "@tanstack/react-query-devtools": "^5.62.11",
     "capital": "file:../types",
     "clsx": "^2.1.1",
+    "cross-env": "^7.0.3",
     "framer-motion": "^12.5.0",
     "isbot": "^5",
     "jwt-decode": "^4.0.0",
@@ -45,6 +50,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
     "@react-router/dev": "^7.1.1",
     "@types/node": "^20",
     "@types/react": "^19.0.2",
@@ -53,7 +59,7 @@
     "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^10.4.20",
     "babel-eslint": "^10.1.0",
-    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.7",
     "eslint": "^9.17.0",
     "eslint-plugin-import-newlines": "^1.4.0",
     "eslint-plugin-react": "^7.37.3",

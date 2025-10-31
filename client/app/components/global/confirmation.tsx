@@ -31,6 +31,8 @@ interface ConfirmationProps {
    color?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
    fontSize?: string;
    title?: string;
+   confirmDataTestId?: string;
+   cancelDataTestId?: string;
 }
 
 /**
@@ -39,7 +41,7 @@ interface ConfirmationProps {
  * @param {ConfirmationProps} props - Confirmation component props
  * @returns {React.ReactNode} The Confirmation component
  */
-export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color }: ConfirmationProps): React.ReactNode {
+export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color, confirmDataTestId, cancelDataTestId }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -100,6 +102,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                         direction = "row"
                      >
                         <Button
+                           data-testid = { cancelDataTestId }
                            onClick = { closeDialog }
                         >
                            No
@@ -107,6 +110,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                         <Button
                            autoFocus = { true }
                            color = "error"
+                           data-testid = { confirmDataTestId }
                            loading = { isSubmitting }
                            type = "submit"
                         >

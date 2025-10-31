@@ -10,6 +10,7 @@ import {
    TextField,
    useTheme
 } from "@mui/material";
+import { HTTP_STATUS } from "capital/server";
 import { updateUserSchema, type UserDetails, type UserUpdates } from "capital/user";
 import { useCallback, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
@@ -83,7 +84,7 @@ export default function Details(): React.ReactNode {
             "users", "PUT", updates, dispatch, navigate, setError
          );
 
-         if (response === 204) {
+         if (response === HTTP_STATUS.NO_CONTENT) {
             // Update Redux store on successful updates and reset the form
             dispatch(updateDetails(updates as Partial<UserDetails>));
 

@@ -12,7 +12,7 @@ const dashboardRouter = express.Router();
 /**
  * Protects all dashboard routes with JWT authentication
  *
- * @requires {string} req.cookies.token - Authentication token
+ * @requires {string} req.cookies.access_token - Authentication token
  */
 dashboardRouter.use(authenticateToken(true));
 

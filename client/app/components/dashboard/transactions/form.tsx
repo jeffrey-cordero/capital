@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { type Account } from "capital/accounts";
 import { type BudgetType, type OrganizedBudgets } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { type Transaction, transactionSchema } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
@@ -165,7 +166,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                `dashboard/transactions/${transaction.transaction_id}`, "PUT", updatedFields, dispatch, navigate
             );
 
-            if (result === 204) {
+            if (result === HTTP_STATUS.NO_CONTENT) {
                // Update the transaction in the Redux store and close the modal
                dispatch(updateTransaction({ index, transaction: updatedFields }));
                onClose();

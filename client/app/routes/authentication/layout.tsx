@@ -6,7 +6,6 @@ import { type NavigateFunction, Outlet, useNavigate } from "react-router";
 import Loading from "@/components/global/loading";
 import { sendApiRequest } from "@/lib/api";
 import { authenticate } from "@/redux/slices/authentication";
-import { addNotification } from "@/redux/slices/notifications";
 
 /**
  * Fetches authentication status and handles redirection logic
@@ -16,19 +15,9 @@ import { addNotification } from "@/redux/slices/notifications";
  * @returns {Promise<boolean | null>} Authentication status or null for error handling
  */
 export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: NavigateFunction): Promise<boolean| null> {
-   const apiTimeout = setTimeout(() => {
-      dispatch(addNotification({
-         type: "info",
-         message: "Hang tight! The server could be waking up and will be ready shortly."
-      }));
-   }, 5000);
-
    const status = await sendApiRequest<{ authenticated: boolean }>(
       "authentication", "GET", null, dispatch, navigate
    );
-
-   // Clear the timer if the API responded before 5 seconds
-   clearTimeout(apiTimeout);
 
    if (typeof status === "object" && status !== null) {
       const authenticated: boolean = Boolean(status.authenticated);
@@ -47,13 +36,13 @@ export async function fetchAuthentication(dispatch: Dispatch<any>, navigate: Nav
  */
 export default function Layout(): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
-   const { isError, isLoading } = useQuery({
+   const { data, isError, isLoading } = useQuery({
       queryKey: ["authentication"],
       queryFn: () => fetchAuthentication(dispatch, navigate),
       staleTime: 5 * 60 * 1000
    });
 
-   if (isLoading || isError) {
+   if (isLoading || isError || data === true) {
       return <Loading />;
    } else {
       return <Outlet />;

@@ -28,21 +28,23 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
  * @property {T} [data] - Response data payload
  * @property {Record<string, string>} [errors] - Error messages by field
  */
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
    data?: T;
    errors?: Record<string, string>;
 }
 
 /**
- * Sends API request with authentication and error handling
+ * Sends API requests with automatic token refresh and retry logic, which may
+ * redirect an authenticated user to the login page if the refresh attempt fails
  *
  * @param {string} path - API endpoint path
- * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
+ * @param {string} method - HTTP method (`GET`, `POST`, `PUT`, `DELETE`)
  * @param {unknown} body - Request payload
  * @param {Dispatch<any>} dispatch - Redux dispatch function
  * @param {NavigateFunction} navigate - Router navigation function
  * @param {UseFormSetError<any>} [setError] - Optional form error setter
- * @returns {Promise<T | number | null>} Response data, status code, or 0/null for server failures/errors
+ * @param {boolean} [isRetrying=false] - Internal flag to prevent infinite refresh loops
+ * @returns {Promise<T | number | null>} Response data, status code, or null for unexpected errors
  */
 export async function sendApiRequest<T>(
    path: string,
@@ -50,7 +52,8 @@ export async function sendApiRequest<T>(
    body: unknown,
    dispatch: Dispatch<any>,
    navigate: NavigateFunction,
-   setError?: UseFormSetError<any>
+   setError?: UseFormSetError<any>,
+   isRetrying: boolean = false
 ): Promise<T | number | null> {
    const isLogin = path === SPECIAL_PATHS.LOGIN;
    const isAuthenticating = path === SPECIAL_PATHS.AUTHENTICATION;
@@ -66,7 +69,21 @@ export async function sendApiRequest<T>(
 
       // Handle potential redirection cases
       if (!isLogin && response.status === HTTP_STATUS.UNAUTHORIZED) {
-         // Update pathname to ensure Redux store is cleared
+         // Check if we can attempt to refresh the access token
+         const json: ApiResponse<{ refreshable?: boolean }> = await response.json();
+
+         if (json.data?.refreshable && !isRetrying) {
+            const refreshResponse = await fetch(`${SERVER_URL}/authentication/refresh`, {
+               method: "POST",
+               credentials: "include"
+            });
+
+            if (refreshResponse.status === HTTP_STATUS.OK) {
+               // Retry the original request once after a successful refresh attempt
+               return sendApiRequest<T>(path, method, body, dispatch, navigate, setError, true);
+            }
+         }
+
          window.location.pathname = "/login";
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
@@ -75,9 +92,9 @@ export async function sendApiRequest<T>(
          return null;
       }
 
-      // Handle Internal Server Errors
-      if (response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
-         throw new Error((await response.json()).errors?.server || "An unknown error occurred");
+      // Handle server errors (rate limiting or internal errors)
+      if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS || response.status === HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+         throw new Error((await response.json()).errors?.server || "An error occurred");
       }
 
       // Re-sync authentication state
@@ -107,17 +124,21 @@ export async function sendApiRequest<T>(
          return null;
       }
    } catch (error: any) {
-      // Log unexpected errors
+      // Log unexpected errors and display a general notification to the user
       const message: string = error.message;
-      console.error("API request failed:", message);
+      console.error(`API request failed: ${message}`);
 
-      // Display error notification
-      dispatch(addNotification({
-         type: "error",
-         message: "Internal Server Error"
-      }));
+      // Determine the notification message based on the error type
+      const isRatedLimited = message.includes("Too many requests");
+      const notificationMessage: string = !navigator.onLine ?
+         "You are offline. Check your internet connection."
+         :
+         isRatedLimited ?
+            "Too many requests. Please try again later."
+            :
+            "Internal Server Error";
+      dispatch(addNotification({ type: "error", message: notificationMessage }));
 
-      // Server-side failure vs. error
-      return error.message === "Failed to fetch" ? 0 : null;
+      return null;
    }
 }

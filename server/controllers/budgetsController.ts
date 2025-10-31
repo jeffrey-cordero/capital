@@ -12,7 +12,7 @@ import * as budgetsService from "@/services/budgetsService";
  * @param {Response} res - Express response object
  * @returns {Promise<Response>} Service response with organized budgets data
  */
-export const GET = asyncHandler(async(req: Request, res: Response) => {
+export const GET = asyncHandler(async(_: Request, res: Response) => {
    return submitServiceRequest(res, async() => budgetsService.fetchBudgets(res.locals.user_id));
 });
 

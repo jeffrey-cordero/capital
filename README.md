@@ -27,6 +27,7 @@ Capital is a comprehensive personal finance management application designed to h
 * **Database:** PostgreSQL
 * **Caching:** Redis
 * **Containerization:** Docker, Docker Compose
+* **Testing:** Playwright (E2E), Jest (Unit)
 * **Authentication:** JWT (JSON Web Tokens), Argon2 (Password Hashing)
 * **Other Libraries:** Zod (Validation), Winston (Logging), Helmet (Security), CORS, Express Rate Limit, etc.
 
@@ -37,6 +38,7 @@ capital/
 ├── client/              # React Frontend Application
 │   ├── app/             # Core application logic (components, hooks, lib, redux, styles)
 │   ├── public/          # Static assets
+│   ├── tests/           # E2E tests (Playwright)
 │   ├── eslint.config.js # ESLint configuration
 │   ├── package.json     # Frontend dependencies and scripts
 │   ├── tsconfig.json    # TypeScript configuration
@@ -49,12 +51,14 @@ capital/
 │   ├── resources/       # Static resources (e.g., fallback economy data)
 │   ├── routers/         # API route definitions
 │   ├── services/        # Business logic
+│   ├── tests/           # Unit tests (Jest)
 │   ├── api/             # Express application
 │   ├── package.json     # Backend dependencies and scripts
 │   ├── schema.sql       # PostgreSQL database schema
 │   └── tsconfig.json    # TypeScript configuration
 │
-├── types/               # Shared TypeScript types/interfaces & Zod schemas
+├── types/               # Shared TypeScript types/interfaces/mocks & Zod schemas
+│   ├── mocks/           # Mock data generators for tests
 │   ├── accounts.ts
 │   ├── budgets.ts
 │   ├── dashboard.ts
@@ -65,15 +69,19 @@ capital/
 │   ├── transactions.ts
 │   └── user.ts
 │
+├── .github/             # CI/CD workflows and scripts
+│   ├── workflows/       # GitHub Actions workflows
+│   └── scripts/         # CI/CD helper scripts
+│
 ├── .env.example         # Example environment variables (requires duplication and filling)
 ├── docker-compose.yaml  # Docker configuration for services (app, postgres, redis)
 ├── package.json         # Root project dependencies and scripts (concurrently, installation)
 └── README.md            # This file
 ```
 
-* **`client/`**: Contains all the code for the React user interface.
-* **`server/`**: Holds the Express.js backend, including API logic, database interactions, and services.
-* **`types/`**: Shared TypeScript definitions and Zod schemas used by both frontend and backend for type safety and data validation.
+* **`client/`**: Contains all the code for the React user interface, including E2E tests.
+* **`server/`**: Holds the Express.js backend, including API logic, database interactions, services, and unit tests.
+* **`types/`**: Shared TypeScript definitions, Zod schemas, and mock data generators used across frontend and backend for type safety and test data.
 * **`docker-compose.yaml`**: Defines the services (application, database, cache) and their configurations for Docker.
 * **`package.json` (root)**: Manages installation and running of both client and server concurrently.
 * **`server/schema.sql`**: SQL script to initialize the PostgreSQL database structure.
@@ -90,15 +98,24 @@ capital/
     cd capital
     ```
 3.  **Environment Variables:**
-    * Copy the `.env.example` file to `.env`.
-    * Fill in the required environment variables in the `.env` file (Database credentials, Session Secret, API Keys if using external data features, Client/Server URLs).
+   * Copy environment-specific example files to `.env`:
+     ```bash
+     cp client/.env.example client/.env
+     cp server/.env.example server/.env
+     ```
+   * Fill in the required environment variables in each `.env` file (Database credentials, Session Secret, API Keys, Client/Server URLs, etc.).
 4.  **Install Dependencies:**
-    * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces.
-    ```bash
-    npm install
-    ```
-5.  **Database Setup:**
-    * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
+   * Run the root installation script which installs dependencies for the `server`, `client`, and `types` workspaces:
+   ```bash
+   npm install
+   ```
+5.  **Build Application:**
+   * Build all workspaces (types, client, server):
+   ```bash
+   npm run build
+   ```
+6.  **Database Setup:**
+   * The `docker-compose.yaml` configuration will automatically initialize the PostgreSQL database using the `server/schema.sql` file when the container starts for the first time.
 
 ## Development
 
@@ -134,18 +151,62 @@ There are two main ways to run the application locally:
         npm run start
         ```
 
-## Future Roadmap
+## Testing
 
-Potential features and improvements for future development:
+Run tests for the entire application:
 
-* **Pagination:** Implement pagination for transaction lists and potentially accounts/budgets.
-* **Testing:** Add comprehensive unit, integration, and end-to-end tests.
-* **Multi-Select Categories:** Allow assigning transactions to multiple budget categories.
-* **JWT Optimizations:** Implement access/refresh token strategy for enhanced security.
-* **Import/Export:** Add functionality to import/export transactions from/to CSV/OFX files, potentially with a helper modal for mapping fields.
-* **Recurring Transactions:** Add support for scheduling recurring income and expenses.
-* **Goal Tracking:** Implement features for setting and tracking specific financial goals (e.g., saving for a down payment).
-* **AI Agent Integration:** Explore integrating an AI agent for financial insights, advice, or automated categorization.
-* **Live Data Feeds:** Integrate real-time stock market and news feeds instead of periodic fetching.
-* **Bank API Syncing:** Connect directly to bank APIs (e.g., Plaid) to automatically import accounts and transactions.
+```bash
+npm run test:all
+```
 
+Run tests for individual workspaces:
+
+```bash
+# Server unit tests (Jest)
+npm run test:server
+
+# Client E2E tests (Playwright)
+npm run test:client
+```
+
+## Linting
+
+Check code quality across all workspaces:
+
+```bash
+# Lint all workspaces
+npm run lint:all
+
+# Lint individual workspaces
+npm run lint:client
+npm run lint:server
+npm run lint:types
+
+# Auto-fix linting issues
+npm run lint:fix
+```
+
+## Type Checking
+
+Run TypeScript type checking:
+
+```bash
+# Check all workspaces
+npm run typecheck:all
+
+# Check individual workspaces
+npm run typecheck:client
+npm run typecheck:server
+npm run typecheck:types
+```
+
+## CI/CD
+
+Continuous integration runs automatically on push and pull requests:
+
+- **Lint:** ESLint code quality checks across all workspaces
+- **Typecheck:** TypeScript type checking for type safety
+- **Unit Tests:** Jest unit tests for server-side logic with coverage reports
+- **E2E Tests:** Playwright end-to-end tests for client-side functionality
+
+Workflows are defined in `.github/workflows/ci.yml` and use cached dependencies for faster builds.

@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import { ServerResponse } from "capital/server";
+import { HTTP_STATUS, ServerResponse } from "capital/server";
 import {
    updateUserSchema,
    User,
@@ -7,7 +7,7 @@ import {
    userSchema,
    UserUpdates
 } from "capital/user";
-import { Request, Response } from "express";
+import { Response } from "express";
 
 import { configureToken } from "@/lib/middleware";
 import { getCacheValue, removeCacheValue, setCacheValue } from "@/lib/redis";
@@ -18,7 +18,7 @@ import { logoutUser } from "@/services/authenticationService";
 /**
  * Cache duration for user details (30 minutes)
  */
-const USER_DETAILS_CACHE_DURATION = 30 * 60;
+export const USER_DETAILS_CACHE_DURATION = 30 * 60;
 
 /**
  * Normalizes user input for case-insensitive comparison
@@ -71,7 +71,7 @@ const getUserCacheKey = (user_id: string): string => `user:${user_id}`;
  * Fetches user details
  *
  * @param {string} user_id - User identifier
- * @returns {Promise<ServerResponse>} A server response of `200` with user details or `404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.OK` with user details or `HTTP_STATUS.NOT_FOUND` with respective errors
  */
 export async function fetchUserDetails(user_id: string): Promise<ServerResponse> {
    // Try to get user details from cache first
@@ -79,14 +79,14 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    const cache: string | null = await getCacheValue(key);
 
    if (cache) {
-      return sendServiceResponse(200, JSON.parse(cache) as UserDetails);
+      return sendServiceResponse(HTTP_STATUS.OK, JSON.parse(cache) as UserDetails);
    }
 
    // Cache miss - fetch complete user data from the database
    const user: User | null = await userRepository.findByUserId(user_id);
 
    if (!user) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          user_id: "User does not exist based on the provided ID"
       });
    }
@@ -100,18 +100,17 @@ export async function fetchUserDetails(user_id: string): Promise<ServerResponse>
    };
    setCacheValue(key, USER_DETAILS_CACHE_DURATION, JSON.stringify(record));
 
-   return sendServiceResponse(200, record);
+   return sendServiceResponse(HTTP_STATUS.OK, record);
 }
 
 /**
  * Creates a new user and configures JWT token
  *
- * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {User} user - User object to create
- * @returns {Promise<ServerResponse>} A server response of `201` with success status or `400`/`409` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.CREATED` with success status or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.CONFLICT` with respective errors
  */
-export async function createUser(req: Request, res: Response, user: User): Promise<ServerResponse> {
+export async function createUser(res: Response, user: User): Promise<ServerResponse> {
    // Validate user fields against the user schema
    const fields = userSchema.safeParse(user);
 
@@ -132,12 +131,12 @@ export async function createUser(req: Request, res: Response, user: User): Promi
       // Configure JWT token for authentication purposes
       configureToken(res, user_id);
 
-      return sendServiceResponse(201, { success: true });
+      return sendServiceResponse(HTTP_STATUS.CREATED, { success: true });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);
 
-      return sendServiceResponse(409, undefined, errors);
+      return sendServiceResponse(HTTP_STATUS.CONFLICT, undefined, errors);
    }
 }
 
@@ -146,7 +145,7 @@ export async function createUser(req: Request, res: Response, user: User): Promi
  *
  * @param {string} user_id - User identifier
  * @param {Partial<UserUpdates>} updates - User details to update
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `400`/`404`/`409` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.BAD_REQUEST`/`HTTP_STATUS.NOT_FOUND`/`HTTP_STATUS.CONFLICT` with respective errors
  */
 export async function updateAccountDetails(user_id: string, updates: Partial<UserUpdates>): Promise<ServerResponse> {
    // Validate update fields with user update schema
@@ -168,7 +167,7 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
          // Handle username/email conflicts
          const errors = generateConflictErrors(existingUsers, details.username || "", details.email || "");
 
-         return sendServiceResponse(409, undefined, errors);
+         return sendServiceResponse(HTTP_STATUS.CONFLICT, undefined, errors);
       }
    }
 
@@ -178,14 +177,14 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
       const current: User | null = await userRepository.findByUserId(user_id);
 
       if (!current) {
-         return sendServiceResponse(404, undefined, {
+         return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
             user_id: "User does not exist based on the provided ID"
          });
       }
 
       // Check if provided password credentials are correct
       if (!details.password || !(await argon2.verify(current.password, details.password))) {
-         return sendServiceResponse(400, undefined, {
+         return sendServiceResponse(HTTP_STATUS.BAD_REQUEST, undefined, {
             password: "Invalid credentials"
          });
       }
@@ -199,7 +198,7 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
    const result = await userRepository.update(user_id, details);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          user_id: "User does not exist based on the provided ID"
       });
    }
@@ -210,28 +209,27 @@ export async function updateAccountDetails(user_id: string, updates: Partial<Use
 /**
  * Deletes a user account and all associated data
  *
- * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<ServerResponse>} A server response of `204` with no content or `404` with respective errors
+ * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.NO_CONTENT` with no content or `HTTP_STATUS.NOT_FOUND` with respective errors
  */
-export async function deleteAccount(req: Request, res: Response): Promise<ServerResponse> {
+export async function deleteAccount(res: Response): Promise<ServerResponse> {
    // Attempt to delete the user and their associated data
    const user_id: string = res.locals.user_id;
    const result = await userRepository.deleteUser(user_id);
 
    if (!result) {
-      return sendServiceResponse(404, undefined, {
+      return sendServiceResponse(HTTP_STATUS.NOT_FOUND, undefined, {
          user_id: "User does not exist based on the provided ID"
       });
    }
 
    // Clear the user authentication status
-   await logoutUser(req, res);
+   await logoutUser(res);
 
    // Clear the respective cache values
    ["accounts", "budgets", "transactions", "user"].forEach((key: string) => {
       removeCacheValue(`${key}:${user_id}`);
    });
 
-   return sendServiceResponse(204);
+   return sendServiceResponse(HTTP_STATUS.NO_CONTENT);
 }

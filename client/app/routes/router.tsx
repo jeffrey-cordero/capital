@@ -25,7 +25,7 @@ export default function Router(): React.ReactNode {
       const requiresRedirection = (authenticated && !isDashboard) || (!authenticated && isDashboard);
 
       if (requiresRedirection) {
-         window.location.pathname = authenticated ? "/dashboard" : "/";
+         window.location.pathname = authenticated ? "/dashboard" : "/login";
       }
    }, [authenticated]);
 

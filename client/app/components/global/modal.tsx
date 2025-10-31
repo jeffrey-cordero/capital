@@ -110,14 +110,14 @@ function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
  * Props for the Modal component
  *
  * @property {boolean} open - Modal open state
- * @property {(_force?: boolean) => void} onClose - Close handler
+ * @property {(force?: boolean) => void} onClose - Close handler
  * @property {React.ReactNode} children - Modal content
  * @property {SxProps<any>} [sx] - Optional styles
  * @property {boolean} [displayWarning] - Whether to show the unsaved changes warning dialog
  */
 interface ModalProps {
    open: boolean;
-   onClose: (_force?: boolean) => void;
+   onClose: (force?: boolean) => void;
    children: React.ReactNode;
    sx?: SxProps<any>;
    displayWarning?: boolean;

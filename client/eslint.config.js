@@ -28,6 +28,7 @@ export default [
       },
       rules: {
          "no-undef": "off",
+         "no-unused-vars": "off",
          "react/react-in-jsx-scope": "off",
          "@typescript-eslint/no-namespace": "off",
          "@typescript-eslint/no-explicit-any": "off",
@@ -71,13 +72,13 @@ export default [
                "JSXSpreadChild"
             ]
          }],
+         "brace-style": ["error", "1tbs", { "allowSingleLine": false }],
          "space-before-blocks": ["error", "always"],
          "object-curly-spacing": ["error", "always"],
          "keyword-spacing": ["error", { after: true }],
          "no-multiple-empty-lines": ["error", { max: 1 }],
          "space-before-function-paren": ["error", "never"],
          "no-console": ["warn", { allow: ["warn", "error"] }],
-         "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 
          "react-hooks/rules-of-hooks": "error",
          "react-hooks/exhaustive-deps": "error",

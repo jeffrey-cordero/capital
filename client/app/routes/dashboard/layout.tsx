@@ -38,7 +38,7 @@ export async function fetchDashboard(dispatch: Dispatch<any>, navigate: Navigate
       return dashboard;
    }
 
-   return dashboard;
+   return null;
 }
 
 /**
@@ -55,12 +55,7 @@ export default function Layout(): React.ReactNode {
       gcTime: 30 * 60 * 1000
    });
 
-   if (data === 0) {
-      // Navigate back to the landing page for server-side failures
-      window.location.pathname = "/";
-   }
-
-   if (isLoading || isError || typeof data !== "object") {
+   if (isLoading || isError || data === null) {
       return <Loading />;
    } else {
       return <Outlet />;

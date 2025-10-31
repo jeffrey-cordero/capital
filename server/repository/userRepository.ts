@@ -7,7 +7,7 @@ import { createCategory } from "@/repository/budgetsRepository";
 /**
  * Updatable user fields
  */
-const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
+export const USER_UPDATES = ["username", "name", "password", "email", "birthday"] as const;
 
 /**
  * Finds potentially conflicting users for email and/or username unique constraints
@@ -21,7 +21,7 @@ export async function findConflictingUsers(username: string, email: string, user
    const conflicts = `
       SELECT user_id, username, email
       FROM users
-      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id IS DISTINCT FROM $3);
+      WHERE (username_normalized = $1 OR email_normalized = $2) AND (user_id != $3 OR user_id IS NULL OR $3 IS NULL);
    `;
    const usernameNormalized = username.toLowerCase().trim();
    const emailNormalized = email.toLowerCase().trim();
@@ -30,7 +30,7 @@ export async function findConflictingUsers(username: string, email: string, user
 }
 
 /**
- * Finds user by username
+ * Finds user by username (case-insensitive)
  *
  * @param {string} username - Username to find
  * @returns {Promise<User | null>} Matching user or null
@@ -39,9 +39,9 @@ export async function findByUsername(username: string): Promise<User | null> {
    const search = `
       SELECT user_id, username, password
       FROM users
-      WHERE username = $1;
+      WHERE username_normalized = $1;
    `;
-   const result = await query(search, [username]);
+   const result = await query(search, [username.toLowerCase().trim()]);
 
    return result.length > 0 ? result[0] : null;
 }
@@ -69,7 +69,7 @@ export async function findByUserId(user_id: string): Promise<User | null> {
  * @returns {Promise<string>} Created user ID
  */
 export async function create(user: User): Promise<string> {
-   return await transaction(async(client: PoolClient) => {
+   return await transaction<string>(async(client: PoolClient) => {
       // Create user record
       const creation = `
          INSERT INTO users (username, name, password, email, birthday)
@@ -112,7 +112,7 @@ export async function create(user: User): Promise<string> {
       }, client);
 
       return result.rows[0].user_id;
-   }) as string;
+   });
 }
 
 /**
@@ -159,7 +159,7 @@ export async function update(user_id: string, updates: Partial<UserUpdates>): Pr
  * @returns {Promise<boolean>} Success status
  */
 export async function deleteUser(user_id: string): Promise<boolean> {
-   return await transaction(async(client: PoolClient): Promise<boolean> => {
+   return await transaction<boolean>(async(client: PoolClient): Promise<boolean> => {
       // Disable main budget category protections
       await client.query("ALTER TABLE budget_categories DISABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
@@ -174,5 +174,5 @@ export async function deleteUser(user_id: string): Promise<boolean> {
       await client.query("ALTER TABLE budget_categories ENABLE TRIGGER prevent_main_budget_category_modifications_trigger");
 
       return result.rowCount === 1;
-   }, "SERIALIZABLE") as boolean;
+   }, "SERIALIZABLE");
 }

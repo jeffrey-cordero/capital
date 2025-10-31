@@ -9,6 +9,7 @@ import {
    Stack
 } from "@mui/material";
 import { type Budget, type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
+import { HTTP_STATUS } from "capital/server";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -27,13 +28,13 @@ import { type RootState } from "@/redux/store";
  * @property {BudgetCategory} category - The category to edit
  * @property {boolean} visible - Whether the form is visible
  * @property {() => void} onCancel - The function to call when the form is cancelled
- * @property {(_fields: object, _field: string) => void} updateDirtyFields - The function to call to update the dirty fields
+ * @property {(fields: object, field: string) => void} updateDirtyFields - The function to call to update the dirty fields
  */
 interface EditCategoryProps {
    visible: boolean;
    category: BudgetCategory;
    onCancel: () => void;
-   updateDirtyFields: (_fields: object, _field: string) => void;
+   updateDirtyFields: (fields: object, field: string) => void;
 }
 
 /**
@@ -136,8 +137,8 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             ) : Promise.resolve(null)
          ]);
 
-         const categorySuccess = (!categoryUpdates || categoryResponse === 204);
-         const budgetSuccess = (!budgetUpdates || budgetResponse === 204 || (typeof budgetResponse === "object" && budgetResponse?.success));
+         const categorySuccess = (!categoryUpdates || categoryResponse === HTTP_STATUS.NO_CONTENT);
+         const budgetSuccess = (!budgetUpdates || budgetResponse === HTTP_STATUS.NO_CONTENT || (typeof budgetResponse === "object" && budgetResponse?.success));
 
          // Only update the Redux store for successful requests
          if (categoryUpdates && categorySuccess) {

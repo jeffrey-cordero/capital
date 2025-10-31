@@ -3,17 +3,28 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "install": "npm --prefix types install && npm --prefix server install --legacy-peer-deps && npm --prefix client install  --legacy-peer-deps",
-    "build": "concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
+    "install": "npm --prefix types install && npm --prefix server install --legacy-peer-deps --include=dev && npm --prefix client install --legacy-peer-deps --include=dev",
+    "build": "npm --prefix types run build && concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
     "server:start": "npm --prefix server run start",
     "client:start": "npm --prefix client run start",
     "server:dev": "npm --prefix server run dev",
     "client:dev": "npm --prefix client run dev",
     "start": "concurrently \"npm run server:start\" \"npm run client:start\"",
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "lint": "concurrently \"npm --prefix client run lint\" \"npm --prefix server run lint\""
+    "lint:client": "npm --prefix client run lint",
+    "lint:server": "npm --prefix server run lint",
+    "lint:types": "npm --prefix types run lint",
+    "lint:all": "concurrently \"npm run lint:client\" \"npm run lint:server\" \"npm run lint:types\"",
+    "lint:fix": "concurrently \"npm --prefix client run lint:fix\" \"npm --prefix server run lint:fix\" \"npm --prefix types run lint:fix\"",
+    "typecheck:client": "npm --prefix client run typecheck",
+    "typecheck:server": "npm --prefix server run typecheck",
+    "typecheck:types": "npm --prefix types run typecheck",
+    "typecheck:all": "concurrently \"npm run typecheck:client\" \"npm run typecheck:server\" \"npm run typecheck:types\"",
+    "test:server": "npm --prefix server run test",
+    "test:client": "npm --prefix client run test:e2e",
+    "test:all": "concurrently \"npm --prefix server run test\" \"npm --prefix client run test:e2e\""
   },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
+  "dependencies": {
+    "concurrently": "^9.2.1"
   }
 }
