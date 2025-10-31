@@ -1,4 +1,4 @@
-import { createLoginCredentials, TEST_USER_ID, VALID_LOGIN } from "capital/mocks/user";
+import { createValidLogin, TEST_USER_ID, VALID_LOGIN } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
 import * as authenticationController from "@/controllers/authenticationController";
@@ -130,7 +130,7 @@ describe("Authentication Controller", () => {
 
    describe("POST /authentication/login", () => {
       it("should authenticate user with valid credentials", async() => {
-         mockReq.body = createLoginCredentials("TestUser");
+         mockReq.body = createValidLogin();
          const mockAuthenticateUser = arrangeMockServiceSuccess(
             authenticationService,
             "authenticateUser",
@@ -150,7 +150,7 @@ describe("Authentication Controller", () => {
       });
 
       it("should return validation errors for invalid credentials", async() => {
-         mockReq.body = createLoginCredentials("TestUser");
+         mockReq.body = createValidLogin();
          const mockAuthenticateUser = arrangeMockServiceValidationError(
             authenticationService,
             "authenticateUser",
@@ -254,7 +254,7 @@ describe("Authentication Controller", () => {
       });
 
       it("should return internal server error for service errors", async() => {
-         mockReq.body = createLoginCredentials("TestUser");
+         mockReq.body = createValidLogin();
          const expectedError = new Error("Database connection failed");
          const mockAuthenticateUser = arrangeMockServiceError(authenticationService, "authenticateUser", expectedError);
 

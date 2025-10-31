@@ -1,6 +1,5 @@
 import {
    createConflictingUser,
-   createMockUserDetails,
    createMockUserUpdates,
    createMockUserWithDetails,
    createUserUpdatesWithPasswordChange,
@@ -124,7 +123,7 @@ describe("User Service", () => {
       };
 
       it("should return cached user details on cache hit", async() => {
-         const cachedUserDetails: UserDetails = createMockUserDetails();
+         const cachedUserDetails: UserDetails = createMockUserWithDetails().expectedUserDetails;
          const cachedData: string = JSON.stringify(cachedUserDetails);
          arrangeMockCacheHit(redis, cachedData);
 

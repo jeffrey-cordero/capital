@@ -15,8 +15,8 @@ test.describe("API Error Handling", () => {
          // Navigate to the login page
          await navigateToPath(page, LOGIN_ROUTE);
 
-         // Wait for 5 seconds to simulate a slow network connection
-         await page.waitForTimeout(5000);
+         // Wait for the form to be ready before going offline
+         await page.getByTestId("username").waitFor({ state: "visible" });
 
          // Go offline and submit a valid login request
          await page.context().setOffline(true);
