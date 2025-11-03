@@ -28,7 +28,7 @@ redisClient.on("error", (error: any) => {
  * @returns {Promise<string | null>} Cached value or null if not found/error
  */
 export async function getCacheValue(key: string): Promise<string | null> {
-   logger.info(`getCacheValue(${key}): null`);
+   // logger.info(`getCacheValue(${key}): null`);
    return null;
    // try {
    //    return await redisClient.get(key);
@@ -46,7 +46,7 @@ export async function getCacheValue(key: string): Promise<string | null> {
  * @param {string} value - String value to store
  */
 export function setCacheValue(key: string, time: number, value: string): void {
-   logger.info(`setCacheValue(${key}): ${value} for ${time} seconds`);
+   // logger.info(`setCacheValue(${key}): ${value} for ${time} seconds`);
    return;
    // redisClient.setex(key, time, value).catch((error: any) => {
    //    logger.error(`redisClient.setex(${key}): ${error.message}\n\n${error.stack}`);
@@ -59,7 +59,7 @@ export function setCacheValue(key: string, time: number, value: string): void {
  * @param {string} key - Cache key to remove
  */
 export function removeCacheValue(key: string): void {
-   logger.info(`removeCacheValue(${key})`);
+   // logger.info(`removeCacheValue(${key})`);
    return;
    // redisClient.del(key).catch((error: any) => {
    //    logger.error(`redisClient.del(${key}): ${error.message}\n\n${error.stack}`);
