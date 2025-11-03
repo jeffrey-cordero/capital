@@ -25,7 +25,8 @@ export default defineConfig({
       _global: ({})
    },
    optimizeDeps: {
-      force: true
+      force: true,
+      exclude: ["@react-router/dev"]
    },
    build: {
       rollupOptions: {

@@ -224,7 +224,7 @@ export async function deleteAccount(res: Response): Promise<ServerResponse> {
    }
 
    // Clear the user authentication status
-   await logoutUser(res);
+   logoutUser(res);
 
    // Clear the respective cache values
    ["accounts", "budgets", "transactions", "user"].forEach((key: string) => {
