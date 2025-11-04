@@ -9,7 +9,7 @@ import * as accountsRepository from "@/repository/accountsRepository";
 /**
  * Cache duration for user accounts (30 minutes)
  */
-const ACCOUNT_CACHE_DURATION = 30 * 60;
+export const ACCOUNT_CACHE_DURATION = 30 * 60;
 
 /**
  * Generates user accounts cache key for Redis

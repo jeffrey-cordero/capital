@@ -43,36 +43,78 @@ export const accountSchema = z.object({
    }).optional(),
 
    /* Account display name */
-   name: z.string().trim().min(1, {
+   name: z.string({
+      message: "Name is required"
+   }).trim().min(1, {
       message: "Name must be at least 1 character"
    }).max(30, {
       message: "Name must be at most 30 characters"
    }),
 
    /* Current monetary balance */
-   balance: zodPreprocessNumber(
-      z.coerce.number({
-         message: "Balance must be a valid currency amount"
-      }).min(-999_999_999_999.99, {
-         message: "Balance is below the minimum allowed value"
-      }).max(999_999_999_999.99, {
-         message: "Balance exceeds the maximum allowed value"
-      })
+   balance: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) return undefined;
+
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Balance is required"
+         }),
+         zodPreprocessNumber(
+            z.coerce.number({
+               message: "Balance must be a valid currency amount"
+            }).min(-999_999_999_999.99, {
+               message: "Balance is below the minimum allowed value"
+            }).max(999_999_999_999.99, {
+               message: "Balance exceeds the maximum allowed value"
+            })
+         )
+      ])
    ),
 
    /* Last update timestamp */
-   last_updated: z.coerce.date({
-      message: "Last updated must be a valid date representation"
-   }).min(new Date("1800-01-01"), {
-      message: "Last updated must be on or after 1800-01-01"
-   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-      message: "Last updated cannot be in the future"
-   }).transform((date) => date.toISOString()),
+   last_updated: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) {
+            return undefined;
+         }
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Last updated is required"
+         }),
+         z.coerce.date({
+            message: "Last updated must be a valid date representation"
+         }).min(new Date("1800-01-01"), {
+            message: "Last updated must be on or after 1800-01-01"
+         }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
+            message: "Last updated cannot be in the future"
+         }).transform((date) => date.toISOString())
+      ])
+   ),
 
    /* Account classification */
-   type: z.enum(ACCOUNT_TYPES as [string, ...string[]], {
-      message: `Invalid account type. Must be one of: ${ACCOUNT_TYPES.join(", ")}`
-   }),
+   type: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) return undefined;
+
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Type is required"
+         }),
+         z.string().refine((val) => ACCOUNT_TYPES.includes(val), {
+            message: `Account type must be one of the following: ${ACCOUNT_TYPES.join(", ")}`
+         })
+      ])
+   ),
 
    /* Visual account representation */
    image: z.enum(Array.from(images) as [string, ...string[]]).or(z.string().url({
@@ -80,13 +122,28 @@ export const accountSchema = z.object({
    })).or(z.literal("")).nullable().optional(),
 
    /* Display priority */
-   account_order: zodPreprocessNumber(z.coerce.number().int({
-      message: "Account order must be an integer"
-   }).min(0, {
-      message: "Account order cannot be negative"
-   }).max(2_147_483_647, {
-      message: "Account order exceeds maximum value"
-   }))
+   account_order: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) return undefined;
+
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Account order is required"
+         }),
+         zodPreprocessNumber(z.coerce.number({
+            message: "Account order must be a valid number"
+         }).int({
+            message: "Account order must be an integer"
+         }).min(0, {
+            message: "Account order cannot be negative"
+         }).max(2_147_483_647, {
+            message: "Account order exceeds maximum value"
+         }))
+      ])
+   )
 });
 
 /**
