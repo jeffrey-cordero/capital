@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "install": "npm --prefix types install && npm --prefix server install --legacy-peer-deps --include=dev && npm --prefix client install --legacy-peer-deps --include=dev",
+    "install:clean": "rm -rf node_modules types/node_modules server/node_modules client/node_modules && npm install",
     "build": "npm --prefix types run build && concurrently \"npm --prefix client run build\" \"npm --prefix server run build\"",
     "server:start": "npm --prefix server run start",
     "client:start": "npm --prefix client run start",

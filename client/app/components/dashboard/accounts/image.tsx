@@ -12,7 +12,7 @@ import {
    OutlinedInput,
    Stack
 } from "@mui/material";
-import { accountSchema, images } from "capital/accounts";
+import { accountSchema, IMAGES } from "capital/accounts";
 import { useCallback, useState } from "react";
 import {
    type Control,
@@ -35,7 +35,7 @@ const imageSchema = accountSchema.shape.image;
 /**
  * Predefined images for account selection
  */
-const imagesArray = Array.from(images);
+const imagesArray = Array.from(IMAGES);
 
 /**
  * Props for the account image selection component
@@ -78,7 +78,7 @@ export default function AccountImage({
 
    // Reset image selection when custom URL is entered
    const handleUrlFocus = useCallback(() => {
-      if (images.has(value)) {
+      if (IMAGES.has(value)) {
          setValue("image", "", { shouldDirty: true });
       }
    }, [value, setValue]);
@@ -212,7 +212,7 @@ export default function AccountImage({
                                  label = "URL"
                                  onFocus = { handleUrlFocus }
                                  type = "text"
-                                 value = { images.has(field.value) || !field.value ? "" : field.value }
+                                 value = { IMAGES.has(field.value) || !field.value ? "" : field.value }
                               />
                               <FormHelperText>
                                  { errors.image?.message?.toString() }

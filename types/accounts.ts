@@ -15,21 +15,21 @@ const ACCOUNT_TYPES: readonly string[] = [
  *
  * @see {@link Account} - Account type these liabilities are part of
  */
-export const liabilities: Set<string> = new Set(["Debt", "Credit Card", "Loan"]);
+export const LIABILITIES: Set<string> = new Set(["Debt", "Credit Card", "Loan"]);
 
 /**
  * All supported account types for efficient lookups
  *
  * @see {@link Account} - Account type using these definitions
  */
-export const types: Set<string> = new Set(ACCOUNT_TYPES);
+export const TYPES: Set<string> = new Set(ACCOUNT_TYPES);
 
 /**
  * Lowercase account types for client-side image mapping
  *
  * @see {@link Account} - Account type using these image mappings
  */
-export const images: Set<string> = new Set(Array.from(types).map((type: string) => type.toLowerCase()));
+export const IMAGES: Set<string> = new Set(Array.from(TYPES).map((type: string) => type.toLowerCase()));
 
 /**
  * Schema for financial account validation
@@ -78,24 +78,66 @@ export const accountSchema = z.object({
    /* Last update timestamp */
    last_updated: z.preprocess(
       (val: any) => {
-         // Preserve undefined to allow required check
+         // Preserve undefined/null for required check
          if (val === null || val === undefined) {
             return undefined;
+         } else if  (typeof val === "string") {
+            // Handle the empty string case
+            const trimmed = val.trim();
+
+            if (trimmed === "") {
+               return undefined;
+            }
+
+            // Handle the invalid date representation case
+            const date = new Date(trimmed);
+
+            if (isNaN(date.getTime())) {
+               return "INVALID_DATE";
+            }
+
+            return date;
+         } else {
+            return val;
          }
-         return val;
       },
       z.union([
          z.literal(undefined).refine(() => false, {
             message: "Last updated is required"
          }),
-         z.coerce.date({
-            message: "Last updated must be a valid date representation"
-         }).min(new Date("1800-01-01"), {
-            message: "Last updated must be on or after 1800-01-01"
-         }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-            message: "Last updated cannot be in the future"
-         }).transform((date) => date.toISOString())
-      ])
+         z.literal("INVALID_DATE").refine(() => false, {
+            message: "Last updated must be a valid date"
+         }),
+         z.date()
+      ]).refine((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return true;
+         }
+
+         const date = val as Date;
+         const minDate = new Date("1800-01-01");
+
+         return date >= minDate;
+      }, {
+         message: "Last updated must be on or after 1800-01-01"
+      }).refine((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return true;
+         }
+
+         const date = val as Date;
+         const maxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+
+         return date <= maxDate;
+      }, {
+         message: "Last updated cannot be in the future"
+      }).transform((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return val;
+         } else {
+            return val.toISOString();
+         }
+      })
    ),
 
    /* Account classification */
@@ -117,7 +159,7 @@ export const accountSchema = z.object({
    ),
 
    /* Visual account representation */
-   image: z.enum(Array.from(images) as [string, ...string[]]).or(z.string().url({
+   image: z.enum(Array.from(IMAGES) as [string, ...string[]]).or(z.string().url({
       message: "Image must be a valid URL"
    })).or(z.literal("")).nullable().optional(),
 

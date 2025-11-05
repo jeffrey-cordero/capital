@@ -11,7 +11,7 @@ import {
    useTheme
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
-import { type Account, liabilities } from "capital/accounts";
+import { type Account, LIABILITIES } from "capital/accounts";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -118,7 +118,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          label: account.name,
          data: points,
          stack: account.account_id || "",
-         color: liabilities.has(account.type) ? theme.palette.error.main : theme.palette.primary.main
+         color: LIABILITIES.has(account.type || "") ? theme.palette.error.main : theme.palette.primary.main
       };
    }, [today, theme]);
 

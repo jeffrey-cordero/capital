@@ -13,7 +13,7 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import { type Account, images } from "capital/accounts";
+import { type Account, IMAGES } from "capital/accounts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -92,7 +92,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
    const getImageSource = useCallback(() => {
       if (!account?.image) {
          return "/svg/logo.svg";
-      } else if (images.has(account.image)) {
+      } else if (IMAGES.has(account.image)) {
          return `/images/${account.image}.png`;
       } else if (!isImageResourceError) {
          return account.image;
@@ -186,7 +186,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                         sx = { { ...horizontalScroll(theme), maxWidth: "100%" } }
                         variant = "caption"
                      >
-                        Updated { displayDate(account.last_updated) }
+                        Updated { displayDate(account.last_updated || new Date().toISOString()) }
                      </Typography>
                      <AccountForm
                         account = { account }

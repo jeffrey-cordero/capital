@@ -109,6 +109,10 @@ capital/
    ```bash
    npm install
    ```
+   * For a clean installation (removes all existing `node_modules` directories before installing):
+   ```bash
+   npm run install:clean
+   ```
 5.  **Build Application:**
    * Build all workspaces (types, client, server):
    ```bash

@@ -9,7 +9,7 @@ import {
    Select,
    Stack
 } from "@mui/material";
-import { type Account, accountSchema, types } from "capital/accounts";
+import { type Account, accountSchema, TYPES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 import type { Transaction } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
@@ -74,7 +74,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    }, [account, reset, open]);
 
    // Prepare account types for selection dropdown
-   const accountTypes = useMemo(() => Array.from(types), []);
+   const accountTypes = useMemo(() => Array.from(TYPES), []);
 
    const onCancel = useCallback(() => {
       reset(account ? account : undefined, { keepDirty: false });
@@ -285,16 +285,16 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                              }
                                           }
                                        }
-                                       value = { types.has(field.value) ? field.value : "Checking" }
+                                       value = { TYPES.has(field.value) ? field.value : "Checking" }
                                        variant = "outlined"
                                     >
                                        {
-                                          accountTypes.map((key) => (
+                                          accountTypes.map((type: string) => (
                                              <MenuItem
-                                                key = { key }
-                                                value = { key }
+                                                key = { `account-type-${type}` }
+                                                value = { type }
                                              >
-                                                { key }
+                                                { type }
                                              </MenuItem>
                                           ))
                                        }
