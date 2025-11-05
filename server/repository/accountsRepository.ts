@@ -3,7 +3,7 @@ import { Account } from "capital/accounts";
 import { FIRST_PARAM, query } from "@/lib/database";
 
 /** Updatable account fields */
-const ACCOUNT_UPDATES = ["name", "type", "image", "account_order", "balance", "last_updated"] as const;
+export const ACCOUNT_UPDATES = ["name", "type", "image", "account_order", "balance", "last_updated"] as const;
 
 /**
  * Fetches all accounts for a user

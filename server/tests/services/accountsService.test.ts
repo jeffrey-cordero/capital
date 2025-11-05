@@ -33,6 +33,8 @@ jest.mock("@/repository/accountsRepository");
 
 describe("Account Service", () => {
    const userId: string = TEST_USER_ID;
+   const accountId: string = TEST_ACCOUNT_ID;
+   const accountIds: string[] = TEST_ACCOUNT_IDS;
    const accountsCacheKey: string = `accounts:${userId}`;
    const VALID_IMAGE_VALUES: string[] = [
       ...Array.from(IMAGES),
@@ -129,24 +131,24 @@ describe("Account Service", () => {
 
    describe("createAccount", () => {
       it("should create account successfully with valid data", async() => {
-         arrangeMockRepositorySuccess(accountsRepository, "create", TEST_ACCOUNT_ID);
+         arrangeMockRepositorySuccess(accountsRepository, "create", accountId);
 
          const result: ServerResponse = await accountsService.createAccount(userId, VALID_ACCOUNT);
 
          assertAccountOperationSuccess("create", [userId, VALID_ACCOUNT]);
-         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: TEST_ACCOUNT_ID });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: accountId });
       });
 
       VALID_IMAGE_VALUES.forEach((image) => {
          it(`should create account successfully with valid image: ${image.length > 50 ? image.substring(0, 50) + "..." : image}`, async() => {
             const validAccount: Account = createValidAccount({ image });
 
-            arrangeMockRepositorySuccess(accountsRepository, "create", TEST_ACCOUNT_ID);
+            arrangeMockRepositorySuccess(accountsRepository, "create", accountId);
 
             const result: ServerResponse = await accountsService.createAccount(userId, validAccount);
 
             assertAccountOperationSuccess("create", [userId, validAccount]);
-            assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: TEST_ACCOUNT_ID });
+            assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: accountId });
          });
       });
 
@@ -330,7 +332,7 @@ describe("Account Service", () => {
    describe("updateAccount", () => {
       it("should update account successfully with valid data", async() => {
          const updates: Partial<Account> = {
-            account_id: TEST_ACCOUNT_ID,
+            account_id: accountId,
             name: "Updated Account Name",
             balance: 2000.75,
             last_updated: new Date("2024-02-01").toISOString(),
@@ -348,7 +350,7 @@ describe("Account Service", () => {
       VALID_IMAGE_VALUES.forEach((image) => {
          it(`should update account successfully with valid image: ${image.length > 50 ? image.substring(0, 50) + "..." : image}`, async() => {
             const updates: Partial<Account> = {
-               account_id: TEST_ACCOUNT_ID,
+               account_id: accountId,
                image,
                last_updated: new Date("2024-02-01").toISOString()
             };
@@ -388,7 +390,7 @@ describe("Account Service", () => {
       updateRequiredFields.forEach(({ field, errorMessage }) => {
          it(`should return validation errors for missing ${field}`, async() => {
             const updates: Partial<Account> = {
-               account_id: TEST_ACCOUNT_ID,
+               account_id: accountId,
                name: "Updated Name",
                last_updated: new Date("2024-02-01").toISOString(),
                [field]: undefined
@@ -405,7 +407,7 @@ describe("Account Service", () => {
 
       it("should return validation errors for invalid field values", async() => {
          const updates: Partial<Account> = {
-            account_id: TEST_ACCOUNT_ID,
+            account_id: accountId,
             name: "a".repeat(31),
             balance: 1_000_000_000_000_000,
             last_updated: new Date("2024-02-01").toISOString(),
@@ -426,7 +428,7 @@ describe("Account Service", () => {
 
       it("should handle repository errors during update using helper", async() => {
          const updates: Partial<Account> = {
-            account_id: TEST_ACCOUNT_ID,
+            account_id: accountId,
             name: "Updated Name",
             last_updated: new Date("2024-02-01").toISOString()
          };
@@ -447,9 +449,9 @@ describe("Account Service", () => {
       it("should update accounts ordering successfully with valid data", async() => {
          arrangeMockRepositorySuccess(accountsRepository, "updateOrdering", true);
 
-         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, TEST_ACCOUNT_IDS);
+         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
-         const expectedOrdering: Partial<Account>[] = TEST_ACCOUNT_IDS.map((id, index) => ({
+         const expectedOrdering: Partial<Account>[] = accountIds.map((id, index) => ({
             account_id: id,
             account_order: index
          }));
@@ -499,9 +501,9 @@ describe("Account Service", () => {
       });
 
       it("should return validation errors for invalid UUID in array", async() => {
-         const accountIds: string[] = [TEST_ACCOUNT_IDS[0], "invalid-uuid"];
+         const testAccountIds: string[] = [accountIds[0], "invalid-uuid"];
 
-         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
+         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, testAccountIds);
 
          assertAccountValidationErrorResponse(
             result,
@@ -516,21 +518,21 @@ describe("Account Service", () => {
 
          assertAccountValidationErrorResponse(
             result,
-            { account_id: "Invalid account ID's: 'invalid-1', 'invalid-2'" }
+            { account_id: "Invalid account ID's: 'invalid-1, invalid-2'" }
          );
       });
 
       it("should handle repository errors during ordering update using helper", async() => {
-         const accountIds: string[] = TEST_ACCOUNT_IDS.slice(0, 2);
+         const testAccountIds: string[] = accountIds.slice(0, 2);
 
          arrangeMockRepositoryError(accountsRepository, "updateOrdering", "Database connection failed");
 
          await assertServiceThrows(
-            () => accountsService.updateAccountsOrdering(userId, accountIds),
+            () => accountsService.updateAccountsOrdering(userId, testAccountIds),
             "Database connection failed"
          );
 
-         const expectedOrdering = accountIds.map((id, index) => ({
+         const expectedOrdering = testAccountIds.map((id, index) => ({
             account_id: id,
             account_order: index
          }));
@@ -543,9 +545,9 @@ describe("Account Service", () => {
       it("should delete account successfully", async() => {
          arrangeMockRepositorySuccess(accountsRepository, "deleteAccount", true);
 
-         const result: ServerResponse = await accountsService.deleteAccount(userId, TEST_ACCOUNT_ID);
+         const result: ServerResponse = await accountsService.deleteAccount(userId, accountId);
 
-         assertAccountOperationSuccess("deleteAccount", [userId, TEST_ACCOUNT_ID]);
+         assertAccountOperationSuccess("deleteAccount", [userId, accountId]);
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -578,11 +580,11 @@ describe("Account Service", () => {
          arrangeMockRepositoryError(accountsRepository, "deleteAccount", "Database connection failed");
 
          await assertServiceThrows(
-            () => accountsService.deleteAccount(userId, TEST_ACCOUNT_ID),
+            () => accountsService.deleteAccount(userId, accountId),
             "Database connection failed"
          );
 
-         assertRepositoryCall(accountsRepository, "deleteAccount", [userId, TEST_ACCOUNT_ID]);
+         assertRepositoryCall(accountsRepository, "deleteAccount", [userId, accountId]);
          assertCacheInvalidationNotCalled(redis);
       });
    });
