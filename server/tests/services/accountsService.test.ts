@@ -1,5 +1,11 @@
 import { Account, IMAGES } from "capital/accounts";
-import { createMockAccounts, createValidAccount, TEST_ACCOUNT_ID, TEST_ACCOUNT_IDS } from "capital/mocks/accounts";
+import {
+   createMockAccounts,
+   createValidAccount,
+   TEST_ACCOUNT_ID,
+   TEST_ACCOUNT_IDS,
+   VALID_ACCOUNT
+} from "capital/mocks/accounts";
 import { TEST_USER_ID } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 
@@ -80,9 +86,9 @@ describe("Account Service", () => {
     * Asserts account operation success - repository call and cache invalidation
     *
     * @param {string} repositoryMethod - Repository method name
-    * @param {any[]} expectedParams - Expected parameters for repository call
+    * @param {unknown[]} expectedParams - Expected parameters for repository call
     */
-   const assertAccountOperationSuccess = (repositoryMethod: string, expectedParams: any[]): void => {
+   const assertAccountOperationSuccess = (repositoryMethod: string, expectedParams: unknown[]): void => {
       assertRepositoryCall(accountsRepository, repositoryMethod, expectedParams);
       assertCacheInvalidation(redis, accountsCacheKey);
    };
@@ -123,13 +129,11 @@ describe("Account Service", () => {
 
    describe("createAccount", () => {
       it("should create account successfully with valid data", async() => {
-         const validAccount: Account = createValidAccount();
-
          arrangeMockRepositorySuccess(accountsRepository, "create", TEST_ACCOUNT_ID);
 
-         const result: ServerResponse = await accountsService.createAccount(userId, validAccount);
+         const result: ServerResponse = await accountsService.createAccount(userId, VALID_ACCOUNT);
 
-         assertAccountOperationSuccess("create", [userId, expect.objectContaining(validAccount)]);
+         assertAccountOperationSuccess("create", [userId, VALID_ACCOUNT]);
          assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: TEST_ACCOUNT_ID });
       });
 
@@ -141,7 +145,7 @@ describe("Account Service", () => {
 
             const result: ServerResponse = await accountsService.createAccount(userId, validAccount);
 
-            assertAccountOperationSuccess("create", [userId, expect.objectContaining(validAccount)]);
+            assertAccountOperationSuccess("create", [userId, validAccount]);
             assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { account_id: TEST_ACCOUNT_ID });
          });
       });
@@ -149,9 +153,9 @@ describe("Account Service", () => {
       const requiredFields: (keyof Account)[] = ["balance", "last_updated", "type", "account_order"];
 
       requiredFields.forEach((field) => {
-         it(`should return validation errors for missing ${field}`, async() => {
+         it(`should return validation errors for missing ${field} field`, async() => {
             const invalidAccount: Partial<Account> = {
-               ...createValidAccount(),
+               ...VALID_ACCOUNT,
                [field]: undefined
             };
 
@@ -256,9 +260,7 @@ describe("Account Service", () => {
       });
 
       it("should return validation errors for account_order negative", async() => {
-         const invalidAccount: Account = createValidAccount({
-            account_order: -1
-         });
+         const invalidAccount: Account = createValidAccount({ account_order: -1 });
 
          const result: ServerResponse = await accountsService.createAccount(userId, invalidAccount);
 
@@ -269,9 +271,7 @@ describe("Account Service", () => {
       });
 
       it("should return validation errors for account_order too large", async() => {
-         const invalidAccount: Account = createValidAccount({
-            account_order: 2_147_483_648
-         });
+         const invalidAccount: Account = createValidAccount({ account_order: 2_147_483_648 });
 
          const result: ServerResponse = await accountsService.createAccount(userId, invalidAccount);
 
@@ -282,9 +282,7 @@ describe("Account Service", () => {
       });
 
       it("should return validation errors for last_updated too early", async() => {
-         const invalidAccount: Account = createValidAccount({
-            last_updated: "1799-12-31"
-         });
+         const invalidAccount: Account = createValidAccount({ last_updated: "1799-12-31" });
 
          const result: ServerResponse = await accountsService.createAccount(userId, invalidAccount);
 
@@ -297,9 +295,7 @@ describe("Account Service", () => {
       it("should return validation errors for last_updated in the future", async() => {
          const futureDate = new Date();
          futureDate.setFullYear(futureDate.getFullYear() + 1);
-         const invalidAccount: Account = createValidAccount({
-            last_updated: futureDate.toISOString()
-         });
+         const invalidAccount: Account = createValidAccount({ last_updated: futureDate.toISOString() });
 
          const result: ServerResponse = await accountsService.createAccount(userId, invalidAccount);
 
@@ -309,34 +305,24 @@ describe("Account Service", () => {
          );
       });
 
-      it("should return validation errors for extra fields (strict mode)", async() => {
-         const invalidAccount: any = {
-            ...createValidAccount(),
-            extraField: "not-allowed"
-         };
+      it("should return validation errors for extra fields", async() => {
+         const invalidAccount = { ...VALID_ACCOUNT, extraField: "not-allowed" };
 
          const result: ServerResponse = await accountsService.createAccount(userId, invalidAccount);
 
-         // Strict mode errors for unrecognized keys are not captured by flatten().fieldErrors
-         // So we verify that validation fails (BAD_REQUEST) but don't check specific error messages
-         expect(result.statusCode).toBe(HTTP_STATUS.BAD_REQUEST);
-         expect(result.errors).toBeDefined();
-         assertMethodsNotCalled([
-            { module: accountsRepository, methods: ["create", "updateDetails", "updateOrdering", "deleteAccount"] },
-            { module: redis, methods: ["removeCacheValue"] }
-         ]);
+         // Empty errors object with a bad request status code to imply validation errors
+         assertAccountValidationErrorResponse(result, {});
       });
 
       it("should handle repository errors during creation using helper", async() => {
-         const validAccount: Account = createValidAccount();
          arrangeMockRepositoryError(accountsRepository, "create", "Database connection failed");
 
          await assertServiceThrows(
-            () => accountsService.createAccount(userId, validAccount),
+            () => accountsService.createAccount(userId, VALID_ACCOUNT),
             "Database connection failed"
          );
 
-         assertRepositoryCall(accountsRepository, "create", [userId, expect.objectContaining(validAccount)]);
+         assertRepositoryCall(accountsRepository, "create", [userId, VALID_ACCOUNT]);
          assertCacheInvalidationNotCalled(redis);
       });
    });
@@ -355,7 +341,7 @@ describe("Account Service", () => {
 
          const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-         assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, expect.objectContaining(updates)]);
+         assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, updates]);
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -371,7 +357,7 @@ describe("Account Service", () => {
 
             const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-            assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, expect.objectContaining(updates)]);
+            assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, updates]);
             assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
          });
       });
@@ -387,7 +373,7 @@ describe("Account Service", () => {
 
          const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, expect.objectContaining(updates)]);
+         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, updates]);
          assertCacheInvalidationNotCalled(redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, {
             account_id: "Account does not exist based on the provided ID"
@@ -452,24 +438,22 @@ describe("Account Service", () => {
             "Database connection failed"
          );
 
-         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, expect.objectContaining(updates)]);
+         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, updates]);
          assertCacheInvalidationNotCalled(redis);
       });
    });
 
    describe("updateAccountsOrdering", () => {
       it("should update accounts ordering successfully with valid data", async() => {
-         const accountIds: string[] = TEST_ACCOUNT_IDS;
-
          arrangeMockRepositorySuccess(accountsRepository, "updateOrdering", true);
 
-         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
+         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, TEST_ACCOUNT_IDS);
 
-         const expectedUpdates = accountIds.map((id, index) => ({
+         const expectedOrdering: Partial<Account>[] = TEST_ACCOUNT_IDS.map((id, index) => ({
             account_id: id,
             account_order: index
          }));
-         assertAccountOperationSuccess("updateOrdering", [userId, expectedUpdates]);
+         assertAccountOperationSuccess("updateOrdering", [userId, expectedOrdering]);
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -483,11 +467,11 @@ describe("Account Service", () => {
 
          const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
-         const expectedUpdates = accountIds.map((id, index) => ({
+         const expectedOrdering: Partial<Account>[] = accountIds.map((id, index) => ({
             account_id: id,
             account_order: index
          }));
-         assertRepositoryCall(accountsRepository, "updateOrdering", [userId, expectedUpdates]);
+         assertRepositoryCall(accountsRepository, "updateOrdering", [userId, expectedOrdering]);
          assertCacheInvalidationNotCalled(redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, {
             accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs"
@@ -496,7 +480,6 @@ describe("Account Service", () => {
 
       it("should return validation errors for empty array", async() => {
          const accountIds: string[] = [];
-
          const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
          assertAccountValidationErrorResponse(
@@ -506,9 +489,8 @@ describe("Account Service", () => {
       });
 
       it("should return validation errors for non-array input", async() => {
-         const accountIds: any = "not-an-array";
-
-         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
+         const accountIds = "not-an-array" as unknown as string[];
+         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds as string[]);
 
          assertAccountValidationErrorResponse(
             result,
@@ -523,18 +505,18 @@ describe("Account Service", () => {
 
          assertAccountValidationErrorResponse(
             result,
-            { account_id: "Invalid account ID: 'invalid-uuid'" }
+            { account_id: "Invalid account ID's: 'invalid-uuid'" }
          );
       });
 
-      it("should return validation errors for multiple invalid UUIDs", async() => {
+      it("should return a validation errors for multiple invalid UUIDs in array", async() => {
          const accountIds: string[] = ["invalid-1", "invalid-2"];
 
          const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
          assertAccountValidationErrorResponse(
             result,
-            { account_id: "Invalid account ID: 'invalid-1'" }
+            { account_id: "Invalid account ID's: 'invalid-1', 'invalid-2'" }
          );
       });
 
@@ -548,11 +530,11 @@ describe("Account Service", () => {
             "Database connection failed"
          );
 
-         const expectedUpdates = accountIds.map((id, index) => ({
+         const expectedOrdering = accountIds.map((id, index) => ({
             account_id: id,
             account_order: index
          }));
-         assertRepositoryCall(accountsRepository, "updateOrdering", [userId, expectedUpdates]);
+         assertRepositoryCall(accountsRepository, "updateOrdering", [userId, expectedOrdering]);
          assertCacheInvalidationNotCalled(redis);
       });
    });

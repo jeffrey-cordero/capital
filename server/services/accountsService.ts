@@ -120,17 +120,22 @@ export async function updateAccountsOrdering(user_id: string, accounts: string[]
    // Validate each account ID against the UUID schema and create order updates
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
+   const invalidAccountIds: string[] = [];
 
    for (let i = 0; i < accounts.length; i++) {
       const uuidFields = uuidSchema.safeParse(accounts[i]);
 
       if (!uuidFields.success) {
-         return sendValidationErrors(null, {
-            account_id: `Invalid account ID: '${accounts[i]}'`
-         });
+         invalidAccountIds.push(accounts[i]);
+      } else {
+         updates.push({ account_id: uuidFields.data, account_order: i });
       }
+   }
 
-      updates.push({ account_id: uuidFields.data, account_order: i });
+   if (invalidAccountIds.length > 0) {
+      return sendValidationErrors(null, {
+         account_id: `Invalid account ID's: '${invalidAccountIds.join(", ")}'`
+      });
    }
 
    // Perform bulk order update in the database
