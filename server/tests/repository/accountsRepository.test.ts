@@ -127,6 +127,7 @@ describe("Account Repository", () => {
             () => accountsRepository.create(userId, account),
             "Database connection failed"
          );
+         assertCreateStructure(userId, account);
       });
    });
 
@@ -148,6 +149,33 @@ describe("Account Repository", () => {
             accountId,
             ACCOUNT_UPDATES
          );
+      };
+
+      /**
+       * Asserts the account update query was called with the proper structure and exact parameters
+       *
+       * @param {Partial<Account>} updates - Valid fields being updated (after filtering)
+       * @param {string} userId - Expected user_id parameter
+       * @param {string} accountId - Expected account_id parameter
+       */
+      const assertUpdateDetailsStructure = (updates: Partial<Account>, userId: string, accountId: string): void => {
+         const validFields: string[] = ACCOUNT_UPDATES.filter(field => field in updates);
+         const setClauses: string[] = validFields.map((field, index) => `${field} = $${index + 1}`);
+         const expectedParams: unknown[] = [
+            ...validFields.map((field: string) => updates[field as keyof Account]),
+            userId,
+            accountId
+         ];
+         const paramCount: number = validFields.length;
+
+         assertQueryCalledWithKeyPhrases([
+            "UPDATE accounts",
+            "SET",
+            ...setClauses,
+            `WHERE user_id = $${paramCount + 1}`,
+            `AND account_id = $${paramCount + 2}`,
+            "RETURNING account_id"
+         ], expectedParams, 0, mockPool);
       };
 
       it("should update the name field only", async() => {
@@ -181,7 +209,6 @@ describe("Account Repository", () => {
       });
 
       it("should return false when account does not exist", async() => {
-         await arrangeAndAssertAccountUpdate({ name: "New Name" });
          arrangeMockQuery([], mockPool);
 
          const result: boolean = await accountsRepository.updateDetails(userId, accountId, { name: "New Name" });
@@ -190,13 +217,14 @@ describe("Account Repository", () => {
       });
 
       it("should throw error when database connection fails", async() => {
-         await arrangeAndAssertAccountUpdate({ name: "New Name" });
+         const updates = { name: "New Name" };
          arrangeMockQueryError("Database connection failed", mockPool);
 
          await assertRepositoryThrows(
-            () => accountsRepository.updateDetails(userId, accountId, { name: "New Name" }),
+            () => accountsRepository.updateDetails(userId, accountId, updates),
             "Database connection failed"
          );
+         assertUpdateDetailsStructure(updates, userId, accountId);
       });
 
       it("should filter out invalid fields and only update valid ones", async() => {
@@ -211,16 +239,9 @@ describe("Account Repository", () => {
 
          assertQueryResult(result, true);
 
-         // Assert only valid fields are included in the query
-         const expectedParams = ["Valid Name", userId, accountId];
-         assertQueryCalledWithKeyPhrases([
-            "UPDATE accounts",
-            "SET",
-            "name = $1",
-            "WHERE user_id = $2",
-            "AND account_id = $3",
-            "RETURNING"
-         ], expectedParams, 0, mockPool);
+         // Assert only valid account fields are included in the query
+         const validUpdates = { name: "Valid Name" };
+         assertUpdateDetailsStructure(validUpdates, userId, accountId);
       });
    });
 
@@ -250,9 +271,7 @@ describe("Account Repository", () => {
       };
 
       it("should update ordering for a single account", async() => {
-         const updates: Partial<Account>[] = [
-            { account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }
-         ];
+         const updates: Partial<Account>[] = [{ account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }];
          arrangeMockQuery([{ user_id: userId }], mockPool);
 
          const result: boolean = await accountsRepository.updateOrdering(userId, updates);
@@ -275,21 +294,8 @@ describe("Account Repository", () => {
          assertQueryResult(result, true);
       });
 
-      it("should return true when update succeeds", async() => {
-         const updates: Partial<Account>[] = [
-            { account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }
-         ];
-         arrangeMockQuery([{ user_id: userId }], mockPool);
-
-         const result: boolean = await accountsRepository.updateOrdering(userId, updates);
-
-         assertQueryResult(result, true);
-      });
-
-      it("should return false when update fails", async() => {
-         const updates: Partial<Account>[] = [
-            { account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }
-         ];
+      it("should return false when update fails for missing accounts", async() => {
+         const updates: Partial<Account>[] = [{ account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }];
          arrangeMockQuery([], mockPool);
 
          const result: boolean = await accountsRepository.updateOrdering(userId, updates);
@@ -298,15 +304,14 @@ describe("Account Repository", () => {
       });
 
       it("should throw error when database connection fails", async() => {
-         const updates: Partial<Account>[] = [
-            { account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }
-         ];
+         const updates: Partial<Account>[] = [{ account_id: TEST_ACCOUNT_IDS[0], account_order: 1 }];
          arrangeMockQueryError("Database connection failed", mockPool);
 
          await assertRepositoryThrows(
             () => accountsRepository.updateOrdering(userId, updates),
             "Database connection failed"
          );
+         assertUpdateOrderingStructure(userId, updates);
       });
    });
 
