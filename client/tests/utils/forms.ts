@@ -17,6 +17,9 @@ export interface FormSubmitOptions {
 
   /** Custom timeout for form submission in milliseconds */
   timeout?: number;
+
+  /** Button type for identifying Create vs Update buttons */
+  buttonType?: "Create" | "Update";
 }
 
 /**
@@ -51,9 +54,24 @@ export async function submitForm(
          const element: Locator = page.getByTestId(testId);
          const tagName: string = await element.evaluate(el => el.tagName.toLowerCase());
 
+         // Check if it's a MUI Select component (the test ID is on the Select component itself)
+         // MUI Select has data-testid on the Select element which has MuiSelect-root class
+         const isMuiSelect = await element.evaluate(el => {
+            return el.classList.contains("MuiSelect-root") ||
+                   (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
+         });
+
          // Handle different input types (select, input, checkbox, radio, date, etc.)
-         if (tagName === "select") {
-            await element.selectOption(value);
+         if (isMuiSelect || tagName === "select") {
+            // For MUI Select, click to open dropdown then select option
+            if (isMuiSelect) {
+               await element.click();
+               await page.waitForTimeout(200); // Wait for dropdown to open
+               await page.getByRole("option", { name: value.toString() }).click();
+               await page.waitForTimeout(100); // Wait for selection to complete
+            } else {
+               await element.selectOption(value);
+            }
          } else if (tagName === "input") {
             const inputType: string = await element.evaluate(el => (el as HTMLInputElement).type);
 
@@ -77,8 +95,15 @@ export async function submitForm(
       }
    }
 
+   // Determine submit button selector based on buttonType or default
+   let submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
+   if (opts.buttonType) {
+      submitButtonSelector = "[data-testid=\"account-submit\"]";
+      // Wait for button to be visible (Collapse animation)
+      await page.locator(submitButtonSelector).waitFor({ state: "visible", timeout: opts.timeout });
+   }
+
    // Create a promise for form submission
-   const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
    const submitPromise = page.locator(submitButtonSelector).click({
       timeout: opts.timeout
    });
@@ -117,5 +142,24 @@ export async function assertValidationErrors(
       } else {
          await expect(errorElement).toContainText(expectedError);
       }
+   }
+}
+
+/**
+ * Closes a modal by clicking the backdrop or pressing Escape key
+ *
+ * @param {Page} page - Playwright page instance
+ */
+export async function closeModal(page: Page): Promise<void> {
+   // Try pressing Escape key first (standard modal close behavior)
+   await page.keyboard.press("Escape");
+
+   // Wait a moment for modal to close
+   await page.waitForTimeout(200);
+
+   // If modal is still open, try clicking the backdrop
+   const backdrop = page.locator(".MuiBackdrop-root");
+   if (await backdrop.isVisible().catch(() => false)) {
+      await backdrop.click({ force: true });
    }
 }

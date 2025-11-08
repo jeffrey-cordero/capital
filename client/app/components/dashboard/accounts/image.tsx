@@ -125,6 +125,7 @@ export default function AccountImage({
          <Button
             className = "btn-primary"
             color = "success"
+            data-testid = "account-image-button"
             fullWidth = { true }
             onClick = { openModal }
             startIcon = { <FontAwesomeIcon icon = { faPhotoFilm } /> }
@@ -144,6 +145,7 @@ export default function AccountImage({
                      sx = { { flexWrap: "wrap", justifyContent: "center", alignItems: "center", alignContent: "center" } }
                   >
                      <Avatar
+                        data-selected = { value === imagesArray[activeStep] ? "true" : "false" }
                         onClick = { selectProvidedImage }
                         src = { `/images/${imagesArray[activeStep]}.png` }
                         sx = {
@@ -166,6 +168,7 @@ export default function AccountImage({
                         backButton = {
                            <IconButton
                               color = "primary"
+                              data-testid = "account-image-carousel-left"
                               onClick = { viewPreviousImage }
                               size = "small"
                               sx = { { pr: 1 } }
@@ -178,6 +181,7 @@ export default function AccountImage({
                         nextButton = {
                            <IconButton
                               color = "primary"
+                              data-testid = "account-image-carousel-right"
                               onClick = { viewNextImage }
                               size = "small"
                               sx = { { pl: 1 } }
@@ -209,6 +213,7 @@ export default function AccountImage({
                                  { ...field }
                                  aria-label = "URL"
                                  id = "image"
+                                 inputProps = { { "data-testid": "account-image-url" } }
                                  label = "URL"
                                  onFocus = { handleUrlFocus }
                                  type = "text"

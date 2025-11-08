@@ -223,6 +223,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        autoComplete = "none"
                                        autoFocus = { true }
                                        id = "name"
+                                       inputProps = { { "data-testid": "account-name" } }
                                        label = "Name"
                                        type = "text"
                                        value = { field.value || "" }
@@ -247,7 +248,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        { ...field }
                                        aria-label = "Balance"
                                        id = "balance"
-                                       inputProps = { { step: 0.01 } }
+                                       inputProps = { { "data-testid": "account-balance", step: 0.01 } }
                                        label = "Balance"
                                        type = "number"
                                        value = { field.value || "" }
@@ -277,6 +278,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                     </InputLabel>
                                     <Select
                                        { ...field }
+                                       inputProps = { { "data-testid": "account-type" } }
                                        label = "Type"
                                        slotProps = {
                                           {

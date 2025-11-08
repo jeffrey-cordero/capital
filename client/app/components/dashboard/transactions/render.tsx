@@ -35,7 +35,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
 
    switch (type) {
       case "amount": {
-         color = params.row.amount > 0 ? "primary.main" : "";
+         color = params.row.type === "Income" ? "primary.main" : "error.main";
          value = displayCurrency(params.row.amount);
          break;
       }

@@ -26,8 +26,8 @@ export const transactionSchema = z.object({
    /* Monetary amount */
    amount: zodPreprocessNumber(z.coerce.number({
       message: "Amount must be a valid currency amount"
-   }).min(-999_999_999_999.99, {
-      message: "Amount is below the minimum allowed value"
+   }).min(1, {
+      message: "Amount must be $1 or greater"
    }).max(999_999_999_999.99, {
       message: "Amount exceeds the maximum allowed value"
    })).refine((amount) => amount !== 0, {

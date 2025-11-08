@@ -1,6 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-
-import { ROOT_ROUTE } from "./authentication";
+import { ROOT_ROUTE } from "@tests/utils/authentication";
 
 /**
  * Derives the sidebar link title from a route path

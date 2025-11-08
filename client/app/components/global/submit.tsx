@@ -59,6 +59,7 @@ export default function SubmitButton({ visible, type, isSubmitting, onCancel, on
             <Button
                className = "btn-primary"
                color = "primary"
+               data-testid = "account-submit"
                fullWidth = { true }
                loading = { isSubmitting }
                onClick = { onSubmit || undefined }

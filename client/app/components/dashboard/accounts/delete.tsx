@@ -37,6 +37,7 @@ export default function AccountDeletion({ account }: { account: Account }): Reac
 
    return (
       <Confirmation
+         confirmDataTestId = "account-delete-button"
          message = { message }
          onConfirmation = { onSubmit }
          type = "button"

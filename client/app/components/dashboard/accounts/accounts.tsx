@@ -137,6 +137,7 @@ export default function Accounts(): React.ReactNode {
                         ))
                      ) : (
                         <Box
+                           data-testid = "accounts-empty-message"
                            sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "175px ", width: "100%", fontWeight: "bold" } }
                         >
                            No available accounts

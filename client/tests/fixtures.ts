@@ -11,6 +11,7 @@ export type CreatedUserRecord = { username: string; password: string; };
  */
 type SharedFixtures = {
   usersRegistry: Set<CreatedUserRecord>;
+  assignedRegistry: Set<CreatedUserRecord>;
 };
 
 /**
@@ -28,6 +29,15 @@ export const test = base.extend<SharedFixtures>({
 
          // Cleanup the created test users from the database before the worker exits
          await cleanupCreatedTestUsers(usersRegistry);
+      }, { scope: "worker" }] as any,
+   assignedRegistry: [
+      // eslint-disable-next-line no-empty-pattern
+      async({}: Fixtures<SharedFixtures>, use: (value: Set<CreatedUserRecord>) => Promise<void>) => {
+         // Worker-scoped assigned registry to track users currently assigned to tests
+         const assignedRegistry = new Set<CreatedUserRecord>();
+
+         // Make the assigned registry available to all test suites within this worker
+         await use(assignedRegistry);
       }, { scope: "worker" }] as any
 });
 

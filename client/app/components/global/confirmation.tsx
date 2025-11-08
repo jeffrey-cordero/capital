@@ -61,6 +61,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                <Button
                   className = "btn-primary"
                   color = { color || "error" }
+                  data-testid = { confirmDataTestId }
                   fullWidth = { true }
                   loading = { isSubmitting }
                   onClick = { openDialog }
@@ -110,7 +111,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                         <Button
                            autoFocus = { true }
                            color = "error"
-                           data-testid = { confirmDataTestId }
+                           data-testid = { confirmDataTestId ? `${confirmDataTestId}-confirm` : undefined }
                            loading = { isSubmitting }
                            type = "submit"
                         >

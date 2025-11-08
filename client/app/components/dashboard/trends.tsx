@@ -312,6 +312,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         {
                            type === "accounts" ? (
                               <Typography
+                                 data-testid = "accounts-net-worth"
                                  sx = { { fontWeight: "600" } }
                                  variant = "subtitle1"
                               >

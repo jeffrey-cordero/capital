@@ -273,7 +273,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                        { ...field }
                                        aria-label = "Amount"
                                        id = "amount"
-                                       inputProps = { { step: 0.01 } }
+                                       inputProps = { { step: 0.01, min: 1 } }
                                        label = "Amount"
                                        type = "number"
                                        value = { field.value || "" }
@@ -333,6 +333,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                     <Select
                                        { ...field }
                                        defaultValue = { budgets.Income.budget_category_id }
+                                       inputProps = { { "data-testid": "transaction-account-select" } }
                                        label = "Account"
                                        renderValue = {
                                           (value) => (

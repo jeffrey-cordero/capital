@@ -29,14 +29,14 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
- * @returns {Promise<{ username: string; email: string }>} The unique credentials used for registration (username and email)
+ * @returns {Promise<{ username: string; email: string; password: string }>} The unique credentials used for registration (username, email, and password)
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
    usersRegistry: Set<CreatedUserRecord>
-): Promise<{ username: string; email: string }> {
+): Promise<{ username: string; email: string; password: string }> {
    await navigateToPath(page, REGISTER_ROUTE);
 
    const credentials = generateTestCredentials();
@@ -60,8 +60,26 @@ export async function createUser(
 
    return {
       username: registrationData.username,
-      email: registrationData.email
+      email: registrationData.email,
+      password: registrationData.password
    };
+}
+
+/**
+ * Logs in a user with the provided credentials
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} username - Username for login
+ * @param {string} password - Password for login
+ */
+export async function loginUser(page: Page, username: string, password: string): Promise<void> {
+   await navigateToPath(page, LOGIN_ROUTE);
+
+   // Wait for the submit button to be visible before submitting the login form
+   await page.getByTestId("submit-button").waitFor({ state: "visible" });
+   await submitForm(page, { username, password });
+   await expect(page).toHaveURL(DASHBOARD_ROUTE);
+   await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
 }
 
 /**
