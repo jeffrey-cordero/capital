@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
+import { assertComponentVisibility } from "@tests/utils";
 import { submitForm } from "@tests/utils/forms";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
@@ -43,7 +44,7 @@ export async function createUser(
    const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
    // Wait for the submit button to be visible before submitting the registration form
-   await page.getByTestId("submit-button").waitFor({ state: "visible" });
+   await assertComponentVisibility(page, "submit-button");
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
    await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
@@ -52,7 +53,7 @@ export async function createUser(
       // Logout the created user, which is typically used for intermediate test users
       await clickSidebarLink(page, "sidebar-logout");
       await expect(page).toHaveURL(LOGIN_ROUTE);
-      await page.getByTestId("username").waitFor({ state: "visible" });
+      await assertComponentVisibility(page, "username");
    }
 
    // Add the created user to the registry for the worker's final cleanup
@@ -76,7 +77,7 @@ export async function loginUser(page: Page, username: string, password: string):
    await navigateToPath(page, LOGIN_ROUTE);
 
    // Wait for the submit button to be visible before submitting the login form
-   await page.getByTestId("submit-button").waitFor({ state: "visible" });
+   await assertComponentVisibility(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
    await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
@@ -101,7 +102,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
-   await page.getByTestId("username").waitFor({ state: "visible" });
+   await assertComponentVisibility(page, "username");
 }
 
 /**

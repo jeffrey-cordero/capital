@@ -66,6 +66,7 @@ interface WarningProps {
 function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
    return (
       <Dialog
+         data-testid = "warning-modal"
          onClose = { onCancel }
          open = { open }
          sx = {
@@ -78,7 +79,7 @@ function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
       >
          <Box sx = { { p: 1 } }>
             <DialogContent sx = { { pb: 0 } }>
-               <DialogContentText>
+               <DialogContentText data-testid = "warning-modal-content">
                   Are you sure you want to exit? Any unsaved changes will be lost.
                </DialogContentText>
             </DialogContent>
@@ -88,12 +89,14 @@ function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
                   spacing = { 1 }
                >
                   <Button
+                     data-testid = "warning-modal-cancel"
                      onClick = { onCancel }
                   >
                      No
                   </Button>
                   <Button
                      autoFocus = { true }
+                     data-testid = "warning-modal-confirm"
                      onClick = { onClose }
                      type = "submit"
                   >
@@ -151,6 +154,7 @@ export default function Modal({ open, onClose, children, sx, displayWarning = fa
 
    return (
       <MuiModal
+         data-testid = "modal"
          onClose = { closeModal }
          open = { open }
       >

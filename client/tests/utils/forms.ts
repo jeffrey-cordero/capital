@@ -114,6 +114,9 @@ export async function submitForm(
    // If applicable, wait for navigation or for all network requests to complete before returning
    if (opts.waitForNavigation) {
       await page.waitForURL(/.*/, { timeout: opts.timeout });
+   } else if (opts.buttonType === "Update") {
+      // Update button should be visible only while there are existing changes to be submitted
+      await page.locator(submitButtonSelector).waitFor({ state: "hidden", timeout: opts.timeout });
    } else if (opts.waitForLoadState) {
       await page.waitForLoadState("networkidle", { timeout: opts.timeout });
    }

@@ -160,7 +160,18 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   color = "primary"
                   data-testid = { `account-card-drag-${account.account_id}` }
                   size = "small"
-                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none" } }
+                  sx = { {
+                     bottom: "75px",
+                     right: "15px",
+                     position: "absolute",
+                     cursor: "grab",
+                     touchAction: "none",
+                     zIndex: 10,
+                     pointerEvents: "auto",
+                     "&:active": {
+                        cursor: "grabbing"
+                     }
+                  } }
                   { ...attributes }
                   { ...listeners }
                >

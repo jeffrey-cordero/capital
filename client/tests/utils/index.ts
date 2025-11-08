@@ -30,18 +30,18 @@ export async function assertComponentVisibility(
  * Closes a modal by clicking the backdrop or pressing Escape key
  *
  * @param {Page} page - Playwright page instance
+ * @param {boolean} [force] - If true, verifies and confirms warning modal when unsaved changes are present
  */
-export async function closeModal(page: Page): Promise<void> {
+export async function closeModal(page: Page, force: boolean = false): Promise<void> {
    // Try pressing Escape key first (standard modal close behavior)
    await page.keyboard.press("Escape");
 
-   // Wait a moment for modal to close
-   await page.waitForTimeout(200);
-
-   // If modal is still open, try clicking the backdrop
-   const backdrop = page.locator(".MuiBackdrop-root");
-   if (await backdrop.isVisible().catch(() => false)) {
-      await backdrop.click({ force: true });
+   // If force is true, check for warning modal and confirm it
+   if (force) {
+      await assertComponentVisibility(page, "warning-modal");
+      await assertComponentVisibility(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
+      await page.getByTestId("warning-modal-confirm").click();
    }
-}
 
+   await page.waitForSelector('[data-testid="modal"]', { state: "detached" });
+}

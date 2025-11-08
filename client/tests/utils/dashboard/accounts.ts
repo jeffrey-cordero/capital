@@ -1,6 +1,8 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, type Response } from "@playwright/test";
 import { submitForm } from "@tests/utils/forms";
+import { closeModal } from "@tests/utils";
 import { type Account } from "capital/accounts";
+import { HTTP_STATUS } from "capital/server";
 
 import { displayCurrency } from "@/lib/display";
 
@@ -17,6 +19,11 @@ export async function createAccount(
    accountData: Partial<Account>,
    options?: { buttonType?: "Create" | "Update" }
 ): Promise<string> {
+   // Store the promise for the account creation POST response
+   const createPromise = page.waitForResponse((response: Response) => {
+      return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === "POST";
+   });
+
    // Open account form
    await page.getByTestId("accounts-add-button").click();
    await page.waitForTimeout(300); // Wait for modal animation
@@ -30,30 +37,25 @@ export async function createAccount(
    // Submit form (submitForm handles filling and waiting for button visibility)
    await submitForm(page, formData, { buttonType: options?.buttonType || "Create" });
 
-   // Wait for modal to close (create closes modal)
-   await page.waitForTimeout(500);
+   // Wait for the creation response to fully resolve and assert the successful status
+   const response: Response = await createPromise;
+   expect(response.status()).toBe(HTTP_STATUS.CREATED);
 
-   // Extract account ID from the created card (first account card container, not child elements)
-   // Wait for card to appear
-   await page.waitForTimeout(500);
-   // Find the first card container using a more specific approach
-   // Get all divs within the accounts container and filter for exact test ID match
-   const allElements = await page.locator("#accounts div").all();
-
-   // Find the first account card by matching UUID pattern in test ID
-   let accountId: string | null = null;
-   for (const element of allElements) {
-      const testId = await element.getAttribute("data-testid");
-      // Only match exact "account-card-{uuid}" pattern (UUID format: 8-4-4-4-12 hex chars)
-      if (testId && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId)) {
-         accountId = testId.replace("account-card-", "");
-         break;
-      }
-   }
+   // Extract account ID from response body
+   const responseBody = await response.json();
+   const accountId: string = responseBody.data?.account_id;
 
    if (!accountId) {
-      throw new Error("Failed to create account - account card not found");
+      throw new Error("Failed to create account - account_id not found in response");
    }
+
+   // Assert account ID is a valid UUID
+   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+   expect(accountId).toMatch(uuidRegex);
+
+   // Wait for the account card to appear in the DOM
+   await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
+
    return accountId;
 }
 
@@ -191,33 +193,30 @@ export async function assertTransactionAccountDropdown(
    expectedAccounts: Account[],
    autoSelectedAccountId?: string
 ): Promise<void> {
+   if (autoSelectedAccountId) {
+      // Open the account form to target the proper transaction form element
+      await page.getByTestId(`account-card-${autoSelectedAccountId}`).click();
+   }
    // Scroll to transactions section and click "Add Transaction" button
    const addButton = page.getByRole("button", { name: /add transaction/i });
-   await addButton.waitFor({ state: "visible", timeout: 5000 });
    await addButton.scrollIntoViewIfNeeded();
    await addButton.click();
-   await page.waitForTimeout(500); // Wait for modal to open
 
-   // Test ID is on input element, but we need to click the Select's combobox div
+   // Test ID is on input element, which holds the literal value of the selected account
    const inputElement = page.getByTestId("transaction-account-select");
-   await inputElement.waitFor({ state: "visible", timeout: 5000 });
 
    // Find the actual clickable Select element via label -> FormControl -> Select
    const selectElement = page.locator("label:has-text(\"Account\")").locator("..").locator(".MuiSelect-root").first();
-   await selectElement.waitFor({ state: "visible", timeout: 5000 });
 
    if (expectedAccounts.length === 0) {
       // Empty state - dropdown should be visible
-      await expect(inputElement).toBeVisible();
       // Click the Select element to open the dropdown
+      await expect(inputElement).toHaveValue("");
       await selectElement.click({ force: true });
-      await page.waitForTimeout(300); // Wait for dropdown menu to open
       await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
-      await page.keyboard.press("Escape"); // Close dropdown
    } else {
       // Click the Select element to open options
       await selectElement.click({ force: true });
-      await page.waitForTimeout(300); // Wait for dropdown menu to open
 
       // Assert placeholder option exists
       await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
@@ -234,6 +233,8 @@ export async function assertTransactionAccountDropdown(
          if (selectedAccount) {
             await expect(selectElement).toContainText(selectedAccount.name);
          }
+
+         await expect(selectElement).toContainText(selectedAccount?.name || "");
       }
 
       // Close dropdown
@@ -250,7 +251,7 @@ export async function assertTransactionAccountDropdown(
  *
  * @param {Page} page - Playwright page instance
  */
-export async function openAccountImageModal(page: Page): Promise<void> {
+export async function openImageModal(page: Page): Promise<void> {
    // Check if modal is already open by checking for carousel buttons
    const carouselLeft = page.getByTestId("account-image-carousel-left");
    const isModalOpen = await carouselLeft.isVisible().catch(() => false);
@@ -265,6 +266,15 @@ export async function openAccountImageModal(page: Page): Promise<void> {
 }
 
 /**
+ * Opens the account image selection modal
+ *
+ * @param {Page} page - Playwright page instance
+ */
+export async function openAccountImageModal(page: Page): Promise<void> {
+   return openImageModal(page);
+}
+
+/**
  * Navigates carousel and selects an image by index
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to select (0-based)
@@ -274,7 +284,7 @@ export async function selectImageFromCarousel(
    imageIndex: number
 ): Promise<void> {
    // Ensure image modal is open by clicking the image button
-   await openAccountImageModal(page);
+   await openImageModal(page);
 
    // Navigate to the desired image
    const currentStep = await page.locator(".MuiMobileStepper-root").getAttribute("aria-label");
@@ -286,13 +296,15 @@ export async function selectImageFromCarousel(
 
    for (let i = 0; i < Math.abs(stepsNeeded); i++) {
       await page.getByTestId(buttonTestId).click();
-      await page.waitForTimeout(100);
+      // Wait for carousel step to update
+      await page.locator(".MuiMobileStepper-root").waitFor({ state: "visible" });
    }
 
    // Click on the image to select it
    const avatar = page.locator("[data-selected]").first();
    await avatar.click();
-   await page.waitForTimeout(200);
+   // Wait for selection state to update
+   await expect(avatar).toHaveAttribute("data-selected", /true|false/);
    // Note: Modal stays open after selection - user must close it manually
 }
 
@@ -312,7 +324,7 @@ export async function assertImageSelected(
    void imageIndex;
 
    // Ensure image modal is open
-   await openAccountImageModal(page);
+   await openImageModal(page);
 
    const avatar = page.locator("[data-selected]").first();
 
@@ -366,7 +378,7 @@ export async function assertImageBorderOnReClick(
    imageIndex: number
 ): Promise<void> {
    // Ensure modal is open
-   await openAccountImageModal(page);
+   await openImageModal(page);
 
    // Navigate to the image if needed
    const currentStep = await page.locator(".MuiMobileStepper-root").getAttribute("aria-label");
@@ -377,13 +389,15 @@ export async function assertImageBorderOnReClick(
 
    for (let i = 0; i < Math.abs(stepsNeeded); i++) {
       await page.getByTestId(buttonTestId).click();
-      await page.waitForTimeout(100);
+      // Wait for carousel step to update
+      await page.locator(".MuiMobileStepper-root").waitFor({ state: "visible" });
    }
 
    // Re-click the selected image to deselect it
    const avatar = page.locator("[data-selected]").first();
    await avatar.click();
-   await page.waitForTimeout(200);
+   // Wait for deselection state to update
+   await expect(avatar).toHaveAttribute("data-selected", /true|false/);
    await assertImageSelected(page, imageIndex, false);
 }
 
@@ -394,7 +408,7 @@ export async function assertImageBorderOnReClick(
  */
 export async function assertImageNoBorderOnInitialOpen(page: Page): Promise<void> {
    // Open the image modal first
-   await openAccountImageModal(page);
+   await openImageModal(page);
 
    const avatar = page.locator("[data-selected]").first();
    const dataSelected = await avatar.getAttribute("data-selected");
@@ -418,10 +432,59 @@ export async function assertActiveImageStep(
    page: Page,
    expectedStep: number
 ): Promise<void> {
-   const stepper = page.locator(".MuiMobileStepper-root");
-   const ariaLabel = await stepper.getAttribute("aria-label");
-   const currentStep = ariaLabel ? parseInt(ariaLabel.split(" ")[1] || "0") : 0;
-   expect(currentStep).toBe(expectedStep);
+   const steps = page.locator(".MuiMobileStepper-dot");
+   const activeStep = steps.nth(expectedStep);
+
+   await expect(activeStep).toHaveClass(/MuiMobileStepper-dotActive/);
+}
+
+/**
+ * Helper to test image modal validation: invalid URL blocking, clearing, and valid URL
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {"clear" | "default-image" | "valid-url"} unblockMethod - Method to unblock modal
+ */
+export async function testImageModalValidation(
+   page: Page,
+   unblockMethod: "clear" | "default-image" | "valid-url"
+): Promise<void> {
+   // Open image modal and fill invalid URL
+   await openImageModal(page);
+   await page.getByTestId("account-image-url").fill("invalid-url");
+
+   // Try to close modal with Escape - should be blocked due to invalid URL
+   await page.keyboard.press("Escape");
+
+   // Assert modal is still open (blocked by invalid URL)
+   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible();
+
+   // Unblock based on method
+   if (unblockMethod === "clear") {
+      // Clear invalid URL
+      await page.getByTestId("account-image-url").fill("");
+      await page.keyboard.press("Escape");
+      // Assert image modal is closed (carousel button not visible)
+      await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
+   } else if (unblockMethod === "default-image") {
+      // Select default image
+      await selectImageFromCarousel(page, 0);
+      await page.keyboard.press("Escape"); // Close image modal
+      await page.keyboard.press("Escape"); // Attempt to close account modal
+      // Force close with warning modal confirmation
+      await closeModal(page, true);
+      // Assert account modal is closed
+      await expect(page.getByTestId("account-name")).not.toBeVisible();
+   } else if (unblockMethod === "valid-url") {
+      // Enter valid URL
+      const urlInput = page.getByTestId("account-image-url");
+      await urlInput.click();
+      await urlInput.selectText();
+      await urlInput.fill("https://example.com/image.png");
+      await page.keyboard.press("Escape");
+      // Assert image modal is closed
+      await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
+      await closeModal(page, true);
+   }
 }
 
 /**
