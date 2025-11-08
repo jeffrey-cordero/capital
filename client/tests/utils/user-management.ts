@@ -1,115 +1,55 @@
 import { type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
-import { createUser, DASHBOARD_ROUTE, loginUser } from "@tests/utils/authentication";
+import { createUser, loginUser } from "@tests/utils/authentication";
+import { navigateToPath } from "@tests/utils/navigation";
 import { Mutex } from "async-mutex";
 
 /**
- * Mutex to ensure thread-safe user assignment during concurrent test execution
+ * Mutex for thread-safe user assignment
  */
 const mutex = new Mutex();
 
 /**
- * Sets up a test-specific user by either logging in as an available user or creating a new one
- * Reuses users from usersRegistry that aren't currently assigned before creating new ones
- * Called in beforeEach blocks to set up users for individual tests
- * The user will be logged in after this function completes
+ * Sets up a test user by logging in as an available user or creating a new one
  *
  * @param {Page} page - Playwright page instance
  * @param {Set<CreatedUserRecord>} usersRegistry - Registry of all created users for cleanup
- * @param {Set<CreatedUserRecord>} assignedRegistry - Registry of users currently assigned to tests
- * @returns {Promise<CreatedUserRecord>} Credentials for the assigned and logged-in user
+ * @param {Record<string, string>} assignedRegistry - Username to password map for users currently assigned to tests
+ * @param {string} route - Route to navigate to after login
  */
 export async function setupAssignedUser(
    page: Page,
    usersRegistry: Set<CreatedUserRecord>,
-   assignedRegistry: Set<CreatedUserRecord>
-): Promise<CreatedUserRecord> {
+   assignedRegistry: Record<string, string>,
+   route: string
+): Promise<void> {
    const release = await mutex.acquire();
 
    try {
-      // Find users in usersRegistry that aren't currently assigned
-      const availableUsers = Array.from(usersRegistry).filter(
-         user => !Array.from(assignedRegistry).some(
-            assigned => assigned.username === user.username
-         )
-      );
+      // Find the first user in the registry that isn't currently assigned
+      let userToAssign: CreatedUserRecord | null = null;
 
-      if (availableUsers.length > 0) {
-         // Reuse an available user - login and add to assigned registry
-         const userToAssign = availableUsers[0];
-         await loginUser(page, userToAssign.username, userToAssign.password);
-         assignedRegistry.add(userToAssign);
-         return userToAssign;
+      for (const user of usersRegistry) {
+         if (!(user.username in assignedRegistry)) {
+            userToAssign = user;
+            break;
+         }
       }
 
-      // No available users, create a new one and keep logged in
-      // createUser adds user to usersRegistry internally and returns credentials
-      // keepLoggedIn: true means user stays logged in after creation
-      const { username, password } = await createUser(page, {}, true, usersRegistry);
+      if (!userToAssign) {
+         // No available users within the current worker, so create a new one for the assignment
+         userToAssign = await createUser(page, {}, false, usersRegistry);
+      }
 
-      // Add user to assigned registry with mutex protection
-      const userCredentials: CreatedUserRecord = { username, password };
-      assignedRegistry.add(userCredentials);
+      // Login with the assigned user's credentials
+      await loginUser(page, userToAssign.username, userToAssign.password);
 
-      return userCredentials;
+      // Add the assigned user to the assigned registry
+      assignedRegistry[userToAssign.username] = userToAssign.password;
+
+      // Navigate to the specified route
+      await navigateToPath(page, route);
    } finally {
       release();
    }
-}
-
-/**
- * Assigns a user from the assigned registry or creates a new one if needed
- * Uses mutex to ensure thread-safe user assignment
- *
- * @param {Page} page - Playwright page instance
- * @param {Set<CreatedUserRecord>} usersRegistry - Registry of all created users for cleanup
- * @param {Set<CreatedUserRecord>} assignedRegistry - Registry of users currently assigned to tests
- * @returns {Promise<CreatedUserRecord>} Credentials for the assigned user
- */
-export async function assignUser(
-   page: Page,
-   usersRegistry: Set<CreatedUserRecord>,
-   assignedRegistry: Set<CreatedUserRecord>
-): Promise<CreatedUserRecord> {
-   const release = await mutex.acquire();
-
-   try {
-      // Check if users are available in assigned registry
-      if (assignedRegistry.size > 0) {
-         // Use existing assigned user (reuse for concurrent tests)
-         const assignedUser = Array.from(assignedRegistry)[0];
-         return assignedUser;
-      }
-
-      // No assigned users available, set up a new one
-      return await setupAssignedUser(page, usersRegistry, assignedRegistry);
-   } finally {
-      release();
-   }
-}
-
-/**
- * Gets or assigns a user and logs them in
- * Handles page reload scenarios by checking if already logged in
- *
- * @param {Page} page - Playwright page instance
- * @param {Set<CreatedUserRecord>} usersRegistry - Registry of all created users for cleanup
- * @param {Set<CreatedUserRecord>} assignedRegistry - Registry of users currently assigned to tests
- * @returns {Promise<CreatedUserRecord>} Credentials for the assigned and logged-in user
- */
-export async function getAssignedUser(
-   page: Page,
-   usersRegistry: Set<CreatedUserRecord>,
-   assignedRegistry: Set<CreatedUserRecord>
-): Promise<CreatedUserRecord> {
-   const credentials = await assignUser(page, usersRegistry, assignedRegistry);
-
-   // Check if already logged in by checking current URL
-   const currentUrl = page.url();
-   if (!currentUrl.includes(DASHBOARD_ROUTE)) {
-      // Not logged in, perform login
-      await loginUser(page, credentials.username, credentials.password);
-   }
-
-   return credentials;
 }

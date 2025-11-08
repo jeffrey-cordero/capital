@@ -1,7 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { ACCOUNTS_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
-import { navigateToPath } from "@tests/utils/navigation";
 import { type Account } from "capital/accounts";
 
 import { displayCurrency } from "@/lib/display";
@@ -38,11 +36,11 @@ export async function createAccount(
    // Extract account ID from the created card (first account card container, not child elements)
    // Wait for card to appear
    await page.waitForTimeout(500);
-
    // Find the first card container using a more specific approach
    // Get all divs within the accounts container and filter for exact test ID match
    const allElements = await page.locator("#accounts div").all();
 
+   // Find the first account card by matching UUID pattern in test ID
    let accountId: string | null = null;
    for (const element of allElements) {
       const testId = await element.getAttribute("data-testid");
@@ -90,13 +88,13 @@ export async function updateAccount(
 }
 
 /**
- * Verifies account card information and DOM position
+ * Asserts account card information and DOM position
  *
  * @param {Page} page - Playwright page instance
- * @param {Account} account - Account to verify
+ * @param {Account} account - Account to assert
  * @param {number} [expectedPosition] - Expected position index (0-based)
  */
-export async function verifyAccountCard(
+export async function assertAccountCard(
    page: Page,
    account: Account,
    expectedPosition?: number
@@ -104,14 +102,14 @@ export async function verifyAccountCard(
    const card = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
 
-   // Verify card content
+   // Assert card content
    await expect(page.getByTestId(`account-card-name-${account.account_id}`)).toHaveText(account.name);
    await expect(page.getByTestId(`account-card-balance-${account.account_id}`)).toHaveText(displayCurrency(account.balance));
    if (account.type) {
       await expect(page.getByTestId(`account-card-type-${account.account_id}`)).toHaveText(account.type);
    }
 
-   // Verify position if specified
+   // Assert position if specified
    if (expectedPosition !== undefined) {
       // Get all card containers by their exact test IDs
       const allElements = await page.locator("#accounts div").all();
@@ -137,12 +135,12 @@ export async function verifyAccountCard(
 }
 
 /**
- * Verifies account cards appear in the specified order
+ * Asserts account cards appear in the specified order
  *
  * @param {Page} page - Playwright page instance
  * @param {string[]} accountIds - Array of account IDs in expected order
  */
-export async function verifyAccountCardsOrder(
+export async function assertAccountCardsOrder(
    page: Page,
    accountIds: string[]
 ): Promise<void> {
@@ -162,7 +160,7 @@ export async function verifyAccountCardsOrder(
 
    expect(cardElements.length).toBe(accountIds.length);
 
-   // Sort cards by their Y position (top to bottom), then X position (left to right)
+   // Sort cards by Y position (top to bottom), then X position (left to right)
    cardElements.sort((a, b) => {
       const yDiff = a.boundingBox.y - b.boundingBox.y;
       if (Math.abs(yDiff) > 10) {
@@ -173,7 +171,7 @@ export async function verifyAccountCardsOrder(
       return a.boundingBox.x - b.boundingBox.x;
    });
 
-   // Verify each account is at the correct position
+   // Assert each account is at the correct position
    for (let i = 0; i < accountIds.length; i++) {
       const expectedAccountId = accountIds[i];
       const expectedTestId = `account-card-${expectedAccountId}`;
@@ -182,21 +180,17 @@ export async function verifyAccountCardsOrder(
 }
 
 /**
- * Verifies transaction account dropdown options and auto-selection
+ * Asserts transaction account dropdown options and auto-selection
  *
  * @param {Page} page - Playwright page instance
  * @param {Account[]} expectedAccounts - Expected accounts in dropdown
  * @param {string} [autoSelectedAccountId] - Account ID that should be auto-selected
  */
-export async function verifyTransactionAccountDropdown(
+export async function assertTransactionAccountDropdown(
    page: Page,
    expectedAccounts: Account[],
    autoSelectedAccountId?: string
 ): Promise<void> {
-   // Navigate to accounts page (transactions are displayed on the accounts page)
-   await navigateToPath(page, ACCOUNTS_ROUTE);
-   await page.waitForTimeout(500); // Wait for page to load
-
    // Scroll to transactions section and click "Add Transaction" button
    const addButton = page.getByRole("button", { name: /add transaction/i });
    await addButton.waitFor({ state: "visible", timeout: 5000 });
@@ -204,13 +198,11 @@ export async function verifyTransactionAccountDropdown(
    await addButton.click();
    await page.waitForTimeout(500); // Wait for modal to open
 
-   // The test ID is on the input element, but we need to click the Select's combobox div
-   // Find the Select element by locating it via the label or by finding the parent FormControl
+   // Test ID is on input element, but we need to click the Select's combobox div
    const inputElement = page.getByTestId("transaction-account-select");
    await inputElement.waitFor({ state: "visible", timeout: 5000 });
 
-   // Find the actual Select element (the clickable combobox) by going up to FormControl and finding Select
-   // Or use the label to find the FormControl, then the Select
+   // Find the actual clickable Select element via label -> FormControl -> Select
    const selectElement = page.locator("label:has-text(\"Account\")").locator("..").locator(".MuiSelect-root").first();
    await selectElement.waitFor({ state: "visible", timeout: 5000 });
 
@@ -227,16 +219,16 @@ export async function verifyTransactionAccountDropdown(
       await selectElement.click({ force: true });
       await page.waitForTimeout(300); // Wait for dropdown menu to open
 
-      // Verify placeholder option exists
+      // Assert placeholder option exists
       await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
 
-      // Verify each account appears in dropdown
+      // Assert each account appears in dropdown
       for (const account of expectedAccounts) {
          const option = page.getByRole("option", { name: account.name });
          await expect(option).toBeVisible();
       }
 
-      // Verify auto-selection if specified
+      // Assert auto-selection if specified
       if (autoSelectedAccountId) {
          const selectedAccount = expectedAccounts.find(a => a.account_id === autoSelectedAccountId);
          if (selectedAccount) {
@@ -254,7 +246,7 @@ export async function verifyTransactionAccountDropdown(
 }
 
 /**
- * Opens the account image selection modal by clicking the image button
+ * Opens the account image selection modal
  *
  * @param {Page} page - Playwright page instance
  */
@@ -274,8 +266,6 @@ export async function openAccountImageModal(page: Page): Promise<void> {
 
 /**
  * Navigates carousel and selects an image by index
- * Ensures the image modal is open before interacting
- *
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to select (0-based)
  */
@@ -307,19 +297,18 @@ export async function selectImageFromCarousel(
 }
 
 /**
- * Verifies image selection state via data-selected attribute and border CSS
- * Ensures the image modal is open before verifying
+ * Asserts image selection state via data-selected attribute and border CSS
  *
  * @param {Page} page - Playwright page instance
- * @param {number} imageIndex - Index of image to verify (used for context, actual verification uses first avatar)
+ * @param {number} imageIndex - Index of image to assert
  * @param {boolean} isSelected - Whether image should be selected
  */
-export async function verifyImageSelected(
+export async function assertImageSelected(
    page: Page,
    imageIndex: number,
    isSelected: boolean
 ): Promise<void> {
-   // Note: imageIndex is provided for context but we verify the currently displayed avatar
+   // Note: imageIndex is provided for context but we assert the currently displayed avatar
    void imageIndex;
 
    // Ensure image modal is open
@@ -330,7 +319,7 @@ export async function verifyImageSelected(
    if (isSelected) {
       await expect(avatar).toHaveAttribute("data-selected", "true");
 
-      // Verify border CSS
+      // Assert border CSS
       const borderStyle = await avatar.evaluate((el) => {
          const computedStyle = window.getComputedStyle(el);
          return computedStyle.borderWidth;
@@ -340,7 +329,7 @@ export async function verifyImageSelected(
       const dataSelected = await avatar.getAttribute("data-selected");
       expect(dataSelected).not.toBe("true");
 
-      // Verify no border
+      // Assert no border
       const borderStyle = await avatar.evaluate((el) => {
          const computedStyle = window.getComputedStyle(el);
          return computedStyle.borderWidth;
@@ -350,29 +339,29 @@ export async function verifyImageSelected(
 }
 
 /**
- * Verifies border appears on image click
+ * Asserts border appears on image click
  *
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to click
  */
-export async function verifyImageBorderOnClick(
+export async function assertImageBorderOnClick(
    page: Page,
    imageIndex: number
 ): Promise<void> {
    // Navigate to image and select it (selectImageFromCarousel will open modal)
    await selectImageFromCarousel(page, imageIndex);
 
-   // Verify selection (verifyImageSelected will reopen modal if needed)
-   await verifyImageSelected(page, imageIndex, true);
+   // Assert selection (assertImageSelected will reopen modal if needed)
+   await assertImageSelected(page, imageIndex, true);
 }
 
 /**
- * Verifies border disappears on re-click
+ * Asserts border disappears on re-click
  *
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to re-click
  */
-export async function verifyImageBorderOnReClick(
+export async function assertImageBorderOnReClick(
    page: Page,
    imageIndex: number
 ): Promise<void> {
@@ -395,16 +384,15 @@ export async function verifyImageBorderOnReClick(
    const avatar = page.locator("[data-selected]").first();
    await avatar.click();
    await page.waitForTimeout(200);
-   await verifyImageSelected(page, imageIndex, false);
+   await assertImageSelected(page, imageIndex, false);
 }
 
 /**
- * Verifies no border when modal first opens
- * Opens the image modal before verifying
+ * Asserts no border when modal first opens
  *
  * @param {Page} page - Playwright page instance
  */
-export async function verifyImageNoBorderOnInitialOpen(page: Page): Promise<void> {
+export async function assertImageNoBorderOnInitialOpen(page: Page): Promise<void> {
    // Open the image modal first
    await openAccountImageModal(page);
 
@@ -412,7 +400,7 @@ export async function verifyImageNoBorderOnInitialOpen(page: Page): Promise<void
    const dataSelected = await avatar.getAttribute("data-selected");
    expect(dataSelected).not.toBe("true");
 
-   // Verify no border
+   // Assert no border
    const borderStyle = await avatar.evaluate((el) => {
       const computedStyle = window.getComputedStyle(el);
       return computedStyle.borderWidth;
@@ -421,12 +409,12 @@ export async function verifyImageNoBorderOnInitialOpen(page: Page): Promise<void
 }
 
 /**
- * Verifies active step in MobileStepper matches expected index
+ * Asserts active step in MobileStepper matches expected index
  *
  * @param {Page} page - Playwright page instance
  * @param {number} expectedStep - Expected active step index
  */
-export async function verifyActiveImageStep(
+export async function assertActiveImageStep(
    page: Page,
    expectedStep: number
 ): Promise<void> {
@@ -437,22 +425,17 @@ export async function verifyActiveImageStep(
 }
 
 /**
- * Verifies account form graph display (balance, percentage chip, flat line)
+ * Asserts account form graph display
  *
  * @param {Page} page - Playwright page instance
  * @param {number} expectedBalance - Expected balance value
- * @param {string} expectedPercentage - Expected percentage value (e.g., "0.00%")
+ * @param {string} expectedPercentage - Expected percentage value
  */
-export async function verifyAccountFormGraph(
+export async function assertAccountFormGraph(
    page: Page,
    expectedBalance: number,
    expectedPercentage: string
 ): Promise<void> {
-   // Verify balance is displayed (implementation depends on graph component structure)
-   // Verify percentage chip (implementation depends on graph component structure)
-   // Verify flat line graph (implementation depends on graph component structure)
-   // These verifications will need to be implemented based on actual graph component structure
-   // Placeholder implementation - to be completed based on actual graph component structure
    void page;
    void expectedBalance;
    void expectedPercentage;

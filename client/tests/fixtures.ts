@@ -10,8 +10,10 @@ export type CreatedUserRecord = { username: string; password: string; };
  * Shared fixtures for all test suites
  */
 type SharedFixtures = {
+  /* Set of created test users for the worker's final cleanup */
   usersRegistry: Set<CreatedUserRecord>;
-  assignedRegistry: Set<CreatedUserRecord>;
+  /* Username to password map for users currently assigned to tests */
+  assignedRegistry: Record<string, string>;
 };
 
 /**
@@ -32,9 +34,9 @@ export const test = base.extend<SharedFixtures>({
       }, { scope: "worker" }] as any,
    assignedRegistry: [
       // eslint-disable-next-line no-empty-pattern
-      async({}: Fixtures<SharedFixtures>, use: (value: Set<CreatedUserRecord>) => Promise<void>) => {
+      async({}: Fixtures<SharedFixtures>, use: (value: Record<string, string>) => Promise<void>) => {
          // Worker-scoped assigned registry to track users currently assigned to tests
-         const assignedRegistry = new Set<CreatedUserRecord>();
+         const assignedRegistry: Record<string, string> = {};
 
          // Make the assigned registry available to all test suites within this worker
          await use(assignedRegistry);

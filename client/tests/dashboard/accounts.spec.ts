@@ -1,21 +1,22 @@
 import { expect, test } from "@tests/fixtures";
-import { ACCOUNTS_ROUTE } from "@tests/utils/authentication";
-import { verifyAccountTrends } from "@tests/utils/dashboard";
+import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
+import { assertAccountTrends } from "@tests/utils/dashboard";
 import {
    createAccount,
    openAccountImageModal,
    selectImageFromCarousel,
-   verifyAccountCard,
-   verifyAccountCardsOrder,
-   verifyImageBorderOnClick,
-   verifyImageBorderOnReClick,
-   verifyImageNoBorderOnInitialOpen,
-   verifyImageSelected,
-   verifyTransactionAccountDropdown
+   assertAccountCard,
+   assertAccountCardsOrder,
+   assertImageBorderOnClick,
+   assertImageBorderOnReClick,
+   assertImageNoBorderOnInitialOpen,
+   assertImageSelected,
+   assertTransactionAccountDropdown
 } from "@tests/utils/dashboard/accounts";
-import { assertValidationErrors, closeModal, submitForm } from "@tests/utils/forms";
+import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import { assertComponentVisibility, closeModal } from "@tests/utils/utils";
 import { type Account } from "capital/accounts";
 
 import { displayCurrency } from "@/lib/display";
@@ -23,36 +24,29 @@ import { displayCurrency } from "@/lib/display";
 test.describe("Account Management", () => {
    test.describe("Initial State", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
-      test("should display empty accounts state on dashboard", async({ page }) => {
-         await verifyAccountTrends(page, [], "$0.00", "dashboard");
-         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+      test("should display empty accounts state on dashboard page", async({ page }) => {
+         await navigateToPath(page, DASHBOARD_ROUTE);
+
+         await assertAccountTrends(page, [], "$0.00", "dashboard");
+         await assertComponentVisibility(page, "empty-accounts-trends-overview", "No available accounts");
       });
 
       test("should display empty accounts state on accounts page", async({ page }) => {
-         await navigateToPath(page, ACCOUNTS_ROUTE);
-         await expect(page.getByTestId("accounts-empty-message")).toBeVisible();
-         await verifyAccountTrends(page, [], "$0.00", "accounts-page");
-      });
+         await assertAccountTrends(page, [], "$0.00", "accounts-page");
 
-      test("should display Add Account button", async({ page }) => {
-         await navigateToPath(page, ACCOUNTS_ROUTE);
-         await expect(page.getByTestId("accounts-add-button")).toBeVisible();
+         await assertComponentVisibility(page, "accounts-empty-message", "No available accounts");
+         await assertComponentVisibility(page, "accounts-add-button", "Add Account");
          await expect(page.getByTestId("accounts-add-button")).toBeEnabled();
-      });
-
-      test("should have empty transaction account dropdown", async({ page }) => {
-         await navigateToPath(page, ACCOUNTS_ROUTE);
-         await verifyTransactionAccountDropdown(page, []);
+         await assertTransactionAccountDropdown(page, []);
       });
    });
 
    test.describe("Account Creation", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should validate empty name field", async({ page }) => {
@@ -106,7 +100,7 @@ test.describe("Account Management", () => {
          await page.getByTestId("account-balance").fill("1000");
          await page.waitForTimeout(500);
 
-         // Open image modal and enter invalid URL
+         // Test that modal blocks closing with invalid URL
          await openAccountImageModal(page);
          await page.getByTestId("account-image-url").fill("invalid-url");
 
@@ -114,8 +108,9 @@ test.describe("Account Management", () => {
          await page.keyboard.press("Escape");
          await page.waitForTimeout(300);
 
-         // Verify modal is still open (blocked by invalid URL)
+         // Assert modal is still open (blocked by invalid URL)
          await expect(page.getByTestId("account-image-carousel-left")).toBeVisible();
+         await expect(page.getByTestId("account-image-carousel-left").locator("svg")).toBeVisible();
 
          // Test unblocking by clearing the invalid URL
          const urlInput = page.getByTestId("account-image-url");
@@ -124,14 +119,14 @@ test.describe("Account Management", () => {
          await page.keyboard.press("Escape");
          await page.waitForTimeout(500);
 
-         // Reopen modal and test unblocking by selecting a default image
+         // Test unblocking by selecting a default image
          await openAccountImageModal(page);
          await page.getByTestId("account-image-url").fill("invalid-url");
-         await selectImageFromCarousel(page, 0); // This clears invalid URL and allows closing
+         await selectImageFromCarousel(page, 0);
          await closeModal(page);
          await page.waitForTimeout(500);
 
-         // Reopen modal and test unblocking by entering valid URL
+         // Test unblocking by entering valid URL
          await openAccountImageModal(page);
          const urlInput2 = page.getByTestId("account-image-url");
          await urlInput2.fill("invalid-url");
@@ -141,7 +136,7 @@ test.describe("Account Management", () => {
          await page.keyboard.press("Escape");
          await page.waitForTimeout(500);
 
-         // Test form validation: reopen modal, enter invalid URL, try to close (should be blocked)
+         // Test form validation error appears when trying to close with invalid URL
          await openAccountImageModal(page);
          await page.getByTestId("account-image-url").fill("invalid-url");
 
@@ -149,23 +144,16 @@ test.describe("Account Management", () => {
          await page.keyboard.press("Escape");
          await page.waitForTimeout(300);
 
-         // Verify modal is still open (blocked by invalid URL)
+         // Assert modal is still open (blocked by invalid URL)
          await expect(page.getByTestId("account-image-carousel-left")).toBeVisible();
+         await expect(page.getByTestId("account-image-carousel-left").locator("svg")).toBeVisible();
 
-         // Verify the validation error appears in the image modal's FormHelperText
-         // The error is set when trying to close the modal with invalid URL
+         // Assert validation error appears in FormHelperText
          const errorText = page.locator(".MuiFormControl-root:has([data-testid=\"account-image-url\"]) .MuiFormHelperText-root");
-         // Wait for error to appear (it may take a moment for the error state to update)
          await page.waitForTimeout(200);
          // Check if error text contains the validation message
          const errorContent = await errorText.textContent();
          expect(errorContent).toContain("URL must be valid");
-
-         // Verify that the form cannot be submitted with invalid URL by checking that
-         // the modal remains open and the error persists
-         // The form submission should be blocked or the validation should prevent submission
-         // Since the modal is blocking the submit button, we can't actually click it,
-         // but we've verified that the invalid URL prevents closing the modal and shows an error
       });
 
       test("should successfully create account with all fields", async({ page }) => {
@@ -177,12 +165,13 @@ test.describe("Account Management", () => {
 
          const accountId = await createAccount(page, accountData);
 
-         // Verify account card is visible (modal closed)
-         await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
-         await verifyAccountCard(page, { account_id: accountId, ...accountData } as Account);
+         // Assert account card is visible (modal closed)
+         await assertComponentVisibility(page, `account-card-${accountId}`);
+         await assertComponentVisibility(page, `account-card-name-${accountId}`, accountData.name!);
+         await assertAccountCard(page, { account_id: accountId, ...accountData } as Account);
 
-         // Verify net worth updates
-         await verifyAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(5000), "accounts-page");
+         // Assert net worth updates
+         await assertAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(5000), "accounts-page");
       });
 
       test("should close modal after successful creation", async({ page }) => {
@@ -194,8 +183,8 @@ test.describe("Account Management", () => {
 
          await createAccount(page, accountData);
 
-         // Verify modal is closed (card visible, modal not visible)
-         await expect(page.getByTestId("accounts-add-button")).toBeVisible();
+         // Assert modal is closed (card visible, modal not visible)
+         await assertComponentVisibility(page, "accounts-add-button", "Add Account");
          const modal = page.locator(".MuiModal-root");
          await expect(modal).not.toBeVisible();
       });
@@ -203,22 +192,23 @@ test.describe("Account Management", () => {
 
    test.describe("Image Selection", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should open image modal", async({ page }) => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
          await openAccountImageModal(page);
-         await expect(page.locator("[data-selected]")).toBeVisible();
+         const avatar = page.locator("[data-selected]").first();
+         await expect(avatar).toBeVisible();
+         await expect(avatar).toHaveClass(/MuiAvatar-root/);
       });
 
       test("should have no border on initial modal open", async({ page }) => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
          await openAccountImageModal(page);
-         await verifyImageNoBorderOnInitialOpen(page);
+         await assertImageNoBorderOnInitialOpen(page);
       });
 
       test("should navigate carousel left and right", async({ page }) => {
@@ -239,15 +229,15 @@ test.describe("Account Management", () => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
          await openAccountImageModal(page);
-         await verifyImageBorderOnClick(page, 0);
+         await assertImageBorderOnClick(page, 0);
       });
 
       test("should remove border on re-click", async({ page }) => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
          await openAccountImageModal(page);
-         await verifyImageBorderOnClick(page, 0);
-         await verifyImageBorderOnReClick(page, 0);
+         await assertImageBorderOnClick(page, 0);
+         await assertImageBorderOnReClick(page, 0);
       });
 
       test("should select each of 9 default images", async({ page }) => {
@@ -258,8 +248,8 @@ test.describe("Account Management", () => {
          // Select each image (0-8) - modal stays open between selections
          for (let i = 0; i < 9; i++) {
             await selectImageFromCarousel(page, i);
-            // Verify selection (modal is still open)
-            await verifyImageSelected(page, i, true);
+            // Assert selection (modal is still open)
+            await assertImageSelected(page, i, true);
          }
 
          // Close modal after all selections
@@ -278,12 +268,11 @@ test.describe("Account Management", () => {
 
    test.describe("Account Viewing", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should display empty accounts state", async({ page }) => {
-         await expect(page.getByTestId("accounts-empty-message")).toBeVisible();
+         await assertComponentVisibility(page, "accounts-empty-message", "No available accounts");
          await expect(page.locator("[data-testid^=\"account-card-\"]")).toHaveCount(0);
       });
 
@@ -291,28 +280,33 @@ test.describe("Account Management", () => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
 
-         await expect(page.getByTestId("account-name")).toBeVisible();
-         await expect(page.getByTestId("account-balance")).toBeVisible();
-         await expect(page.getByTestId("account-type")).toBeVisible();
-         await expect(page.getByTestId("account-image-button")).toBeVisible();
+         const formInputs = [
+            { testId: "account-name", label: "Name" },
+            { testId: "account-balance", label: "Balance" },
+            { testId: "account-type", label: "Type" },
+            { testId: "account-image-button" }
+         ];
+         for (const input of formInputs) {
+            await assertComponentVisibility(page, input.testId, undefined, input.label);
+         }
       });
 
-      test("should verify image modal border behavior", async({ page }) => {
+      test("should assert image modal border behavior", async({ page }) => {
          await page.getByTestId("accounts-add-button").click();
          await page.waitForTimeout(300);
 
          // No border on initial open
          await openAccountImageModal(page);
-         await verifyImageNoBorderOnInitialOpen(page);
+         await assertImageNoBorderOnInitialOpen(page);
 
          // Border appears on click
-         await verifyImageBorderOnClick(page, 0);
+         await assertImageBorderOnClick(page, 0);
 
          // Border disappears on re-click
-         await verifyImageBorderOnReClick(page, 0);
+         await assertImageBorderOnReClick(page, 0);
       });
 
-      test("should create account and verify card visibility", async({ page }) => {
+      test("should create account and assert card visibility", async({ page }) => {
          const accountData: Partial<Account> = {
             name: "View Test Account",
             balance: 2000,
@@ -321,19 +315,18 @@ test.describe("Account Management", () => {
 
          const accountId = await createAccount(page, accountData);
 
-         // Verify card is visible after creation (modal closed)
+         // Assert card is visible after creation (modal closed)
          await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
-         await verifyAccountCard(page, { account_id: accountId, ...accountData } as Account);
+         await assertAccountCard(page, { account_id: accountId, ...accountData } as Account);
       });
    });
 
    test.describe("Account Type & Net Worth", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
-      test("should create asset account and verify blue bar", async({ page }) => {
+      test("should create asset account and assert blue bar", async({ page }) => {
          const accountData: Partial<Account> = {
             name: "Checking Account",
             balance: 10000,
@@ -341,10 +334,10 @@ test.describe("Account Management", () => {
          };
 
          const accountId = await createAccount(page, accountData);
-         await verifyAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(10000), "accounts-page");
+         await assertAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(10000), "accounts-page");
       });
 
-      test("should create liability account and verify red bar", async({ page }) => {
+      test("should create liability account and assert red bar", async({ page }) => {
          const accountData: Partial<Account> = {
             name: "Credit Card",
             balance: 5000,
@@ -352,7 +345,7 @@ test.describe("Account Management", () => {
          };
 
          const accountId = await createAccount(page, accountData);
-         await verifyAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(-5000), "accounts-page");
+         await assertAccountTrends(page, [{ account_id: accountId, ...accountData } as Account], displayCurrency(-5000), "accounts-page");
       });
 
       test("should calculate net worth correctly with mixed accounts", async({ page }) => {
@@ -375,14 +368,13 @@ test.describe("Account Management", () => {
             { account_id: checkingId, ...checkingAccount } as Account,
             { account_id: creditCardId, ...creditCardAccount } as Account
          ];
-         await verifyAccountTrends(page, accounts, displayCurrency(7000), "accounts-page");
+         await assertAccountTrends(page, accounts, displayCurrency(7000), "accounts-page");
       });
    });
 
    test.describe("Account Card Display", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should display account card with correct information", async({ page }) => {
@@ -393,7 +385,7 @@ test.describe("Account Management", () => {
          };
 
          const accountId = await createAccount(page, accountData);
-         await verifyAccountCard(page, { account_id: accountId, ...accountData } as Account);
+         await assertAccountCard(page, { account_id: accountId, ...accountData } as Account);
       });
 
       test("should display cards in correct order", async({ page }) => {
@@ -403,14 +395,13 @@ test.describe("Account Management", () => {
          const id1 = await createAccount(page, account1);
          const id2 = await createAccount(page, account2);
 
-         await verifyAccountCardsOrder(page, [id1, id2]);
+         await assertAccountCardsOrder(page, [id1, id2]);
       });
    });
 
    test.describe("Transaction Form Integration", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should show created accounts in transaction dropdown", async({ page }) => {
@@ -423,16 +414,15 @@ test.describe("Account Management", () => {
          const accountId = await createAccount(page, accountData);
 
          // Navigate to transactions or open transaction form
-         // Verify dropdown contains the account
+         // Assert dropdown contains the account
          const accounts: Account[] = [{ account_id: accountId, ...accountData } as Account];
-         await verifyTransactionAccountDropdown(page, accounts);
+         await assertTransactionAccountDropdown(page, accounts);
       });
    });
 
    test.describe("Account Update", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should update account name", async({ page }) => {
@@ -451,12 +441,12 @@ test.describe("Account Management", () => {
          // Update name
          await submitForm(page, { "account-name": "Updated Name" }, { buttonType: "Update" });
 
-         // Modal stays open - manually close to verify card
+         // Modal stays open - manually close to assert card
          await closeModal(page);
          await page.waitForTimeout(300);
 
-         // Verify update
-         await verifyAccountCard(page, { account_id: accountId, name: "Updated Name", balance: 1000, type: "Checking" } as Account);
+         // Assert update
+         await assertAccountCard(page, { account_id: accountId, name: "Updated Name", balance: 1000, type: "Checking" } as Account);
       });
 
       test("should update account balance and recalculate net worth", async({ page }) => {
@@ -475,9 +465,9 @@ test.describe("Account Management", () => {
          await closeModal(page);
          await page.waitForTimeout(300);
 
-         // Verify net worth updated
+         // Assert net worth updated
          const updatedAccount: Account = { account_id: accountId, name: "Balance Test", balance: 5000, type: "Checking" } as Account;
-         await verifyAccountTrends(page, [updatedAccount], displayCurrency(5000), "accounts-page");
+         await assertAccountTrends(page, [updatedAccount], displayCurrency(5000), "accounts-page");
       });
 
       test("should update account type and recalculate net worth", async({ page }) => {
@@ -496,9 +486,9 @@ test.describe("Account Management", () => {
          await closeModal(page);
          await page.waitForTimeout(300);
 
-         // Verify net worth recalculated (should be negative now)
+         // Assert net worth recalculated (should be negative now)
          const updatedAccount: Account = { account_id: accountId, name: "Type Test", balance: 5000, type: "Credit Card" } as Account;
-         await verifyAccountTrends(page, [updatedAccount], displayCurrency(-5000), "accounts-page");
+         await assertAccountTrends(page, [updatedAccount], displayCurrency(-5000), "accounts-page");
       });
 
       test("should keep modal open after update", async({ page }) => {
@@ -518,16 +508,16 @@ test.describe("Account Management", () => {
          await submitForm(page, { "account-name": "Updated" }, { buttonType: "Update" });
          await page.waitForTimeout(500);
 
-         // Verify modal is still open
+         // Assert modal is still open (form should still be visible)
          const modal = page.locator(".MuiModal-root");
          await expect(modal).toBeVisible();
+         await expect(page.getByTestId("account-name")).toBeVisible();
       });
    });
 
    test.describe("Drag and Drop", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should reorder accounts via drag and drop", async({ page }) => {
@@ -537,7 +527,7 @@ test.describe("Account Management", () => {
          const id1 = await createAccount(page, account1);
          const id2 = await createAccount(page, account2);
 
-         await verifyAccountCardsOrder(page, [id1, id2]);
+         await assertAccountCardsOrder(page, [id1, id2]);
 
          // Get the drag handle and target card positions
          const dragHandle1 = page.getByTestId(`account-card-drag-${id1}`);
@@ -578,20 +568,19 @@ test.describe("Account Management", () => {
          await page.mouse.up();
          await page.waitForTimeout(1000); // Wait for drag end handler and reorder to complete
 
-         // Verify visual order changed
-         await verifyAccountCardsOrder(page, [id2, id1]);
+         // Assert visual order changed
+         await assertAccountCardsOrder(page, [id2, id1]);
 
-         // Reload and verify order persists
+         // Reload and assert order persists
          await page.reload();
          await page.waitForTimeout(1000);
-         await verifyAccountCardsOrder(page, [id2, id1]);
+         await assertAccountCardsOrder(page, [id2, id1]);
       });
    });
 
    test.describe("Account Deletion", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry);
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });
 
       test("should show confirmation dialog on delete", async({ page }) => {
@@ -618,7 +607,7 @@ test.describe("Account Management", () => {
          await page.getByTestId("account-delete-button").click();
          await page.waitForTimeout(200);
 
-         // Verify confirmation dialog appears
+         // Assert confirmation dialog appears
          await expect(page.getByText("Are you sure you want to delete your account?")).toBeVisible();
       });
 
@@ -650,9 +639,9 @@ test.describe("Account Management", () => {
          await page.getByTestId("account-delete-button-confirm").click();
          await page.waitForTimeout(500);
 
-         // Verify account removed and net worth updated
+         // Assert account removed and net worth updated
          await expect(page.getByTestId(`account-card-${accountId}`)).not.toBeVisible();
-         await verifyAccountTrends(page, [], "$0.00", "accounts-page");
+         await assertAccountTrends(page, [], "$0.00", "accounts-page");
       });
    });
 });
