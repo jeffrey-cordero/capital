@@ -146,6 +146,7 @@ export default function AccountImage({
                   >
                      <Avatar
                         data-selected = { value === imagesArray[activeStep] ? "true" : "false" }
+                        data-testid = "account-image-carousel-image"
                         onClick = { selectProvidedImage }
                         src = { `/images/${imagesArray[activeStep]}.png` }
                         sx = {

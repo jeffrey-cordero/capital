@@ -20,6 +20,9 @@ export interface FormSubmitOptions {
 
   /** Button type for identifying Create vs Update buttons */
   buttonType?: "Create" | "Update";
+
+  /** Whether the form contains validation errors */
+  containsErrors?: boolean;
 }
 
 /**
@@ -29,7 +32,8 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
    waitForNavigation: false,
    submitButtonSelector: "button[type=\"submit\"]",
    waitForLoadState: true,
-   timeout: 30000
+   timeout: 30000,
+   containsErrors: false
 };
 
 /**
@@ -98,9 +102,8 @@ export async function submitForm(
    // Determine submit button selector based on buttonType or default
    let submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
    if (opts.buttonType) {
-      submitButtonSelector = "[data-testid=\"account-submit\"]";
       // Wait for button to be visible (Collapse animation)
-      await page.locator(submitButtonSelector).waitFor({ state: "visible", timeout: opts.timeout });
+      await page.getByTestId("submit-button").waitFor({ state: "visible", timeout: opts.timeout });
    }
 
    // Create a promise for form submission
@@ -114,7 +117,7 @@ export async function submitForm(
    // If applicable, wait for navigation or for all network requests to complete before returning
    if (opts.waitForNavigation) {
       await page.waitForURL(/.*/, { timeout: opts.timeout });
-   } else if (opts.buttonType === "Update") {
+   } else if (opts.buttonType === "Update" && !opts.containsErrors) {
       // Update button should be visible only while there are existing changes to be submitted
       await page.locator(submitButtonSelector).waitFor({ state: "hidden", timeout: opts.timeout });
    } else if (opts.waitForLoadState) {

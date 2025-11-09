@@ -1,62 +1,116 @@
-import { expect, type Page, type Response } from "@playwright/test";
-import { submitForm } from "@tests/utils/forms";
-import { closeModal } from "@tests/utils";
-import { type Account } from "capital/accounts";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
+import { assertComponentVisibility, assertModalClosed } from "@tests/utils";
+import { assertValidationErrors, submitForm } from "@tests/utils/forms";
+import { type Account, IMAGES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 
 import { displayCurrency } from "@/lib/display";
 
 /**
- * Creates an account via the form
+ * Predefined images array for account selection
+ */
+const imagesArray: string[] = Array.from(IMAGES);
+
+/**
+ * Opens the account form modal for creating or updating an account
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} [accountId] - Optional account ID to open the form in update mode
+ */
+export async function openAccountForm(page: Page, accountId?: string): Promise<void> {
+   if (accountId) {
+      await page.getByTestId(`account-card-${accountId}`).click();
+   } else {
+      await page.getByTestId("accounts-add-button").click();
+   }
+
+   await assertComponentVisibility(page, "account-name");
+}
+
+/**
+ * Submits the account form and handles validation errors or successful responses
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Partial<Account>} accountData - Account data to submit
+ * @param {"Create" | "Update"} buttonType - Type of operation being performed
+ * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @returns {Promise<string | null>} The created account ID if successful create, null if update or validation errors expected
+ */
+async function submitAccountForm(
+   page: Page,
+   accountData: Partial<Account>,
+   buttonType: "Create" | "Update",
+   expectedErrors?: Record<string, string | string[]>
+): Promise<string | null> {
+   const formData: Record<string, any> = {};
+
+   if (accountData.name !== undefined) formData["account-name"] = accountData.name;
+   if (accountData.balance !== undefined) formData["account-balance"] = accountData.balance;
+   if (accountData.type !== undefined) formData["account-type"] = accountData.type;
+
+   // If validation errors are expected, submit and assert errors without waiting for the API response
+   if (expectedErrors) {
+      await submitForm(page, formData, { buttonType, containsErrors: true });
+      await assertValidationErrors(page, expectedErrors);
+
+      return null;
+   }
+
+   const method: string = buttonType === "Create" ? "POST" : "PUT";
+   const responsePromise = page.waitForResponse((response: Response) => {
+      return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === method;
+   });
+
+   // Submit form (submitForm handles filling and waiting for button visibility)
+   await submitForm(page, formData, { buttonType });
+
+   // Wait for the response to fully resolve and assert the successful status
+   const response: Response = await responsePromise;
+
+   if (buttonType === "Create") {
+      expect(response.status()).toBe(HTTP_STATUS.CREATED);
+
+      // Extract account ID from response body
+      const responseBody = await response.json();
+      const accountId: string = responseBody.data?.account_id;
+
+      if (!accountId) {
+         throw new Error("Failed to create account - account_id not found in response");
+      }
+
+      // Assert the new account card is visible
+      await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
+
+      // Assert modal is closed and add button is visible
+      await assertModalClosed(page);
+      await assertComponentVisibility(page, "accounts-add-button", "Add Account");
+
+      return accountId;
+   } else {
+      expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
+
+      // Assert that the form remains open after a successful update
+      await assertComponentVisibility(page, "account-name");
+      return null;
+   }
+}
+
+/**
+ * Creates an account via the form or validates form submission errors
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<Account>} accountData - Account data to fill in the form
- * @param {object} [options] - Optional submission options
- * @returns {Promise<string>} The created account ID
+ * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @returns {Promise<string>} The created account ID if successful, empty string if validation errors expected
  */
 export async function createAccount(
    page: Page,
    accountData: Partial<Account>,
-   options?: { buttonType?: "Create" | "Update" }
+   expectedErrors?: Record<string, string | string[]>
 ): Promise<string> {
-   // Store the promise for the account creation POST response
-   const createPromise = page.waitForResponse((response: Response) => {
-      return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === "POST";
-   });
+   await openAccountForm(page);
 
-   // Open account form
-   await page.getByTestId("accounts-add-button").click();
-   await page.waitForTimeout(300); // Wait for modal animation
-
-   // Fill form fields
-   const formData: Record<string, any> = {};
-   if (accountData.name) formData["account-name"] = accountData.name;
-   if (accountData.balance !== undefined) formData["account-balance"] = accountData.balance;
-   if (accountData.type) formData["account-type"] = accountData.type;
-
-   // Submit form (submitForm handles filling and waiting for button visibility)
-   await submitForm(page, formData, { buttonType: options?.buttonType || "Create" });
-
-   // Wait for the creation response to fully resolve and assert the successful status
-   const response: Response = await createPromise;
-   expect(response.status()).toBe(HTTP_STATUS.CREATED);
-
-   // Extract account ID from response body
-   const responseBody = await response.json();
-   const accountId: string = responseBody.data?.account_id;
-
-   if (!accountId) {
-      throw new Error("Failed to create account - account_id not found in response");
-   }
-
-   // Assert account ID is a valid UUID
-   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-   expect(accountId).toMatch(uuidRegex);
-
-   // Wait for the account card to appear in the DOM
-   await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
-
-   return accountId;
+   return await submitAccountForm(page, accountData, "Create", expectedErrors) || "";
 }
 
 /**
@@ -65,48 +119,43 @@ export async function createAccount(
  * @param {Page} page - Playwright page instance
  * @param {string} accountId - Account ID to update
  * @param {Partial<Account>} accountData - Updated account data
- * @param {object} [options] - Optional submission options
+ * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  */
 export async function updateAccount(
    page: Page,
    accountId: string,
    accountData: Partial<Account>,
-   options?: { buttonType?: "Create" | "Update" }
+   expectedErrors?: Record<string, string | string[]>
 ): Promise<void> {
-   // Open account form by clicking on account card
-   await page.getByTestId(`account-card-${accountId}`).click();
-   await page.waitForTimeout(300); // Wait for modal animation
-
-   // Fill form fields
-   const formData: Record<string, any> = {};
-   if (accountData.name) formData["account-name"] = accountData.name;
-   if (accountData.balance !== undefined) formData["account-balance"] = accountData.balance;
-   if (accountData.type) formData["account-type"] = accountData.type;
-
-   await submitForm(page, formData, { buttonType: options?.buttonType || "Update" });
-
-   // Wait for update to complete (modal stays open on update)
-   await page.waitForTimeout(500);
+   await openAccountForm(page, accountId);
+   await submitAccountForm(page, accountData, "Update", expectedErrors);
 }
 
 /**
  * Asserts account card information and DOM position
  *
  * @param {Page} page - Playwright page instance
- * @param {Account} account - Account to assert
+ * @param {Partial<Account>} account - Account to assert
  * @param {number} [expectedPosition] - Expected position index (0-based)
  */
 export async function assertAccountCard(
    page: Page,
-   account: Account,
+   account: Partial<Account>,
    expectedPosition?: number
 ): Promise<void> {
    const card = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
 
    // Assert card content
-   await expect(page.getByTestId(`account-card-name-${account.account_id}`)).toHaveText(account.name);
-   await expect(page.getByTestId(`account-card-balance-${account.account_id}`)).toHaveText(displayCurrency(account.balance));
+   await expect(page.getByTestId(`account-card-name-${account.account_id}`)).toHaveText(account.name || "");
+   await expect(page.getByTestId(`account-card-balance-${account.account_id}`)).toHaveText(displayCurrency(account.balance || 0));
+
+   const image: Locator = page.getByTestId(`account-card-image-${account.account_id}`).locator("img");
+   await expect(image).toBeVisible();
+   const imageSrc: string | null = await image.getAttribute("src");
+   const expectedSrc = account.image ? `/images/${account.image}.png` : "/svg/logo.svg";
+   expect(imageSrc).toBe(expectedSrc);
+
    if (account.type) {
       await expect(page.getByTestId(`account-card-type-${account.account_id}`)).toHaveText(account.type);
    }
@@ -120,6 +169,7 @@ export async function assertAccountCard(
       for (let i = 0; i < allElements.length; i++) {
          const element = allElements[i];
          const testId = await element.getAttribute("data-testid");
+
          // Only match exact "account-card-{uuid}" pattern
          if (testId && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId)) {
             cardContainers.push({ element, index: cardContainers.length });
@@ -185,12 +235,12 @@ export async function assertAccountCardsOrder(
  * Asserts transaction account dropdown options and auto-selection
  *
  * @param {Page} page - Playwright page instance
- * @param {Account[]} expectedAccounts - Expected accounts in dropdown
+ * @param {Partial<Account>[]} expectedAccounts - Expected accounts in dropdown
  * @param {string} [autoSelectedAccountId] - Account ID that should be auto-selected
  */
 export async function assertTransactionAccountDropdown(
    page: Page,
-   expectedAccounts: Account[],
+   expectedAccounts: Partial<Account>[],
    autoSelectedAccountId?: string
 ): Promise<void> {
    if (autoSelectedAccountId) {
@@ -231,7 +281,7 @@ export async function assertTransactionAccountDropdown(
       if (autoSelectedAccountId) {
          const selectedAccount = expectedAccounts.find(a => a.account_id === autoSelectedAccountId);
          if (selectedAccount) {
-            await expect(selectElement).toContainText(selectedAccount.name);
+            await expect(selectElement).toContainText(selectedAccount.name!);
          }
 
          await expect(selectElement).toContainText(selectedAccount?.name || "");
@@ -247,65 +297,134 @@ export async function assertTransactionAccountDropdown(
 }
 
 /**
- * Opens the account image selection modal
+ * Opens the account image selection form, which is a child component of the account form
  *
  * @param {Page} page - Playwright page instance
  */
-export async function openImageModal(page: Page): Promise<void> {
-   // Check if modal is already open by checking for carousel buttons
-   const carouselLeft = page.getByTestId("account-image-carousel-left");
-   const isModalOpen = await carouselLeft.isVisible().catch(() => false);
-
-   if (!isModalOpen) {
-      // Modal is not open, click the button to open it
-      await page.getByTestId("account-image-button").click({ force: true });
+export async function openImageForm(page: Page): Promise<void> {
+   if (!await page.getByTestId("account-image-button").isVisible()) {
+      // Open the account form if the image form is not visible
+      await openAccountForm(page);
    }
 
-   // Wait for the image modal to be visible (carousel buttons indicate modal is open)
-   await carouselLeft.waitFor({ state: "visible", timeout: 5000 });
+   await page.getByTestId("account-image-button").click();
+   await assertComponentVisibility(page, "account-image-carousel-left");
 }
 
 /**
- * Opens the account image selection modal
+ * Gets the current active step index from the image carousel stepper
  *
  * @param {Page} page - Playwright page instance
+ * @returns {Promise<number>} The current active step index
  */
-export async function openAccountImageModal(page: Page): Promise<void> {
-   return openImageModal(page);
+export async function getActiveImageStep(page: Page): Promise<number> {
+   const steps: Locator = page.locator(".MuiMobileStepper-dot");
+   const count: number = await steps.count();
+
+   for (let i = 0; i < count; i++) {
+      const dot: Locator = steps.nth(i);
+      const classNames: string | null = await dot.getAttribute("class");
+
+      if (classNames?.includes("MuiMobileStepper-dotActive")) {
+         return i;
+      }
+   }
+
+   return 0;
 }
 
 /**
- * Navigates carousel and selects an image by index
+ * Asserts active step in MobileStepper matches expected index
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {number} expectedStep - Expected active step index
+ */
+export async function assertActiveImageStep(
+   page: Page,
+   expectedStep: number
+): Promise<void> {
+   const steps: Locator = page.locator(".MuiMobileStepper-dot");
+   const activeStep: Locator = steps.nth(expectedStep);
+   await expect(activeStep).toHaveClass(/MuiMobileStepper-dotActive/);
+}
+
+/**
+ * Asserts carousel navigation with loopback behavior and verifies each image
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {"left" | "right"} direction - Direction to navigate through the carousel
+ */
+export async function assertImageCarouselNavigation(
+   page: Page,
+   direction: "left" | "right"
+): Promise<void> {
+   const totalImages: number = imagesArray.length;
+   const buttonTestId: string = `account-image-carousel-${direction}`;
+
+   // Select the first image to reset the carousel
+   await selectImageCarouselPosition(page, 0);
+
+   // Navigate through all images and verify loopback
+   for (let i = 0; i < totalImages; i++) {
+      const expectedStep: number = direction === "right" ? (
+         i === totalImages - 1 ? 0 : i + 1
+      ) : (
+         totalImages - i - 1
+      );
+
+      // Click navigation button
+      await page.getByTestId(buttonTestId).click();
+
+      await assertActiveImageStep(page, expectedStep);
+      await assertImageSelected(page, expectedStep, false);
+   }
+
+   // Assert the first image is always looped back to after navigation
+   await assertImageSelected(page, 0, false);
+}
+
+/**
+ * Asserts image selection by clicking the avatar and verifying selection state updates
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {boolean} isSelected - Whether image should be selected
+ */
+export async function assertImageSelection(page: Page, isSelected: boolean): Promise<void> {
+   const avatar: Locator = page.locator("[data-selected]").first();
+   await expect(avatar).toBeVisible();
+
+   if (isSelected) {
+      await expect(avatar).toHaveAttribute("data-selected", "true");
+   } else {
+      await expect(avatar).toHaveAttribute("data-selected", "false");
+   }
+}
+
+/**
+ * Navigates carousel and selects an image to view and optionally select by index
+ *
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to select (0-based)
+ * @param {boolean} [select] - Whether to select the image (default: false)
  */
-export async function selectImageFromCarousel(
+export async function selectImageCarouselPosition(
    page: Page,
-   imageIndex: number
+   imageIndex: number,
+   select: boolean = false
 ): Promise<void> {
-   // Ensure image modal is open by clicking the image button
-   await openImageModal(page);
-
    // Navigate to the desired image
-   const currentStep = await page.locator(".MuiMobileStepper-root").getAttribute("aria-label");
-   const currentIndex = currentStep ? parseInt(currentStep.split(" ")[1] || "0") : 0;
-
-   const stepsNeeded = imageIndex - currentIndex;
-   const direction = stepsNeeded > 0 ? "right" : "left";
-   const buttonTestId = direction === "right" ? "account-image-carousel-right" : "account-image-carousel-left";
+   const activeStep: number = await getActiveImageStep(page);
+   const stepsNeeded: number = imageIndex - activeStep;
+   const direction: "left" | "right" = stepsNeeded > 0 ? "right" : "left";
+   const buttonTestId: string = `account-image-carousel-${direction}`;
 
    for (let i = 0; i < Math.abs(stepsNeeded); i++) {
       await page.getByTestId(buttonTestId).click();
-      // Wait for carousel step to update
-      await page.locator(".MuiMobileStepper-root").waitFor({ state: "visible" });
    }
 
-   // Click on the image to select it
-   const avatar = page.locator("[data-selected]").first();
-   await avatar.click();
-   // Wait for selection state to update
-   await expect(avatar).toHaveAttribute("data-selected", /true|false/);
-   // Note: Modal stays open after selection - user must close it manually
+   if (select) {
+      await page.getByTestId("account-image-carousel-image").click();
+   }
 }
 
 /**
@@ -320,171 +439,59 @@ export async function assertImageSelected(
    imageIndex: number,
    isSelected: boolean
 ): Promise<void> {
-   // Note: imageIndex is provided for context but we assert the currently displayed avatar
-   void imageIndex;
+   await assertActiveImageStep(page, imageIndex);
 
-   // Ensure image modal is open
-   await openImageModal(page);
+   // Assert the image is visible
+   const avatar: Locator = page.locator("[data-selected]").first();
+   await expect(avatar).toBeVisible();
 
-   const avatar = page.locator("[data-selected]").first();
+   // Assert the image source is correct relative to default images array
+   const expectedSrc: string = `/images/${imagesArray[imageIndex]}.png`;
+   await expect(avatar.locator("img")).toHaveAttribute("src", expectedSrc);
 
-   if (isSelected) {
-      await expect(avatar).toHaveAttribute("data-selected", "true");
-
-      // Assert border CSS
-      const borderStyle = await avatar.evaluate((el) => {
-         const computedStyle = window.getComputedStyle(el);
-         return computedStyle.borderWidth;
-      });
-      expect(borderStyle).toBe("3px");
-   } else {
-      const dataSelected = await avatar.getAttribute("data-selected");
-      expect(dataSelected).not.toBe("true");
-
-      // Assert no border
-      const borderStyle = await avatar.evaluate((el) => {
-         const computedStyle = window.getComputedStyle(el);
-         return computedStyle.borderWidth;
-      });
-      expect(borderStyle).toBe("0px");
-   }
-}
-
-/**
- * Asserts border appears on image click
- *
- * @param {Page} page - Playwright page instance
- * @param {number} imageIndex - Index of image to click
- */
-export async function assertImageBorderOnClick(
-   page: Page,
-   imageIndex: number
-): Promise<void> {
-   // Navigate to image and select it (selectImageFromCarousel will open modal)
-   await selectImageFromCarousel(page, imageIndex);
-
-   // Assert selection (assertImageSelected will reopen modal if needed)
-   await assertImageSelected(page, imageIndex, true);
-}
-
-/**
- * Asserts border disappears on re-click
- *
- * @param {Page} page - Playwright page instance
- * @param {number} imageIndex - Index of image to re-click
- */
-export async function assertImageBorderOnReClick(
-   page: Page,
-   imageIndex: number
-): Promise<void> {
-   // Ensure modal is open
-   await openImageModal(page);
-
-   // Navigate to the image if needed
-   const currentStep = await page.locator(".MuiMobileStepper-root").getAttribute("aria-label");
-   const currentIndex = currentStep ? parseInt(currentStep.split(" ")[1] || "0") : 0;
-   const stepsNeeded = imageIndex - currentIndex;
-   const direction = stepsNeeded > 0 ? "right" : "left";
-   const buttonTestId = direction === "right" ? "account-image-carousel-right" : "account-image-carousel-left";
-
-   for (let i = 0; i < Math.abs(stepsNeeded); i++) {
-      await page.getByTestId(buttonTestId).click();
-      // Wait for carousel step to update
-      await page.locator(".MuiMobileStepper-root").waitFor({ state: "visible" });
-   }
-
-   // Re-click the selected image to deselect it
-   const avatar = page.locator("[data-selected]").first();
-   await avatar.click();
-   // Wait for deselection state to update
-   await expect(avatar).toHaveAttribute("data-selected", /true|false/);
-   await assertImageSelected(page, imageIndex, false);
-}
-
-/**
- * Asserts no border when modal first opens
- *
- * @param {Page} page - Playwright page instance
- */
-export async function assertImageNoBorderOnInitialOpen(page: Page): Promise<void> {
-   // Open the image modal first
-   await openImageModal(page);
-
-   const avatar = page.locator("[data-selected]").first();
-   const dataSelected = await avatar.getAttribute("data-selected");
-   expect(dataSelected).not.toBe("true");
-
-   // Assert no border
-   const borderStyle = await avatar.evaluate((el) => {
+   // Assert the data-selected attribute and border style
+   await expect(avatar).toHaveAttribute("data-selected", isSelected ? "true" : "false");
+   const borderStyle: string = await avatar.evaluate((el) => {
       const computedStyle = window.getComputedStyle(el);
       return computedStyle.borderWidth;
    });
-   expect(borderStyle).toBe("0px");
+   expect(borderStyle).toBe(isSelected ? "3px" : "0px");
 }
 
 /**
- * Asserts active step in MobileStepper matches expected index
+ * Asserts invalid image URL validation and unblocks the invalid image form using the specified method
  *
  * @param {Page} page - Playwright page instance
- * @param {number} expectedStep - Expected active step index
+ * @param {"clear" | "default-image" | "valid-url"} unblockMethod - Method to unblock the invalid image form after validation
  */
-export async function assertActiveImageStep(
-   page: Page,
-   expectedStep: number
-): Promise<void> {
-   const steps = page.locator(".MuiMobileStepper-dot");
-   const activeStep = steps.nth(expectedStep);
-
-   await expect(activeStep).toHaveClass(/MuiMobileStepper-dotActive/);
-}
-
-/**
- * Helper to test image modal validation: invalid URL blocking, clearing, and valid URL
- *
- * @param {Page} page - Playwright page instance
- * @param {"clear" | "default-image" | "valid-url"} unblockMethod - Method to unblock modal
- */
-export async function testImageModalValidation(
+export async function assertAndUnblockInvalidImageURL(
    page: Page,
    unblockMethod: "clear" | "default-image" | "valid-url"
 ): Promise<void> {
-   // Open image modal and fill invalid URL
-   await openImageModal(page);
+   // Open the image form and fill an invalid URL
+   await openImageForm(page);
    await page.getByTestId("account-image-url").fill("invalid-url");
 
-   // Try to close modal with Escape - should be blocked due to invalid URL
+   // Try to close the image form with Escape, which should be blocked due to invalid URL
    await page.keyboard.press("Escape");
-
-   // Assert modal is still open (blocked by invalid URL)
    await expect(page.getByTestId("account-image-carousel-left")).toBeVisible();
+   await assertValidationErrors(page, { "account-image-url": "URL must be valid" });
 
-   // Unblock based on method
+   // Unblock the image form based on the method
    if (unblockMethod === "clear") {
-      // Clear invalid URL
+      // Clear the invalid URL
       await page.getByTestId("account-image-url").fill("");
-      await page.keyboard.press("Escape");
-      // Assert image modal is closed (carousel button not visible)
-      await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
    } else if (unblockMethod === "default-image") {
-      // Select default image
-      await selectImageFromCarousel(page, 0);
-      await page.keyboard.press("Escape"); // Close image modal
-      await page.keyboard.press("Escape"); // Attempt to close account modal
-      // Force close with warning modal confirmation
-      await closeModal(page, true);
-      // Assert account modal is closed
-      await expect(page.getByTestId("account-name")).not.toBeVisible();
+      // Select the default image
+      await selectImageCarouselPosition(page, 0, true);
    } else if (unblockMethod === "valid-url") {
-      // Enter valid URL
-      const urlInput = page.getByTestId("account-image-url");
-      await urlInput.click();
-      await urlInput.selectText();
-      await urlInput.fill("https://example.com/image.png");
-      await page.keyboard.press("Escape");
-      // Assert image modal is closed
-      await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
-      await closeModal(page, true);
+      // Enter the valid URL
+      await page.getByTestId("account-image-url").fill("https://example.com/image.png");
    }
+
+   // Close the image form after a successful input validation
+   await page.keyboard.press("Escape");
+   await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
 }
 
 /**
