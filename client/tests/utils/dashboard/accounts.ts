@@ -1,6 +1,9 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { assertComponentVisibility, assertModalClosed } from "@tests/utils";
+import { assertAccountTrends } from "@tests/utils/dashboard";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
+import { navigateToPath } from "@tests/utils/navigation";
+import { assertNotificationStatus } from "@tests/utils/notifications";
 import { type Account, IMAGES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 
@@ -28,17 +31,24 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
 }
 
 /**
+ * Extended account data type for form submission with optional image selection
+ */
+type AccountFormData = Partial<Account> & {
+   imageSelection?: number | string;
+};
+
+/**
  * Submits the account form and handles validation errors or successful responses
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<Account>} accountData - Account data to submit
+ * @param {AccountFormData} accountData - Account data to submit, optionally with imageSelection (number for carousel index, string for custom URL)
  * @param {"Create" | "Update"} buttonType - Type of operation being performed
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string | null>} The created account ID if successful create, null if update or validation errors expected
  */
 async function submitAccountForm(
    page: Page,
-   accountData: Partial<Account>,
+   accountData: AccountFormData,
    buttonType: "Create" | "Update",
    expectedErrors?: Record<string, string | string[]>
 ): Promise<string | null> {
@@ -47,6 +57,21 @@ async function submitAccountForm(
    if (accountData.name !== undefined) formData["account-name"] = accountData.name;
    if (accountData.balance !== undefined) formData["account-balance"] = accountData.balance;
    if (accountData.type !== undefined) formData["account-type"] = accountData.type;
+
+   // Handle image selection if provided
+   if (accountData.imageSelection !== undefined) {
+      await openImageForm(page);
+
+      if (typeof accountData.imageSelection === "number") {
+         // Select from carousel (default image by index)
+         await selectImageCarouselPosition(page, accountData.imageSelection, true);
+      } else {
+         // Enter custom URL
+         await page.getByTestId("account-image-url").fill(accountData.imageSelection);
+      }
+
+      await page.keyboard.press("Escape");
+   }
 
    // If validation errors are expected, submit and assert errors without waiting for the API response
    if (expectedErrors) {
@@ -99,13 +124,13 @@ async function submitAccountForm(
  * Creates an account via the form or validates form submission errors
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<Account>} accountData - Account data to fill in the form
+ * @param {AccountFormData} accountData - Account data to fill in the form (can include imageSelection)
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string>} The created account ID if successful, empty string if validation errors expected
  */
 export async function createAccount(
    page: Page,
-   accountData: Partial<Account>,
+   accountData: AccountFormData,
    expectedErrors?: Record<string, string | string[]>
 ): Promise<string> {
    await openAccountForm(page);
@@ -118,13 +143,13 @@ export async function createAccount(
  *
  * @param {Page} page - Playwright page instance
  * @param {string} accountId - Account ID to update
- * @param {Partial<Account>} accountData - Updated account data
+ * @param {AccountFormData} accountData - Updated account data (can include imageSelection)
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  */
 export async function updateAccount(
    page: Page,
    accountId: string,
-   accountData: Partial<Account>,
+   accountData: AccountFormData,
    expectedErrors?: Record<string, string | string[]>
 ): Promise<void> {
    await openAccountForm(page, accountId);
@@ -137,11 +162,13 @@ export async function updateAccount(
  * @param {Page} page - Playwright page instance
  * @param {Partial<Account>} account - Account to assert
  * @param {number} [expectedPosition] - Expected position index (0-based)
+ * @param {boolean} [expectImageError] - Whether to expect an image error (error message is derived from account name)
  */
 export async function assertAccountCard(
    page: Page,
    account: Partial<Account>,
-   expectedPosition?: number
+   expectedPosition?: number,
+   expectImageError?: boolean
 ): Promise<void> {
    const card = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
@@ -150,15 +177,44 @@ export async function assertAccountCard(
    await expect(page.getByTestId(`account-card-name-${account.account_id}`)).toHaveText(account.name || "");
    await expect(page.getByTestId(`account-card-balance-${account.account_id}`)).toHaveText(displayCurrency(account.balance || 0));
 
-   const image: Locator = page.getByTestId(`account-card-image-${account.account_id}`).locator("img");
-   await expect(image).toBeVisible();
-   const imageSrc: string | null = await image.getAttribute("src");
-   const expectedSrc = account.image ? `/images/${account.image}.png` : "/svg/logo.svg";
-   expect(imageSrc).toBe(expectedSrc);
+   if (expectImageError) {
+      // Construct error message from account name
+      const errorMessage = `There was an issue fetching the account image for ${account.name}`;
 
-   if (account.type) {
-      await expect(page.getByTestId(`account-card-type-${account.account_id}`)).toHaveText(account.type);
+      // Assert error state: fallback error.svg image + error notification
+      const imageContainer = page.getByTestId(`account-card-image-${account.account_id}`);
+      await expect(imageContainer).toBeVisible();
+
+      // Assert error image is displayed (error.svg when image fails to load)
+      const image: Locator = imageContainer.locator("img");
+      await expect(image).toBeVisible();
+      const imageSrc: string | null = await image.getAttribute("src");
+      expect(imageSrc).toBe("/svg/error.svg");
+
+      // Assert error notification in the notification system
+      await assertNotificationStatus(page, errorMessage, "error");
+   } else {
+      // Assert normal image
+      const image: Locator = page.getByTestId(`account-card-image-${account.account_id}`).locator("img");
+      await expect(image).toBeVisible();
+      const imageSrc: string | null = await image.getAttribute("src");
+
+      // Determine expected source: predefined image or custom URL
+      let expectedSrc: string;
+      if (!account.image) {
+         expectedSrc = "/svg/logo.svg";
+      } else if (imagesArray.includes(account.image)) {
+         // Predefined image from carousel
+         expectedSrc = `/images/${account.image}.png`;
+      } else {
+         // Custom URL
+         expectedSrc = account.image;
+      }
+      expect(imageSrc).toBe(expectedSrc);
    }
+
+   // Default account type is "Checking"
+   await expect(page.getByTestId(`account-card-type-${account.account_id}`)).toHaveText(account.type || "Checking");
 
    // Assert position if specified
    if (expectedPosition !== undefined) {
@@ -486,7 +542,7 @@ export async function assertAndUnblockInvalidImageURL(
       await selectImageCarouselPosition(page, 0, true);
    } else if (unblockMethod === "valid-url") {
       // Enter the valid URL
-      await page.getByTestId("account-image-url").fill("https://example.com/image.png");
+      await page.getByTestId("account-image-url").fill("https://picsum.photos/200/300");
    }
 
    // Close the image form after a successful input validation
@@ -509,4 +565,117 @@ export async function assertAccountFormGraph(
    void page;
    void expectedBalance;
    void expectedPercentage;
+}
+
+/**
+ * Asserts net worth on the dashboard page
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Partial<Account>[]} accounts - Array of accounts to display
+ * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
+ */
+export async function assertNetWorthOnDashboard(
+   page: Page,
+   accounts: Partial<Account>[],
+   expectedNetWorth: number
+): Promise<void> {
+   await navigateToPath(page, "/dashboard");
+   await assertAccountTrends(page, accounts, expectedNetWorth, "dashboard");
+}
+
+/**
+ * Asserts net worth on the accounts page
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Partial<Account>[]} accounts - Array of accounts to display
+ * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
+ */
+export async function assertNetWorthOnAccountsPage(
+   page: Page,
+   accounts: Partial<Account>[],
+   expectedNetWorth: number
+): Promise<void> {
+   await navigateToPath(page, "/dashboard/accounts");
+   await assertAccountTrends(page, accounts, expectedNetWorth, "accounts-page");
+}
+
+/**
+ * Unified helper to verify net worth updates on both dashboard and accounts page
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Partial<Account>[]} accounts - Array of accounts to display
+ * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
+ */
+export async function assertNetWorthAfterAction(
+   page: Page,
+   accounts: Partial<Account>[],
+   expectedNetWorth: number
+): Promise<void> {
+   // Check dashboard first
+   await assertNetWorthOnDashboard(page, accounts, expectedNetWorth);
+
+   // Check accounts page
+   await assertNetWorthOnAccountsPage(page, accounts, expectedNetWorth);
+}
+
+/**
+ * Deletes all existing accounts from the page to ensure a clean slate
+ *
+ * @param {Page} page - Playwright page instance
+ */
+export async function deleteAllAccounts(page: Page): Promise<void> {
+   // Get all account cards currently visible
+   while (await page.getByTestId(/^account-card-[0-9a-f-]+$/).first().isVisible().catch(() => false)) {
+      const firstCard = page.getByTestId(/^account-card-[0-9a-f-]+$/).first();
+      await firstCard.click();
+      await assertComponentVisibility(page, "account-delete-button");
+      await page.getByTestId("account-delete-button").click();
+      await assertComponentVisibility(page, "account-delete-button-confirm");
+      await page.getByTestId("account-delete-button-confirm").click();
+      // Wait for deletion to complete
+      await page.waitForTimeout(300);
+   }
+}
+
+/**
+ * Deletes an account via the form, showing confirmation dialog
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} accountId - Account ID to delete
+ */
+export async function deleteAccount(page: Page, accountId: string): Promise<void> {
+   await openAccountForm(page, accountId);
+
+   // Wait for delete button to appear (rendered when isUpdating is true)
+   await assertComponentVisibility(page, "account-delete-button");
+
+   // Click delete button to open confirmation dialog
+   await page.getByTestId("account-delete-button").click();
+
+   // Assert confirmation dialog appears
+   await assertComponentVisibility(page, "account-delete-button-confirm");
+
+   // Confirm deletion
+   const responsePromise = page.waitForResponse((response: Response) => {
+      return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === "DELETE";
+   });
+
+   await page.getByTestId("account-delete-button-confirm").click();
+
+   const response = await responsePromise;
+   expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
+}
+
+/**
+ * Asserts that an account has been deleted from the UI
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} accountId - Account ID that should be deleted
+ */
+export async function assertAccountDeleted(page: Page, accountId: string): Promise<void> {
+   // Assert account card is gone
+   await expect(page.getByTestId(`account-card-${accountId}`)).not.toBeVisible();
+
+   // Assert modal is closed
+   await assertModalClosed(page);
 }

@@ -87,6 +87,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       try {
          const fields = accountSchema.safeParse({
             ...data,
+            name: data.name || "",
             account_order,
             last_updated: new Date().toISOString()
          });

@@ -100,7 +100,7 @@ export async function submitForm(
    }
 
    // Determine submit button selector based on buttonType or default
-   let submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
+   const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
    if (opts.buttonType) {
       // Wait for button to be visible (Collapse animation)
       await page.getByTestId("submit-button").waitFor({ state: "visible", timeout: opts.timeout });
@@ -117,7 +117,7 @@ export async function submitForm(
    // If applicable, wait for navigation or for all network requests to complete before returning
    if (opts.waitForNavigation) {
       await page.waitForURL(/.*/, { timeout: opts.timeout });
-   } else if (opts.buttonType === "Update" && !opts.containsErrors) {
+   } else if (!opts.containsErrors && opts.buttonType === "Update") {
       // Update button should be visible only while there are existing changes to be submitted
       await page.locator(submitButtonSelector).waitFor({ state: "hidden", timeout: opts.timeout });
    } else if (opts.waitForLoadState) {
