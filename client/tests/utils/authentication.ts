@@ -97,7 +97,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
       await clickSidebarLink(page, "sidebar-logout");
    } else if (method === "settings") {
       await navigateToPath(page, SETTINGS_ROUTE);
-      await page.getByRole("button", { name: "Logout" }).click();
+      await page.getByTestId("settings-logout").click();
       await page.getByTestId("settings-logout-confirm").click();
    }
 

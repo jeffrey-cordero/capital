@@ -31,6 +31,7 @@ export async function clickSidebarLink(page: Page, testId: string): Promise<void
 
    await expect(page.getByTestId(testId)).toBeVisible();
    await page.getByTestId(testId).click();
+   await page.waitForSelector(testId, { state: "hidden" });
 }
 
 /**

@@ -1,7 +1,6 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import {
-   createUser,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
    logoutUser,
@@ -9,6 +8,7 @@ import {
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
 import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
+import { setupAssignedUser } from "../utils/user-management";
 
 test.describe("Routing and Navigation", () => {
    /**
@@ -22,12 +22,7 @@ test.describe("Routing and Navigation", () => {
       await clickSidebarLink(page, `sidebar-link-${linkTitle.toLowerCase()}`);
 
       // Assert that the link is visible and active
-      const link: Locator = page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`);
-      await expect(link).toBeVisible();
-      await expect(link).toHaveAttribute("data-active", "true");
-
-      // Close the sidebar for further testing
-      await page.keyboard.press("Escape");
+      await expect(page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`)).toHaveAttribute("data-active", "true");
    };
 
    /**
@@ -77,8 +72,8 @@ test.describe("Routing and Navigation", () => {
    };
 
    test.describe("Authenticated User Routing", () => {
-      test.beforeEach(async({ page, usersRegistry }) => {
-         await createUser(page, {}, true, usersRegistry);
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE);
       });
 
       test("should highlight the sidebar link for all protected routes", async({ page }) => {

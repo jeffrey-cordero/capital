@@ -405,7 +405,7 @@ export async function assertActiveImageStep(
 }
 
 /**
- * Asserts carousel navigation with loopback behavior and verifies each image
+ * Asserts carousel navigation with loopback behavior and asserts each image
  *
  * @param {Page} page - Playwright page instance
  * @param {"left" | "right"} direction - Direction to navigate through the carousel
@@ -420,7 +420,7 @@ export async function assertImageCarouselNavigation(
    // Select the first image to reset the carousel
    await selectImageCarouselPosition(page, 0);
 
-   // Navigate through all images and verify loopback
+   // Navigate through all images and assert loopback
    for (let i = 0; i < totalImages; i++) {
       const expectedStep: number = direction === "right" ? (
          i === totalImages - 1 ? 0 : i + 1
@@ -440,7 +440,7 @@ export async function assertImageCarouselNavigation(
 }
 
 /**
- * Asserts image selection by clicking the avatar and verifying selection state updates
+ * Asserts image selection by clicking the avatar and asserting selection state updates
  *
  * @param {Page} page - Playwright page instance
  * @param {boolean} isSelected - Whether image should be selected
@@ -599,7 +599,7 @@ export async function assertNetWorthOnAccountsPage(
 }
 
 /**
- * Unified helper to verify net worth updates on both dashboard and accounts page
+ * Unified helper to assert net worth updates on both dashboard and accounts page
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<Account>[]} accounts - Array of accounts to display
