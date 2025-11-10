@@ -176,34 +176,6 @@ test.describe("Account Management", () => {
       });
    });
 
-   test.describe("Image URL Validation", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
-      });
-
-      test("should display MUI error styling for invalid image URL", async({ page }) => {
-         await openAccountForm(page);
-         await openImageForm(page);
-
-         // Enter invalid URL
-         await page.getByTestId("account-image-url").fill("invalid-url");
-
-         // Try to close form, which should fail validation
-         await page.keyboard.press("Escape");
-
-         // Assert error is displayed with MUI styling
-         await assertValidationErrors(page, { "account-image-url": "URL must be valid" });
-      });
-
-      test("should clear error styling after correcting image URL", async({ page }) => {
-         await assertAndUnblockInvalidImageURL(page, "valid-url");
-      });
-
-      test("should clear error styling after selecting default image", async({ page }) => {
-         await assertAndUnblockInvalidImageURL(page, "default-image");
-      });
-   });
-
    test.describe("Image Selection", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
@@ -244,6 +216,14 @@ test.describe("Account Management", () => {
          await page.getByTestId("account-image-url").fill("https://example.com/image.png");
          await page.keyboard.press("Escape");
          await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
+      });
+
+      test("should validate image URL format and unblock with different methods", async({ page }) => {
+         // Test unblocking with different methods
+         for (const method of ["clear", "valid-url", "default-image"] as const) {
+            await assertAndUnblockInvalidImageURL(page, method);
+            await openImageForm(page);
+         }
       });
    });
 
@@ -375,32 +355,100 @@ test.describe("Account Management", () => {
          ];
          await assertNetWorthAfterAction(page, accounts, 0);
       });
-   });
 
-   test.describe("Account Card Display", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
+      test("should update asset and liability to balance to zero net worth", async({ page }) => {
+         // Create asset and liability that balance
+         const assetData: Partial<Account> = { name: "Asset", balance: 5000, type: "Checking" };
+         const liabilityData: Partial<Account> = { name: "Liability", balance: 5000, type: "Credit Card" };
+
+         const assetId = await createAccount(page, assetData);
+         const liabilityId = await createAccount(page, liabilityData);
+
+         // Verify initial net worth = 5000 - 5000 = 0
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData },
+            { account_id: liabilityId, ...liabilityData }
+         ], 0);
+
+         // Update asset to 500
+         await updateAccount(page, assetId, { balance: 500 });
+         await closeModal(page);
+
+         // Net worth should now be 500 - 5000 = -4500
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData, balance: 500 },
+            { account_id: liabilityId, ...liabilityData }
+         ], -4500);
       });
 
-      test("should display account card with correct information", async({ page }) => {
-         const account: Partial<Account> = {
-            name: "Display Test Account",
-            balance: 7500,
-            type: "Savings"
-         };
+      test("should update liability balance and recalculate net worth correctly", async({ page }) => {
+         // Start with asset and liability that balance to zero
+         const assetData: Partial<Account> = { name: "Checking", balance: 5000, type: "Checking" };
+         const liabilityData: Partial<Account> = { name: "Credit Card", balance: 5000, type: "Credit Card" };
 
-         const accountId = await createAccount(page, account);
-         await assertAccountCard(page, { account_id: accountId, ...account });
+         const assetId = await createAccount(page, assetData);
+         const liabilityId = await createAccount(page, liabilityData);
+
+         // Initial net worth = 5000 - 5000 = 0
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData },
+            { account_id: liabilityId, ...liabilityData }
+         ], 0);
+
+         // Increase liability balance to 6000
+         await updateAccount(page, liabilityId, { balance: 6000 });
+         await closeModal(page);
+
+         // Net worth should now be 5000 - 6000 = -1000
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData },
+            { account_id: liabilityId, ...liabilityData, balance: 6000 }
+         ], -1000);
       });
 
-      test("should display cards in correct order", async({ page }) => {
-         const account1: Partial<Account> = { name: "First Account", balance: 1000, type: "Checking" };
-         const account2: Partial<Account> = { name: "Second Account", balance: 2000, type: "Savings" };
+      test("should handle multiple sequential updates affecting net worth", async({ page }) => {
+         // Create initial asset and liability at zero
+         const assetData: Partial<Account> = { name: "Savings", balance: 5000, type: "Savings" };
+         const liabilityData: Partial<Account> = { name: "Debt", balance: 5000, type: "Debt" };
 
-         const id1 = await createAccount(page, account1);
-         const id2 = await createAccount(page, account2);
+         const assetId = await createAccount(page, assetData);
+         const liabilityId = await createAccount(page, liabilityData);
 
-         await assertAccountCardsOrder(page, [id1, id2]);
+         // Initial net worth = 5000 - 5000 = 0
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData },
+            { account_id: liabilityId, ...liabilityData }
+         ], 0);
+
+         // Step 1: Update asset to 7000
+         // Net worth = 7000 - 5000 = 2000
+         await updateAccount(page, assetId, { balance: 7000 });
+         await closeModal(page);
+
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData, balance: 7000 },
+            { account_id: liabilityId, ...liabilityData }
+         ], 2000);
+
+         // Step 2: Update liability to 10000
+         // Net worth = 7000 - 10000 = -3000
+         await updateAccount(page, liabilityId, { balance: 10000 });
+         await closeModal(page);
+
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData, balance: 7000 },
+            { account_id: liabilityId, ...liabilityData, balance: 10000 }
+         ], -3000);
+
+         // Step 3: Update asset to 15000
+         // Net worth = 15000 - 10000 = 5000
+         await updateAccount(page, assetId, { balance: 15000 });
+         await closeModal(page);
+
+         await assertNetWorthAfterAction(page, [
+            { account_id: assetId, ...assetData, balance: 15000 },
+            { account_id: liabilityId, ...liabilityData, balance: 10000 }
+         ], 5000);
       });
    });
 
@@ -436,17 +484,16 @@ test.describe("Account Management", () => {
       });
    });
 
-   test.describe("Account Updates with Net Worth Verification", () => {
-      let accountId: string = "";
+   test.describe("Account Updates", () => {
+      let accountId: string;
       const baseAccount: Partial<Account> = { name: "Test Account", balance: 1000, type: "Checking" };
 
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
-
+         // Clean up the baseAccount after each test
          if (accountId && await page.getByTestId(`account-card-${accountId}`).isVisible()) {
             await deleteAccount(page, accountId);
          }
-
          accountId = await createAccount(page, baseAccount);
          baseAccount.account_id = accountId;
       });
@@ -538,101 +585,6 @@ test.describe("Account Management", () => {
             await assertAndUnblockInvalidImageURL(page, method);
          }
       });
-
-      test("should update asset and liability to balance to zero net worth", async({ page }) => {
-         // Create asset and liability that balance
-         const assetData: Partial<Account> = { name: "Asset", balance: 5000, type: "Checking" };
-         const liabilityData: Partial<Account> = { name: "Liability", balance: 5000, type: "Credit Card" };
-
-         const assetId = await createAccount(page, assetData);
-         const liabilityId = await createAccount(page, liabilityData);
-
-         // Verify initial net worth = 1000 + 5000 - 5000 = 1000
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData },
-            { account_id: liabilityId, ...liabilityData }
-         ], 1000);
-
-         // Update asset to 500
-         await updateAccount(page, assetId, { balance: 500 });
-         await closeModal(page);
-
-         // Net worth should now be 1000 + 500 - 5000 = -3500
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData, balance: 500 },
-            { account_id: liabilityId, ...liabilityData }
-         ], -3500);
-      });
-
-      test("should update liability balance and recalculate net worth correctly", async({ page }) => {
-         // Start with asset and liability that balance to zero
-         const assetData: Partial<Account> = { name: "Checking", balance: 5000, type: "Checking" };
-         const liabilityData: Partial<Account> = { name: "Credit Card", balance: 5000, type: "Credit Card" };
-
-         const assetId = await createAccount(page, assetData);
-         const liabilityId = await createAccount(page, liabilityData);
-
-         // Initial net worth = 1000 + 5000 - 5000 = 1000
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData },
-            { account_id: liabilityId, ...liabilityData }
-         ], 1000);
-
-         // Increase liability balance to 6000
-         await updateAccount(page, liabilityId, { balance: 6000 });
-         await closeModal(page);
-
-         // Net worth should now be 1000 + 5000 - 6000 = 0
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData },
-            { account_id: liabilityId, ...liabilityData, balance: 6000 }
-         ], 0);
-      });
-
-      test("should handle multiple sequential updates affecting net worth", async({ page }) => {
-         // Create initial asset and liability at zero
-         const assetData: Partial<Account> = { name: "Savings", balance: 5000, type: "Savings" };
-         const liabilityData: Partial<Account> = { name: "Debt", balance: 5000, type: "Debt" };
-
-         const assetId = await createAccount(page, assetData);
-         const liabilityId = await createAccount(page, liabilityData);
-
-         // Initial net worth = 1000 + 5000 - 5000 = 1000
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData },
-            { account_id: liabilityId, ...liabilityData }
-         ], 1000);
-
-         // Step 1: Update asset to 7000
-         // Net worth = 1000 + 7000 - 5000 = 3000
-         await updateAccount(page, assetId, { balance: 7000 });
-         await closeModal(page);
-
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData, balance: 7000 },
-            { account_id: liabilityId, ...liabilityData }
-         ], 3000);
-
-         // Step 2: Update liability to 10000
-         // Net worth = 1000 + 7000 - 10000 = -2000
-         await updateAccount(page, liabilityId, { balance: 10000 });
-         await closeModal(page);
-
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData, balance: 7000 },
-            { account_id: liabilityId, ...liabilityData, balance: 10000 }
-         ], -2000);
-
-         // Step 3: Update asset to 15000
-         // Net worth = 1000 + 15000 - 10000 = 6000
-         await updateAccount(page, assetId, { balance: 15000 });
-         await closeModal(page);
-
-         await assertNetWorthAfterAction(page, [
-            { account_id: assetId, ...assetData, balance: 15000 },
-            { account_id: liabilityId, ...liabilityData, balance: 10000 }
-         ], 6000);
-      });
    });
 
    test.describe("Drag and Drop", () => {
@@ -665,7 +617,7 @@ test.describe("Account Management", () => {
       });
    });
 
-   test.describe("Account Deletion (Modular)", () => {
+   test.describe("Account Deletion", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
       });

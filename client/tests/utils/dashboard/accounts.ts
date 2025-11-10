@@ -524,8 +524,7 @@ export async function assertAndUnblockInvalidImageURL(
    page: Page,
    unblockMethod: "clear" | "default-image" | "valid-url"
 ): Promise<void> {
-   // Open the image form and fill an invalid URL
-   await openImageForm(page);
+   // Fill an invalid URL
    await page.getByTestId("account-image-url").fill("invalid-url");
 
    // Try to close the image form with Escape, which should be blocked due to invalid URL
