@@ -4,6 +4,7 @@ import { assertComponentVisibility } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends, dragAndDrop } from "@tests/utils/dashboard";
 import {
+   type AccountFormData,
    assertAccountCard,
    assertAccountCardsOrder,
    assertAccountDeleted,
@@ -24,9 +25,22 @@ import {
 } from "@tests/utils/dashboard/accounts";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
-import { type Account, IMAGES } from "capital/accounts";
+import { IMAGES } from "capital/accounts";
 
 test.describe("Account Management", () => {
+   /**
+    * Options for performing and asserting account operations
+    */
+   type PerformAccountActionOptions = {
+      page: Page;
+      accountData: AccountFormData;
+      expectedNetWorth: number;
+      accountId?: string;
+      baseAccount?: AccountFormData;
+      hasImageError?: boolean;
+      expectedErrors?: Record<string, string>;
+   };
+
    /**
     * Fixtures for reusable test data
     */
@@ -46,38 +60,36 @@ test.describe("Account Management", () => {
    } as const;
 
    /**
-    * Updates account fields and asserts changes on the UI
+    * Performs an account operation (create or update) and asserts account card, trends, and net worth
     *
-    * @param {Page} page - Playwright page instance
-    * @param {string} accountId - Account ID to update
-    * @param {Partial<Account>} updates - Fields to update
-    * @param {Partial<Account>} baseAccount - Base account to merge with updates
-    * @param {number} expectedNetWorth - Expected net worth to assert after update
+    * @param {PerformAccountActionOptions} options - Operation options
+    * @returns {Promise<string>} The created or updated account ID (empty string if validation errors expected)
     */
-   const updateAndAssertAccount = async(
-      page: Page,
-      accountId: string,
-      updates: Partial<Account>,
-      baseAccount: Partial<Account>,
-      expectedNetWorth: number
-   ): Promise<void> => {
-      await updateAccount(page, accountId, updates, undefined, true);
-      await assertNetWorth(page, [{ ...baseAccount, ...updates }], expectedNetWorth);
-   };
+   const performAndAssertAccountAction = async(options: PerformAccountActionOptions): Promise<string> => {
+      const { page, accountData, expectedNetWorth, accountId, baseAccount, hasImageError = false, expectedErrors } = options;
 
-   /**
-    * Creates an account and asserts the net worth calculation
-    *
-    * @param {Page} page - Playwright page instance
-    * @param {Partial<Account>} accountData - Account data to create
-    * @param {number} expectedNetWorth - Expected net worth to assert after creation
-    * @returns {Promise<string>} Created account ID
-    */
-   const createAndAssertNetWorth = async(page: Page, accountData: Partial<Account>, expectedNetWorth: number): Promise<string> => {
-      const accountId: string = await createAccount(page, accountData);
-      await assertNetWorth(page, [{ account_id: accountId, ...accountData }], expectedNetWorth);
+      const isUpdate = !!accountId && baseAccount;
 
-      return accountId;
+      let resultId: string;
+      let finalAccount: AccountFormData;
+
+      if (isUpdate) {
+         await updateAccount(page, accountId, accountData, expectedErrors, !expectedErrors);
+         finalAccount = { ...baseAccount, ...accountData };
+         resultId = accountId;
+      } else {
+         resultId = await createAccount(page, accountData, expectedErrors);
+         finalAccount = { account_id: resultId, ...accountData };
+      }
+
+      if (expectedErrors) {
+         return resultId;
+      }
+
+      await assertAccountCard(page, finalAccount, hasImageError);
+      await assertNetWorth(page, [finalAccount], expectedNetWorth);
+
+      return resultId;
    };
 
    /**
@@ -88,6 +100,7 @@ test.describe("Account Management", () => {
    const testImageValidationMethods = async(page: Page): Promise<void> => {
       for (const method of ["clear", "valid-url", "default-image"] as const) {
          await assertImageCarouselVisibility(page, true).catch(async() => {
+            // In the case of the image carousel being hidden, open it to avoid arrangment complexity in subsequent tests
             await openImageForm(page);
          });
 
@@ -108,9 +121,9 @@ test.describe("Account Management", () => {
 
       test("should display empty accounts state on accounts page", async({ page }) => {
          await assertAccountTrends(page, [], 0, "accounts-page");
-         await assertComponentVisibility(page, "accounts-empty-message", "No available accounts");
-         await assertComponentVisibility(page, "accounts-add-button", "Add Account");
          await expect(page.getByTestId("accounts-add-button")).toBeEnabled();
+         await assertComponentVisibility(page, "accounts-add-button", "Add Account");
+         await assertComponentVisibility(page, "accounts-empty-message", "No available accounts");
          await assertTransactionAccountDropdown(page, []);
       });
 
@@ -136,103 +149,95 @@ test.describe("Account Management", () => {
       });
 
       test("should successfully create account with all required fields", async({ page }) => {
-         const account: Partial<Account> = {
+         const account: AccountFormData = {
             name: "Test Checking Account",
             balance: 5000,
             type: "Checking"
          };
 
-         const accountId: string = await createAccount(page, account);
-         const newAccount: Partial<Account> = { account_id: accountId, ...account };
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 5000 });
+      });
 
-         await assertAccountCard(page, newAccount);
-         await assertAccountTrends(page, [newAccount], 5000, "accounts-page");
+      test("should create account with the default image from the carousel", async({ page }) => {
+         const account: AccountFormData = {
+            name: "Default Image Account",
+            balance: 3000,
+            type: "Savings",
+            image: 1
+         } as any;
+
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 3000 });
+      });
+
+      test("should create account with a custom image URL", async({ page }) => {
+         const account: AccountFormData = {
+            name: "Custom URL Account",
+            balance: 2000,
+            type: "Checking",
+            image: IMAGE_FIXTURES.valid,
+         };
+
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 2000 });
+      });
+
+      test("should create account with an invalid image URL and display error notification", async({ page }) => {
+         const account: AccountFormData = {
+            name: "Invalid Image Account",
+            balance: 1500,
+            type: "Savings",
+            image: IMAGE_FIXTURES.invalid
+         };
+
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 1500, hasImageError: true });
       });
 
       test("should validate name minimum length", async({ page }) => {
-         await createAccount(
+         await performAndAssertAccountAction({
             page,
-            { name: "", balance: 1000, type: "Checking" },
-            { "account-name": "Name must be at least 1 character" }
-         );
+            accountData: { name: "", balance: 1000, type: "Checking" },
+            expectedNetWorth: 0,
+            expectedErrors: { "account-name": "Name must be at least 1 character" }
+         });
       });
 
       test("should validate name maximum length", async({ page }) => {
-         await createAccount(
+         await performAndAssertAccountAction({
             page,
-            { name: "a".repeat(31), balance: 1000 },
-            { "account-name": "Name must be at most 30 characters" }
-         );
+            accountData: { name: "a".repeat(31), balance: 1000 },
+            expectedNetWorth: 0,
+            expectedErrors: { "account-name": "Name must be at most 30 characters" }
+         });
       });
 
       test("should validate empty balance field", async({ page }) => {
-         await createAccount(
+         await performAndAssertAccountAction({
             page,
-            { name: "Test Account" },
-            { "account-balance": "Balance is required" }
-         );
+            accountData: { name: "Test Account" },
+            expectedNetWorth: 0,
+            expectedErrors: { "account-balance": "Balance is required" }
+         });
       });
 
       test("should validate balance minimum value", async({ page }) => {
-         await createAccount(
+         await performAndAssertAccountAction({
             page,
-            { name: "Test Account", balance: -1_000_000_000_000 },
-            { "account-balance": "Balance is below the minimum allowed value" }
-         );
+            accountData: { name: "Test Account", balance: -1_000_000_000_000 },
+            expectedNetWorth: 0,
+            expectedErrors: { "account-balance": "Balance is below the minimum allowed value" }
+         });
       });
 
       test("should validate balance maximum value", async({ page }) => {
-         await createAccount(
+         await performAndAssertAccountAction({
             page,
-            { name: "Test Account", balance: 1_000_000_000_000 },
-            { "account-balance": "Balance exceeds the maximum allowed value" }
-         );
+            accountData: { name: "Test Account", balance: 1_000_000_000_000 },
+            expectedNetWorth: 0,
+            expectedErrors: { "account-balance": "Balance exceeds the maximum allowed value" }
+         });
       });
 
       test("should validate invalid image URL format", async({ page }) => {
          await testImageValidationMethods(page);
-      });
-
-      test("should create account with the default image from the carousel", async({ page }) => {
-         const account: Partial<Account> = {
-            name: "Default Image Account",
-            balance: 3000,
-            type: "Savings"
-         };
-
-         const accountId = await createAccount(page, { ...account, imageSelection: 0 });
-         const accountData: Partial<Account> = { account_id: accountId, ...account, image: "checking" };
-
-         await assertAccountCard(page, accountData);
-         await assertNetWorth(page, [accountData], 3000);
-      });
-
-      test("should create account with a custom image URL", async({ page }) => {
-         const account: Partial<Account> = {
-            name: "Custom URL Account",
-            balance: 2000,
-            type: "Checking"
-         };
-
-         const accountId = await createAccount(page, { ...account, imageSelection: IMAGE_FIXTURES.valid });
-         const accountData: Partial<Account> = { account_id: accountId, ...account, image: IMAGE_FIXTURES.valid };
-
-         await assertAccountCard(page, accountData);
-         await assertNetWorth(page, [accountData], 2000);
-      });
-
-      test("should create account with an invalid image URL and display error notification", async({ page }) => {
-         const account: Partial<Account> = {
-            name: "Invalid Image Account",
-            balance: 1500,
-            type: "Savings"
-         };
-
-         const accountId = await createAccount(page, { ...account, imageSelection: IMAGE_FIXTURES.invalid });
-         const accountData: Partial<Account> = { account_id: accountId, ...account, image: IMAGE_FIXTURES.invalid };
-
-         await assertAccountCard(page, accountData, undefined, true);
-         await assertNetWorth(page, [accountData], 1500);
       });
    });
 
@@ -284,20 +289,20 @@ test.describe("Account Management", () => {
       });
 
       test("should calculate net worth correctly for asset accounts (adds to total)", async({ page }) => {
-         const account: Partial<Account> = { name: "Checking Account", balance: 10000, type: "Checking" };
-         await createAndAssertNetWorth(page, account, 10000);
+         const account: AccountFormData = { name: "Checking Account", balance: 10000, type: "Checking" };
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 10000 });
       });
 
       test("should calculate net worth correctly for liability accounts (subtracts from total)", async({ page }) => {
-         const account: Partial<Account> = { name: "Credit Card", balance: 5000, type: "Credit Card" };
-         await createAndAssertNetWorth(page, account, -5000);
+         const account: AccountFormData = { name: "Credit Card", balance: 5000, type: "Credit Card" };
+         await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: -5000 });
       });
 
       test("should calculate net worth correctly with mixed asset and liability accounts", async({ page }) => {
          const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking);
          const creditCardId = await createAccount(page, ACCOUNT_FIXTURES.creditCard);
 
-         const accounts: Partial<Account>[] = [
+         const accounts: AccountFormData[] = [
             { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
             { account_id: creditCardId, ...ACCOUNT_FIXTURES.creditCard }
          ];
@@ -308,7 +313,7 @@ test.describe("Account Management", () => {
          const savingsId = await createAccount(page, ACCOUNT_FIXTURES.savings);
          const investmentId = await createAccount(page, ACCOUNT_FIXTURES.investment);
 
-         const accounts: Partial<Account>[] = [
+         const accounts: AccountFormData[] = [
             { account_id: savingsId, ...ACCOUNT_FIXTURES.savings },
             { account_id: investmentId, ...ACCOUNT_FIXTURES.investment }
          ];
@@ -319,7 +324,7 @@ test.describe("Account Management", () => {
          const debtId = await createAccount(page, ACCOUNT_FIXTURES.debt);
          const loanId = await createAccount(page, ACCOUNT_FIXTURES.loan);
 
-         const accounts: Partial<Account>[] = [
+         const accounts: AccountFormData[] = [
             { account_id: debtId, ...ACCOUNT_FIXTURES.debt },
             { account_id: loanId, ...ACCOUNT_FIXTURES.loan }
          ];
@@ -327,13 +332,13 @@ test.describe("Account Management", () => {
       });
 
       test("should calculate net worth correctly when asset and liability balance to zero", async({ page }) => {
-         const assetAccount: Partial<Account> = { name: "Checking", balance: 5000, type: "Checking" };
-         const liabilityAccount: Partial<Account> = { name: "Credit Card", balance: 5000, type: "Credit Card" };
+         const assetAccount: AccountFormData = { name: "Checking", balance: 5000, type: "Checking" };
+         const liabilityAccount: AccountFormData = { name: "Credit Card", balance: 5000, type: "Credit Card" };
 
          const assetId = await createAccount(page, assetAccount);
          const liabilityId = await createAccount(page, liabilityAccount);
 
-         const accounts: Partial<Account>[] = [
+         const accounts: AccountFormData[] = [
             { account_id: assetId, ...assetAccount },
             { account_id: liabilityId, ...liabilityAccount }
          ];
@@ -342,8 +347,8 @@ test.describe("Account Management", () => {
 
       test("should update asset and liability to balance to zero net worth", async({ page }) => {
          // Create asset and liability that balance
-         const assetData: Partial<Account> = { name: "Asset", balance: 5000, type: "Checking" };
-         const liabilityData: Partial<Account> = { name: "Liability", balance: 5000, type: "Credit Card" };
+         const assetData: AccountFormData = { name: "Asset", balance: 5000, type: "Checking" };
+         const liabilityData: AccountFormData = { name: "Liability", balance: 5000, type: "Credit Card" };
 
          const assetId = await createAccount(page, assetData);
          const liabilityId = await createAccount(page, liabilityData);
@@ -366,8 +371,8 @@ test.describe("Account Management", () => {
 
       test("should update liability balance and recalculate net worth correctly", async({ page }) => {
          // Start with asset and liability that balance to zero
-         const assetData: Partial<Account> = { name: "Checking", balance: 5000, type: "Checking" };
-         const liabilityData: Partial<Account> = { name: "Credit Card", balance: 5000, type: "Credit Card" };
+         const assetData: AccountFormData = { name: "Checking", balance: 5000, type: "Checking" };
+         const liabilityData: AccountFormData = { name: "Credit Card", balance: 5000, type: "Credit Card" };
 
          const assetId = await createAccount(page, assetData);
          const liabilityId = await createAccount(page, liabilityData);
@@ -390,8 +395,8 @@ test.describe("Account Management", () => {
 
       test("should handle multiple sequential updates affecting net worth", async({ page }) => {
          // Create initial asset and liability at zero
-         const assetData: Partial<Account> = { name: "Savings", balance: 5000, type: "Savings" };
-         const liabilityData: Partial<Account> = { name: "Debt", balance: 5000, type: "Debt" };
+         const assetData: AccountFormData = { name: "Savings", balance: 5000, type: "Savings" };
+         const liabilityData: AccountFormData = { name: "Debt", balance: 5000, type: "Debt" };
 
          const assetId = await createAccount(page, assetData);
          const liabilityId = await createAccount(page, liabilityData);
@@ -437,7 +442,7 @@ test.describe("Account Management", () => {
       });
 
       test("should show created accounts in transaction dropdown", async({ page }) => {
-         const account: Partial<Account> = {
+         const account: AccountFormData = {
             name: "Transaction Test Account",
             balance: 5000,
             type: "Checking"
@@ -447,12 +452,12 @@ test.describe("Account Management", () => {
 
          // Navigate to transactions or open transaction form
          // Assert dropdown contains the account
-         const accounts: Partial<Account>[] = [{ account_id: accountId, ...account }];
+         const accounts: AccountFormData[] = [{ account_id: accountId, ...account }];
          await assertTransactionAccountDropdown(page, accounts);
       });
 
       test("should auto-select account in transaction dropdown", async({ page }) => {
-         const account: Partial<Account> = {
+         const account: AccountFormData = {
             name: "Transaction Test Account",
             balance: 5000,
             type: "Checking"
@@ -465,40 +470,37 @@ test.describe("Account Management", () => {
 
    test.describe("Account Updates", () => {
       let accountId: string;
-      const baseAccount: Partial<Account> = { name: "Test Account", balance: 1000, type: "Checking" };
+      const baseAccount: AccountFormData = { name: "Test Account", balance: 1000, type: "Checking" };
 
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE);
-         // Clean up the baseAccount after each test
-         if (accountId && await page.getByTestId(`account-card-${accountId}`).isVisible()) {
-            await deleteAccount(page, accountId);
-         }
+         await deleteAllAccounts(page);
          accountId = await createAccount(page, baseAccount);
          baseAccount.account_id = accountId;
       });
 
       test("should update account name and assert on both pages", async({ page }) => {
-         await updateAndAssertAccount(page, accountId, { name: "Updated Name" }, baseAccount, 1000);
+         await performAndAssertAccountAction({ page, accountId, baseAccount, accountData: { name: "Updated Name" }, expectedNetWorth: 1000 });
       });
 
       test("should update account balance and assert recalculated net worth on both pages", async({ page }) => {
-         await updateAndAssertAccount(page, accountId, { balance: 5000 }, baseAccount, 5000);
+         await performAndAssertAccountAction({ page, accountId, baseAccount, accountData: { balance: 5000 }, expectedNetWorth: 5000 });
       });
 
       test("should update account type from asset to liability and assert recalculated net worth", async({ page }) => {
-         await updateAndAssertAccount(page, accountId, { type: "Credit Card" }, baseAccount, -1000);
+         await performAndAssertAccountAction({ page, accountId, baseAccount, accountData: { type: "Credit Card" }, expectedNetWorth: -1000 });
       });
 
       test("should update account with new image and assert persistence", async({ page }) => {
-         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.validAlt }, undefined, true);
-         const updatedAccount: Partial<Account> = { ...baseAccount, image: IMAGE_FIXTURES.validAlt };
+         await updateAccount(page, accountId, { image: IMAGE_FIXTURES.validAlt }, undefined, true);
+         const updatedAccount: AccountFormData = { ...baseAccount, image: IMAGE_FIXTURES.validAlt };
          await assertAccountCard(page, updatedAccount);
       });
 
       test("should update account from no image to invalid image URL and display error", async({ page }) => {
-         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.invalid }, undefined, true);
-         const updatedAccount: Partial<Account> = { ...baseAccount, image: IMAGE_FIXTURES.invalid };
-         await assertAccountCard(page, updatedAccount, undefined, true);
+         await updateAccount(page, accountId, { image: IMAGE_FIXTURES.invalid }, undefined, true);
+         const updatedAccount: AccountFormData = { ...baseAccount, image: IMAGE_FIXTURES.invalid };
+         await assertAccountCard(page, updatedAccount, true);
       });
 
       test("should keep modal open after update", async({ page }) => {
@@ -509,19 +511,47 @@ test.describe("Account Management", () => {
       });
 
       test("should validate empty name field on update", async({ page }) => {
-         await updateAccount(page, accountId, { name: "" }, { "account-name": "Name must be at least 1 character" });
+         await performAndAssertAccountAction({
+            page,
+            accountId,
+            baseAccount,
+            accountData: { name: "" },
+            expectedNetWorth: 1000,
+            expectedErrors: { "account-name": "Name must be at least 1 character" }
+         });
       });
 
       test("should validate name maximum length on update", async({ page }) => {
-         await updateAccount(page, accountId, { name: "a".repeat(31) }, { "account-name": "Name must be at most 30 characters" });
+         await performAndAssertAccountAction({
+            page,
+            accountId,
+            baseAccount,
+            accountData: { name: "a".repeat(31) },
+            expectedNetWorth: 1000,
+            expectedErrors: { "account-name": "Name must be at most 30 characters" }
+         });
       });
 
       test("should validate balance minimum value on update", async({ page }) => {
-         await updateAccount(page, accountId, { balance: -1_000_000_000_000 }, { "account-balance": "Balance is below the minimum allowed value" });
+         await performAndAssertAccountAction({
+            page,
+            accountId,
+            baseAccount,
+            accountData: { balance: -1_000_000_000_000 },
+            expectedNetWorth: 1000,
+            expectedErrors: { "account-balance": "Balance is below the minimum allowed value" }
+         });
       });
 
       test("should validate balance maximum value on update", async({ page }) => {
-         await updateAccount(page, accountId, { balance: 1_000_000_000_000 }, { "account-balance": "Balance exceeds the maximum allowed value" });
+         await performAndAssertAccountAction({
+            page,
+            accountId,
+            baseAccount,
+            accountData: { balance: 1_000_000_000_000 },
+            expectedNetWorth: 1000,
+            expectedErrors: { "account-balance": "Balance exceeds the maximum allowed value" }
+         });
       });
 
       test("should validate invalid image URL format on update", async({ page }) => {
@@ -536,8 +566,9 @@ test.describe("Account Management", () => {
       });
 
       test("should reorder accounts via drag and drop", async({ page }) => {
-         const account1: Partial<Account> = { name: "First", balance: 1000, type: "Checking" };
-         const account2: Partial<Account> = { name: "Second", balance: 2000, type: "Savings" };
+         // Simple drag and drop for two side-by-side accounts
+         const account1: AccountFormData = { name: "First", balance: 1000, type: "Checking" };
+         const account2: AccountFormData = { name: "Second", balance: 2000, type: "Savings" };
 
          const accountId1 = await createAccount(page, account1);
          const accountId2 = await createAccount(page, account2);
@@ -557,6 +588,17 @@ test.describe("Account Management", () => {
          await page.reload();
          await page.waitForTimeout(1000);
          await assertAccountCardsOrder(page, [accountId2, accountId1]);
+
+         // Add another account and drag and drop from last to first position
+         const account3: AccountFormData = { name: "Third", balance: 3000, type: "Investment" };
+         const accountId3 = await createAccount(page, account3);
+         await assertAccountCardsOrder(page, [accountId2, accountId1, accountId3]);
+
+         const dragHandle3 = page.getByTestId(`account-card-drag-${accountId3}`);
+         await expect(dragHandle3).toBeVisible();
+         await dragAndDrop(page, dragHandle3, card2);
+
+         await assertAccountCardsOrder(page, [accountId3, accountId2, accountId1]);
       });
    });
 
@@ -566,7 +608,7 @@ test.describe("Account Management", () => {
       });
 
       test("should show confirmation dialog on delete attempt", async({ page }) => {
-         const account: Partial<Account> = {
+         const account: AccountFormData = {
             name: "Delete Test",
             balance: 1000,
             type: "Checking"
@@ -592,7 +634,7 @@ test.describe("Account Management", () => {
       });
 
       test("should delete account and update net worth on both pages", async({ page }) => {
-         const account: Partial<Account> = {
+         const account: AccountFormData = {
             name: "To Delete",
             balance: 5000,
             type: "Checking"

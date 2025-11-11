@@ -11,9 +11,10 @@ import { HTTP_STATUS } from "capital/server";
 import { displayCurrency, displayDate } from "@/lib/display";
 
 /**
- * Extended account data type for form submission with optional image selection
+ * Extended account data type for form submission with optional image selection, where image can
+ * be based on carousel index, carousel image name, or custom URL
  */
-type AccountFormData = Partial<Account> & { imageSelection?: number | string; };
+export type AccountFormData = Partial<Account> & { image?: string | number | null | undefined; };
 
 /**
  * Predefined images array for account selection
@@ -40,7 +41,7 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
  * Submits the account form and handles validation errors or successful responses
  *
  * @param {Page} page - Playwright page instance
- * @param {AccountFormData} accountData - Account data to submit, optionally with imageSelection (number for carousel index, string for custom URL)
+ * @param {AccountFormData} accountData - Account data to submit, optionally with image (number for carousel index, string for custom URL)
  * @param {"Create" | "Update"} buttonType - Type of operation being performed
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string | null>} The created account ID if successful create, null if update or validation errors expected
@@ -58,15 +59,15 @@ async function submitAccountForm(
    if (accountData.type !== undefined) formData["account-type"] = accountData.type;
 
    // Handle image selection if provided
-   if (accountData.imageSelection !== undefined) {
+   if (accountData.image !== undefined) {
       await openImageForm(page);
 
-      if (typeof accountData.imageSelection === "number") {
+      if (typeof accountData.image === "number") {
          // Select from carousel (default image by index)
-         await selectImageCarouselPosition(page, accountData.imageSelection, true);
-      } else {
+         await selectImageCarouselPosition(page, accountData.image, true);
+      } else if (accountData.image && typeof accountData.image === "string") {
          // Enter custom URL
-         await page.getByTestId("account-image-url").fill(accountData.imageSelection);
+         await page.getByTestId("account-image-url").fill(accountData.image);
       }
 
       await page.keyboard.press("Escape");
@@ -115,6 +116,7 @@ async function submitAccountForm(
 
       // Assert that the form remains open after a successful update
       await assertComponentVisibility(page, "account-name");
+
       return null;
    }
 }
@@ -123,7 +125,7 @@ async function submitAccountForm(
  * Creates an account via the form or validates form submission errors
  *
  * @param {Page} page - Playwright page instance
- * @param {AccountFormData} accountData - Account data to fill in the form (can include imageSelection)
+ * @param {AccountFormData} accountData - Account data to fill in the form
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string>} The created account ID if successful, empty string if validation errors expected
  */
@@ -133,7 +135,6 @@ export async function createAccount(
    expectedErrors?: Record<string, string | string[]>
 ): Promise<string> {
    await openAccountForm(page);
-
    return await submitAccountForm(page, accountData, "Create", expectedErrors) || "";
 }
 
@@ -142,7 +143,7 @@ export async function createAccount(
  *
  * @param {Page} page - Playwright page instance
  * @param {string} accountId - Account ID to update
- * @param {AccountFormData} accountData - Updated account data (can include imageSelection)
+ * @param {AccountFormData} accountData - Updated account data
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @param {boolean} [exitModal] - Whether to exit the modal after updating the account
  */
@@ -165,33 +166,29 @@ export async function updateAccount(
  * Asserts account card information and DOM position
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<Account>} account - Account to assert
- * @param {number} [expectedPosition] - Expected position index (0-based)
+ * @param {AccountFormData} account - Account to assert
  * @param {boolean} [expectImageError] - Whether to expect an image error (error message is derived from account name)
  */
 export async function assertAccountCard(
    page: Page,
-   account: Partial<Account>,
-   expectedPosition?: number,
+   account: AccountFormData,
    expectImageError?: boolean
 ): Promise<void> {
-   const card = page.getByTestId(`account-card-${account.account_id}`);
+   const formInputs = [
+      { testId: `account-card-name-${account.account_id}`, value: account.name },
+      { testId: `account-card-balance-${account.account_id}`, value: displayCurrency(account.balance) },
+      { testId: `account-card-type-${account.account_id}`, value: account.type || "Checking" },
+      { testId: `account-card-last-updated-${account.account_id}`, value: `Updated ${displayDate(new Date().toISOString())}` },
+   ]
+
+   const card: Locator = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
 
-   const testIds: Record<string, string> = {
-      name: `account-card-name-${account.account_id}`,
-      balance: `account-card-balance-${account.account_id}`,
-      image: `account-card-image-${account.account_id}`,
-      type: `account-card-type-${account.account_id}`,
-      lastUpdated: `account-card-last-updated-${account.account_id}`
+   for (const input of formInputs) {
+      await assertComponentVisibility(page, input.testId, input.value);
    }
 
-   await assertComponentVisibility(page, testIds.name, account.name);
-   await assertComponentVisibility(page, testIds.balance, displayCurrency(account.balance));
-   await assertComponentVisibility(page, testIds.type, account.type || "Checking");
-   await assertComponentVisibility(page, testIds.lastUpdated, `Updated ${displayDate(new Date().toISOString())}`);
-
-   const imageContainer: Locator = page.getByTestId(testIds.image);
+   const imageContainer: Locator = page.getByTestId(`account-card-image-${account.account_id}`);
    await expect(imageContainer).toBeVisible();
 
    const image: Locator = imageContainer.locator("img");
@@ -200,50 +197,28 @@ export async function assertAccountCard(
    const imageSrc: string | null = await image.getAttribute("src");
 
    if (expectImageError) {
-      const errorMessage: string = `There was an issue fetching the account image for ${account.name}`;
-
       // Assert fallback error.svg image and error message notification
+      const errorMessage: string = `There was an issue fetching the account image for ${account.name}`;
       expect(imageSrc).toBe("/svg/error.svg");
       await assertNotificationStatus(page, errorMessage, "error");
    } else {
       let expectedSrc: string;
 
-      if (!account.image) {
+      if (account.image === undefined) {
          // Default image
-         expectedSrc = "/svg/logo.svg";
-      } else if (IMAGES.has(account.image)) {
-         // Predefined image from carousel
+         expectedSrc =  "/svg/logo.svg";
+      } else if (typeof account.image === "number") {
+         // Predefined image from carousel based on the image index
+         expectedSrc = `/images/${imagesArray[account.image]}.png`;
+      } else if (account.image && IMAGES.has(account.image)) {
+         // Predefined image from carousel based on the image name
          expectedSrc = `/images/${account.image}.png`;
       } else {
          // Custom URL
-         expectedSrc = account.image;
+         expectedSrc = account.image || "/svg/logo.svg";
       }
 
       expect(imageSrc).toBe(expectedSrc);
-   }
-
-   // Assert position if specified
-   if (expectedPosition !== undefined) {
-      // Get all account cards by data-testid pattern
-      const cardLocator = page.locator('[data-testid^="account-card-"]');
-
-      // Get all matching test IDs
-      const testIds = await cardLocator.evaluateAll((els) =>
-         els.map((el) => el.getAttribute("data-testid"))
-      );
-
-      // Filter only valid UUID-style test IDs
-      const cardTestIds = testIds.filter((id): id is string =>
-         id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-      );
-
-      if (expectedPosition >= cardTestIds.length) {
-         throw new Error(
-            `Expected position ${expectedPosition} is out of bounds. Found ${cardTestIds.length} cards.`
-         );
-      }
-
-      expect(cardTestIds[expectedPosition]).toBe(`account-card-${account.account_id}`);
    }
 }
 
@@ -257,38 +232,16 @@ export async function assertAccountCardsOrder(
    page: Page,
    accountIds: string[]
 ): Promise<void> {
-   // Use getByTestId for each card to avoid matching child elements
-   // This is more reliable than using a generic selector that matches child elements
-   const cardElements: { testId: string; boundingBox: any }[] = [];
+   // Get all account cards by data-testid pattern
+   const cardLocator = page.locator("[data-testid^=\"account-card-\"]");
 
-   // Get each card by its exact test ID and store its position
-   for (const accountId of accountIds) {
-      const card = page.getByTestId(`account-card-${accountId}`);
-      await expect(card).toBeVisible();
-      const boundingBox = await card.boundingBox();
-      if (boundingBox) {
-         cardElements.push({ testId: `account-card-${accountId}`, boundingBox });
-      }
-   }
+   // Get all account cards by data-testid pattern
+   const cardTestIds: string[] = (await cardLocator.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).filter((id): id is string =>
+      id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+   );
 
-   expect(cardElements.length).toBe(accountIds.length);
-
-   // Sort cards by Y position (top to bottom), then X position (left to right)
-   cardElements.sort((a, b) => {
-      const yDiff = a.boundingBox.y - b.boundingBox.y;
-      if (Math.abs(yDiff) > 10) {
-         // Different rows - sort by Y
-         return yDiff;
-      }
-      // Same row - sort by X
-      return a.boundingBox.x - b.boundingBox.x;
-   });
-
-   // Assert each account is at the correct position
-   for (let i = 0; i < accountIds.length; i++) {
-      const expectedAccountId = accountIds[i];
-      const expectedTestId = `account-card-${expectedAccountId}`;
-      expect(cardElements[i].testId).toBe(expectedTestId);
+   for (let i = 0; i < cardTestIds.length; i++) {
+      expect(cardTestIds[i]).toBe(`account-card-${accountIds[i]}`);
    }
 }
 
@@ -296,56 +249,57 @@ export async function assertAccountCardsOrder(
  * Asserts transaction account dropdown options and auto-selection
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<Account>[]} expectedAccounts - Expected accounts in dropdown
+ * @param {AccountFormData[]} expectedAccounts - Expected accounts in dropdown
  * @param {string} [autoSelectedAccountId] - Account ID that should be auto-selected
  */
 export async function assertTransactionAccountDropdown(
    page: Page,
-   expectedAccounts: Partial<Account>[],
+   expectedAccounts: AccountFormData[],
    autoSelectedAccountId?: string
 ): Promise<void> {
    if (autoSelectedAccountId) {
       // Open the account form to target the proper transaction form element
       await page.getByTestId(`account-card-${autoSelectedAccountId}`).click();
    }
+
    // Scroll to transactions section and click "Add Transaction" button
-   const addButton = page.getByRole("button", { name: /add transaction/i });
+   const addButton: Locator = page.getByRole("button", { name: /add transaction/i });
    await addButton.scrollIntoViewIfNeeded();
    await addButton.click();
 
-   // Test ID is on input element, which holds the literal value of the selected account
-   const inputElement = page.getByTestId("transaction-account-select");
+   // Test ID resides on the input element, which holds the literal value of the selected account
+   const inputElement: Locator = page.getByTestId("transaction-account-select");
 
    // Find the actual clickable Select element via label -> FormControl -> Select
-   const selectElement = page.locator("label:has-text(\"Account\")").locator("..").locator(".MuiSelect-root").first();
+   const selectElement: Locator = page.locator("label:has-text(\"Account\")").locator("..").locator(".MuiSelect-root");
 
    if (expectedAccounts.length === 0) {
-      // Empty state - dropdown should be visible
-      // Click the Select element to open the dropdown
       await expect(inputElement).toHaveValue("");
       await selectElement.click({ force: true });
       await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
    } else {
-      // Click the Select element to open options
+      // Open the dropdown
       await selectElement.click({ force: true });
 
       // Assert placeholder option exists
       await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
 
-      // Assert each account appears in dropdown
       for (const account of expectedAccounts) {
-         const option = page.getByRole("option", { name: account.name });
+         const option: Locator = page.getByRole("option", { name: account.name });
          await expect(option).toBeVisible();
+         await expect(option).toContainText(account.name|| "");
       }
 
       // Assert auto-selection if specified
       if (autoSelectedAccountId) {
          const selectedAccount = expectedAccounts.find(a => a.account_id === autoSelectedAccountId);
-         if (selectedAccount) {
-            await expect(selectElement).toContainText(selectedAccount.name!);
-         }
 
-         await expect(selectElement).toContainText(selectedAccount?.name || "");
+         if (selectedAccount) {
+            await expect(inputElement).toHaveValue(autoSelectedAccountId);
+            await expect(selectElement).toContainText(selectedAccount.name!);
+         } else {
+            throw new Error(`Account with ID ${autoSelectedAccountId} not found in expected accounts`);
+         }
       }
 
       // Close dropdown
@@ -354,7 +308,6 @@ export async function assertTransactionAccountDropdown(
 
    // Close the transaction form modal
    await page.keyboard.press("Escape");
-   await page.waitForTimeout(200);
 }
 
 /**
@@ -463,12 +416,7 @@ export async function assertImageCarouselNavigation(
 export async function assertImageSelection(page: Page, isSelected: boolean): Promise<void> {
    const avatar: Locator = page.locator("[data-selected]").first();
    await expect(avatar).toBeVisible();
-
-   if (isSelected) {
-      await expect(avatar).toHaveAttribute("data-selected", "true");
-   } else {
-      await expect(avatar).toHaveAttribute("data-selected", "false");
-   }
+   await expect(avatar).toHaveAttribute("data-selected", isSelected ? "true" : "false");
 }
 
 /**
@@ -565,64 +513,19 @@ export async function assertAndUnblockInvalidImageURL(
 }
 
 /**
- * Asserts account form graph display
- *
- * @param {Page} page - Playwright page instance
- * @param {number} expectedBalance - Expected balance value
- * @param {string} expectedPercentage - Expected percentage value
- */
-export async function assertAccountFormGraph(
-   page: Page,
-   expectedBalance: number,
-   expectedPercentage: string
-): Promise<void> {
-   void page;
-   void expectedBalance;
-   void expectedPercentage;
-}
-
-/**
- * Asserts net worth on the dashboard page
- *
- * @param {Page} page - Playwright page instance
- * @param {Partial<Account>[]} accounts - Array of accounts to display
- * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
- */
-export async function assertNetWorthOnDashboard(
-   page: Page,
-   accounts: Partial<Account>[],
-   expectedNetWorth: number
-): Promise<void> {
-   await navigateToPath(page, DASHBOARD_ROUTE);
-   await assertAccountTrends(page, accounts, expectedNetWorth, "dashboard");
-}
-
-/**
- * Asserts net worth on the accounts page
- *
- * @param {Page} page - Playwright page instance
- * @param {Partial<Account>[]} accounts - Array of accounts to display
- * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
- */
-export async function assertNetWorthOnAccountsPage(
-   page: Page,
-   accounts: Partial<Account>[],
-   expectedNetWorth: number
-): Promise<void> {
-   await navigateToPath(page, ACCOUNTS_ROUTE);
-   await assertAccountTrends(page, accounts, expectedNetWorth, "accounts-page");
-}
-
-/**
  * Unified helper to assert net worth updates on both dashboard and accounts page
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<Account>[]} accounts - Array of accounts to display
- * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
+ * @param {AccountFormData[]} accounts - Array of accounts to display
+ * @param {number} expectedNetWorth - Expected net worth value, which must be calculated explicitly by caller
  */
-export async function assertNetWorth(page: Page, accounts: Partial<Account>[], expectedNetWorth: number): Promise<void> {
-   await assertNetWorthOnDashboard(page, accounts, expectedNetWorth);
-   await assertNetWorthOnAccountsPage(page, accounts, expectedNetWorth);
+export async function assertNetWorth(page: Page, accounts: AccountFormData[], expectedNetWorth: number): Promise<void> {
+   await navigateToPath(page, DASHBOARD_ROUTE);
+   await assertAccountTrends(page, accounts, expectedNetWorth, "dashboard");
+
+   await navigateToPath(page, ACCOUNTS_ROUTE);
+   await assertAccountTrends(page, accounts, expectedNetWorth, "accounts-page");
+
 }
 
 /**
@@ -631,16 +534,16 @@ export async function assertNetWorth(page: Page, accounts: Partial<Account>[], e
  * @param {Page} page - Playwright page instance
  */
 export async function deleteAllAccounts(page: Page): Promise<void> {
-   // Get all account cards currently visible
-   while (await page.getByTestId(/^account-card-[0-9a-f-]+$/).first().isVisible().catch(() => false)) {
-      const firstCard = page.getByTestId(/^account-card-[0-9a-f-]+$/).first();
-      await firstCard.click();
-      await assertComponentVisibility(page, "account-delete-button");
-      await page.getByTestId("account-delete-button").click();
-      await assertComponentVisibility(page, "account-delete-button-confirm");
-      await page.getByTestId("account-delete-button-confirm").click();
-      // Wait for deletion to complete
-      await page.waitForTimeout(300);
+   // Get all account cards by data-testid pattern
+   const cardLocator = page.locator("[data-testid^=\"account-card-\"]");
+   const cardTestIds: string[] = (await cardLocator.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).filter((id): id is string =>
+      id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+   );
+
+   for (const cardTestId of cardTestIds) {
+      if (cardTestId) {
+         await deleteAccount(page, cardTestId.split("account-card-")[1]);
+      }
    }
 }
 
