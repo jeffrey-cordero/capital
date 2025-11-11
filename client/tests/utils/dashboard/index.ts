@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { LIABILITIES, type Account } from "capital/accounts";
+import { type Account, LIABILITIES } from "capital/accounts";
 
 import { displayCurrency } from "@/lib/display";
 import { brand, red } from "@/styles/mui/colors";
@@ -50,10 +50,10 @@ export async function assertAccountTrends(
             const bar: Locator = page.locator(`[data-testid="accounts-${account.account_id}-bar-${i}"]`);
             const value: string | null = await bar.getAttribute("data-bar-chart-value");
 
-            const expectedValue = i > currentMonth - 1 ? "null" : account.balance.toString();
+            const expectedValue: string = i > currentMonth - 1 ? "null" : account.balance.toString();
             expect(value).toBe(expectedValue);
 
-            const expectedColor = LIABILITIES.has(account.type!) ? red[400] : brand[400];
+            const expectedColor: string = LIABILITIES.has(account.type!) ? red[400] : brand[400];
             await expect(bar).toHaveAttribute("data-bar-chart-color", expectedColor);
          }
       }
@@ -72,18 +72,25 @@ export async function dragAndDrop(
    dragHandle: Locator,
    dropTarget: Locator
 ): Promise<void> {
+   // Scroll the drag handle into view and hover over it to ensure it's visible
    await dragHandle.scrollIntoViewIfNeeded();
    await dragHandle.hover();
 
+   // Get the bounding boxes of the drag handle and drop target elements
    const handleBox = await dragHandle.boundingBox();
    const targetBox = await dropTarget.boundingBox();
-   if (!handleBox || !targetBox) throw new Error("Bounding box missing");
 
+   if (!handleBox || !targetBox) {
+      throw new Error("Bounding box missing");
+   }
+
+   // Determine the starting and ending coordinates for the drag and drop operation
    const startX = handleBox.x + handleBox.width / 2;
    const startY = handleBox.y + handleBox.height / 2;
    const endX = targetBox.x + targetBox.width / 2;
    const endY = targetBox.y + targetBox.height / 2;
 
+   // Perform the drag and drop operation by mimicking a mouse click and drag
    await page.mouse.move(startX, startY);
    await page.mouse.down();
    await page.waitForTimeout(150);

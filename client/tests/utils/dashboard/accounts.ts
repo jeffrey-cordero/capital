@@ -8,7 +8,7 @@ import { assertNotificationStatus } from "@tests/utils/notifications";
 import { type Account, IMAGES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 
-import { displayCurrency } from "@/lib/display";
+import { displayCurrency, displayDate } from "@/lib/display";
 
 /**
  * Extended account data type for form submission with optional image selection
@@ -178,36 +178,38 @@ export async function assertAccountCard(
    const card = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
 
-   // Assert card content
-   await expect(page.getByTestId(`account-card-name-${account.account_id}`)).toHaveText(account.name || "");
-   await expect(page.getByTestId(`account-card-balance-${account.account_id}`)).toHaveText(displayCurrency(account.balance || 0));
+   const testIds: Record<string, string> = {
+      name: `account-card-name-${account.account_id}`,
+      balance: `account-card-balance-${account.account_id}`,
+      image: `account-card-image-${account.account_id}`,
+      type: `account-card-type-${account.account_id}`,
+      lastUpdated: `account-card-last-updated-${account.account_id}`
+   }
+
+   await assertComponentVisibility(page, testIds.name, account.name);
+   await assertComponentVisibility(page, testIds.balance, displayCurrency(account.balance));
+   await assertComponentVisibility(page, testIds.type, account.type || "Checking");
+   await assertComponentVisibility(page, testIds.lastUpdated, `Updated ${displayDate(new Date().toISOString())}`);
+
+   const imageContainer: Locator = page.getByTestId(testIds.image);
+   await expect(imageContainer).toBeVisible();
+
+   const image: Locator = imageContainer.locator("img");
+   await expect(image).toBeVisible();
+
+   const imageSrc: string | null = await image.getAttribute("src");
 
    if (expectImageError) {
-      // Construct error message from account name
-      const errorMessage = `There was an issue fetching the account image for ${account.name}`;
+      const errorMessage: string = `There was an issue fetching the account image for ${account.name}`;
 
-      // Assert error state: fallback error.svg image + error notification
-      const imageContainer = page.getByTestId(`account-card-image-${account.account_id}`);
-      await expect(imageContainer).toBeVisible();
-
-      // Assert error image is displayed (error.svg when image fails to load)
-      const image: Locator = imageContainer.locator("img");
-      await expect(image).toBeVisible();
-      const imageSrc: string | null = await image.getAttribute("src");
+      // Assert fallback error.svg image and error message notification
       expect(imageSrc).toBe("/svg/error.svg");
-
-      // Assert error notification in the notification system
       await assertNotificationStatus(page, errorMessage, "error");
    } else {
-      // Assert normal image
-      const image: Locator = page.getByTestId(`account-card-image-${account.account_id}`).locator("img");
-      await expect(image).toBeVisible();
-      const imageSrc: string | null = await image.getAttribute("src");
-
-      // Determine expected source: predefined image or custom URL
       let expectedSrc: string;
 
       if (!account.image) {
+         // Default image
          expectedSrc = "/svg/logo.svg";
       } else if (IMAGES.has(account.image)) {
          // Predefined image from carousel
@@ -216,11 +218,9 @@ export async function assertAccountCard(
          // Custom URL
          expectedSrc = account.image;
       }
+
       expect(imageSrc).toBe(expectedSrc);
    }
-
-   // Default account type is "Checking"
-   await expect(page.getByTestId(`account-card-type-${account.account_id}`)).toHaveText(account.type || "Checking");
 
    // Assert position if specified
    if (expectedPosition !== undefined) {

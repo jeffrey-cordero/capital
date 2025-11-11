@@ -160,20 +160,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                   color = "primary"
                   data-testid = { `account-card-drag-${account.account_id}` }
                   size = "small"
-                  sx = {
- {
-    bottom: "75px",
-    right: "15px",
-    position: "absolute",
-    cursor: "grab",
-    touchAction: "none",
-    zIndex: 10,
-    pointerEvents: "auto",
-    "&:active": {
-       cursor: "grabbing"
-    }
- }
-}
+                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none", zIndex: 10, pointerEvents: "auto", "&:active": { cursor: "grabbing" } } }
                   { ...attributes }
                   { ...listeners }
                >
@@ -205,6 +192,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                         { account.type }
                      </Typography>
                      <Typography
+                        data-testid = { `account-card-last-updated-${account.account_id}` }
                         sx = { { ...horizontalScroll(theme), maxWidth: "100%" } }
                         variant = "caption"
                      >
