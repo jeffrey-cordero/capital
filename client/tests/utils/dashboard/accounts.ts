@@ -224,27 +224,26 @@ export async function assertAccountCard(
 
    // Assert position if specified
    if (expectedPosition !== undefined) {
-      // Get all card containers by their exact test IDs
-      const allElements = await page.locator("#accounts div").all();
-      const cardContainers: { element: any; index: number }[] = [];
+      // Get all account cards by data-testid pattern
+      const cardLocator = page.locator('[data-testid^="account-card-"]');
 
-      for (let i = 0; i < allElements.length; i++) {
-         const element = allElements[i];
-         const testId = await element.getAttribute("data-testid");
+      // Get all matching test IDs
+      const testIds = await cardLocator.evaluateAll((els) =>
+         els.map((el) => el.getAttribute("data-testid"))
+      );
 
-         // Only match exact "account-card-{uuid}" pattern
-         if (testId && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testId)) {
-            cardContainers.push({ element, index: cardContainers.length });
-         }
+      // Filter only valid UUID-style test IDs
+      const cardTestIds = testIds.filter((id): id is string =>
+         id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+      );
+
+      if (expectedPosition >= cardTestIds.length) {
+         throw new Error(
+            `Expected position ${expectedPosition} is out of bounds. Found ${cardTestIds.length} cards.`
+         );
       }
 
-      if (expectedPosition < cardContainers.length) {
-         const cardAtPosition = cardContainers[expectedPosition].element;
-         const testId = await cardAtPosition.getAttribute("data-testid");
-         expect(testId).toBe(`account-card-${account.account_id}`);
-      } else {
-         throw new Error(`Expected position ${expectedPosition} is out of bounds. Found ${cardContainers.length} cards.`);
-      }
+      expect(cardTestIds[expectedPosition]).toBe(`account-card-${account.account_id}`);
    }
 }
 
