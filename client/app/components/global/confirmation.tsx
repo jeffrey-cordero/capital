@@ -61,9 +61,9 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                <Button
                   className = "btn-primary"
                   color = { color || "error" }
+                  data-testid = { dataTestId }
                   fullWidth = { true }
                   loading = { isSubmitting }
-                  data-testid = { dataTestId }
                   onClick = { openDialog }
                   startIcon = { <FontAwesomeIcon icon = { startIcon || faTrashCan } /> }
                   type = "button"

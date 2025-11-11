@@ -12,7 +12,13 @@ import {
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { type Account, LIABILITIES } from "capital/accounts";
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState
+} from "react";
 import { useSelector } from "react-redux";
 
 import ChartContainer from "@/components/global/chart-container";
@@ -276,6 +282,23 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          }
       </ChartContainer>
    ), [colorPalette, isCard, type, yearAbbreviations, series, height]);
+
+   useEffect(() => {
+      const timeout = setTimeout(() => {
+         series.forEach((value) => {
+            const id: string = value.id;
+            const bars: NodeListOf<SVGRectElement> = document.querySelectorAll(`.MuiBarElement-series-${id}`);
+
+            bars.forEach((barEl: SVGRectElement, barIndex: number) => {
+               barEl.setAttribute("data-testid", `${type}-${id}-bar-${barIndex}`);
+               barEl.setAttribute("data-bar-chart-color", value.color);
+               barEl.setAttribute("data-bar-chart-value", value.data[barIndex]?.toString() || "null");
+            });
+         });
+      }, 0); // Execute after next tick to ensure the DOM is fully rendered
+
+      return () => clearTimeout(timeout);
+   }, [series, type]);
 
    return (
       <Box sx = { { position: "relative" } }>

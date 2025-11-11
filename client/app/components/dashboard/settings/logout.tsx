@@ -24,8 +24,8 @@ export default function Logout(): React.ReactNode {
    return (
       <Box sx = { { width: "100%" } }>
          <Confirmation
-            dataTestId = "settings-logout"
             color = "warning"
+            dataTestId = "settings-logout"
             message = "Are you sure you want to logout?"
             onConfirmation = { onSubmit }
             startIcon = { faRightFromBracket }

@@ -1,7 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { type Account } from "capital/accounts";
+import { LIABILITIES, type Account } from "capital/accounts";
 
 import { displayCurrency } from "@/lib/display";
+import { brand, red } from "@/styles/mui/colors";
 
 /**
  * Asserts account trends including net worth, bar count, bar colors, and bar positions
@@ -17,41 +18,45 @@ export async function assertAccountTrends(
    expectedNetWorth: number,
    location: "dashboard" | "accounts-page"
 ): Promise<void> {
+   const barChartValues: Locator = page.locator("[data-bar-chart-value]");
    const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
    const expectedFormattedNetWorth: string = displayCurrency(expectedNetWorth);
 
    if (accounts.length === 0) {
-      // No accounts exist - assert empty state
+      await expect(barChartValues).toHaveCount(0);
+
       if (location === "dashboard") {
-         // On dashboard, trends component is always rendered
          await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
          await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
-
-         // Assert no bars in chart (chart should not be visible or have no bars)
-         const chartBars = page.locator(".MuiBarElement-root");
-         await expect(chartBars).toHaveCount(0);
       } else {
-         // On accounts page, trends component is only rendered when accounts.length > 0
-         // So when empty, the element won't exist - just assert empty accounts message
-         await expect(page.getByTestId("accounts-empty-message")).toBeVisible();
-         // Assert the trends component is not rendered
          await expect(netWorthElement).not.toBeVisible();
+         await expect(page.getByTestId("accounts-empty-message")).toBeVisible();
+         await expect(page.getByTestId("accounts-empty-message")).toHaveText("No available accounts");
       }
    } else {
-      // Accounts exist - assert net worth, bar count, colors, and positions
-      // Wait for the net worth element to be visible (trends component renders when accounts exist)
-      await netWorthElement.waitFor({ state: "visible" });
+      // There should be 12 bars for each account
+      const currentMonth = new Date().getMonth() + 1;
+      await expect(barChartValues).toHaveCount(12 * accounts.length);
 
       // Assert net worth matches expected value
       await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
 
-      // Assert chart has bars (each account has 12 bars for 12 months, so total bars = accounts.length * 12)
-      // Wait for bars to appear
-      const chartBars = page.locator(".MuiBarElement-root");
-      await chartBars.first().waitFor({ state: "visible" });
-      const barCount = await chartBars.count();
-      // Each account series has 12 bars (one per month), so assert we have at least accounts.length bars
-      expect(barCount).toBeGreaterThanOrEqual(accounts.length);
+      for (const account of accounts) {
+         const bars = page.locator(`.MuiBarElement-series-${account.account_id}`);
+         await expect(bars).toHaveCount(12);
+
+         for (let i = 0; i < 12; i++) {
+            // Assert the account balance matches the expected value and color relative to the account type
+            const bar: Locator = page.locator(`[data-testid="accounts-${account.account_id}-bar-${i}"]`);
+            const value: string | null = await bar.getAttribute("data-bar-chart-value");
+
+            const expectedValue = i > currentMonth - 1 ? "null" : account.balance.toString();
+            expect(value).toBe(expectedValue);
+
+            const expectedColor = LIABILITIES.has(account.type!) ? red[400] : brand[400];
+            await expect(bar).toHaveAttribute("data-bar-chart-color", expectedColor);
+         }
+      }
    }
 }
 

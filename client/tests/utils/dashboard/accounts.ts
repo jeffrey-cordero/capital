@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
-import { assertComponentVisibility, assertModalClosed } from "@tests/utils";
+import { assertComponentVisibility, assertModalClosed, closeModal } from "@tests/utils";
+import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -8,6 +9,11 @@ import { type Account, IMAGES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 
 import { displayCurrency } from "@/lib/display";
+
+/**
+ * Extended account data type for form submission with optional image selection
+ */
+type AccountFormData = Partial<Account> & { imageSelection?: number | string; };
 
 /**
  * Predefined images array for account selection
@@ -29,13 +35,6 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
 
    await assertComponentVisibility(page, "account-name");
 }
-
-/**
- * Extended account data type for form submission with optional image selection
- */
-type AccountFormData = Partial<Account> & {
-   imageSelection?: number | string;
-};
 
 /**
  * Submits the account form and handles validation errors or successful responses
@@ -145,15 +144,21 @@ export async function createAccount(
  * @param {string} accountId - Account ID to update
  * @param {AccountFormData} accountData - Updated account data (can include imageSelection)
  * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @param {boolean} [exitModal] - Whether to exit the modal after updating the account
  */
 export async function updateAccount(
    page: Page,
    accountId: string,
    accountData: AccountFormData,
-   expectedErrors?: Record<string, string | string[]>
+   expectedErrors?: Record<string, string | string[]>,
+   exitModal?: boolean
 ): Promise<void> {
    await openAccountForm(page, accountId);
    await submitAccountForm(page, accountData, "Update", expectedErrors);
+
+   if (exitModal) {
+      await closeModal(page);
+   }
 }
 
 /**
@@ -201,9 +206,10 @@ export async function assertAccountCard(
 
       // Determine expected source: predefined image or custom URL
       let expectedSrc: string;
+
       if (!account.image) {
          expectedSrc = "/svg/logo.svg";
-      } else if (imagesArray.includes(account.image)) {
+      } else if (IMAGES.has(account.image)) {
          // Predefined image from carousel
          expectedSrc = `/images/${account.image}.png`;
       } else {
@@ -405,6 +411,16 @@ export async function assertActiveImageStep(
 }
 
 /**
+ * Asserts the visibility state of the image carousel navigation controls.
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {boolean} shouldBeVisible - Whether the image carousel navigation controls should be visible
+ */
+export async function assertImageCarouselVisibility(page: Page, shouldBeVisible: boolean): Promise<void> {
+   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible({ visible: shouldBeVisible });
+}
+
+/**
  * Asserts carousel navigation with loopback behavior and asserts each image
  *
  * @param {Page} page - Playwright page instance
@@ -529,7 +545,7 @@ export async function assertAndUnblockInvalidImageURL(
 
    // Try to close the image form with Escape, which should be blocked due to invalid URL
    await page.keyboard.press("Escape");
-   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible();
+   await assertImageCarouselVisibility(page, true);
    await assertValidationErrors(page, { "account-image-url": "URL must be valid" });
 
    // Unblock the image form based on the method
@@ -546,7 +562,7 @@ export async function assertAndUnblockInvalidImageURL(
 
    // Close the image form after a successful input validation
    await page.keyboard.press("Escape");
-   await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
+   await assertImageCarouselVisibility(page, false);
 }
 
 /**
@@ -578,7 +594,7 @@ export async function assertNetWorthOnDashboard(
    accounts: Partial<Account>[],
    expectedNetWorth: number
 ): Promise<void> {
-   await navigateToPath(page, "/dashboard");
+   await navigateToPath(page, DASHBOARD_ROUTE);
    await assertAccountTrends(page, accounts, expectedNetWorth, "dashboard");
 }
 
@@ -594,7 +610,7 @@ export async function assertNetWorthOnAccountsPage(
    accounts: Partial<Account>[],
    expectedNetWorth: number
 ): Promise<void> {
-   await navigateToPath(page, "/dashboard/accounts");
+   await navigateToPath(page, ACCOUNTS_ROUTE);
    await assertAccountTrends(page, accounts, expectedNetWorth, "accounts-page");
 }
 
@@ -605,15 +621,8 @@ export async function assertNetWorthOnAccountsPage(
  * @param {Partial<Account>[]} accounts - Array of accounts to display
  * @param {number} expectedNetWorth - Expected net worth value (must be calculated explicitly by caller)
  */
-export async function assertNetWorthAfterAction(
-   page: Page,
-   accounts: Partial<Account>[],
-   expectedNetWorth: number
-): Promise<void> {
-   // Check dashboard first
+export async function assertNetWorth(page: Page, accounts: Partial<Account>[], expectedNetWorth: number): Promise<void> {
    await assertNetWorthOnDashboard(page, accounts, expectedNetWorth);
-
-   // Check accounts page
    await assertNetWorthOnAccountsPage(page, accounts, expectedNetWorth);
 }
 

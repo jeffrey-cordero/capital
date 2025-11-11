@@ -1,5 +1,6 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisibility, closeModal } from "@tests/utils";
+import { assertComponentVisibility } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends, dragAndDrop } from "@tests/utils/dashboard";
 import {
@@ -8,9 +9,10 @@ import {
    assertAccountDeleted,
    assertAndUnblockInvalidImageURL,
    assertImageCarouselNavigation,
+   assertImageCarouselVisibility,
    assertImageSelected,
    assertImageSelection,
-   assertNetWorthAfterAction,
+   assertNetWorth,
    assertTransactionAccountDropdown,
    createAccount,
    deleteAccount,
@@ -44,63 +46,50 @@ test.describe("Account Management", () => {
    } as const;
 
    /**
-    * Updates account fields and asserts changes on the UI.
+    * Updates account fields and asserts changes on the UI
     *
     * @param {Page} page - Playwright page instance
     * @param {string} accountId - Account ID to update
     * @param {Partial<Account>} updates - Fields to update
     * @param {Partial<Account>} baseAccount - Base account to merge with updates
-    * @param {number} [expectedNetWorth] - Expected net worth to assert after update
+    * @param {number} expectedNetWorth - Expected net worth to assert after update
     */
    const updateAndAssertAccount = async(
-      page: any,
+      page: Page,
       accountId: string,
-      updates: any,
-      baseAccount: any,
-      expectedNetWorth?: number
+      updates: Partial<Account>,
+      baseAccount: Partial<Account>,
+      expectedNetWorth: number
    ): Promise<void> => {
-      await updateAccount(page, accountId, updates);
-      await closeModal(page);
-
-      const updatedAccount = { ...baseAccount, ...updates };
-      if (expectedNetWorth !== undefined) {
-         await assertNetWorthAfterAction(page, [updatedAccount], expectedNetWorth);
-      } else {
-         await assertAccountCard(page, updatedAccount);
-      }
+      await updateAccount(page, accountId, updates, undefined, true);
+      await assertNetWorth(page, [{ ...baseAccount, ...updates }], expectedNetWorth);
    };
 
    /**
-    * Creates an account and asserts the net worth calculation.
+    * Creates an account and asserts the net worth calculation
     *
     * @param {Page} page - Playwright page instance
     * @param {Partial<Account>} accountData - Account data to create
     * @param {number} expectedNetWorth - Expected net worth to assert after creation
     * @returns {Promise<string>} Created account ID
     */
-   const createAndAssertNetWorth = async(
-      page: any,
-      accountData: any,
-      expectedNetWorth: number
-   ): Promise<string> => {
-      const accountId = await createAccount(page, accountData);
-      const accountWithId = { account_id: accountId, ...accountData };
-      await assertNetWorthAfterAction(page, [accountWithId], expectedNetWorth);
+   const createAndAssertNetWorth = async(page: Page, accountData: Partial<Account>, expectedNetWorth: number): Promise<string> => {
+      const accountId: string = await createAccount(page, accountData);
+      await assertNetWorth(page, [{ account_id: accountId, ...accountData }], expectedNetWorth);
+
       return accountId;
    };
 
    /**
-    * Tests image URL validation by attempting invalid input and unblocking with different methods.
+    * Tests image URL validation by attempting invalid input and unblocking with different methods
     *
     * @param {Page} page - Playwright page instance
     */
-   const testImageValidationMethods = async(
-      page: any,
-   ): Promise<void> => {
+   const testImageValidationMethods = async(page: Page): Promise<void> => {
       for (const method of ["clear", "valid-url", "default-image"] as const) {
-         if (!(await page.getByTestId("account-image-carousel-left").isVisible())) {
+         await assertImageCarouselVisibility(page, true).catch(async() => {
             await openImageForm(page);
-         }
+         });
 
          await assertAndUnblockInvalidImageURL(page, method);
       }
@@ -126,14 +115,15 @@ test.describe("Account Management", () => {
       });
 
       test("should have accessible form inputs", async({ page }) => {
-         await openAccountForm(page);
-
          const formInputs = [
             { testId: "account-name", label: "Name" },
             { testId: "account-balance", label: "Balance" },
             { testId: "account-type", label: "Type" },
             { testId: "account-image-button" }
          ];
+
+         await openAccountForm(page);
+
          for (const input of formInputs) {
             await assertComponentVisibility(page, input.testId, undefined, input.label);
          }
@@ -203,7 +193,7 @@ test.describe("Account Management", () => {
          await testImageValidationMethods(page);
       });
 
-      test("should create account with default carousel image", async({ page }) => {
+      test("should create account with the default image from the carousel", async({ page }) => {
          const account: Partial<Account> = {
             name: "Default Image Account",
             balance: 3000,
@@ -214,10 +204,10 @@ test.describe("Account Management", () => {
          const accountData: Partial<Account> = { account_id: accountId, ...account, image: "checking" };
 
          await assertAccountCard(page, accountData);
-         await assertNetWorthAfterAction(page, [accountData], 3000);
+         await assertNetWorth(page, [accountData], 3000);
       });
 
-      test("should create account with custom image URL", async({ page }) => {
+      test("should create account with a custom image URL", async({ page }) => {
          const account: Partial<Account> = {
             name: "Custom URL Account",
             balance: 2000,
@@ -228,10 +218,10 @@ test.describe("Account Management", () => {
          const accountData: Partial<Account> = { account_id: accountId, ...account, image: IMAGE_FIXTURES.valid };
 
          await assertAccountCard(page, accountData);
-         await assertNetWorthAfterAction(page, [accountData], 2000);
+         await assertNetWorth(page, [accountData], 2000);
       });
 
-      test("should create account with invalid image URL and display error notification", async({ page }) => {
+      test("should create account with an invalid image URL and display error notification", async({ page }) => {
          const account: Partial<Account> = {
             name: "Invalid Image Account",
             balance: 1500,
@@ -242,7 +232,7 @@ test.describe("Account Management", () => {
          const accountData: Partial<Account> = { account_id: accountId, ...account, image: IMAGE_FIXTURES.invalid };
 
          await assertAccountCard(page, accountData, undefined, true);
-         await assertNetWorthAfterAction(page, [accountData], 1500);
+         await assertNetWorth(page, [accountData], 1500);
       });
    });
 
@@ -278,7 +268,7 @@ test.describe("Account Management", () => {
       test("should accept valid URL input", async({ page }) => {
          await page.getByTestId("account-image-url").fill(IMAGE_FIXTURES.valid);
          await page.keyboard.press("Escape");
-         await expect(page.getByTestId("account-image-carousel-left")).not.toBeVisible();
+         await assertImageCarouselVisibility(page, true);
       });
 
       test("should validate image URL format and unblock with different methods", async({ page }) => {
@@ -311,7 +301,7 @@ test.describe("Account Management", () => {
             { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
             { account_id: creditCardId, ...ACCOUNT_FIXTURES.creditCard }
          ];
-         await assertNetWorthAfterAction(page, accounts, 7000);
+         await assertNetWorth(page, accounts, 7000);
       });
 
       test("should calculate net worth correctly with multiple assets", async({ page }) => {
@@ -322,7 +312,7 @@ test.describe("Account Management", () => {
             { account_id: savingsId, ...ACCOUNT_FIXTURES.savings },
             { account_id: investmentId, ...ACCOUNT_FIXTURES.investment }
          ];
-         await assertNetWorthAfterAction(page, accounts, 13000);
+         await assertNetWorth(page, accounts, 13000);
       });
 
       test("should calculate net worth correctly with multiple liabilities", async({ page }) => {
@@ -333,7 +323,7 @@ test.describe("Account Management", () => {
             { account_id: debtId, ...ACCOUNT_FIXTURES.debt },
             { account_id: loanId, ...ACCOUNT_FIXTURES.loan }
          ];
-         await assertNetWorthAfterAction(page, accounts, -35000);
+         await assertNetWorth(page, accounts, -35000);
       });
 
       test("should calculate net worth correctly when asset and liability balance to zero", async({ page }) => {
@@ -347,7 +337,7 @@ test.describe("Account Management", () => {
             { account_id: assetId, ...assetAccount },
             { account_id: liabilityId, ...liabilityAccount }
          ];
-         await assertNetWorthAfterAction(page, accounts, 0);
+         await assertNetWorth(page, accounts, 0);
       });
 
       test("should update asset and liability to balance to zero net worth", async({ page }) => {
@@ -359,17 +349,16 @@ test.describe("Account Management", () => {
          const liabilityId = await createAccount(page, liabilityData);
 
          // Assert initial net worth = 5000 - 5000 = 0
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData }
          ], 0);
 
          // Update asset to 500
-         await updateAccount(page, assetId, { balance: 500 });
-         await closeModal(page);
+         await updateAccount(page, assetId, { balance: 500 }, undefined, true);
 
          // Net worth should now be 500 - 5000 = -4500
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData, balance: 500 },
             { account_id: liabilityId, ...liabilityData }
          ], -4500);
@@ -384,17 +373,16 @@ test.describe("Account Management", () => {
          const liabilityId = await createAccount(page, liabilityData);
 
          // Initial net worth = 5000 - 5000 = 0
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData }
          ], 0);
 
          // Increase liability balance to 6000
-         await updateAccount(page, liabilityId, { balance: 6000 });
-         await closeModal(page);
+         await updateAccount(page, liabilityId, { balance: 6000 }, undefined, true);
 
          // Net worth should now be 5000 - 6000 = -1000
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData, balance: 6000 }
          ], -1000);
@@ -409,37 +397,34 @@ test.describe("Account Management", () => {
          const liabilityId = await createAccount(page, liabilityData);
 
          // Initial net worth = 5000 - 5000 = 0
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData }
          ], 0);
 
          // Step 1: Update asset to 7000
          // Net worth = 7000 - 5000 = 2000
-         await updateAccount(page, assetId, { balance: 7000 });
-         await closeModal(page);
+         await updateAccount(page, assetId, { balance: 7000 }, undefined, true);
 
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData, balance: 7000 },
             { account_id: liabilityId, ...liabilityData }
          ], 2000);
 
          // Step 2: Update liability to 10000
          // Net worth = 7000 - 10000 = -3000
-         await updateAccount(page, liabilityId, { balance: 10000 });
-         await closeModal(page);
+         await updateAccount(page, liabilityId, { balance: 10000 }, undefined, true);
 
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData, balance: 7000 },
             { account_id: liabilityId, ...liabilityData, balance: 10000 }
          ], -3000);
 
          // Step 3: Update asset to 15000
          // Net worth = 15000 - 10000 = 5000
-         await updateAccount(page, assetId, { balance: 15000 });
-         await closeModal(page);
+         await updateAccount(page, assetId, { balance: 15000 }, undefined, true);
 
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: assetId, ...assetData, balance: 15000 },
             { account_id: liabilityId, ...liabilityData, balance: 10000 }
          ], 5000);
@@ -505,15 +490,13 @@ test.describe("Account Management", () => {
       });
 
       test("should update account with new image and assert persistence", async({ page }) => {
-         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.validAlt });
-         await closeModal(page);
+         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.validAlt }, undefined, true);
          const updatedAccount: Partial<Account> = { ...baseAccount, image: IMAGE_FIXTURES.validAlt };
          await assertAccountCard(page, updatedAccount);
       });
 
       test("should update account from no image to invalid image URL and display error", async({ page }) => {
-         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.invalid });
-         await closeModal(page);
+         await updateAccount(page, accountId, { imageSelection: IMAGE_FIXTURES.invalid }, undefined, true);
          const updatedAccount: Partial<Account> = { ...baseAccount, image: IMAGE_FIXTURES.invalid };
          await assertAccountCard(page, updatedAccount, undefined, true);
       });
@@ -624,14 +607,14 @@ test.describe("Account Management", () => {
          await assertAccountDeleted(page, accountId);
 
          // Assert net worth updated on both pages (no accounts = 0 net worth)
-         await assertNetWorthAfterAction(page, [], 0);
+         await assertNetWorth(page, [], 0);
       });
 
       test("should delete account from asset and recalculate net worth to zero", async({ page }) => {
          const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking);
          const savingsId = await createAccount(page, ACCOUNT_FIXTURES.savings);
 
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
             { account_id: savingsId, ...ACCOUNT_FIXTURES.savings }
          ], 15000);
@@ -639,14 +622,14 @@ test.describe("Account Management", () => {
          await deleteAccount(page, checkingId);
          await assertAccountDeleted(page, checkingId);
 
-         await assertNetWorthAfterAction(page, [{ account_id: savingsId, ...ACCOUNT_FIXTURES.savings }], 5000);
+         await assertNetWorth(page, [{ account_id: savingsId, ...ACCOUNT_FIXTURES.savings }], 5000);
       });
 
       test("should delete liability account and recalculate net worth correctly", async({ page }) => {
          const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking);
          const creditCardId = await createAccount(page, ACCOUNT_FIXTURES.creditCard);
 
-         await assertNetWorthAfterAction(page, [
+         await assertNetWorth(page, [
             { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
             { account_id: creditCardId, ...ACCOUNT_FIXTURES.creditCard }
          ], 7000);
@@ -654,7 +637,7 @@ test.describe("Account Management", () => {
          await deleteAccount(page, creditCardId);
          await assertAccountDeleted(page, creditCardId);
 
-         await assertNetWorthAfterAction(page, [{ account_id: checkingId, ...ACCOUNT_FIXTURES.checking }], 10000);
+         await assertNetWorth(page, [{ account_id: checkingId, ...ACCOUNT_FIXTURES.checking }], 10000);
       });
    });
 });
