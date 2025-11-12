@@ -64,8 +64,8 @@ export async function submitForm(
 
          // Handle different input types (select, input, checkbox, radio, date, etc.)
          if (isSelectElement) {
-            await element.click(); // Click to open the dropdown
-            await page.getByRole("option", { name: value.toString() }).click(); // Select the desired option
+            await element.click();
+            await page.getByRole("option", { name: value.toString() }).click();
          } else if (tagName === "input") {
             const inputType: string = await element.evaluate(el => (el as HTMLInputElement).type);
 
@@ -89,7 +89,6 @@ export async function submitForm(
       }
    }
 
-   // Determine submit button selector based on buttonType or pivot to the default submit button
    const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
 
    if (opts.buttonType) {

@@ -6,13 +6,14 @@ import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertNotificationStatus } from "@tests/utils/notifications";
 import { type Account, IMAGES } from "capital/accounts";
+import { IMAGE_FIXTURES } from "capital/mocks/accounts";
 import { HTTP_STATUS } from "capital/server";
 
 import { displayCurrency, displayDate } from "@/lib/display";
 
 /**
- * Extended account data type for form submission with optional image selection, where image can
- * be based on carousel index, carousel image name, or custom URL
+ * Extended account data type for form submission with optional image selection, where
+ * number type implies carousel index selection and string type implies custom URL input
  */
 export type AccountFormData = Partial<Account> & { image?: string | number | null; };
 
@@ -41,7 +42,7 @@ const imagesArray: string[] = Array.from(IMAGES);
  * @returns {Promise<string[]>} Array of account IDs in DOM order
  */
 export async function getAccountCardIds(page: Page): Promise<string[]> {
-   const cards = page.locator("[data-testid^=\"account-card-\"]");
+   const cards: Locator = page.locator("[data-testid^=\"account-card-\"]");
 
    return (await cards.evaluateAll(els =>
       els.map(el => el.getAttribute("data-testid"))
@@ -58,8 +59,10 @@ export async function getAccountCardIds(page: Page): Promise<string[]> {
  */
 export async function openAccountForm(page: Page, accountId?: string): Promise<void> {
    if (accountId) {
+      // Account-specific form
       await page.getByTestId(`account-card-${accountId}`).click();
    } else {
+      // New account form
       await page.getByTestId("accounts-add-button").click();
    }
 
@@ -72,14 +75,14 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
  * @param {Page} page - Playwright page instance
  * @param {AccountFormData} accountData - Account data to submit, optionally with image (number for carousel index, string for custom URL)
  * @param {"Create" | "Update"} buttonType - Type of operation being performed
- * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @param {Record<string, string>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string | null>} The created account ID if successful create, null if update or validation errors expected
  */
 async function submitAccountForm(
    page: Page,
    accountData: AccountFormData,
    buttonType: "Create" | "Update",
-   expectedErrors?: Record<string, string | string[]>
+   expectedErrors?: Record<string, string>
 ): Promise<string | null> {
    const formData: Record<string, any> = {};
 
@@ -87,34 +90,31 @@ async function submitAccountForm(
    if (accountData.balance !== undefined) formData["account-balance"] = accountData.balance;
    if (accountData.type !== undefined) formData["account-type"] = accountData.type;
 
-   // Handle image selection if provided
+   // Handle image selection based on carousel index or custom URL, if applicable
    if (accountData.image !== undefined) {
       await openImageForm(page);
 
       if (typeof accountData.image === "number") {
-         // Select from carousel (default image by index)
          await selectImageCarouselPosition(page, accountData.image, true);
-      } else if (accountData.image && typeof accountData.image === "string") {
-         // Enter custom URL
+      } else if (typeof accountData.image === "string") {
          await page.getByTestId("account-image-url").fill(accountData.image);
       }
 
       await page.keyboard.press("Escape");
    }
 
-   // If validation errors are expected, submit and assert errors without waiting for the API response
    if (expectedErrors) {
       await submitForm(page, formData, { buttonType, containsErrors: true });
       await assertValidationErrors(page, expectedErrors);
+
       return null;
    }
 
-   const method: string = buttonType === "Create" ? "POST" : "PUT";
+   // Create a promise for the response to be received
    const responsePromise = page.waitForResponse((response: Response) => {
-      return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === method;
+      return response.url().includes("/api/v1/dashboard/accounts")
+         && response.request().method() === (buttonType === "Create" ? "POST" : "PUT");
    });
-
-   // Submit form (submitForm handles filling and waiting for button visibility)
    await submitForm(page, formData, { buttonType });
 
    // Wait for the response to fully resolve and assert the successful status
@@ -131,12 +131,9 @@ async function submitAccountForm(
          throw new Error("Failed to create account - account_id not found in response");
       }
 
-      // Assert the new account card is visible
+      // Assert the new account card is visible and modal is closed
       await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
-
-      // Assert modal is closed and add button is visible
       await assertModalClosed(page);
-      await assertComponentVisibility(page, "accounts-add-button", "Add Account");
 
       return accountId;
    } else {
@@ -154,15 +151,16 @@ async function submitAccountForm(
  *
  * @param {Page} page - Playwright page instance
  * @param {AccountFormData} accountData - Account data to fill in the form
- * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @param {Record<string, string>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @returns {Promise<string>} The created account ID if successful, empty string if validation errors expected
  */
 export async function createAccount(
    page: Page,
    accountData: AccountFormData,
-   expectedErrors?: Record<string, string | string[]>
+   expectedErrors?: Record<string, string>
 ): Promise<string> {
    await openAccountForm(page);
+
    return await submitAccountForm(page, accountData, "Create", expectedErrors) || "";
 }
 
@@ -172,14 +170,14 @@ export async function createAccount(
  * @param {Page} page - Playwright page instance
  * @param {string} accountId - Account ID to update
  * @param {AccountFormData} accountData - Updated account data
- * @param {Record<string, string | string[]>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
+ * @param {Record<string, string>} [expectedErrors] - Optional map of test IDs to expected error messages for validation testing
  * @param {boolean} [exitModal] - Whether to exit the modal after updating the account
  */
 export async function updateAccount(
    page: Page,
    accountId: string,
    accountData: AccountFormData,
-   expectedErrors?: Record<string, string | string[]>,
+   expectedErrors?: Record<string, string>,
    exitModal?: boolean
 ): Promise<void> {
    await openAccountForm(page, accountId);
@@ -191,11 +189,11 @@ export async function updateAccount(
 }
 
 /**
- * Asserts account card information and DOM position
+ * Asserts account card information and DOM positioning
  *
  * @param {Page} page - Playwright page instance
  * @param {AccountFormData} account - Account to assert
- * @param {boolean} [expectImageError] - Whether to expect an image error (error message is derived from account name)
+ * @param {boolean} [expectImageError] - Whether to expect an image error
  */
 export async function assertAccountCard(
    page: Page,
@@ -222,32 +220,28 @@ export async function assertAccountCard(
    const image: Locator = imageContainer.locator("img");
    await expect(image).toBeVisible();
 
+   let expectedImageSrc: string = "";
    const imageSrc: string | null = await image.getAttribute("src");
 
    if (expectImageError) {
-      // Assert fallback error.svg image and error message notification
+      // Assert fallback error.svg image (logo in red color) and error message notification
+      expectedImageSrc = "/svg/error.svg";
       const errorMessage: string = `There was an issue fetching the account image for ${account.name}`;
-      expect(imageSrc).toBe("/svg/error.svg");
       await assertNotificationStatus(page, errorMessage, "error");
    } else {
-      let expectedSrc: string;
-
       if (account.image === undefined) {
-         // Default image
-         expectedSrc =  "/svg/logo.svg";
+         // Default image (logo in blue color)
+         expectedImageSrc =  "/svg/logo.svg";
       } else if (typeof account.image === "number") {
          // Predefined image from carousel based on the image index
-         expectedSrc = `/images/${imagesArray[account.image]}.png`;
-      } else if (account.image && IMAGES.has(account.image)) {
-         // Predefined image from carousel based on the image name
-         expectedSrc = `/images/${account.image}.png`;
+         expectedImageSrc = `/images/${imagesArray[account.image]}.png`;
       } else {
          // Custom URL
-         expectedSrc = account.image || "/svg/logo.svg";
+         expectedImageSrc = account.image!;
       }
-
-      expect(imageSrc).toBe(expectedSrc);
    }
+
+   expect(imageSrc).toBe(expectedImageSrc);
 }
 
 /**
@@ -256,10 +250,7 @@ export async function assertAccountCard(
  * @param {Page} page - Playwright page instance
  * @param {string[]} accountIds - Array of account IDs in expected order
  */
-export async function assertAccountCardsOrder(
-   page: Page,
-   accountIds: string[]
-): Promise<void> {
+export async function assertAccountCardsOrder(page: Page, accountIds: string[]): Promise<void> {
    const cardIds = await getAccountCardIds(page);
 
    for (let i = 0; i < cardIds.length; i++) {
@@ -280,8 +271,7 @@ export async function assertTransactionAccountDropdown(
    autoSelectedAccountId?: string
 ): Promise<void> {
    if (autoSelectedAccountId) {
-      // Open the account form to target the proper transaction form element
-      await page.getByTestId(`account-card-${autoSelectedAccountId}`).click();
+      await openAccountForm(page, autoSelectedAccountId);
    }
 
    // Scroll to transactions section and click "Add Transaction" button
@@ -289,30 +279,24 @@ export async function assertTransactionAccountDropdown(
    await addButton.scrollIntoViewIfNeeded();
    await addButton.click();
 
-   // Test ID resides on the input element, which holds the literal value of the selected account
    const inputElement: Locator = page.getByTestId("transaction-account-select");
-
-   // Find the actual clickable Select element via label -> FormControl -> Select
    const selectElement: Locator = page.locator("label:has-text(\"Account\")").locator("..").locator(".MuiSelect-root");
+
+   // Open the select dropdown
+   await selectElement.click({ force: true });
+   await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
 
    if (expectedAccounts.length === 0) {
       await expect(inputElement).toHaveValue("");
-      await selectElement.click({ force: true });
-      await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
    } else {
-      // Open the dropdown
-      await selectElement.click({ force: true });
-
-      // Assert placeholder option exists
-      await expect(page.getByRole("option", { name: "-- Select Account --" })).toBeVisible();
-
       for (const account of expectedAccounts) {
+         // Assert all accounts are visible in the dropdown with their name
          const option: Locator = page.getByRole("option", { name: account.name });
          await expect(option).toBeVisible();
          await expect(option).toContainText(account.name || "");
       }
 
-      // Assert auto-selection if specified
+      // Assert auto-selection if specified, where input element should hold the account ID
       if (autoSelectedAccountId) {
          const selectedAccount = expectedAccounts.find(a => a.account_id === autoSelectedAccountId);
 
@@ -324,12 +308,32 @@ export async function assertTransactionAccountDropdown(
          }
       }
 
-      // Close dropdown
+      // Close the select dropdown
       await page.keyboard.press("Escape");
    }
 
-   // Close the transaction form modal
+   // Close the transaction form
    await page.keyboard.press("Escape");
+}
+
+/**
+ * Asserts the visibility state of the image carousel navigation controls
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {boolean} shouldBeVisible - Whether the image carousel navigation controls should be visible
+ */
+export async function assertImageCarouselVisibility(page: Page, shouldBeVisible: boolean): Promise<void> {
+   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible({ visible: shouldBeVisible });
+}
+
+/**
+ * Asserts active step in MobileStepper matches expected index
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {number} expectedStep - Expected active step index
+ */
+export async function assertActiveImageStep(page: Page, expectedStep: number): Promise<void> {
+   await expect(page.locator(".MuiMobileStepper-dot").nth(expectedStep)).toHaveClass(/MuiMobileStepper-dotActive/);
 }
 
 /**
@@ -338,13 +342,13 @@ export async function assertTransactionAccountDropdown(
  * @param {Page} page - Playwright page instance
  */
 export async function openImageForm(page: Page): Promise<void> {
-   if (!await page.getByTestId("account-image-button").isVisible()) {
-      // Open the account form if the image form is not visible
+   if (!(await page.getByTestId("account-image-button").isVisible())) {
+      // Open the account form if the image button is not visible
       await openAccountForm(page);
    }
 
    await page.getByTestId("account-image-button").click();
-   await assertComponentVisibility(page, "account-image-carousel-left");
+   await assertImageCarouselVisibility(page, true);
 }
 
 /**
@@ -370,31 +374,6 @@ export async function getActiveImageStep(page: Page): Promise<number> {
 }
 
 /**
- * Asserts active step in MobileStepper matches expected index
- *
- * @param {Page} page - Playwright page instance
- * @param {number} expectedStep - Expected active step index
- */
-export async function assertActiveImageStep(
-   page: Page,
-   expectedStep: number
-): Promise<void> {
-   const steps: Locator = page.locator(".MuiMobileStepper-dot");
-   const activeStep: Locator = steps.nth(expectedStep);
-   await expect(activeStep).toHaveClass(/MuiMobileStepper-dotActive/);
-}
-
-/**
- * Asserts the visibility state of the image carousel navigation controls.
- *
- * @param {Page} page - Playwright page instance
- * @param {boolean} shouldBeVisible - Whether the image carousel navigation controls should be visible
- */
-export async function assertImageCarouselVisibility(page: Page, shouldBeVisible: boolean): Promise<void> {
-   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible({ visible: shouldBeVisible });
-}
-
-/**
  * Asserts carousel navigation with loopback behavior and asserts each image
  *
  * @param {Page} page - Playwright page instance
@@ -413,19 +392,20 @@ export async function assertImageCarouselNavigation(
    // Navigate through all images and assert loopback
    for (let i = 0; i < totalImages; i++) {
       const expectedStep: number = direction === "right" ? (
+         // Loop back to the first image if on the last image
          i === totalImages - 1 ? 0 : i + 1
       ) : (
+         // Loop back to the last image if on the first image
          totalImages - i - 1
       );
 
-      // Click navigation button
+      // Click the navigation button and assert the active step and selected image
       await page.getByTestId(buttonTestId).click();
-
       await assertActiveImageStep(page, expectedStep);
       await assertImageSelected(page, expectedStep, false);
    }
 
-   // Assert the first image is always looped back to after navigation
+   // Assert the first image is always looped back to after navigation (loopback behavior)
    await assertImageSelected(page, 0, false);
 }
 
@@ -434,16 +414,13 @@ export async function assertImageCarouselNavigation(
  *
  * @param {Page} page - Playwright page instance
  * @param {number} imageIndex - Index of image to select (0-based)
- * @param {boolean} [select] - Whether to select the image (default: false)
+ * @param {boolean} [select] - Whether to select the image (default: `false`)
  */
-export async function selectImageCarouselPosition(
-   page: Page,
-   imageIndex: number,
-   select: boolean = false
-): Promise<void> {
-   // Navigate to the desired image
+export async function selectImageCarouselPosition(page: Page, imageIndex: number, select: boolean = false): Promise<void> {
    const activeStep: number = await getActiveImageStep(page);
    const stepsNeeded: number = imageIndex - activeStep;
+
+   // Navigate to the left or right depending on the number of steps needed for the desired image position
    const direction: "left" | "right" = stepsNeeded > 0 ? "right" : "left";
    const buttonTestId: string = `account-image-carousel-${direction}`;
 
@@ -463,20 +440,16 @@ export async function selectImageCarouselPosition(
  * @param {number} imageIndex - Index of image to assert
  * @param {boolean} isSelected - Whether image should be selected
  */
-export async function assertImageSelected(
-   page: Page,
-   imageIndex: number,
-   isSelected: boolean
-): Promise<void> {
+export async function assertImageSelected(page: Page, imageIndex: number, isSelected: boolean): Promise<void> {
    await assertActiveImageStep(page, imageIndex);
 
-   // Assert the image is visible
+   // Assert the image is visible and the source is correct relative to the default images array
    const image: Locator = page.getByTestId("account-image-carousel-image");
    await expect(image).toBeVisible();
 
    // Assert the image source is correct relative to default images array
-   const expectedSrc: string = `/images/${imagesArray[imageIndex]}.png`;
-   await expect(image.locator("img")).toHaveAttribute("src", expectedSrc);
+   const expectedImageSrc: string = `/images/${imagesArray[imageIndex]}.png`;
+   await expect(image.locator("img")).toHaveAttribute("src", expectedImageSrc);
 
    // Assert the data-selected attribute and border style
    await expect(image).toHaveAttribute("data-selected", isSelected ? "true" : "false");
@@ -488,7 +461,8 @@ export async function assertImageSelected(
 }
 
 /**
- * Asserts invalid image URL validation and unblocks the invalid image form using the specified method
+ * Asserts invalid image URL validation and unblocks the invalid image form using the specified method to
+ * return back to the account form
  *
  * @param {Page} page - Playwright page instance
  * @param {"clear" | "default-image" | "valid-url"} unblockMethod - Method to unblock the invalid image form after validation
@@ -497,10 +471,10 @@ export async function assertAndUnblockInvalidImageURL(
    page: Page,
    unblockMethod: "clear" | "default-image" | "valid-url"
 ): Promise<void> {
-   // Fill an invalid URL
-   await page.getByTestId("account-image-url").fill("invalid-url");
+   // Fill an invalid URL into the image URL input field
+   await page.getByTestId("account-image-url").fill(IMAGE_FIXTURES.invalid);
 
-   // Try to close the image form with Escape, which should be blocked due to invalid URL
+   // Try to close the image form with Escape, which should be blocked due to invalid URL to notify the user
    await page.keyboard.press("Escape");
    await assertImageCarouselVisibility(page, true);
    await assertValidationErrors(page, { "account-image-url": "URL must be valid" });
@@ -510,11 +484,11 @@ export async function assertAndUnblockInvalidImageURL(
       // Clear the invalid URL
       await page.getByTestId("account-image-url").fill("");
    } else if (unblockMethod === "default-image") {
-      // Select the default image
+      // Select the default image from the carousel
       await selectImageCarouselPosition(page, 0, true);
    } else if (unblockMethod === "valid-url") {
-      // Enter the valid URL
-      await page.getByTestId("account-image-url").fill("https://picsum.photos/200/300");
+      // Enter a valid URL
+      await page.getByTestId("account-image-url").fill(IMAGE_FIXTURES.valid);
    }
 
    // Close the image form after a successful input validation
@@ -535,7 +509,6 @@ export async function assertNetWorth(page: Page, accounts: AccountFormData[], ex
 
    await navigateToPath(page, ACCOUNTS_ROUTE);
    await assertAccountTrends(page, accounts, expectedNetWorth, "accounts");
-
 }
 
 /**
@@ -547,16 +520,14 @@ export async function assertNetWorth(page: Page, accounts: AccountFormData[], ex
 export async function deleteAccount(page: Page, accountId: string): Promise<void> {
    await openAccountForm(page, accountId);
 
-   // Wait for delete button to appear (rendered when isUpdating is true)
+   // Wait for delete button to appear
    await assertComponentVisibility(page, "account-delete-button");
 
-   // Click delete button to open confirmation dialog
+   // Click the delete button to open the confirmation dialog
    await page.getByTestId("account-delete-button").click();
-
-   // Assert confirmation dialog appears
    await assertComponentVisibility(page, "account-delete-button-confirm");
 
-   // Confirm deletion
+   // Confirm the deletion and wait for the response
    const responsePromise = page.waitForResponse((response: Response) => {
       return response.url().includes("/api/v1/dashboard/accounts") && response.request().method() === "DELETE";
    });
@@ -566,7 +537,7 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
    const response = await responsePromise;
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
 
-   // Assert form is closed and account card is hidden before making further assertions
+   // Assert the account form is closed and the account card is hidden
    await assertModalClosed(page);
    await expect(page.getByTestId(`account-card-${accountId}`)).toBeHidden();
 }

@@ -22,6 +22,16 @@ export const VALID_ACCOUNT: Omit<Account, "account_id"> = {
 };
 
 /**
+ * Fixtures for account image URLs for testing
+ */
+export const IMAGE_FIXTURES = {
+   valid: "https://picsum.photos/200/300",
+   validAlt: "https://picsum.photos/300/400",
+   invalid: "invalid-url",
+   error: "https://invalid-domain-that-does-not-exist.com/image.png"
+} as const;
+
+/**
  * Creates a valid account object for testing
  *
  * @param {Partial<Account>} [overrides] - Optional properties to override

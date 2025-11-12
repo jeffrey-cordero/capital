@@ -46,7 +46,7 @@ export async function closeModal(page: Page, force: boolean = false): Promise<vo
    // Try pressing Escape key first to mimic standard modal close behavior
    await page.keyboard.press("Escape");
 
-   // If this is a forced close, check for warning modal and confirm it
+   // If this is a forced close, confirm through the expected warning modal container
    if (force) {
       await assertComponentVisibility(page, "warning-modal");
       await assertComponentVisibility(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");

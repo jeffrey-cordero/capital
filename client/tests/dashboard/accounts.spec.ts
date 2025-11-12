@@ -24,26 +24,9 @@ import {
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
 import { IMAGES } from "capital/accounts";
+import { createValidAccount, IMAGE_FIXTURES } from "capital/mocks/accounts";
 
 test.describe("Account Management", () => {
-   /**
-    * Fixtures for reusable test data
-    */
-   const IMAGE_FIXTURES = {
-      valid: "https://picsum.photos/200/300",
-      validAlt: "https://picsum.photos/300/400",
-      invalid: "https://invalid-domain-that-does-not-exist.com/image.png"
-   } as const;
-
-   const ACCOUNT_FIXTURES = {
-      checking: { name: "Checking", balance: 10000, type: "Checking" },
-      savings: { name: "Savings", balance: 5000, type: "Savings" },
-      creditCard: { name: "Credit Card", balance: 3000, type: "Credit Card" },
-      investment: { name: "Investment", balance: 8000, type: "Investment" },
-      debt: { name: "Student Loan", balance: 20000, type: "Debt" },
-      loan: { name: "Car Loan", balance: 15000, type: "Loan" }
-   } as const;
-
    /**
     * Performs an account operation (create or update) and asserts account card, trends, and net worth
     *
@@ -169,7 +152,7 @@ test.describe("Account Management", () => {
                name: "Invalid Image Account",
                balance: 1500,
                type: "Savings",
-               image: IMAGE_FIXTURES.invalid
+               image: IMAGE_FIXTURES.error
             };
 
             await performAndAssertAccountAction({ page, accountData: account, expectedNetWorth: 1500, hasImageError: true });
@@ -279,34 +262,43 @@ test.describe("Account Management", () => {
       });
 
       test("should calculate net worth correctly with mixed asset and liability accounts", async({ page }) => {
-         const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking); // +$10,000 asset
-         const creditCardId = await createAccount(page, ACCOUNT_FIXTURES.creditCard); // -$3,000 liability
+         const checking = createValidAccount({ name: "Checking", balance: 10000, type: "Checking" });
+         const creditCard = createValidAccount({ name: "Credit Card", balance: 3000, type: "Credit Card" });
+
+         const checkingId = await createAccount(page, checking);
+         const creditCardId = await createAccount(page, creditCard);
 
          const accounts: AccountFormData[] = [
-            { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
-            { account_id: creditCardId, ...ACCOUNT_FIXTURES.creditCard }
+            { account_id: checkingId, ...checking },
+            { account_id: creditCardId, ...creditCard }
          ];
          await assertNetWorth(page, accounts, 7000);
       });
 
       test("should calculate net worth correctly with multiple assets", async({ page }) => {
-         const savingsId = await createAccount(page, ACCOUNT_FIXTURES.savings); // +$5,000 asset
-         const investmentId = await createAccount(page, ACCOUNT_FIXTURES.investment); // +$8,000 asset
+         const savings = createValidAccount({ name: "Savings", balance: 5000, type: "Savings" });
+         const investment = createValidAccount({ name: "Investment", balance: 8000, type: "Investment" });
+
+         const savingsId = await createAccount(page, savings);
+         const investmentId = await createAccount(page, investment);
 
          const accounts: AccountFormData[] = [
-            { account_id: savingsId, ...ACCOUNT_FIXTURES.savings },
-            { account_id: investmentId, ...ACCOUNT_FIXTURES.investment }
+            { account_id: savingsId, ...savings },
+            { account_id: investmentId, ...investment }
          ];
          await assertNetWorth(page, accounts, 13000);
       });
 
       test("should calculate net worth correctly with multiple liabilities", async({ page }) => {
-         const debtId = await createAccount(page, ACCOUNT_FIXTURES.debt); // -$20,000 liability
-         const loanId = await createAccount(page, ACCOUNT_FIXTURES.loan); // -$15,000 liability
+         const debt = createValidAccount({ name: "Student Loan", balance: 20000, type: "Debt" });
+         const loan = createValidAccount({ name: "Car Loan", balance: 15000, type: "Loan" });
+
+         const debtId = await createAccount(page, debt);
+         const loanId = await createAccount(page, loan);
 
          const accounts: AccountFormData[] = [
-            { account_id: debtId, ...ACCOUNT_FIXTURES.debt },
-            { account_id: loanId, ...ACCOUNT_FIXTURES.loan }
+            { account_id: debtId, ...debt },
+            { account_id: loanId, ...loan }
          ];
          await assertNetWorth(page, accounts, -35000);
       });
@@ -326,31 +318,26 @@ test.describe("Account Management", () => {
       });
 
       test("should update account balance and recalculate net worth correctly with sequential updates", async({ page }) => {
-         // Start with two accounts that balance to zero
          const assetData: AccountFormData = { name: "Checking", balance: 5000, type: "Checking" };
          const liabilityData: AccountFormData = { name: "Credit Card", balance: 5000, type: "Credit Card" };
 
-         const assetId = await createAccount(page, assetData); // +$5,000 asset
-         const liabilityId = await createAccount(page, liabilityData); // +$5,000 liability
+         const assetId = await createAccount(page, assetData);
+         const liabilityId = await createAccount(page, liabilityData);
 
          await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData }
          ], 0);
 
-         // Increase liability balance to $6000
          await updateAccount(page, liabilityId, { balance: 6000 }, undefined, true);
 
-         // Net worth should now be $5000 - $6000 = -$1000
          await assertNetWorth(page, [
             { account_id: assetId, ...assetData },
             { account_id: liabilityId, ...liabilityData, balance: 6000 }
          ], -1000);
 
-         // Increase asset balance to $6000
          await updateAccount(page, assetId, { balance: 6000 }, undefined, true);
 
-         // Net worth should now be $6000 - $6000 = $0
          await assertNetWorth(page, [
             { account_id: assetId, ...assetData, balance: 6000 },
             { account_id: liabilityId, ...liabilityData, balance: 6000 }
@@ -364,8 +351,8 @@ test.describe("Account Management", () => {
       });
 
       test("should show created accounts in transaction dropdown", async({ page }) => {
-         const checking: AccountFormData = ACCOUNT_FIXTURES.checking;
-         const savings: AccountFormData = ACCOUNT_FIXTURES.savings;
+         const checking = createValidAccount({ name: "Checking", balance: 10000, type: "Checking" });
+         const savings = createValidAccount({ name: "Savings", balance: 5000, type: "Savings" });
 
          const checkingId = await createAccount(page, checking);
          const savingsId = await createAccount(page, savings);
@@ -379,7 +366,7 @@ test.describe("Account Management", () => {
       });
 
       test("should auto-select account in transaction dropdown", async({ page }) => {
-         const investment: AccountFormData = ACCOUNT_FIXTURES.investment;
+         const investment = createValidAccount({ name: "Investment", balance: 8000, type: "Investment" });
          const investmentId = await createAccount(page, investment);
 
          await assertTransactionAccountDropdown(page, [{ account_id: investmentId, ...investment }], investmentId);
@@ -415,7 +402,7 @@ test.describe("Account Management", () => {
          });
 
          test("should update account from no image to invalid image URL and display error notification", async({ page }) => {
-            await performAndAssertAccountAction({ page, accountId, baseAccount, accountData: { image: IMAGE_FIXTURES.invalid }, expectedNetWorth: 1000, hasImageError: true });
+            await performAndAssertAccountAction({ page, accountId, baseAccount, accountData: { image: IMAGE_FIXTURES.error }, expectedNetWorth: 1000, hasImageError: true });
          });
       });
 
@@ -565,32 +552,37 @@ test.describe("Account Management", () => {
       });
 
       test("should delete account from asset and recalculate net worth to zero", async({ page }) => {
-         const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking); // +$10,000 asset
-         const savingsId = await createAccount(page, ACCOUNT_FIXTURES.savings); // +$5,000 asset
+         const checking = createValidAccount({ name: "Checking", balance: 10000, type: "Checking" });
+         const savings = createValidAccount({ name: "Savings", balance: 5000, type: "Savings" });
+
+         const checkingId = await createAccount(page, checking);
+         const savingsId = await createAccount(page, savings);
 
          await assertNetWorth(page, [
-            { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
-            { account_id: savingsId, ...ACCOUNT_FIXTURES.savings }
+            { account_id: checkingId, ...checking },
+            { account_id: savingsId, ...savings }
          ], 15000);
 
          await deleteAccount(page, checkingId);
 
-         await assertNetWorth(page, [{ account_id: savingsId, ...ACCOUNT_FIXTURES.savings }], 5000);
+         await assertNetWorth(page, [{ account_id: savingsId, ...savings }], 5000);
       });
 
       test("should delete liability account and recalculate net worth correctly", async({ page }) => {
-         const checkingId = await createAccount(page, ACCOUNT_FIXTURES.checking); // +$10,000 asset
-         const creditCardId = await createAccount(page, ACCOUNT_FIXTURES.creditCard); // -$3,000 liability
+         const checking = createValidAccount({ name: "Checking", balance: 10000, type: "Checking" });
+         const creditCard = createValidAccount({ name: "Credit Card", balance: 3000, type: "Credit Card" });
+
+         const checkingId = await createAccount(page, checking);
+         const creditCardId = await createAccount(page, creditCard);
 
          await assertNetWorth(page, [
-            { account_id: checkingId, ...ACCOUNT_FIXTURES.checking },
-            { account_id: creditCardId, ...ACCOUNT_FIXTURES.creditCard }
+            { account_id: checkingId, ...checking },
+            { account_id: creditCardId, ...creditCard }
          ], 7000);
 
          await deleteAccount(page, creditCardId);
 
-         // Assert only the asset account is left and the net worth is recalculated
-         await assertNetWorth(page, [{ account_id: checkingId, ...ACCOUNT_FIXTURES.checking }], 10000);
+         await assertNetWorth(page, [{ account_id: checkingId, ...checking }], 10000);
       });
    });
 });

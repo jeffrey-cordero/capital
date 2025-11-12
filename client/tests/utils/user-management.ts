@@ -46,10 +46,8 @@ export async function setupAssignedUser(
       // Login with the assigned user's credentials
       await loginUser(page, userToAssign.username, userToAssign.password);
 
-      // Add the assigned user to the assigned registry (only if isolation is required)
-      if (requiresIsolation) {
-         assignedRegistry[userToAssign.username] = userToAssign.password;
-      }
+      // Add the assigned user to the assigned registry
+      assignedRegistry[userToAssign.username] = userToAssign.password;
 
       // Navigate to the specified route
       await navigateToPath(page, route);
