@@ -83,7 +83,7 @@ test.describe("Account Management", () => {
    const testImageValidationMethods = async(page: Page): Promise<void> => {
       for (const method of ["clear", "valid-url", "default-image"] as const) {
          await assertImageCarouselVisibility(page, true).catch(async() => {
-            // In the case of the image carousel being hidden, open it to avoid arrangment complexity in subsequent tests
+            // In the case of the image carousel being hidden, open it to avoid arrangement complexity in subsequent tests
             await openImageForm(page);
          });
 
@@ -103,7 +103,7 @@ test.describe("Account Management", () => {
       });
 
       test("should display empty accounts state on accounts page", async({ page }) => {
-         await assertAccountTrends(page, [], 0, "accounts-page");
+         await assertAccountTrends(page, [], 0, "accounts");
          await expect(page.getByTestId("accounts-add-button")).toBeEnabled();
          await assertComponentVisibility(page, "accounts-add-button", "Add Account");
          await assertComponentVisibility(page, "accounts-empty-message", "No available accounts");

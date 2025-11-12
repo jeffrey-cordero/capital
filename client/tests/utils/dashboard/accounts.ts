@@ -534,7 +534,7 @@ export async function assertNetWorth(page: Page, accounts: AccountFormData[], ex
    await assertAccountTrends(page, accounts, expectedNetWorth, "dashboard");
 
    await navigateToPath(page, ACCOUNTS_ROUTE);
-   await assertAccountTrends(page, accounts, expectedNetWorth, "accounts-page");
+   await assertAccountTrends(page, accounts, expectedNetWorth, "accounts");
 
 }
 

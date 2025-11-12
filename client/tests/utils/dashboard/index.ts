@@ -10,13 +10,13 @@ import { brand, red } from "@/styles/mui/colors";
  * @param {Page} page - Playwright page instance
  * @param {Partial<Account>[]} accounts - Array of accounts to assert
  * @param {number} expectedNetWorth - Expected net worth value as a number
- * @param {"dashboard" | "accounts-page"} location - Location where trends are displayed
+ * @param {"dashboard" | "accounts"} location - Location where trends are displayed
  */
 export async function assertAccountTrends(
    page: Page,
    accounts: Partial<Account>[],
    expectedNetWorth: number,
-   location: "dashboard" | "accounts-page"
+   location: "dashboard" | "accounts"
 ): Promise<void> {
    const barChartValues: Locator = page.locator("[data-bar-chart-value]");
    const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
@@ -34,19 +34,19 @@ export async function assertAccountTrends(
          await expect(page.getByTestId("accounts-empty-message")).toHaveText("No available accounts");
       }
    } else {
-      // There should be 12 bars for each account
-      const currentMonth = new Date().getMonth() + 1;
+      // There should be a bar for each account every month of the current year
+      const currentMonth: number = new Date().getMonth() + 1;
       await expect(barChartValues).toHaveCount(12 * accounts.length);
 
-      // Assert net worth matches expected value
+      // Assert net worth (current aggregation of all account balances)
       await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
 
+      // Assert all bar chart colors (blue for assets, red for liabilities) and values (final expected value of the given month)
       for (const account of accounts) {
-         const bars = page.locator(`.MuiBarElement-series-${account.account_id}`);
+         const bars: Locator = page.locator(`.MuiBarElement-series-${account.account_id}`);
          await expect(bars).toHaveCount(12);
 
          for (let i = 0; i < 12; i++) {
-            // Assert the account balance matches the expected value and color relative to the account type
             const bar: Locator = page.locator(`[data-testid="accounts-${account.account_id}-bar-${i}"]`);
             const value: string | null = await bar.getAttribute("data-bar-chart-value");
 
@@ -90,7 +90,7 @@ export async function dragAndDrop(
    const endX = targetBox.x + targetBox.width / 2;
    const endY = targetBox.y + targetBox.height / 2;
 
-   // Perform the drag and drop operation by mimicking a mouse click and drag
+   // Perform the drag and drop operation by mimicking a user mouse click and drag
    await page.mouse.move(startX, startY);
    await page.mouse.down();
    await page.waitForTimeout(150);

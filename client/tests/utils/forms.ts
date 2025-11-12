@@ -21,7 +21,7 @@ export interface FormSubmitOptions {
   /** Button type for identifying Create vs Update buttons */
   buttonType?: "Create" | "Update";
 
-  /** Whether the form contains validation errors */
+  /** Whether the form contains validation errors to avoid waiting for navigation or load state */
   containsErrors?: boolean;
 }
 
@@ -57,25 +57,15 @@ export async function submitForm(
       if (value !== undefined && value !== null) {
          const element: Locator = page.getByTestId(testId);
          const tagName: string = await element.evaluate(el => el.tagName.toLowerCase());
-
-         // Check if it's a MUI Select component (the test ID is on the Select component itself)
-         // MUI Select has data-testid on the Select element which has MuiSelect-root class
-         const isMuiSelect = await element.evaluate(el => {
+         const isSelectElement: boolean = await element.evaluate(el => {
             return el.classList.contains("MuiSelect-root") ||
-                   (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
+               (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
          });
 
          // Handle different input types (select, input, checkbox, radio, date, etc.)
-         if (isMuiSelect || tagName === "select") {
-            // For MUI Select, click to open dropdown then select option
-            if (isMuiSelect) {
-               await element.click();
-               await page.waitForTimeout(200); // Wait for dropdown to open
-               await page.getByRole("option", { name: value.toString() }).click();
-               await page.waitForTimeout(100); // Wait for selection to complete
-            } else {
-               await element.selectOption(value);
-            }
+         if (isSelectElement) {
+            await element.click(); // Click to open the dropdown
+            await page.getByRole("option", { name: value.toString() }).click(); // Select the desired option
          } else if (tagName === "input") {
             const inputType: string = await element.evaluate(el => (el as HTMLInputElement).type);
 
@@ -99,14 +89,15 @@ export async function submitForm(
       }
    }
 
-   // Determine submit button selector based on buttonType or default
+   // Determine submit button selector based on buttonType or pivot to the default submit button
    const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
+
    if (opts.buttonType) {
-      // Wait for button to be visible (Collapse animation)
+      // Wait for the submit button to be visible, typically due to an expected collapse animation
       await page.getByTestId("submit-button").waitFor({ state: "visible", timeout: opts.timeout });
    }
 
-   // Create a promise for form submission
+   // Create a promise for the form submission
    const submitPromise = page.locator(submitButtonSelector).click({
       timeout: opts.timeout
    });
@@ -114,13 +105,17 @@ export async function submitForm(
    // Wait for the form submission to complete
    await submitPromise;
 
-   // If applicable, wait for navigation or for all network requests to complete before returning
-   if (opts.waitForNavigation) {
+   if (opts.containsErrors) {
+      // Ignore waiting for any context-specific conditions for validation errors
+      return;
+   } else if (opts.waitForNavigation) {
+      // Wait for navigation to complete
       await page.waitForURL(/.*/, { timeout: opts.timeout });
-   } else if (!opts.containsErrors && opts.buttonType === "Update") {
-      // Update button should be visible only while there are existing changes to be submitted
+   } else if (opts.buttonType === "Update") {
+      // Wait for the update button to be hidden to imply a successful request
       await page.locator(submitButtonSelector).waitFor({ state: "hidden", timeout: opts.timeout });
    } else if (opts.waitForLoadState) {
+      // Wait for all network requests to complete
       await page.waitForLoadState("networkidle", { timeout: opts.timeout });
    }
 }
