@@ -182,7 +182,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          if (type === "accounts") {
             if (record.account_id && balances[record.account_id] !== undefined) {
                // Generally, income-related transactions should decrement the balance, while expenses should increment it
-               balances[record.account_id].balance += record.type === "Income" ? -Number(amount) : Number(amount);
+               balances[record.account_id].balance += record.type === "Income" ? -amount : amount;
 
                for (let i = 0; i < month - 1; i++) {
                   // Propagate the new balance to the previous months
