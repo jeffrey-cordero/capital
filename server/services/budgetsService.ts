@@ -107,7 +107,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
       return sendValidationErrors(fields);
    } else if (category.name === null) {
       return sendValidationErrors(null, {
-         name: "Budget category name can't be null"
+         name: "Budget category name cannot be null"
       });
    }
 

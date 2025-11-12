@@ -22,17 +22,17 @@ import { useForm } from "react-hook-form";
  * @property {string} [title] - Button title text
  * @property {IconDefinition} [startIcon] - Button start icon
  * @property {string} [color] - MUI Button color variant
+ * @property {string} [dataTestId] - Data test ID for the button or icon
  */
 interface ConfirmationProps {
    type: "button" | "icon";
    message: string;
    onConfirmation: () => void;
+   title?: string;
    startIcon?: IconDefinition;
    color?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
    fontSize?: string;
-   title?: string;
-   confirmDataTestId?: string;
-   cancelDataTestId?: string;
+   dataTestId?: string
 }
 
 /**
@@ -41,7 +41,7 @@ interface ConfirmationProps {
  * @param {ConfirmationProps} props - Confirmation component props
  * @returns {React.ReactNode} The Confirmation component
  */
-export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color, confirmDataTestId, cancelDataTestId }: ConfirmationProps): React.ReactNode {
+export default function Confirmation({ message, onConfirmation, type, fontSize, title, startIcon, color, dataTestId }: ConfirmationProps): React.ReactNode {
    const [open, setOpen] = useState<boolean>(false);
    const { handleSubmit, formState: { isSubmitting } } = useForm();
 
@@ -61,6 +61,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                <Button
                   className = "btn-primary"
                   color = { color || "error" }
+                  data-testid = { dataTestId }
                   fullWidth = { true }
                   loading = { isSubmitting }
                   onClick = { openDialog }
@@ -73,6 +74,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
             ) : (
                <FontAwesomeIcon
                   className = "primary"
+                  data-testid = { dataTestId }
                   icon = { faTrashCan }
                   onClick = { openDialog }
                   style = { { cursor: "pointer", color: "red", fontSize: fontSize || "1.1rem" } }
@@ -102,7 +104,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                         direction = "row"
                      >
                         <Button
-                           data-testid = { cancelDataTestId }
+                           data-testid = { dataTestId ? `${dataTestId}-cancel` : undefined }
                            onClick = { closeDialog }
                         >
                            No
@@ -110,7 +112,7 @@ export default function Confirmation({ message, onConfirmation, type, fontSize, 
                         <Button
                            autoFocus = { true }
                            color = "error"
-                           data-testid = { confirmDataTestId }
+                           data-testid = { dataTestId ? `${dataTestId}-confirm` : undefined }
                            loading = { isSubmitting }
                            type = "submit"
                         >

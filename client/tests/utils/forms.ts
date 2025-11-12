@@ -17,6 +17,12 @@ export interface FormSubmitOptions {
 
   /** Custom timeout for form submission in milliseconds */
   timeout?: number;
+
+  /** Button type for identifying Create vs Update buttons */
+  buttonType?: "Create" | "Update";
+
+  /** Whether the form contains validation errors to avoid waiting for navigation or load state */
+  containsErrors?: boolean;
 }
 
 /**
@@ -26,7 +32,8 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
    waitForNavigation: false,
    submitButtonSelector: "button[type=\"submit\"]",
    waitForLoadState: true,
-   timeout: 30000
+   timeout: 30000,
+   containsErrors: false
 };
 
 /**
@@ -50,10 +57,15 @@ export async function submitForm(
       if (value !== undefined && value !== null) {
          const element: Locator = page.getByTestId(testId);
          const tagName: string = await element.evaluate(el => el.tagName.toLowerCase());
+         const isSelectElement: boolean = await element.evaluate(el => {
+            return el.classList.contains("MuiSelect-root") ||
+               (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
+         });
 
          // Handle different input types (select, input, checkbox, radio, date, etc.)
-         if (tagName === "select") {
-            await element.selectOption(value);
+         if (isSelectElement) {
+            await element.click();
+            await page.getByRole("option", { name: value.toString() }).click();
          } else if (tagName === "input") {
             const inputType: string = await element.evaluate(el => (el as HTMLInputElement).type);
 
@@ -77,8 +89,14 @@ export async function submitForm(
       }
    }
 
-   // Create a promise for form submission
    const submitButtonSelector = opts.submitButtonSelector || DEFAULT_FORM_OPTIONS.submitButtonSelector as string;
+
+   if (opts.buttonType) {
+      // Wait for the submit button to be visible, typically due to an expected collapse animation
+      await page.getByTestId("submit-button").waitFor({ state: "visible", timeout: opts.timeout });
+   }
+
+   // Create a promise for the form submission
    const submitPromise = page.locator(submitButtonSelector).click({
       timeout: opts.timeout
    });
@@ -86,10 +104,17 @@ export async function submitForm(
    // Wait for the form submission to complete
    await submitPromise;
 
-   // If applicable, wait for navigation or for all network requests to complete before returning
-   if (opts.waitForNavigation) {
+   if (opts.containsErrors) {
+      // Ignore waiting for any context-specific conditions for validation errors
+      return;
+   } else if (opts.waitForNavigation) {
+      // Wait for navigation to complete
       await page.waitForURL(/.*/, { timeout: opts.timeout });
+   } else if (opts.buttonType === "Update") {
+      // Wait for the update button to be hidden to imply a successful request
+      await page.locator(submitButtonSelector).waitFor({ state: "hidden", timeout: opts.timeout });
    } else if (opts.waitForLoadState) {
+      // Wait for all network requests to complete
       await page.waitForLoadState("networkidle", { timeout: opts.timeout });
    }
 }

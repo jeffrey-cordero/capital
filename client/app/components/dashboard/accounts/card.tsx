@@ -13,7 +13,7 @@ import {
    Typography,
    useTheme
 } from "@mui/material";
-import { type Account, images } from "capital/accounts";
+import { type Account, IMAGES } from "capital/accounts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -92,7 +92,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
    const getImageSource = useCallback(() => {
       if (!account?.image) {
          return "/svg/logo.svg";
-      } else if (images.has(account.image)) {
+      } else if (IMAGES.has(account.image)) {
          return `/images/${account.image}.png`;
       } else if (!isImageResourceError) {
          return account.image;
@@ -107,6 +107,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
             <Button
                className = "btn-primary"
                color = "primary"
+               data-testid = "accounts-add-button"
                onClick = { openAccountModal }
                startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                sx = { { p: 2.8 } }
@@ -124,6 +125,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
    } else {
       return (
          <div
+            data-testid = { `account-card-${account.account_id}` }
             ref = { setNodeRef }
             style = { style }
          >
@@ -139,6 +141,7 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                >
                   <Avatar
                      alt = { account.name }
+                     data-testid = { `account-card-image-${account.account_id}` }
                      id = { account.account_id }
                      onError = { setImageResourceError }
                      src = { getImageSource() }
@@ -155,8 +158,9 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                </Typography>
                <Fab
                   color = "primary"
+                  data-testid = { `account-card-drag-${account.account_id}` }
                   size = "small"
-                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none" } }
+                  sx = { { bottom: "75px", right: "15px", position: "absolute", cursor: "grab", touchAction: "none", zIndex: 10, pointerEvents: "auto", "&:active": { cursor: "grabbing" } } }
                   { ...attributes }
                   { ...listeners }
                >
@@ -168,25 +172,31 @@ export default function AccountCard({ account }: AccountCardProps): React.ReactN
                      sx = { { width: "100%", alignItems: "flex-start" } }
                   >
                      <Typography
+                        data-testid = { `account-card-name-${account.account_id}` }
                         sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "h6"
                      >
                         { account.name }
                      </Typography>
                      <Typography
+                        data-testid = { `account-card-balance-${account.account_id}` }
                         sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 2.5rem)" } }
                         variant = "subtitle2"
                      >
                         { displayCurrency(account.balance) }
                      </Typography>
-                     <Typography variant = "caption">
+                     <Typography
+                        data-testid = { `account-card-type-${account.account_id}` }
+                        variant = "caption"
+                     >
                         { account.type }
                      </Typography>
                      <Typography
+                        data-testid = { `account-card-last-updated-${account.account_id}` }
                         sx = { { ...horizontalScroll(theme), maxWidth: "100%" } }
                         variant = "caption"
                      >
-                        Updated { displayDate(account.last_updated) }
+                        Updated { displayDate(account.last_updated || new Date().toISOString()) }
                      </Typography>
                      <AccountForm
                         account = { account }

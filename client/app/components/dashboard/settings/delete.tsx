@@ -35,9 +35,7 @@ export default function DeleteAccount(): React.ReactNode {
    return (
       <Box sx = { { width: "100%" } }>
          <Confirmation
-            cancelDataTestId = "settings-delete-account-cancel"
-            confirmDataTestId = "settings-delete-account-confirm"
-            data-testid = "settings-delete-account"
+            dataTestId = "settings-delete-account"
             message = "Are you sure you want to delete your account? This action cannot be undone."
             onConfirmation = { onSubmit }
             startIcon = { faUserXmark }

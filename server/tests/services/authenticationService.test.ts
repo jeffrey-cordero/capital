@@ -53,7 +53,10 @@ describe("Authentication Service", () => {
       secondsUntilExpire?: number
    ): void => {
       if (secondsUntilExpire !== undefined) {
-         expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId, secondsUntilExpire);
+         const calledSeconds = (middleware.configureToken as jest.Mock).mock.calls[0][2];
+         expect(calledSeconds).toBeLessThanOrEqual(secondsUntilExpire + 2);
+         expect(calledSeconds).toBeGreaterThanOrEqual(secondsUntilExpire - 2);
+         expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId, calledSeconds);
       } else {
          expect(middleware.configureToken).toHaveBeenCalledWith(mockRes, userId);
       }

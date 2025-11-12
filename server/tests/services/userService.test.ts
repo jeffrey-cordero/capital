@@ -512,7 +512,7 @@ describe("User Service", () => {
        */
       const assertUserUpdateSuccessBehavior = (username: string, email: string, userId: string, expectedUpdates: Partial<UserUpdates>, cacheKey: string): void => {
          assertRepositoryCall(userRepository, "findConflictingUsers", [username, email, userId]);
-         assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(expectedUpdates)]);
+         assertRepositoryCall(userRepository, "update", [userId, expectedUpdates]);
          assertCacheInvalidation(redis, cacheKey);
       };
 
@@ -885,7 +885,7 @@ describe("User Service", () => {
 
          const result: ServerResponse = await userService.updateAccountDetails(userId, updates);
 
-         assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
+         assertRepositoryCall(userRepository, "update", [userId, updates]);
          assertCacheInvalidationNotCalled(redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, { user_id: "User does not exist based on the provided ID" });
       });
@@ -901,7 +901,7 @@ describe("User Service", () => {
             "Database connection failed"
          );
 
-         assertRepositoryCall(userRepository, "update", [userId, expect.objectContaining(updates)]);
+         assertRepositoryCall(userRepository, "update", [userId, updates]);
          assertCacheInvalidationNotCalled(redis);
       });
    });

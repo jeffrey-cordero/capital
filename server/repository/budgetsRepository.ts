@@ -172,7 +172,7 @@ export async function updateCategory(
       return result.length > 0;
    } catch (error: any) {
       // Handle main category update restrictions
-      if (error.message.includes("Main budget category can't be updated")) {
+      if (error.message.includes("Main budget category cannot be updated")) {
          return false;
       }
 

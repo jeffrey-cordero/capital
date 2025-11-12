@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
+import { assertComponentVisibility } from "@tests/utils";
 import { submitForm } from "@tests/utils/forms";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
@@ -29,30 +30,30 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
- * @returns {Promise<{ username: string; email: string }>} The unique credentials used for registration (username and email)
+ * @returns {Promise<{ username: string; email: string; password: string }>} The unique credentials used for registration (username, email, and password)
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
    usersRegistry: Set<CreatedUserRecord>
-): Promise<{ username: string; email: string }> {
+): Promise<{ username: string; email: string; password: string }> {
    await navigateToPath(page, REGISTER_ROUTE);
 
    const credentials = generateTestCredentials();
    const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
    // Wait for the submit button to be visible before submitting the registration form
-   await page.getByTestId("submit-button").waitFor({ state: "visible" });
+   await assertComponentVisibility(page, "submit-button");
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
 
    if (!keepLoggedIn) {
       // Logout the created user, which is typically used for intermediate test users
       await clickSidebarLink(page, "sidebar-logout");
       await expect(page).toHaveURL(LOGIN_ROUTE);
-      await page.getByTestId("username").waitFor({ state: "visible" });
+      await assertComponentVisibility(page, "username");
    }
 
    // Add the created user to the registry for the worker's final cleanup
@@ -60,8 +61,26 @@ export async function createUser(
 
    return {
       username: registrationData.username,
-      email: registrationData.email
+      email: registrationData.email,
+      password: registrationData.password
    };
+}
+
+/**
+ * Logs in a user with the provided credentials
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} username - Username for login
+ * @param {string} password - Password for login
+ */
+export async function loginUser(page: Page, username: string, password: string): Promise<void> {
+   await navigateToPath(page, LOGIN_ROUTE);
+
+   // Wait for the submit button to be visible before submitting the login form
+   await assertComponentVisibility(page, "submit-button");
+   await submitForm(page, { username, password });
+   await expect(page).toHaveURL(DASHBOARD_ROUTE);
+   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
 }
 
 /**
@@ -78,12 +97,12 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
       await clickSidebarLink(page, "sidebar-logout");
    } else if (method === "settings") {
       await navigateToPath(page, SETTINGS_ROUTE);
-      await page.getByRole("button", { name: "Logout" }).click();
+      await page.getByTestId("settings-logout").click();
       await page.getByTestId("settings-logout-confirm").click();
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
-   await page.getByTestId("username").waitFor({ state: "visible" });
+   await assertComponentVisibility(page, "username");
 }
 
 /**

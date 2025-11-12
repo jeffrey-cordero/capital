@@ -9,7 +9,7 @@ import {
    Select,
    Stack
 } from "@mui/material";
-import { type Account, accountSchema, types } from "capital/accounts";
+import { type Account, accountSchema, TYPES } from "capital/accounts";
 import { HTTP_STATUS } from "capital/server";
 import type { Transaction } from "capital/transactions";
 import { useCallback, useEffect, useMemo } from "react";
@@ -74,7 +74,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    }, [account, reset, open]);
 
    // Prepare account types for selection dropdown
-   const accountTypes = useMemo(() => Array.from(types), []);
+   const accountTypes = useMemo(() => Array.from(TYPES), []);
 
    const onCancel = useCallback(() => {
       reset(account ? account : undefined, { keepDirty: false });
@@ -87,6 +87,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       try {
          const fields = accountSchema.safeParse({
             ...data,
+            name: data.name || "",
             account_order,
             last_updated: new Date().toISOString()
          });
@@ -223,6 +224,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        autoComplete = "none"
                                        autoFocus = { true }
                                        id = "name"
+                                       inputProps = { { "data-testid": "account-name" } }
                                        label = "Name"
                                        type = "text"
                                        value = { field.value || "" }
@@ -247,7 +249,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                        { ...field }
                                        aria-label = "Balance"
                                        id = "balance"
-                                       inputProps = { { step: 0.01 } }
+                                       inputProps = { { "data-testid": "account-balance", step: 0.01 } }
                                        label = "Balance"
                                        type = "number"
                                        value = { field.value || "" }
@@ -277,6 +279,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                     </InputLabel>
                                     <Select
                                        { ...field }
+                                       inputProps = { { "data-testid": "account-type" } }
                                        label = "Type"
                                        slotProps = {
                                           {
@@ -285,16 +288,16 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
                                              }
                                           }
                                        }
-                                       value = { types.has(field.value) ? field.value : "Checking" }
+                                       value = { TYPES.has(field.value) ? field.value : "Checking" }
                                        variant = "outlined"
                                     >
                                        {
-                                          accountTypes.map((key) => (
+                                          accountTypes.map((type: string) => (
                                              <MenuItem
-                                                key = { key }
-                                                value = { key }
+                                                key = { `account-type-${type}` }
+                                                value = { type }
                                              >
-                                                { key }
+                                                { type }
                                              </MenuItem>
                                           ))
                                        }

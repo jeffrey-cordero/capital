@@ -9,7 +9,7 @@ import * as accountsRepository from "@/repository/accountsRepository";
 /**
  * Cache duration for user accounts (30 minutes)
  */
-const ACCOUNT_CACHE_DURATION = 30 * 60;
+export const ACCOUNT_CACHE_DURATION = 30 * 60;
 
 /**
  * Generates user accounts cache key for Redis
@@ -111,26 +111,35 @@ export async function updateAccount(
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate the array of account IDs is not empty
-   if (!Array.isArray(accounts) || !accounts?.length) {
+   if (!Array.isArray(accounts)) {
       return sendValidationErrors(null, {
          accounts: "Account ID's array must be a valid array representation"
+      });
+   } else if (accounts.length === 0) {
+      return sendValidationErrors(null, {
+         accounts: "Account ID's array must not be empty"
       });
    }
 
    // Validate each account ID against the UUID schema and create order updates
    const uuidSchema = z.string().trim().uuid();
    const updates: Partial<Account>[] = [];
+   const invalidAccountIds: string[] = [];
 
    for (let i = 0; i < accounts.length; i++) {
       const uuidFields = uuidSchema.safeParse(accounts[i]);
 
       if (!uuidFields.success) {
-         return sendValidationErrors(null, {
-            account_id: `Invalid account ID: '${accounts[i]}'`
-         });
+         invalidAccountIds.push(accounts[i]);
+      } else {
+         updates.push({ account_id: uuidFields.data, account_order: i });
       }
+   }
 
-      updates.push({ account_id: uuidFields.data, account_order: i });
+   if (invalidAccountIds.length > 0) {
+      return sendValidationErrors(null, {
+         account_id: `Invalid account ID's: '${invalidAccountIds.join(", ")}'`
+      });
    }
 
    // Perform bulk order update in the database

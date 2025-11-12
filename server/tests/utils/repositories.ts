@@ -39,6 +39,16 @@ export interface MockQueryResult {
 }
 
 /**
+ * Repository update function with a single ID parameter
+ */
+type SingleIdUpdateFn = (id: string, updates: Record<string, any>) => Promise<boolean>;
+
+/**
+ * Repository update function with two ID parameters
+ */
+type DualIdUpdateFn = (id1: string, id2: string, updates: Record<string, any>) => Promise<boolean>;
+
+/**
  * Create a mock database pool for repository unit tests
  */
 export function createMockPool(): MockPool {
@@ -247,40 +257,69 @@ export function assertQueryCalledWithKeyPhrases(
  * @param {Record<string, any>} updates - Fields to update
  * @param {string} idField - ID field name
  * @param {string} idValue - ID value
- * @param {(id: string, updates: Record<string, any>) => Promise<boolean>} updateFn - Repository update function
+ * @param {SingleIdUpdateFn | DualIdUpdateFn} updateFn - Repository update function
  * @param {MockPool} mockPool - Test-scoped mock pool for the current test
+ * @param {string} [secondIdField] - Optional second ID field name for composite WHERE clauses
+ * @param {string} [secondIdValue] - Optional second ID value for composite WHERE clauses
+ * @param {readonly string[]} [allowedFields] - Optional array of allowed field names to filter updates through
  */
 export async function arrangeAndAssertUpdateQueries(
    tableName: string,
    updates: Record<string, any>,
    idField: string,
    idValue: string,
-   updateFn: (id: string, updates: Record<string, any>) => Promise<boolean>,
-   mockPool: MockPool
+   updateFn: SingleIdUpdateFn | DualIdUpdateFn,
+   mockPool: MockPool,
+   secondIdField?: string,
+   secondIdValue?: string,
+   allowedFields?: readonly string[]
 ): Promise<void> {
+   // Determine which ID field to use for mock response
+   const mockIdField = secondIdField || idField;
+   const mockIdValue = secondIdValue || idValue;
+
    // Arrange a successful response to the database query call
-   arrangeMockQuery([{ [idField]: idValue }], mockPool);
+   arrangeMockQuery([{ [mockIdField]: mockIdValue }], mockPool);
 
    // Execute the provided update function to update the database
-   await updateFn(idValue, updates);
+   if (secondIdField && secondIdValue) {
+      await (updateFn as DualIdUpdateFn)(idValue, secondIdValue, updates);
+   } else {
+      await (updateFn as SingleIdUpdateFn)(idValue, updates);
+   }
 
-   // Get fields and values in the order they appear in the updates object in the SQL query
-   const fields: string[] = Object.keys(updates);
-   const values: any[] = Object.values(updates);
+   // Get fields and values by filtering through the allowed fields or using all of the keys from the updates object
+   let param = 1;
+   const values: any[] = [];
+   const fields: string[] = [];
+
+   (allowedFields || Object.keys(updates)).forEach((field) => {
+      if (field in updates) {
+         fields.push(`${field} = $${param}`);
+         values.push(updates[field]);
+         param++;
+      }
+   });
+
    const keyPhrases: string[] = [`UPDATE ${tableName}`, "SET", "RETURNING"];
 
    if (fields.length === 1) {
       // For a single field, the parameter should be at index 1 in the SQL query
-      keyPhrases.push(`${fields[0]} = $1`);
+      keyPhrases.push(`${fields[0]}`);
    } else {
       // For multiple fields, join with commas
-      const fieldAssignments = fields.map((field, index) => `${field} = $${index + 1}`).join(", ");
-      keyPhrases.push(fieldAssignments);
+      keyPhrases.push(fields.join(", "));
    }
 
-   // Add the WHERE clause with the expected parameter
-   keyPhrases.push(`WHERE ${idField} = $${fields.length + 1}`);
+   // Add the WHERE clause with the expected parameter(s)
+   keyPhrases.push(`WHERE ${idField} = $${param}`);
    values.push(idValue);
+   param++;
+
+   if (secondIdField && secondIdValue) {
+      keyPhrases.push(`AND ${secondIdField} = $${param}`);
+      values.push(secondIdValue);
+   }
 
    assertQueryCalledWithKeyPhrases(keyPhrases, values, 0, mockPool);
 }

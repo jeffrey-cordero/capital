@@ -1,6 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-
-import { ROOT_ROUTE } from "./authentication";
+import { ROOT_ROUTE } from "@tests/utils/authentication";
 
 /**
  * Derives the sidebar link title from a route path
@@ -32,6 +31,7 @@ export async function clickSidebarLink(page: Page, testId: string): Promise<void
 
    await expect(page.getByTestId(testId)).toBeVisible();
    await page.getByTestId(testId).click();
+   await page.waitForSelector(testId, { state: "hidden" });
 }
 
 /**

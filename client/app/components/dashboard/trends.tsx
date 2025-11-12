@@ -11,8 +11,14 @@ import {
    useTheme
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
-import { type Account, liabilities } from "capital/accounts";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { type Account, LIABILITIES } from "capital/accounts";
+import {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState
+} from "react";
 import { useSelector } from "react-redux";
 
 import ChartContainer from "@/components/global/chart-container";
@@ -118,7 +124,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          label: account.name,
          data: points,
          stack: account.account_id || "",
-         color: liabilities.has(account.type) ? theme.palette.error.main : theme.palette.primary.main
+         color: LIABILITIES.has(account.type || "") ? theme.palette.error.main : theme.palette.primary.main
       };
    }, [today, theme]);
 
@@ -165,7 +171,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             });
          }
 
-         const amount: number = Math.abs(record.amount);
+         const amount: number = Math.abs(Number(record.amount));
 
          // Increment Income/Expense stack based on the absolute transaction amount
          if (type === "budgets") {
@@ -176,7 +182,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
          if (type === "accounts") {
             if (record.account_id && balances[record.account_id] !== undefined) {
                // Generally, income-related transactions should decrement the balance, while expenses should increment it
-               balances[record.account_id].balance -= record.amount;
+               balances[record.account_id].balance += record.type === "Income" ? -amount : amount;
 
                for (let i = 0; i < month - 1; i++) {
                   // Propagate the new balance to the previous months
@@ -277,8 +283,28 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       </ChartContainer>
    ), [colorPalette, isCard, type, yearAbbreviations, series, height]);
 
+   useEffect(() => {
+      const timeout = setTimeout(() => {
+         series.forEach((value) => {
+            const id: string = value.id;
+            const bars: NodeListOf<SVGRectElement> = document.querySelectorAll(`.MuiBarElement-series-${id}`);
+
+            bars.forEach((barEl: SVGRectElement, barIndex: number) => {
+               barEl.setAttribute("data-testid", `${type}-${id}-bar-${barIndex}`);
+               barEl.setAttribute("data-bar-chart-color", value.color);
+               barEl.setAttribute("data-bar-chart-value", value.data[barIndex]?.toString() || "null");
+            });
+         });
+      }, 0);
+
+      return () => clearTimeout(timeout);
+   }, [series, type]);
+
    return (
-      <Box sx = { { position: "relative" } }>
+      <Box
+         data-testid = { `${type}-trends-container` }
+         sx = { { position: "relative" } }
+      >
          <Card
             elevation = { isCard ? 3 : 0 }
             sx = { { borderRadius: 2, backgroundColor: isCard ? undefined : "transparent" } }
@@ -312,6 +338,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         {
                            type === "accounts" ? (
                               <Typography
+                                 data-testid = "accounts-net-worth"
                                  sx = { { fontWeight: "600" } }
                                  variant = "subtitle1"
                               >
