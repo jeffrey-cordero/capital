@@ -45,7 +45,7 @@ describe("Account Repository", () => {
       /**
        * Asserts the user ID lookup query was called with the proper structure and exact parameters
        *
-       * @param {string} userId - Expected user_id parameter
+       * @param {string} userId - Expected `user_id` parameter
        */
       const assertFindByUserIdStructure = (userId: string): void => {
          assertQueryCalledWithKeyPhrases([
@@ -90,7 +90,7 @@ describe("Account Repository", () => {
       /**
        * Asserts the account creation query was called with the proper structure and exact parameters
        *
-       * @param {string} userId - Expected user_id parameter
+       * @param {string} userId - Expected `user_id` parameter
        * @param {Account} account - Expected account data
        */
       const assertCreateStructure = (userId: string, account: Account): void => {
@@ -160,13 +160,13 @@ describe("Account Repository", () => {
        */
       const assertUpdateDetailsStructure = (updates: Partial<Account>, userId: string, accountId: string): void => {
          const validFields: string[] = ACCOUNT_UPDATES.filter(field => field in updates);
+         const paramCount: number = validFields.length;
          const setClauses: string[] = validFields.map((field, index) => `${field} = $${index + 1}`);
          const expectedParams: unknown[] = [
             ...validFields.map((field: string) => updates[field as keyof Account]),
             userId,
             accountId
          ];
-         const paramCount: number = validFields.length;
 
          assertQueryCalledWithKeyPhrases([
             "UPDATE accounts",
@@ -201,7 +201,7 @@ describe("Account Repository", () => {
          });
       });
 
-      it("should return true immediately when no fields are provided", async() => {
+      it("should not perform any updates and return true when no fields are provided", async() => {
          const result: boolean = await accountsRepository.updateDetails(userId, accountId, {});
 
          assertQueryNotCalled(mockPool);
@@ -239,7 +239,7 @@ describe("Account Repository", () => {
 
          assertQueryResult(result, true);
 
-         // Assert only valid account fields are included in the query
+         // Assert only valid account update fields are included in the query
          const validUpdates = { name: "Valid Name" };
          assertUpdateDetailsStructure(validUpdates, userId, accountId);
       });
@@ -249,8 +249,8 @@ describe("Account Repository", () => {
       /**
        * Asserts the account ordering update query was called with the proper structure and exact parameters
        *
-       * @param {string} userId - Expected user_id parameter
-       * @param {Partial<Account>[]} updates - Account order updates
+       * @param {string} userId - Expected `user_id` parameter
+       * @param {Partial<Account>[]} updates - Account ordering updates
        */
       const assertUpdateOrderingStructure = (userId: string, updates: Partial<Account>[]): void => {
          const params = updates.flatMap(update => [
@@ -319,7 +319,7 @@ describe("Account Repository", () => {
       /**
        * Asserts the account deletion query was called with the proper structure and exact parameters
        *
-       * @param {string} userId - Expected user_id parameter
+       * @param {string} userId - Expected `user_id` parameter
        * @param {string} accountId - Expected account_id parameter
        */
       const assertDeleteAccountStructure = (userId: string, accountId: string): void => {

@@ -290,8 +290,8 @@ export async function arrangeAndAssertUpdateQueries(
 
    // Get fields and values by filtering through the allowed fields or using all of the keys from the updates object
    let param = 1;
-   const fields: string[] = [];
    const values: any[] = [];
+   const fields: string[] = [];
 
    (allowedFields || Object.keys(updates)).forEach((field) => {
       if (field in updates) {

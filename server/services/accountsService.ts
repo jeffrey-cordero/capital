@@ -111,9 +111,13 @@ export async function updateAccount(
  */
 export async function updateAccountsOrdering(user_id: string, accounts: string[]): Promise<ServerResponse> {
    // Validate the array of account IDs is not empty
-   if (!Array.isArray(accounts) || !accounts?.length) {
+   if (!Array.isArray(accounts)) {
       return sendValidationErrors(null, {
          accounts: "Account ID's array must be a valid array representation"
+      });
+   } else if (accounts.length === 0) {
+      return sendValidationErrors(null, {
+         accounts: "Account ID's array must not be empty"
       });
    }
 

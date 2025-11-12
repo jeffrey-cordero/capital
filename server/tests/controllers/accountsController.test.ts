@@ -97,9 +97,7 @@ describe("Accounts Controller", () => {
             accountsService,
             "createAccount",
             HTTP_STATUS.BAD_REQUEST,
-            {
-               name: "Name must be at least 1 character"
-            }
+            { name: "Name must be at least 1 character" }
          );
 
          await callControllerMethod(accountsController.POST, mockReq, mockRes, mockNext);
@@ -110,9 +108,7 @@ describe("Accounts Controller", () => {
             mockCreateAccount,
             [TEST_USER_ID, mockReq.body],
             HTTP_STATUS.BAD_REQUEST,
-            {
-               name: "Name must be at least 1 character"
-            }
+            { name: "Name must be at least 1 character" }
          );
       });
 
@@ -163,9 +159,7 @@ describe("Accounts Controller", () => {
             accountsService,
             "updateAccountsOrdering",
             HTTP_STATUS.BAD_REQUEST,
-            {
-               accounts: "Account ID's array must be a valid array representation"
-            }
+            { accounts: "Account ID's array must be a valid array representation" }
          );
 
          await callControllerMethod(accountsController.PUT, mockReq, mockRes, mockNext);
@@ -176,25 +170,18 @@ describe("Accounts Controller", () => {
             mockUpdateAccountsOrdering,
             [TEST_USER_ID, mockReq.body.accountsIds],
             HTTP_STATUS.BAD_REQUEST,
-            {
-               accounts: "Account ID's array must be a valid array representation"
-            }
+            { accounts: "Account ID's array must be a valid array representation" }
          );
       });
 
       it("should return not found when accounts do not exist", async() => {
          mockReq.params.id = "ordering";
-         mockReq.body.accountsIds = [
-            "00000000-0000-0000-0000-000000000001",
-            "00000000-0000-0000-0000-000000000002"
-         ];
+         mockReq.body.accountsIds = TEST_ACCOUNT_IDS;
          const mockUpdateAccountsOrdering = arrangeMockServiceValidationError(
             accountsService,
             "updateAccountsOrdering",
             HTTP_STATUS.NOT_FOUND,
-            {
-               accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs"
-            }
+            { accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs" }
          );
 
          await callControllerMethod(accountsController.PUT, mockReq, mockRes, mockNext);
@@ -205,9 +192,7 @@ describe("Accounts Controller", () => {
             mockUpdateAccountsOrdering,
             [TEST_USER_ID, mockReq.body.accountsIds],
             HTTP_STATUS.NOT_FOUND,
-            {
-               accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs"
-            }
+            { accounts: "Account(s) do not exist or do not belong to the user based on the provided IDs" }
          );
       });
 
@@ -264,9 +249,7 @@ describe("Accounts Controller", () => {
             accountsService,
             "updateAccount",
             HTTP_STATUS.BAD_REQUEST,
-            {
-               last_updated: "Missing last updated timestamp"
-            }
+            { last_updated: "Missing last updated timestamp" }
          );
 
          await callControllerMethod(accountsController.PUT, mockReq, mockRes, mockNext);
@@ -277,14 +260,12 @@ describe("Accounts Controller", () => {
             mockUpdateAccount,
             [TEST_USER_ID, { ...mockReq.body, account_id: TEST_ACCOUNT_ID }],
             HTTP_STATUS.BAD_REQUEST,
-            {
-               last_updated: "Missing last updated timestamp"
-            }
+            { last_updated: "Missing last updated timestamp" }
          );
       });
 
       it("should return not found when account does not exist", async() => {
-         mockReq.params.id = "00000000-0000-0000-0000-000000000000";
+         mockReq.params.id = TEST_ACCOUNT_ID;
          mockReq.body = {
             name: "Updated Account",
             last_updated: new Date().toISOString()
@@ -293,9 +274,7 @@ describe("Accounts Controller", () => {
             accountsService,
             "updateAccount",
             HTTP_STATUS.NOT_FOUND,
-            {
-               account_id: "Account does not exist based on the provided ID"
-            }
+            { account_id: "Account does not exist based on the provided ID" }
          );
 
          await callControllerMethod(accountsController.PUT, mockReq, mockRes, mockNext);
@@ -361,9 +340,7 @@ describe("Accounts Controller", () => {
             accountsService,
             "deleteAccount",
             HTTP_STATUS.BAD_REQUEST,
-            {
-               account_id: "Missing account ID"
-            }
+            { account_id: "Missing account ID" }
          );
 
          await callControllerMethod(accountsController.DELETE, mockReq, mockRes, mockNext);
@@ -374,21 +351,17 @@ describe("Accounts Controller", () => {
             mockDeleteAccount,
             [TEST_USER_ID, mockReq.params.id],
             HTTP_STATUS.BAD_REQUEST,
-            {
-               account_id: "Missing account ID"
-            }
+            { account_id: "Missing account ID" }
          );
       });
 
       it("should return not found when account does not exist", async() => {
-         mockReq.params.id = "00000000-0000-0000-0000-000000000000";
+         mockReq.params.id = TEST_ACCOUNT_ID;
          const mockDeleteAccount = arrangeMockServiceValidationError(
             accountsService,
             "deleteAccount",
             HTTP_STATUS.NOT_FOUND,
-            {
-               account_id: "Account does not exist based on the provided ID or does not belong to the user"
-            }
+            { account_id: "Account does not exist based on the provided ID or does not belong to the user" }
          );
 
          await callControllerMethod(accountsController.DELETE, mockReq, mockRes, mockNext);
@@ -399,9 +372,7 @@ describe("Accounts Controller", () => {
             mockDeleteAccount,
             [TEST_USER_ID, mockReq.params.id],
             HTTP_STATUS.NOT_FOUND,
-            {
-               account_id: "Account does not exist based on the provided ID or does not belong to the user"
-            }
+            { account_id: "Account does not exist based on the provided ID or does not belong to the user" }
          );
       });
 

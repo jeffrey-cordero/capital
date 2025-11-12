@@ -295,7 +295,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                barEl.setAttribute("data-bar-chart-value", value.data[barIndex]?.toString() || "null");
             });
          });
-      }, 0); // Execute after next tick to ensure the DOM is fully rendered
+      }, 0);
 
       return () => clearTimeout(timeout);
    }, [series, type]);

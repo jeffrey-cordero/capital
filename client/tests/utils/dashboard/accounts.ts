@@ -565,4 +565,8 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
 
    const response = await responsePromise;
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
+
+   // Assert form is closed and account card is hidden before making further assertions
+   await assertModalClosed(page);
+   await expect(page.getByTestId(`account-card-${accountId}`)).toBeHidden();
 }

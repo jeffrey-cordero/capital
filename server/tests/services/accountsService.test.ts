@@ -167,10 +167,7 @@ describe("Account Service", () => {
             const identifier: string = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
             const expectedError: string = `${identifier} is required`;
 
-            assertAccountValidationErrorResponse(
-               result,
-               { [field]: expectedError }
-            );
+            assertAccountValidationErrorResponse(result, { [field]: expectedError });
          });
       });
 
@@ -343,7 +340,7 @@ describe("Account Service", () => {
 
          const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-         assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, updates]);
+         assertAccountOperationSuccess("updateDetails", [userId, updates.account_id, updates]);
          assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
       });
 
@@ -359,14 +356,14 @@ describe("Account Service", () => {
 
             const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-            assertAccountOperationSuccess("updateDetails", [userId, updates.account_id!, updates]);
+            assertAccountOperationSuccess("updateDetails", [userId, updates.account_id, updates]);
             assertServiceSuccessResponse(result, HTTP_STATUS.NO_CONTENT);
          });
       });
 
       it("should return not found when account does not exist", async() => {
          const updates: Partial<Account> = {
-            account_id: "00000000-0000-0000-0000-000000000000",
+            account_id: TEST_ACCOUNT_ID,
             name: "Updated Name",
             last_updated: new Date("2024-02-01").toISOString()
          };
@@ -375,7 +372,7 @@ describe("Account Service", () => {
 
          const result: ServerResponse = await accountsService.updateAccount(userId, updates);
 
-         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, updates]);
+         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id, updates]);
          assertCacheInvalidationNotCalled(redis);
          assertServiceErrorResponse(result, HTTP_STATUS.NOT_FOUND, {
             account_id: "Account does not exist based on the provided ID"
@@ -440,7 +437,7 @@ describe("Account Service", () => {
             "Database connection failed"
          );
 
-         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id!, updates]);
+         assertRepositoryCall(accountsRepository, "updateDetails", [userId, updates.account_id, updates]);
          assertCacheInvalidationNotCalled(redis);
       });
    });
@@ -460,11 +457,6 @@ describe("Account Service", () => {
       });
 
       it("should return not found when accounts do not exist", async() => {
-         const accountIds: string[] = [
-            "00000000-0000-0000-0000-000000000001",
-            "00000000-0000-0000-0000-000000000002"
-         ];
-
          arrangeMockRepositorySuccess(accountsRepository, "updateOrdering", false);
 
          const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
@@ -480,8 +472,8 @@ describe("Account Service", () => {
          });
       });
 
-      it("should return validation errors for empty array", async() => {
-         const accountIds: string[] = [];
+      it("should return validation errors for non-array input", async() => {
+         const accountIds = "not-an-array" as unknown as string[];
          const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
          assertAccountValidationErrorResponse(
@@ -490,13 +482,13 @@ describe("Account Service", () => {
          );
       });
 
-      it("should return validation errors for non-array input", async() => {
-         const accountIds = "not-an-array" as unknown as string[];
-         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds as string[]);
+      it("should return validation errors for empty array", async() => {
+         const accountIds: string[] = [];
+         const result: ServerResponse = await accountsService.updateAccountsOrdering(userId, accountIds);
 
          assertAccountValidationErrorResponse(
             result,
-            { accounts: "Account ID's array must be a valid array representation" }
+            { accounts: "Account ID's array must not be empty" }
          );
       });
 
@@ -552,8 +544,6 @@ describe("Account Service", () => {
       });
 
       it("should return not found when account does not exist", async() => {
-         const accountId: string = "00000000-0000-0000-0000-000000000000";
-
          arrangeMockRepositorySuccess(accountsRepository, "deleteAccount", false);
 
          const result: ServerResponse = await accountsService.deleteAccount(userId, accountId);
