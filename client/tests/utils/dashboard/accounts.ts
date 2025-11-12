@@ -14,12 +14,41 @@ import { displayCurrency, displayDate } from "@/lib/display";
  * Extended account data type for form submission with optional image selection, where image can
  * be based on carousel index, carousel image name, or custom URL
  */
-export type AccountFormData = Partial<Account> & { image?: string | number | null | undefined; };
+export type AccountFormData = Partial<Account> & { image?: string | number | null; };
+
+/**
+ * Options for performing and asserting account operations
+ */
+export type PerformAccountActionOptions = {
+   page: Page;
+   accountData: AccountFormData;
+   expectedNetWorth?: number;
+   accountId?: string;
+   baseAccount?: AccountFormData;
+   hasImageError?: boolean;
+   expectedErrors?: Record<string, string>;
+};
 
 /**
  * Predefined images array for account selection
  */
 const imagesArray: string[] = Array.from(IMAGES);
+
+/**
+ * Extracts all account card IDs from the DOM using data-testid pattern matching
+ *
+ * @param {Page} page - Playwright page instance
+ * @returns {Promise<string[]>} Array of account IDs in DOM order
+ */
+export async function getAccountCardIds(page: Page): Promise<string[]> {
+   const cards = page.locator("[data-testid^=\"account-card-\"]");
+
+   return (await cards.evaluateAll(els =>
+      els.map(el => el.getAttribute("data-testid"))
+   )).filter((id): id is string =>
+      id !== null && /^account-card-[\da-f-]{36}$/i.test(id)
+   ).map(id => id.replace("account-card-", ""));
+}
 
 /**
  * Opens the account form modal for creating or updating an account
@@ -77,7 +106,6 @@ async function submitAccountForm(
    if (expectedErrors) {
       await submitForm(page, formData, { buttonType, containsErrors: true });
       await assertValidationErrors(page, expectedErrors);
-
       return null;
    }
 
@@ -178,8 +206,8 @@ export async function assertAccountCard(
       { testId: `account-card-name-${account.account_id}`, value: account.name },
       { testId: `account-card-balance-${account.account_id}`, value: displayCurrency(account.balance) },
       { testId: `account-card-type-${account.account_id}`, value: account.type || "Checking" },
-      { testId: `account-card-last-updated-${account.account_id}`, value: `Updated ${displayDate(new Date().toISOString())}` },
-   ]
+      { testId: `account-card-last-updated-${account.account_id}`, value: `Updated ${displayDate(new Date().toISOString())}` }
+   ];
 
    const card: Locator = page.getByTestId(`account-card-${account.account_id}`);
    await expect(card).toBeVisible();
@@ -232,16 +260,10 @@ export async function assertAccountCardsOrder(
    page: Page,
    accountIds: string[]
 ): Promise<void> {
-   // Get all account cards by data-testid pattern
-   const cardLocator = page.locator("[data-testid^=\"account-card-\"]");
+   const cardIds = await getAccountCardIds(page);
 
-   // Get all account cards by data-testid pattern
-   const cardTestIds: string[] = (await cardLocator.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).filter((id): id is string =>
-      id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-   );
-
-   for (let i = 0; i < cardTestIds.length; i++) {
-      expect(cardTestIds[i]).toBe(`account-card-${accountIds[i]}`);
+   for (let i = 0; i < cardIds.length; i++) {
+      expect(cardIds[i]).toBe(accountIds[i]);
    }
 }
 
@@ -287,7 +309,7 @@ export async function assertTransactionAccountDropdown(
       for (const account of expectedAccounts) {
          const option: Locator = page.getByRole("option", { name: account.name });
          await expect(option).toBeVisible();
-         await expect(option).toContainText(account.name|| "");
+         await expect(option).toContainText(account.name || "");
       }
 
       // Assert auto-selection if specified
@@ -408,18 +430,6 @@ export async function assertImageCarouselNavigation(
 }
 
 /**
- * Asserts image selection by clicking the avatar and asserting selection state updates
- *
- * @param {Page} page - Playwright page instance
- * @param {boolean} isSelected - Whether image should be selected
- */
-export async function assertImageSelection(page: Page, isSelected: boolean): Promise<void> {
-   const avatar: Locator = page.locator("[data-selected]").first();
-   await expect(avatar).toBeVisible();
-   await expect(avatar).toHaveAttribute("data-selected", isSelected ? "true" : "false");
-}
-
-/**
  * Navigates carousel and selects an image to view and optionally select by index
  *
  * @param {Page} page - Playwright page instance
@@ -461,16 +471,16 @@ export async function assertImageSelected(
    await assertActiveImageStep(page, imageIndex);
 
    // Assert the image is visible
-   const avatar: Locator = page.locator("[data-selected]").first();
-   await expect(avatar).toBeVisible();
+   const image: Locator = page.getByTestId("account-image-carousel-image");
+   await expect(image).toBeVisible();
 
    // Assert the image source is correct relative to default images array
    const expectedSrc: string = `/images/${imagesArray[imageIndex]}.png`;
-   await expect(avatar.locator("img")).toHaveAttribute("src", expectedSrc);
+   await expect(image.locator("img")).toHaveAttribute("src", expectedSrc);
 
    // Assert the data-selected attribute and border style
-   await expect(avatar).toHaveAttribute("data-selected", isSelected ? "true" : "false");
-   const borderStyle: string = await avatar.evaluate((el) => {
+   await expect(image).toHaveAttribute("data-selected", isSelected ? "true" : "false");
+   const borderStyle: string = await image.evaluate((el) => {
       const computedStyle = window.getComputedStyle(el);
       return computedStyle.borderWidth;
    });
@@ -529,25 +539,6 @@ export async function assertNetWorth(page: Page, accounts: AccountFormData[], ex
 }
 
 /**
- * Deletes all existing accounts from the page to ensure a clean slate
- *
- * @param {Page} page - Playwright page instance
- */
-export async function deleteAllAccounts(page: Page): Promise<void> {
-   // Get all account cards by data-testid pattern
-   const cardLocator = page.locator("[data-testid^=\"account-card-\"]");
-   const cardTestIds: string[] = (await cardLocator.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).filter((id): id is string =>
-      id !== null && /^account-card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-   );
-
-   for (const cardTestId of cardTestIds) {
-      if (cardTestId) {
-         await deleteAccount(page, cardTestId.split("account-card-")[1]);
-      }
-   }
-}
-
-/**
  * Deletes an account via the form, showing confirmation dialog
  *
  * @param {Page} page - Playwright page instance
@@ -574,18 +565,4 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
 
    const response = await responsePromise;
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
-}
-
-/**
- * Asserts that an account has been deleted from the UI
- *
- * @param {Page} page - Playwright page instance
- * @param {string} accountId - Account ID that should be deleted
- */
-export async function assertAccountDeleted(page: Page, accountId: string): Promise<void> {
-   // Assert account card is gone
-   await expect(page.getByTestId(`account-card-${accountId}`)).not.toBeVisible();
-
-   // Assert modal is closed
-   await assertModalClosed(page);
 }

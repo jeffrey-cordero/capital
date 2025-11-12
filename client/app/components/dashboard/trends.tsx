@@ -301,7 +301,10 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    }, [series, type]);
 
    return (
-      <Box sx = { { position: "relative" } }>
+      <Box
+         data-testid = { `${type}-trends-container` }
+         sx = { { position: "relative" } }
+      >
          <Card
             elevation = { isCard ? 3 : 0 }
             sx = { { borderRadius: 2, backgroundColor: isCard ? undefined : "transparent" } }

@@ -47,7 +47,7 @@ export async function createUser(
    await assertComponentVisibility(page, "submit-button");
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
 
    if (!keepLoggedIn) {
       // Logout the created user, which is typically used for intermediate test users
@@ -80,7 +80,7 @@ export async function loginUser(page: Page, username: string, password: string):
    await assertComponentVisibility(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
 }
 
 /**

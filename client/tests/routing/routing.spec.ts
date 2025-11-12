@@ -8,8 +8,7 @@ import {
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
 import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
-
-import { setupAssignedUser } from "../utils/user-management";
+import { setupAssignedUser } from "@tests/utils/user-management";
 
 test.describe("Routing and Navigation", () => {
    /**
@@ -74,7 +73,7 @@ test.describe("Routing and Navigation", () => {
 
    test.describe("Authenticated User Routing", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
       });
 
       test("should highlight the sidebar link for all protected routes", async({ page }) => {

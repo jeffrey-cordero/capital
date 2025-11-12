@@ -16,21 +16,23 @@ const mutex = new Mutex();
  * @param {Set<CreatedUserRecord>} usersRegistry - Registry of all created users for cleanup
  * @param {Record<string, string>} assignedRegistry - Username to password map for users currently assigned to tests
  * @param {string} route - Route to navigate to after login
+ * @param {boolean} [requiresIsolation=true] - If true, assigns a fresh user, otherwise reuses any available user
  */
 export async function setupAssignedUser(
    page: Page,
    usersRegistry: Set<CreatedUserRecord>,
    assignedRegistry: Record<string, string>,
-   route: string
+   route: string,
+   requiresIsolation: boolean = true
 ): Promise<void> {
    const release = await mutex.acquire();
 
    try {
-      // Find the first user in the registry that isn't currently assigned
       let userToAssign: CreatedUserRecord | null = null;
 
+      // Find the first user in the registry that isn't currently assigned
       for (const user of usersRegistry) {
-         if (!(user.username in assignedRegistry)) {
+         if (!requiresIsolation || !(user.username in assignedRegistry)) {
             userToAssign = user;
             break;
          }
@@ -44,8 +46,10 @@ export async function setupAssignedUser(
       // Login with the assigned user's credentials
       await loginUser(page, userToAssign.username, userToAssign.password);
 
-      // Add the assigned user to the assigned registry
-      assignedRegistry[userToAssign.username] = userToAssign.password;
+      // Add the assigned user to the assigned registry (only if isolation is required)
+      if (requiresIsolation) {
+         assignedRegistry[userToAssign.username] = userToAssign.password;
+      }
 
       // Navigate to the specified route
       await navigateToPath(page, route);
