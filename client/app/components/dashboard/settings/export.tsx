@@ -78,6 +78,7 @@ export default function ExportAccount(): React.ReactNode {
       <Button
          className = "btn-primary"
          color = "success"
+         data-testid = "settings-export"
          fullWidth = { true }
          onClick = { exportAccount }
          startIcon = { <FontAwesomeIcon icon = { faDownload } /> }

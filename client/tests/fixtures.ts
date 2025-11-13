@@ -4,7 +4,11 @@ import { cleanupCreatedTestUsers } from "@tests/utils/authentication";
 /**
  * Record of a created test user's credentials for the test's final cleanup
  */
-export type CreatedUserRecord = { username: string; password: string; };
+export type CreatedUserRecord = {
+   username: string;
+   password: string;
+   isSingleTest?: boolean;
+};
 
 /**
  * Shared fixtures for all test suites

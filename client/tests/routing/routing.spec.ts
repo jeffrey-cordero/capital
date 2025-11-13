@@ -8,6 +8,7 @@ import {
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
 import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
+import { assertThemeState, toggleTheme } from "@tests/utils/dashboard/settings";
 import { setupAssignedUser } from "@tests/utils/user-management";
 
 test.describe("Routing and Navigation", () => {
@@ -110,6 +111,59 @@ test.describe("Routing and Navigation", () => {
 
       test("should redirect an unauthenticated user from protected routes to the login page", async({ page }) => {
          await assertRouteRedirects(page, "unverified");
+      });
+   });
+
+   test.describe("Theme Toggle", () => {
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+      });
+
+      test("should toggle theme via sidebar switch and persist across routes", async({ page }) => {
+         // Get current theme
+         const currentThemeValue = await page.getByTestId("router").getAttribute("data-dark");
+         const currentTheme = currentThemeValue === "true" ? "dark" : "light";
+         const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+         // Click sidebar theme toggle
+         await page.getByTestId("theme-switch").click();
+
+         // Verify theme changed
+         await assertThemeState(page, newTheme);
+
+         // Navigate to different route
+         await navigateToPath(page, "/dashboard/accounts");
+         await expect(page).toHaveURL(/accounts/);
+
+         // Verify theme persists
+         await assertThemeState(page, newTheme);
+
+         // Navigate back to dashboard
+         await navigateToPath(page, DASHBOARD_ROUTE);
+         await expect(page).toHaveURL(DASHBOARD_ROUTE);
+
+         // Verify theme still persists
+         await assertThemeState(page, newTheme);
+      });
+
+      test("should toggle theme via settings Details form and persist across page reload", async({ page }) => {
+         // Navigate to settings
+         await navigateToPath(page, "/dashboard/settings");
+
+         // Get current theme
+         const currentThemeValue = await page.getByTestId("router").getAttribute("data-dark");
+         const currentTheme = currentThemeValue === "true" ? "dark" : "light";
+         const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+         // Toggle theme in settings
+         await toggleTheme(page, newTheme);
+         await assertThemeState(page, newTheme);
+
+         // Reload page
+         await page.reload();
+
+         // Verify theme persists after reload
+         await assertThemeState(page, newTheme);
       });
    });
 });

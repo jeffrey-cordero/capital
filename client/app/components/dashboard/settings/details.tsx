@@ -104,7 +104,7 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Section icon = { faAddressCard }>
+      <Section dataTestId = "settings-details" icon = { faAddressCard }>
          <form onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
@@ -127,6 +127,7 @@ export default function Details(): React.ReactNode {
                               { ...field }
                               autoComplete = "name"
                               id = "name"
+                              inputProps = { { "data-testid": "details-name" } }
                               label = "Name"
                               value = { field.value || "" }
                            />
@@ -161,6 +162,7 @@ export default function Details(): React.ReactNode {
                               slotProps = {
                                  {
                                     htmlInput: {
+                                       "data-testid": "details-birthday",
                                        min: minDate,
                                        max: maxDate
                                     },
@@ -195,6 +197,7 @@ export default function Details(): React.ReactNode {
                      Theme
                   </InputLabel>
                   <Select
+                     data-testid = "details-theme-toggle"
                      label = "Theme"
                      onChange = { (e) => updateTheme(e.target.value as "light" | "dark") }
                      slotProps = {
