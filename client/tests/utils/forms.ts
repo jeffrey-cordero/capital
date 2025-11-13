@@ -37,6 +37,19 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
 };
 
 /**
+ * Updates a MUI Select element with the specified value
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} testId - Data test ID of the select element
+ * @param {string} value - The value to select
+ */
+export async function updateSelectValue(page: Page, testId: string, value: string): Promise<void> {
+   const element = page.getByTestId(testId);
+   await element.click();
+   await page.getByRole("option", { name: value }).click();
+}
+
+/**
  * Fills form fields with provided data and submits the form
  *
  * @param {Page} page - Playwright page instance
@@ -64,8 +77,7 @@ export async function submitForm(
 
          // Handle different input types (select, input, checkbox, radio, date, etc.)
          if (isSelectElement) {
-            await element.click();
-            await page.getByRole("option", { name: value.toString() }).click();
+            await updateSelectValue(page, testId, value.toString());
          } else if (tagName === "input") {
             const inputType: string = await element.evaluate(el => (el as HTMLInputElement).type);
 
@@ -93,7 +105,7 @@ export async function submitForm(
 
    if (opts.buttonType) {
       // Wait for the submit button to be visible, typically due to an expected collapse animation
-      await page.getByTestId("submit-button").waitFor({ state: "visible", timeout: opts.timeout });
+      await page.locator(submitButtonSelector).waitFor({ state: "visible", timeout: opts.timeout });
    }
 
    // Create a promise for the form submission

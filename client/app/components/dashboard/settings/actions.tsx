@@ -13,7 +13,7 @@ import Section from "@/components/global/section";
  */
 export default function Actions(): React.ReactNode {
    return (
-      <Section icon = { faToolbox }>
+      <Section dataTestId = "settings-actions" icon = { faToolbox }>
          <Stack
             direction = "column"
             spacing = { 1 }

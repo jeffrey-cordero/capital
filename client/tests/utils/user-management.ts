@@ -46,12 +46,7 @@ export async function setupAssignedUser(
 
       if (!userToAssign) {
          // No available users within the current worker, so create a new one for the assignment
-         userToAssign = await createUser(page, {}, false, usersRegistry);
-      }
-
-      // Mark user as single-test if requested (prevents future reuse)
-      if (markAsSingleTest) {
-         userToAssign.isSingleTest = true;
+         userToAssign = await createUser(page, {}, false, usersRegistry, markAsSingleTest);
       }
 
       // Add the assigned user to the assigned registry

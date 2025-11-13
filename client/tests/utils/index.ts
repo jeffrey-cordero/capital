@@ -28,6 +28,43 @@ export async function assertComponentVisibility(
 }
 
 /**
+ * Asserts that an input field is visible with expected label, value, and enabled state
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} testId - Data test ID of the input element
+ * @param {string} labelText - Expected label text for the input
+ * @param {string} [defaultValue] - Expected default value in the input
+ * @param {boolean} [enabledState] - Expected enabled state (true for enabled, false for disabled)
+ */
+export async function assertInputVisibility(
+   page: Page,
+   testId: string,
+   labelText: string,
+   defaultValue?: string,
+   enabledState: boolean = true
+): Promise<void> {
+   const input = page.getByTestId(testId);
+
+   // Verify input is visible
+   await expect(input).toBeVisible();
+
+   const labelLocator = input.locator("..").locator("..").locator("label").filter({ hasText: labelText });
+   await expect(labelLocator).toBeVisible();
+
+   // Verify default value if provided
+   if (defaultValue !== undefined) {
+      await expect(input).toHaveValue(defaultValue);
+   }
+
+   // Verify enabled state
+   if (enabledState) {
+      await expect(input).toBeEnabled();
+   } else {
+      await expect(input).toBeDisabled();
+   }
+}
+
+/**
  * Asserts that the modal is closed by waiting for it to be detached from the DOM
  *
  * @param {Page} page - Playwright page instance

@@ -19,7 +19,9 @@ export default function Settings(): React.ReactNode {
          >
             <Details />
             <Security />
-            <Actions />
+            <Box data-testid = "actions-section">
+               <Actions />
+            </Box>
          </Stack>
       </Box>
    );

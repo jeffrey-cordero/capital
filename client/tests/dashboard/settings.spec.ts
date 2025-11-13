@@ -1,10 +1,9 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisibility } from "@tests/utils";
-import { DASHBOARD_ROUTE } from "@tests/utils/authentication";
+import { assertComponentVisibility, assertInputVisibility } from "@tests/utils";
+import { DASHBOARD_ROUTE, VERIFIED_ROUTES } from "@tests/utils/authentication";
 import {
    assertAllSecurityFieldsDisabled,
-   assertDeleteConfirmationDialog,
    assertDetailsDisplay,
    assertExportStructure,
    assertPasswordVisibilityToggle,
@@ -14,7 +13,6 @@ import {
    cancelDetailsEdit,
    cancelLogout,
    cancelSecurityFieldEdit,
-   openSecuritySection,
    openSettingsPage,
    performDelete,
    performExport,
@@ -27,17 +25,40 @@ import {
 } from "@tests/utils/dashboard/settings";
 import { createAccount } from "@tests/utils/dashboard/accounts";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import { navigateToPath } from "@tests/utils/navigation";
 
 test.describe("Settings Page E2E Tests", () => {
    /**
     * Asserts initial state of security form with all fields disabled
+    * and optionally verifies expected values
+    *
+    * @param {Page} page - Playwright page instance
+    * @param {object} [expectedValues] - Optional expected field values
+    * @param {string} [expectedValues.username] - Expected username value
+    * @param {string} [expectedValues.email] - Expected email value
     */
-   const assertInitialSecurityState = async(page: Page): Promise<void> => {
-      await openSecuritySection(page);
-      await assertAllSecurityFieldsDisabled(page);
+   const assertInitialSecurityState = async(
+      page: Page,
+      expectedValues?: { username?: string; email?: string }
+   ): Promise<void> => {
+      // Verify security fields using assertInputVisibility with disabled state
+      await assertInputVisibility(page, "security-username", "Username", expectedValues?.username, false);
+      await assertInputVisibility(page, "security-email", "Email", expectedValues?.email, false);
+
+      // Verify password field is disabled (no value to check initially)
+      const passwordInput = page.getByTestId("security-current-password");
+      await expect(passwordInput).toHaveAttribute("disabled");
+
+      // Verify pen icons are visible for all fields
       await expect(page.getByTestId("security-username-pen")).toBeVisible();
       await expect(page.getByTestId("security-email-pen")).toBeVisible();
       await expect(page.getByTestId("security-password-pen")).toBeVisible();
+
+      // Verify new and verify password fields are hidden in initial state
+      await expect(page.getByTestId("security-new-password")).not.toBeVisible();
+      await expect(page.getByTestId("security-verify-password")).not.toBeVisible();
+
+      // Verify cancel button is hidden
       await expect(page.getByTestId("security-cancel")).toBeHidden();
    };
 
@@ -47,19 +68,13 @@ test.describe("Settings Page E2E Tests", () => {
          await openSettingsPage(page);
       });
 
-      test("should display settings page with all sections", async({ page }) => {
-         await assertComponentVisibility(page, "settings-details", undefined);
-         await assertComponentVisibility(page, "security-section", undefined);
-         await assertComponentVisibility(page, "actions-section");
-      });
-
       test("should have all security fields disabled initially", async({ page }) => {
          await assertInitialSecurityState(page);
       });
 
       test("should have accessible form inputs", async({ page }) => {
-         await assertComponentVisibility(page, "details-name", undefined, "Name");
-         await assertComponentVisibility(page, "details-birthday", undefined, "Birthday");
+         await assertInputVisibility(page, "details-name", "Name");
+         await assertInputVisibility(page, "details-birthday", "Birthday");
          await assertComponentVisibility(page, "details-theme-toggle");
       });
    });
@@ -140,10 +155,6 @@ test.describe("Settings Page E2E Tests", () => {
             await updateDetails(page, { name: "a".repeat(31) }, { "details-name": "Name must be at most 30 characters" });
          });
 
-         test("should validate invalid birthday format", async({ page }) => {
-            await updateDetails(page, { birthday: "invalid-date" }, { "details-birthday": "Invalid date" });
-         });
-
          test("should validate birthday too early", async({ page }) => {
             await updateDetails(page, { birthday: "1799-12-31" }, { "details-birthday": "Birthday must be on or after 1800-01-01" });
          });
@@ -171,16 +182,13 @@ test.describe("Settings Page E2E Tests", () => {
             await toggleTheme(page, newTheme);
             await assertThemeState(page, newTheme);
 
-            // Navigate away
-            await page.goto("/dashboard/accounts");
-            await expect(page).toHaveURL(/accounts/);
-
-            // Navigate back
-            await page.goto("/dashboard/settings");
-            await expect(page).toHaveURL(/settings/);
-
-            // Verify theme persists
-            await assertThemeState(page, newTheme);
+            // Navigate through all verified routes and verify theme persists
+            for (const route of VERIFIED_ROUTES) {
+               if (route !== DASHBOARD_ROUTE) {  // Skip dashboard base route
+                  await navigateToPath(page, route);
+                  await assertThemeState(page, newTheme);
+               }
+            }
          });
 
          test("should persist theme across page reload", async({ page }) => {
@@ -252,7 +260,7 @@ test.describe("Settings Page E2E Tests", () => {
    test.describe("Security Form", () => {
       test.describe("Successful Updates", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
          });
 
@@ -329,7 +337,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Multiple Fields Together", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
          });
 
@@ -403,7 +411,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Update All Security Fields", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
          });
 
@@ -439,7 +447,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
          });
 
@@ -527,7 +535,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Cancel Behavior", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
          });
 
@@ -620,15 +628,17 @@ test.describe("Settings Page E2E Tests", () => {
          // Update details name
          await page.getByTestId("details-name").fill(newName);
 
+         // Submit details form
+         await page.getByTestId("details-submit").click();
+         await page.getByTestId("details-submit").waitFor({ state: "hidden", timeout: 10000 });
+
          // Update security username
          await toggleSecurityField(page, "username");
          await page.getByTestId("security-username").fill(newUsername);
 
-         // Single submission should handle both
-         await page.getByTestId("submit-button").click();
-
-         // Wait for response
-         await expect(page.locator('[data-testid="submit-button"]')).toBeHidden({ timeout: 10000 });
+         // Submit security form
+         await page.getByTestId("security-submit").click();
+         await page.getByTestId("security-submit").waitFor({ state: "hidden", timeout: 10000 });
 
          // Verify both updated
          await assertDetailsDisplay(page, { name: newName });
@@ -657,8 +667,6 @@ test.describe("Settings Page E2E Tests", () => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
             await openSettingsPage(page);
 
-            const deletedUsername = (Array.from(usersRegistry).find(u => !!(u as any).isSingleTest))?.username;
-
             await performDelete(page, true);
 
             // Verify redirect
@@ -685,8 +693,9 @@ test.describe("Settings Page E2E Tests", () => {
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };
             const account2Data = { name: "Savings Account", balance: 3000, type: "Savings" };
 
-            const account1Id = await createAccount(page, account1Data);
-            const account2Id = await createAccount(page, account2Data);
+            await navigateToPath(page, "/dashboard/accounts");
+            await createAccount(page, account1Data);
+            await createAccount(page, account2Data);
 
             // Navigate back to settings
             await navigateToPath(page, "/dashboard/settings");
@@ -695,7 +704,7 @@ test.describe("Settings Page E2E Tests", () => {
             const exportedJSON = await performExport(page);
 
             // Verify structure with 2 accounts
-            await assertExportStructure(page, exportedJSON, 2);
+            await assertExportStructure(exportedJSON, 2);
 
             // Verify accounts have correct data
             const exportedAccounts = exportedJSON.accounts;

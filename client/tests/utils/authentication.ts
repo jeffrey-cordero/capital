@@ -30,14 +30,16 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
- * @returns {Promise<{ username: string; email: string; password: string }>} The unique credentials used for registration (username, email, and password)
+ * @param {boolean} isSingleTest - Whether to mark the user as single test (prevents future reuse)
+ * @returns {Promise<{ username: string; email: string; password: string; isSingleTest?: boolean }>} The unique credentials used for registration (username, email, and password) and whether the user is single test
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
-   usersRegistry: Set<CreatedUserRecord>
-): Promise<{ username: string; email: string; password: string }> {
+   usersRegistry: Set<CreatedUserRecord>,
+   isSingleTest: boolean = false
+): Promise<{ username: string; email: string; password: string; isSingleTest?: boolean }> {
    await navigateToPath(page, REGISTER_ROUTE);
 
    const credentials = generateTestCredentials();
@@ -57,13 +59,16 @@ export async function createUser(
    }
 
    // Add the created user to the registry for the worker's final cleanup
-   usersRegistry.add({ username: registrationData.username, password: registrationData.password });
+   usersRegistry.add({ username: registrationData.username, password: registrationData.password, isSingleTest });
 
-   return {
+   const result: { username: string; email: string; password: string; isSingleTest?: boolean } = {
       username: registrationData.username,
       email: registrationData.email,
-      password: registrationData.password
+      password: registrationData.password,
+      isSingleTest
    };
+
+   return result;
 }
 
 /**

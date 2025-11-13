@@ -122,8 +122,8 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Section dataTestId = "settings-security" icon = { faShieldHalved }>
-         <form onSubmit = { handleSubmit(onSubmit) }>
+      <Section dataTestId = "security-section" icon = { faShieldHalved }>
+         <form noValidate onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
                spacing = { 1.5 }
@@ -149,7 +149,7 @@ export default function Security(): React.ReactNode {
                                  disabled.username ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       data-testid = "security-username-edit"
+                                       data-testid = "security-username-pen"
                                        icon = { faPenToSquare }
                                        onClick = { () => toggleEditableFields("username") }
                                        style = { { cursor: "pointer" } }
@@ -188,7 +188,7 @@ export default function Security(): React.ReactNode {
                                  disabled.email ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       data-testid = "security-email-edit"
+                                       data-testid = "security-email-pen"
                                        icon = { faPenToSquare }
                                        onClick = { () => toggleEditableFields("email") }
                                        style = { { cursor: "pointer" } }
@@ -228,7 +228,7 @@ export default function Security(): React.ReactNode {
                                  disabled.passwords ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       data-testid = "security-password-edit"
+                                       data-testid = "security-password-pen"
                                        icon = { disabled.passwords ? faPenToSquare : visible.password ? faEye : faEyeSlash }
                                        onClick = { () => toggleEditableFields("passwords") }
                                        style = { { cursor: "pointer" } }
@@ -236,7 +236,7 @@ export default function Security(): React.ReactNode {
                                  ) : (
                                     <FontAwesomeIcon
                                        className = { visible.password ? "primary" : undefined }
-                                       data-testid = "security-password-visibility"
+                                       data-testid = "security-current-password-visibility"
                                        icon = { visible.password ? faEye : faEyeSlash }
                                        onClick = { () => toggleVisiblePasswords("password") }
                                        style = { { cursor: "pointer" } }
@@ -244,7 +244,7 @@ export default function Security(): React.ReactNode {
                                  )
                               }
                               id = "password"
-                              inputProps = { { "data-testid": "security-password" } }
+                              inputProps = { { "data-testid": "security-current-password" } }
                               label = "Password"
                               type = { visible.password ? "text" : "password" }
                               value = { disabled.passwords ? "********" : field.value || "" }
@@ -345,6 +345,7 @@ export default function Security(): React.ReactNode {
                   </Stack>
                </Collapse>
                <SubmitButton
+                  dataTestId = "security"
                   isSubmitting = { isSubmitting }
                   onCancel = { onCancel }
                   type = "Update"

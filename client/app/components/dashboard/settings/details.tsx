@@ -105,7 +105,7 @@ export default function Details(): React.ReactNode {
 
    return (
       <Section dataTestId = "settings-details" icon = { faAddressCard }>
-         <form onSubmit = { handleSubmit(onSubmit) }>
+         <form noValidate onSubmit = { handleSubmit(onSubmit) }>
             <Stack
                direction = "column"
                spacing = { 1.5 }
@@ -219,6 +219,7 @@ export default function Details(): React.ReactNode {
                   </Select>
                </FormControl>
                <SubmitButton
+                  dataTestId = "details"
                   isSubmitting = { isSubmitting }
                   onCancel = { onReset }
                   type = "Update"
