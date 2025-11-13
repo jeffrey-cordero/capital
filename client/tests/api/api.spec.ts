@@ -1,6 +1,6 @@
 import { type Cookie, type Page, type Response, type Route } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisibility } from "@tests/utils";
+import { assertComponentVisible } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -17,7 +17,7 @@ test.describe("API Error Handling", () => {
          await navigateToPath(page, LOGIN_ROUTE);
 
          // Wait for the form to be ready before going offline
-         await assertComponentVisibility(page, "username");
+         await assertComponentVisible(page, "username");
 
          // Go offline and submit a valid login request
          await page.context().setOffline(true);

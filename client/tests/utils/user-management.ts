@@ -10,6 +10,50 @@ import { Mutex } from "async-mutex";
 const mutex = new Mutex();
 
 /**
+ * Updates username in both assigned and user registries
+ */
+export function updateUsernameInRegistries(
+   usersRegistry: Set<CreatedUserRecord>,
+   assignedRegistry: Record<string, string>,
+   originalUsername: string,
+   newUsername: string
+): void {
+   const password = assignedRegistry[originalUsername];
+   if (password) {
+      delete assignedRegistry[originalUsername];
+      assignedRegistry[newUsername] = password;
+
+      // Update the user record in registry
+      for (const user of usersRegistry) {
+         if (user.username === originalUsername) {
+            user.username = newUsername;
+            break;
+         }
+      }
+   }
+}
+
+/**
+ * Updates password in both assigned and user registries
+ */
+export function updatePasswordInRegistries(
+   usersRegistry: Set<CreatedUserRecord>,
+   assignedRegistry: Record<string, string>,
+   username: string,
+   newPassword: string
+): void {
+   assignedRegistry[username] = newPassword;
+
+   // Update the user record in registry
+   for (const user of usersRegistry) {
+      if (user.username === username) {
+         user.password = newPassword;
+         break;
+      }
+   }
+}
+
+/**
  * Sets up a test user by logging in as an available user or creating a new one
  *
  * @param {Page} page - Playwright page instance
@@ -17,7 +61,7 @@ const mutex = new Mutex();
  * @param {Record<string, string>} assignedRegistry - Username to password map for users currently assigned to tests
  * @param {string} route - Route to navigate to after login
  * @param {boolean} [requiresIsolation=true] - If true, assigns a fresh user, otherwise reuses any available user
- * @param {boolean} [markAsSingleTest=false] - If true, marks the user with isSingleTest flag to prevent future reuse (username updates, password updates, account deletions, etc.)
+ * @param {boolean} [markAsTestScoped=false] - If true, marks the user with isTestScoped flag to prevent future reuse (username updates, password updates, account deletions, etc.)
  */
 export async function setupAssignedUser(
    page: Page,
@@ -25,7 +69,7 @@ export async function setupAssignedUser(
    assignedRegistry: Record<string, string>,
    route: string,
    requiresIsolation: boolean = true,
-   markAsSingleTest: boolean = false
+   markAsTestScoped: boolean = false
 ): Promise<void> {
    const release = await mutex.acquire();
 
@@ -34,8 +78,8 @@ export async function setupAssignedUser(
 
       // Find the first user in the registry that isn't currently assigned
       for (const user of usersRegistry) {
-         // Skip users marked as single-test (never reuse them)
-         if (user.isSingleTest) continue;
+         // Skip users marked as test-scoped (never reuse them)
+         if (user.isTestScoped) continue;
 
          // Check if the user is available for assignment (no isolation required or not already assigned)
          if (!requiresIsolation || !(user.username in assignedRegistry)) {
@@ -46,7 +90,7 @@ export async function setupAssignedUser(
 
       if (!userToAssign) {
          // No available users within the current worker, so create a new one for the assignment
-         userToAssign = await createUser(page, {}, false, usersRegistry, markAsSingleTest);
+         userToAssign = await createUser(page, {}, false, usersRegistry, markAsTestScoped);
       }
 
       // Add the assigned user to the assigned registry

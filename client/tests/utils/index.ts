@@ -9,7 +9,7 @@ import { expect, type Page } from "@playwright/test";
  * @param {string} [text] - Optional text content to verify
  * @param {string} [label] - Optional label text to verify
  */
-export async function assertComponentVisibility(
+export async function assertComponentVisible(
    page: Page,
    testId: string,
    text?: string,
@@ -74,6 +74,19 @@ export async function assertModalClosed(page: Page): Promise<void> {
 }
 
 /**
+ * Asserts that a component is hidden from view
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} testId - Data test ID of the component
+ */
+export async function assertComponentHidden(
+   page: Page,
+   testId: string
+): Promise<void> {
+   await expect(page.getByTestId(testId)).toBeHidden();
+}
+
+/**
  * Closes a modal by clicking the backdrop or pressing Escape key
  *
  * @param {Page} page - Playwright page instance
@@ -85,8 +98,8 @@ export async function closeModal(page: Page, force: boolean = false): Promise<vo
 
    // If this is a forced close, confirm through the expected warning modal container
    if (force) {
-      await assertComponentVisibility(page, "warning-modal");
-      await assertComponentVisibility(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
+      await assertComponentVisible(page, "warning-modal");
+      await assertComponentVisible(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
       await page.getByTestId("warning-modal-confirm").click();
    }
 

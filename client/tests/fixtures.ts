@@ -7,7 +7,7 @@ import { cleanupCreatedTestUsers } from "@tests/utils/authentication";
 export type CreatedUserRecord = {
    username: string;
    password: string;
-   isSingleTest?: boolean;
+   isTestScoped?: boolean;
 };
 
 /**

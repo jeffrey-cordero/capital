@@ -21,7 +21,7 @@ client/
         ├── dashboard/
         │   ├── settings.ts (NEW - helper functions)
         │   └── accounts.ts (existing)
-        └── user-management.ts (MODIFIED - added isSingleTest flag)
+        └── user-management.ts (MODIFIED - added isTestScoped flag)
 ```
 
 ## Test Categories and Count
@@ -197,7 +197,7 @@ client/
 #### 3.1 Successful Individual Updates (6 tests)
 
 **3.1.1 Update Username Only**
-- Setup: `requiresIsolation=true, markAsSingleTest=true`
+- Setup: `requiresIsolation=true, markAsTestScoped=true`
 - User clicks username pen icon
 - Username input becomes enabled, pen disappears, cancel visible
 - User enters new username
@@ -216,7 +216,7 @@ client/
 - Assert other fields remain disabled
 
 **3.1.3 Update Password with Valid Credentials**
-- Setup: `requiresIsolation=true, markAsSingleTest=true`
+- Setup: `requiresIsolation=true, markAsTestScoped=true`
 - User clicks password pen icon
 - All 3 password inputs appear and become enabled
 - Password pen disappears, cancel visible
@@ -386,7 +386,7 @@ client/
 ### 4. Cross-Section Updates (1 test)
 
 **4.1 Update Details and Security Together**
-- Setup: `requiresIsolation=true, markAsSingleTest=true`
+- Setup: `requiresIsolation=true, markAsTestScoped=true`
 - User fills name field with new value
 - User clicks username pen icon
 - User fills username field with new value
@@ -422,7 +422,7 @@ client/
 #### 5.2 Delete Account (2 tests)
 
 **5.2.1 Delete Account with Confirmation**
-- Setup: `requiresIsolation=true, markAsSingleTest=true`
+- Setup: `requiresIsolation=true, markAsTestScoped=true`
 - User clicks delete account button
 - Confirmation dialog appears
 - Assert dialog text: "Are you sure you want to delete your account?"
@@ -433,7 +433,7 @@ client/
 - Verify: Can create new user with same username
 
 **5.2.2 Cancel Delete**
-- Setup: `requiresIsolation=true, markAsSingleTest=true`
+- Setup: `requiresIsolation=true, markAsTestScoped=true`
 - User clicks delete account button
 - Confirmation dialog appears
 - User clicks cancel button
@@ -496,7 +496,7 @@ client/
 
 ### User Isolation Levels
 
-| Test Category | Isolation | isSingleTest | Notes |
+| Test Category | Isolation | isTestScoped | Notes |
 |---|---|---|---|
 | Details Form | `false` | N/A | Can reuse users |
 | Email Update | `false` | N/A | Can reuse users |
@@ -510,15 +510,15 @@ client/
 
 ### Registry Management
 
-**isSingleTest Flag Purpose**: Prevent parallel test contamination for tests that:
+**isTestScoped Flag Purpose**: Prevent parallel test contamination for tests that:
 - Modify username (unique constraint)
 - Modify password (affects login)
 - Delete account (user no longer exists)
 
 **Implementation**:
-- Mark users with `isSingleTest=true` in registry
+- Mark users with `isTestScoped=true` in registry
 - Skip these users in `setupAssignedUser()` when searching for reusable users
-- Never add `isSingleTest` users to `assignedRegistry`
+- Never add `isTestScoped` users to `assignedRegistry`
 - Mutex ensures thread-safe access during setup
 
 ---
@@ -629,9 +629,9 @@ await expect(page.locator("body")).toHaveAttribute("data-dark", "true");
 - Use `page.waitForTimeout()` only for guaranteed delays (100ms)
 
 ### 2. Mutation Prevention
-- Mark sensitive users with `isSingleTest=true`
+- Mark sensitive users with `isTestScoped=true`
 - Use mutex in `setupAssignedUser()` for thread safety
-- Never assign `isSingleTest` users to `assignedRegistry`
+- Never assign `isTestScoped` users to `assignedRegistry`
 
 ### 3. State Management
 - Clear Redux state between tests (via page reload if needed)
@@ -674,7 +674,7 @@ await expect(page.locator("body")).toHaveAttribute("data-dark", "true");
 - [ ] Theme changes apply instantly without HTTP request
 - [ ] Cancel operations fully revert changes
 - [ ] Logout/Delete show confirmation dialogs
-- [ ] Registry properly manages `isSingleTest` flag
+- [ ] Registry properly manages `isTestScoped` flag
 - [ ] Export JSON has required structure and fields
 - [ ] Tests follow accounts.spec.ts modularity patterns
 
@@ -694,8 +694,8 @@ await expect(page.locator("body")).toHaveAttribute("data-dark", "true");
 - Type-safe with TypeScript interfaces for form data
 
 ### User Management Updates
-- Updated `CreatedUserRecord` type in fixtures to include optional `isSingleTest` property
-- `isSingleTest` flag (defaults to false implicitly) prevents reuse in parallel tests
+- Updated `CreatedUserRecord` type in fixtures to include optional `isTestScoped` property
+- `isTestScoped` flag (defaults to false implicitly) prevents reuse in parallel tests
 - Mutex ensures thread-safe user assignment
 - Simplified implementation without TS intersection types
 

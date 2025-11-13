@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
-import { assertComponentVisibility, assertModalClosed, closeModal } from "@tests/utils";
+import { assertComponentVisible, assertModalClosed, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
@@ -66,7 +66,7 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
       await page.getByTestId("accounts-add-button").click();
    }
 
-   await assertComponentVisibility(page, "account-name");
+   await assertComponentVisible(page, "account-name");
 }
 
 /**
@@ -140,7 +140,7 @@ async function submitAccountForm(
       expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
 
       // Assert that the form remains open after a successful update
-      await assertComponentVisibility(page, "account-name");
+      await assertComponentVisible(page, "account-name");
 
       return null;
    }
@@ -211,7 +211,7 @@ export async function assertAccountCard(
    await expect(card).toBeVisible();
 
    for (const input of formInputs) {
-      await assertComponentVisibility(page, input.testId, input.value);
+      await assertComponentVisible(page, input.testId, input.value);
    }
 
    const imageContainer: Locator = page.getByTestId(`account-card-image-${account.account_id}`);
@@ -521,11 +521,11 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
    await openAccountForm(page, accountId);
 
    // Wait for delete button to appear
-   await assertComponentVisibility(page, "account-delete-button");
+   await assertComponentVisible(page, "account-delete-button");
 
    // Click the delete button to open the confirmation dialog
    await page.getByTestId("account-delete-button").click();
-   await assertComponentVisibility(page, "account-delete-button-confirm");
+   await assertComponentVisible(page, "account-delete-button-confirm");
 
    // Confirm the deletion and wait for the response
    const responsePromise = page.waitForResponse((response: Response) => {

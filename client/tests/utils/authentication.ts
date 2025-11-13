@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
-import { assertComponentVisibility } from "@tests/utils";
+import { assertComponentVisible } from "@tests/utils";
 import { submitForm } from "@tests/utils/forms";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
@@ -30,23 +30,23 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
- * @param {boolean} isSingleTest - Whether to mark the user as single test (prevents future reuse)
- * @returns {Promise<{ username: string; email: string; password: string; isSingleTest?: boolean }>} The unique credentials used for registration (username, email, and password) and whether the user is single test
+ * @param {boolean} isTestScoped - Whether to mark the user as test-scoped (prevents future reuse)
+ * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration (username, email, and password) and whether the user is test-scoped
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
    usersRegistry: Set<CreatedUserRecord>,
-   isSingleTest: boolean = false
-): Promise<{ username: string; email: string; password: string; isSingleTest?: boolean }> {
+   isTestScoped: boolean = false
+): Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }> {
    await navigateToPath(page, REGISTER_ROUTE);
 
    const credentials = generateTestCredentials();
    const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
    // Wait for the submit button to be visible before submitting the registration form
-   await assertComponentVisibility(page, "submit-button");
+   await assertComponentVisible(page, "submit-button");
    await submitForm(page, registrationData);
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
    await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
@@ -55,17 +55,17 @@ export async function createUser(
       // Logout the created user, which is typically used for intermediate test users
       await clickSidebarLink(page, "sidebar-logout");
       await expect(page).toHaveURL(LOGIN_ROUTE);
-      await assertComponentVisibility(page, "username");
+      await assertComponentVisible(page, "username");
    }
 
    // Add the created user to the registry for the worker's final cleanup
-   usersRegistry.add({ username: registrationData.username, password: registrationData.password, isSingleTest });
+   usersRegistry.add({ username: registrationData.username, password: registrationData.password, isTestScoped });
 
-   const result: { username: string; email: string; password: string; isSingleTest?: boolean } = {
+   const result: { username: string; email: string; password: string; isTestScoped?: boolean } = {
       username: registrationData.username,
       email: registrationData.email,
       password: registrationData.password,
-      isSingleTest
+      isTestScoped
    };
 
    return result;
@@ -82,7 +82,7 @@ export async function loginUser(page: Page, username: string, password: string):
    await navigateToPath(page, LOGIN_ROUTE);
 
    // Wait for the submit button to be visible before submitting the login form
-   await assertComponentVisibility(page, "submit-button");
+   await assertComponentVisible(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
    await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
@@ -107,7 +107,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
-   await assertComponentVisibility(page, "username");
+   await assertComponentVisible(page, "username");
 }
 
 /**
