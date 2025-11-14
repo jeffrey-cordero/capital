@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisible } from "@tests/utils";
+import { assertComponentIsVisible } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends, dragAndDrop } from "@tests/utils/dashboard";
 import {
@@ -82,14 +82,14 @@ test.describe("Account Management", () => {
       test("should display empty accounts state on dashboard page", async({ page }) => {
          await navigateToPath(page, DASHBOARD_ROUTE);
          await assertAccountTrends(page, [], 0, "dashboard");
-         await assertComponentVisible(page, "empty-accounts-trends-overview", "No available accounts");
+         await assertComponentIsVisible(page, "empty-accounts-trends-overview", "No available accounts");
       });
 
       test("should display empty accounts state on accounts page", async({ page }) => {
          await assertAccountTrends(page, [], 0, "accounts");
          await expect(page.getByTestId("accounts-add-button")).toBeEnabled();
-         await assertComponentVisible(page, "accounts-add-button", "Add Account");
-         await assertComponentVisible(page, "accounts-empty-message", "No available accounts");
+         await assertComponentIsVisible(page, "accounts-add-button", "Add Account");
+         await assertComponentIsVisible(page, "accounts-empty-message", "No available accounts");
          await assertTransactionAccountDropdown(page, []);
       });
 
@@ -104,7 +104,7 @@ test.describe("Account Management", () => {
          await openAccountForm(page);
 
          for (const input of formInputs) {
-            await assertComponentVisible(page, input.testId, undefined, input.label);
+            await assertComponentIsVisible(page, input.testId, undefined, input.label);
          }
       });
    });
@@ -540,16 +540,16 @@ test.describe("Account Management", () => {
          await openAccountForm(page, accountId);
 
          // Wait for delete button to appear to open the confirmation dialog
-         await assertComponentVisible(page, "account-delete-button");
+         await assertComponentIsVisible(page, "account-delete-button");
          await page.getByTestId("account-delete-button").click();
 
          // Assert confirmation dialog appears and contains the correct message
-         await assertComponentVisible(page, "account-delete-button-confirm");
+         await assertComponentIsVisible(page, "account-delete-button-confirm");
          await expect(page.getByText("Are you sure you want to delete your account?")).toBeVisible();
 
          // Close the confirmation dialog without confirming
          await page.getByTestId("account-delete-button-cancel").click();
-         await assertComponentVisible(page, "account-delete-button-confirm");
+         await assertComponentIsVisible(page, "account-delete-button-confirm");
       });
 
       test("should successfully delete account and update net worth", async({ page }) => {

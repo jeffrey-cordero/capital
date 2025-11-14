@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { assertComponentIsVisible } from "@tests/utils";
 import { type Account, LIABILITIES } from "capital/accounts";
 
 import { displayCurrency } from "@/lib/display";
@@ -27,10 +28,10 @@ export async function assertAccountTrends(
 
       if (location === "dashboard") {
          await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
-         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+         await assertComponentIsVisible(page, "empty-accounts-trends-overview");
       } else {
          await expect(netWorthElement).not.toBeVisible();
-         await expect(page.getByTestId("accounts-empty-message")).toBeVisible();
+         await assertComponentIsVisible(page, "accounts-empty-message");
          await expect(page.getByTestId("accounts-empty-message")).toHaveText("No available accounts");
       }
    } else {

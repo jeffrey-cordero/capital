@@ -1,4 +1,5 @@
-import { expect, type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
+import { assertComponentIsVisible } from "@tests/utils";
 import { ROOT_ROUTE } from "@tests/utils/authentication";
 
 /**
@@ -22,14 +23,14 @@ export function getRouteLinkTitle(route: string): string {
  * @param {string} testId - The test ID of the element to click after opening the sidebar
  */
 export async function clickSidebarLink(page: Page, testId: string): Promise<void> {
-   const sidebarToggle = page.getByTestId("sidebar-toggle");
+   const sidebarToggle: Locator = page.getByTestId("sidebar-toggle");
 
    if (await sidebarToggle.isVisible()) {
       // Open the closed sidebar
       await sidebarToggle.click();
    }
 
-   await expect(page.getByTestId(testId)).toBeVisible();
+   await assertComponentIsVisible(page, testId);
    await page.getByTestId(testId).click();
    await page.waitForSelector(testId, { state: "hidden" });
 }

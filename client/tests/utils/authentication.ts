@@ -1,9 +1,10 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
-import { assertComponentVisible } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { submitForm } from "@tests/utils/forms";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
+import { HTTP_STATUS } from "capital/server";
 import type { RegisterPayload } from "capital/user";
 
 /**
@@ -24,7 +25,8 @@ export const SETTINGS_ROUTE = "/dashboard/settings";
 export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, SETTINGS_ROUTE] as const;
 
 /**
- * Creates a test user by registering them with unique credentials
+ * Creates a test user by registering them with unique credentials, which is retried up to 3 times
+ * if the username already exists
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
@@ -32,6 +34,7 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
  * @param {boolean} isTestScoped - Whether to mark the user as test-scoped (prevents future reuse)
  * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration (username, email, and password) and whether the user is test-scoped
+ * @throws {Error} If user creation fails after 3 attempts
  */
 export async function createUser(
    page: Page,
@@ -40,26 +43,63 @@ export async function createUser(
    usersRegistry: Set<CreatedUserRecord>,
    isTestScoped: boolean = false
 ): Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }> {
-   await navigateToPath(page, REGISTER_ROUTE);
+   const MAX_RETRIES: number = 3;
+   let success: boolean = false;
+   let lastError: string = "";
 
-   const credentials = generateTestCredentials();
-   const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
+   let registrationData: RegisterPayload | undefined;
 
-   // Wait for the submit button to be visible before submitting the registration form
-   await assertComponentVisible(page, "submit-button");
-   await submitForm(page, registrationData);
-   await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
+   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      await navigateToPath(page, REGISTER_ROUTE);
 
-   if (!keepLoggedIn) {
-      // Logout the created user, which is typically used for intermediate test users
-      await clickSidebarLink(page, "sidebar-logout");
-      await expect(page).toHaveURL(LOGIN_ROUTE);
-      await assertComponentVisible(page, "username");
+      const credentials = generateTestCredentials();
+      registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
+
+      // Wait for the submit button to be visible before submitting the registration form
+      await assertComponentIsVisible(page, "submit-button");
+      const responsePromise =  page.waitForResponse(
+         response => response.url().includes("/api/v1/users") && response.request().method() === "POST"
+     );
+
+      // Submit the form and check for either successful navigation or validation errors (conflict)
+      await submitForm(page, registrationData);
+      const response = await responsePromise;
+
+      if (response.status() === HTTP_STATUS.CREATED) {
+         // Registration succeeded
+         await assertComponentIsVisible(page, "accounts-trends-container");
+
+         if (!keepLoggedIn) {
+            // Logout the created user, which is typically used for intermediate test users
+            await clickSidebarLink(page, "sidebar-logout");
+            await expect(page).toHaveURL(LOGIN_ROUTE);
+            await assertInputVisibility(page, "username", "Username");
+         }
+
+         // Add the created user to the registry for the worker's final cleanup
+         usersRegistry.add({ username: registrationData.username, password: registrationData.password, isTestScoped });
+
+         success = true;
+         break;
+      } else if (response.status() === HTTP_STATUS.CONFLICT) {
+         // Form submission failed, likely due to username conflict
+         lastError = `User creation failed: username conflict or invalid data`;
+
+         if (attempt === MAX_RETRIES) {
+            throw new Error(`${lastError} after ${MAX_RETRIES} attempts`);
+         }
+
+         // Continue to next attempt with new credentials
+         continue;
+      } else {
+         // Unexpected response status
+         throw new Error(`User registration failed with unexpected response status: ${response.status()}`);
+      }
    }
 
-   // Add the created user to the registry for the worker's final cleanup
-   usersRegistry.add({ username: registrationData.username, password: registrationData.password, isTestScoped });
+   if (!success || !registrationData) {
+      throw new Error(lastError || "User creation failed: unexpected error");
+   }
 
    const result: { username: string; email: string; password: string; isTestScoped?: boolean } = {
       username: registrationData.username,
@@ -82,10 +122,10 @@ export async function loginUser(page: Page, username: string, password: string):
    await navigateToPath(page, LOGIN_ROUTE);
 
    // Wait for the submit button to be visible before submitting the login form
-   await assertComponentVisible(page, "submit-button");
+   await assertComponentIsVisible(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
+   await assertComponentIsVisible(page, "accounts-trends-container");
 }
 
 /**
@@ -107,7 +147,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
-   await assertComponentVisible(page, "username");
+   await assertInputVisibility(page, "username", "Username");
 }
 
 /**

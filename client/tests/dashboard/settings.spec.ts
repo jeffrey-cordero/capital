@@ -1,17 +1,18 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisible, assertInputVisibility } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE, REGISTER_ROUTE, SETTINGS_ROUTE, VERIFIED_ROUTES, createUser } from "@tests/utils/authentication";
 import {
+   assertSecurityFieldDisabled,
    assertSecurityUpdates,
    assertDetailsDisplay,
    assertExportStructure,
    assertInitialSecurityState,
-   assertPasswordVisibilityToggle,
-   assertSecurityFieldDisabled,
+   assertSidebarTheme,
    assertThemeState,
    cancelDetailsEdit,
    cancelLogout,
    cancelSecurityFieldEdit,
+   getCurrentAndOppositeTheme,
    openSettingsPage,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
@@ -19,7 +20,7 @@ import {
    performDelete,
    performExport,
    performLogout,
-   togglePasswordVisibility,
+   testAllPasswordVisibilityToggles,
    toggleSecurityField,
    toggleTheme,
    updateDetails,
@@ -28,6 +29,7 @@ import {
 import { createAccount } from "@tests/utils/dashboard/accounts";
 import { setupAssignedUser, updateUsernameInRegistries, updatePasswordInRegistries } from "@tests/utils/user-management";
 import { navigateToPath } from "@tests/utils/navigation";
+import { generateTestCredentials, createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings Page E2E Tests", () => {
 
@@ -44,7 +46,7 @@ test.describe("Settings Page E2E Tests", () => {
       test("should have accessible form inputs", async({ page }) => {
          await assertInputVisibility(page, "details-name", "Name");
          await assertInputVisibility(page, "details-birthday", "Birthday");
-         await assertComponentVisible(page, "details-theme-toggle");
+         await assertComponentIsVisible(page, "details-theme-toggle");
       });
    });
 
@@ -77,35 +79,26 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should toggle theme and apply instantly", async({ page }) => {
-            const newTheme = (await page.getByTestId("router").getAttribute("data-dark")) === "false" ? "dark" : "light";
-            await performAndAssertThemeToggle(
-               page,
-               newTheme
-            );
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
+            await performAndAssertThemeToggle(page, newTheme);
          });
 
          test("should update name, birthday, and toggle theme", async({ page }) => {
-            const newTheme = (await page.getByTestId("router").getAttribute("data-dark")) === "false" ? "dark" : "light";
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await performAndAssertDetailsUpdate(
                page,
                { name: "Updated User", birthday: "1992-03-10", theme: newTheme }
             );
-            await performAndAssertThemeToggle(
-               page,
-               newTheme
-            );
+            await performAndAssertThemeToggle(page, newTheme);
          });
 
          test("should update all Details fields together", async({ page }) => {
-            const newTheme = (await page.getByTestId("router").getAttribute("data-dark")) === "false" ? "dark" : "light";
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await performAndAssertDetailsUpdate(
                page,
                { name: "Complete Update", birthday: "1988-12-25", theme: newTheme }
             );
-            await performAndAssertThemeToggle(
-               page,
-               newTheme
-            );
+            await performAndAssertThemeToggle(page, newTheme);
          });
       });
 
@@ -143,16 +136,12 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should persist theme across page navigation", async({ page }) => {
-            // Toggle to dark
-            const currentTheme = await page.getByTestId("router").getAttribute("data-dark");
-            const newTheme = currentTheme === "false" ? "dark" : "light";
-
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await toggleTheme(page, newTheme);
             await assertThemeState(page, newTheme);
 
-            // Navigate through all verified routes and verify theme persists
             for (const route of VERIFIED_ROUTES) {
-               if (route !== DASHBOARD_ROUTE) {  // Skip dashboard base route
+               if (route !== DASHBOARD_ROUTE) {
                   await navigateToPath(page, route);
                   await assertThemeState(page, newTheme);
                }
@@ -160,18 +149,25 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should persist theme across page reload", async({ page }) => {
-            // Toggle theme
-            const currentTheme = await page.getByTestId("router").getAttribute("data-dark");
-            const newTheme = currentTheme === "false" ? "dark" : "light";
-
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await toggleTheme(page, newTheme);
             await assertThemeState(page, newTheme);
 
-            // Reload page
             await page.reload();
-
-            // Verify theme persists
             await assertThemeState(page, newTheme);
+         });
+
+         test("should sync theme between sidebar and settings form", async({ page }) => {
+            const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
+
+            await toggleTheme(page, newTheme);
+            await assertThemeState(page, newTheme);
+            await assertSidebarTheme(page, newTheme);
+
+            const oppositeTheme = newTheme === "dark" ? "light" : "dark";
+            await toggleTheme(page, oppositeTheme);
+            await assertThemeState(page, oppositeTheme);
+            await assertSidebarTheme(page, oppositeTheme);
          });
       });
 
@@ -189,7 +185,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("details-name").fill(newName);
 
             // Verify cancel button appears (indicates change was detected)
-            await assertComponentVisible(page, "details-cancel");
+            await assertComponentIsVisible(page, "details-cancel");
 
             // Cancel
             await cancelDetailsEdit(page, { name: originalName });
@@ -206,7 +202,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("details-birthday").fill(newBirthday);
 
             // Verify cancel button appears (indicates change was detected)
-            await assertComponentVisible(page, "details-cancel");
+            await assertComponentIsVisible(page, "details-cancel");
 
             // Cancel
             await cancelDetailsEdit(page, { birthday: originalBirthday });
@@ -227,7 +223,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("details-birthday").fill(newBirthday);
 
             // Verify cancel button appears (indicates changes were detected)
-            await assertComponentVisible(page, "details-cancel");
+            await assertComponentIsVisible(page, "details-cancel");
 
             // Cancel
             await cancelDetailsEdit(page, { name: originalName, birthday: originalBirthday });
@@ -248,57 +244,29 @@ test.describe("Settings Page E2E Tests", () => {
 
          test("should update username only", async({ page, usersRegistry, assignedRegistry }) => {
             const originalUsername = await page.getByTestId("security-username").inputValue();
-            const newUsername = `user_${Date.now()}`;
-            await performAndAssertSecurityUpdate(
-               page,
-               { username: newUsername }
-            );
+            const { username: newUsername } = generateTestCredentials();
+            await performAndAssertSecurityUpdate(page, { username: newUsername });
             updateUsernameInRegistries(usersRegistry, assignedRegistry, originalUsername, newUsername);
          });
 
          test("should update email only", async({ page }) => {
-            await performAndAssertSecurityUpdate(
-               page,
-               { email: `test_${Date.now()}@example.com` }
-            );
+            const { email: newEmail } = generateTestCredentials();
+            await performAndAssertSecurityUpdate(page, { email: newEmail });
          });
 
          test("should update password with valid credentials", async({ page, usersRegistry, assignedRegistry }) => {
             const currentUsername = await page.getByTestId("security-username").inputValue();
-            await performAndAssertSecurityUpdate(
-               page,
-               {
-                  password: "Password1!",
-                  newPassword: "NewPassword1!",
-                  verifyPassword: "NewPassword1!"
-               }
-            );
-            updatePasswordInRegistries(usersRegistry, assignedRegistry, currentUsername, "NewPassword1!");
+            const { password: currentPassword, newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
+            await performAndAssertSecurityUpdate(page, {
+               password: currentPassword,
+               newPassword,
+               verifyPassword
+            });
+            updatePasswordInRegistries(usersRegistry, assignedRegistry, currentUsername, newPassword!);
          });
 
          test("should verify each password field has independent visibility toggle", async({ page }) => {
-            await toggleSecurityField(page, "password");
-
-            // Test current password visibility
-            await assertPasswordVisibilityToggle(page, "current", false);
-            await togglePasswordVisibility(page, "current");
-            await assertPasswordVisibilityToggle(page, "current", true);
-            await togglePasswordVisibility(page, "current");
-            await assertPasswordVisibilityToggle(page, "current", false);
-
-            // Test new password visibility
-            await assertPasswordVisibilityToggle(page, "new", false);
-            await togglePasswordVisibility(page, "new");
-            await assertPasswordVisibilityToggle(page, "new", true);
-            await togglePasswordVisibility(page, "new");
-            await assertPasswordVisibilityToggle(page, "new", false);
-
-            // Test verify password visibility
-            await assertPasswordVisibilityToggle(page, "verify", false);
-            await togglePasswordVisibility(page, "verify");
-            await assertPasswordVisibilityToggle(page, "verify", true);
-            await togglePasswordVisibility(page, "verify");
-            await assertPasswordVisibilityToggle(page, "verify", false);
+            await testAllPasswordVisibilityToggles(page);
          });
       });
 
@@ -309,40 +277,31 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should update username and email together", async({ page }) => {
-            const newUsername = `user_${Date.now()}`;
-            const newEmail = `test_${Date.now()}@example.com`;
-
-            await updateSecurityFields(page, {
-               username: newUsername,
-               email: newEmail
-            });
+            const { username: newUsername, email: newEmail } = generateTestCredentials();
+            await updateSecurityFields(page, { username: newUsername, email: newEmail });
             await assertSecurityUpdates(page, { username: newUsername, email: newEmail });
          });
 
          test("should update username and password together", async({ page }) => {
-            const newUsername = `user_${Date.now()}`;
-            const currentPassword = "Password1!";
-            const newPassword = "NewPassword1!";
-
+            const { username: newUsername } = generateTestCredentials();
+            const { password: currentPassword, newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                username: newUsername,
                password: currentPassword,
                newPassword,
-               verifyPassword: newPassword
+               verifyPassword
             });
             await assertSecurityUpdates(page, { username: newUsername });
          });
 
          test("should update email and password together", async({ page }) => {
-            const newEmail = `test_${Date.now()}@example.com`;
-            const currentPassword = "Password1!";
-            const newPassword = "NewPassword1!";
-
+            const { email: newEmail } = generateTestCredentials();
+            const { password: currentPassword, newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                email: newEmail,
                password: currentPassword,
                newPassword,
-               verifyPassword: newPassword
+               verifyPassword
             });
             await assertSecurityUpdates(page, { email: newEmail });
          });
@@ -355,17 +314,14 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should update all security fields together", async({ page }) => {
-            const newUsername = `user_${Date.now()}`;
-            const newEmail = `test_${Date.now()}@example.com`;
-            const currentPassword = "Password1!";
-            const newPassword = "NewPassword1!";
-
+            const { username: newUsername, email: newEmail } = generateTestCredentials();
+            const { password: currentPassword, newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                username: newUsername,
                email: newEmail,
                password: currentPassword,
                newPassword,
-               verifyPassword: newPassword
+               verifyPassword
             });
             await assertSecurityUpdates(page, { username: newUsername, email: newEmail });
          });
@@ -386,69 +342,46 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should validate password mismatch", async({ page }) => {
-            const currentPassword = "Password1!";
-
-            await updateSecurityFields(
-               page,
-               {
-                  password: currentPassword,
-                  newPassword: "NewPassword1!",
-                  verifyPassword: "DifferentPassword1!"
-               },
-               { "security-verify-password": "Passwords don't match" }
-            );
+            const { password: currentPassword, newPassword } = createUserUpdatesWithPasswordChange();
+            await updateSecurityFields(page, {
+               password: currentPassword,
+               newPassword,
+               verifyPassword: "DifferentPassword1!"
+            }, { "security-verify-password": "Passwords don't match" });
          });
 
          test("should validate new password same as old password", async({ page }) => {
-            const samePassword = "Password1!";
-
-            await updateSecurityFields(
-               page,
-               {
-                  password: samePassword,
-                  newPassword: samePassword,
-                  verifyPassword: samePassword
-               },
-               { "security-new-password": "New password must not match the old password" }
-            );
+            const { password: currentPassword } = createUserUpdatesWithPasswordChange();
+            await updateSecurityFields(page, {
+               password: currentPassword,
+               newPassword: currentPassword,
+               verifyPassword: currentPassword
+            }, { "security-new-password": "New password must not match the old password" });
          });
 
          test("should validate invalid current password", async({ page }) => {
-            const newPassword = "NewPassword1!";
-
-            await updateSecurityFields(
-               page,
-               {
-                  password: "WrongPassword1!",
-                  newPassword,
-                  verifyPassword: newPassword
-               },
-               { "security-current-password": "Invalid credentials" }
-            );
+            const { newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
+            await updateSecurityFields(page, {
+               password: "WrongPassword1!",
+               newPassword,
+               verifyPassword
+            }, { "security-current-password": "Invalid credentials" });
          });
 
          test("should validate current password required for password change", async({ page }) => {
-            await updateSecurityFields(
-               page,
-               {
-                  newPassword: "NewPassword1!",
-                  verifyPassword: "NewPassword1!"
-               },
-               { "security-current-password": "Current password is required to set a new password" }
-            );
+            const { newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
+            await updateSecurityFields(page, {
+               newPassword,
+               verifyPassword
+            }, { "security-current-password": "Current password is required to set a new password" });
          });
 
          test("should validate new password required for password change", async({ page }) => {
-            const currentPassword = "Password1!";
-
-            await updateSecurityFields(
-               page,
-               {
-                  password: currentPassword,
-                  verifyPassword: "NewPassword1!"
-               },
-               { "security-new-password": "New password is required to set a new password" }
-            );
+            const { password: currentPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
+            await updateSecurityFields(page, {
+               password: currentPassword,
+               verifyPassword
+            }, { "security-new-password": "New password is required to set a new password" });
          });
       });
 
@@ -467,7 +400,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("security-username").fill(newUsername);
 
             // Verify cancel button appears (indicates change was detected)
-            await assertComponentVisible(page, "security-cancel");
+            await assertComponentIsVisible(page, "security-cancel");
 
             // Cancel
             await cancelSecurityFieldEdit(page, { username: originalUsername });
@@ -486,7 +419,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("security-email").fill(newEmail);
 
             // Verify cancel button appears (indicates change was detected)
-            await assertComponentVisible(page, "security-cancel");
+            await assertComponentIsVisible(page, "security-cancel");
 
             // Cancel
             await cancelSecurityFieldEdit(page, { email: originalEmail });
@@ -501,9 +434,9 @@ test.describe("Settings Page E2E Tests", () => {
             await toggleSecurityField(page, "password");
 
             // Verify fields visible
-            await assertComponentVisible(page, "security-current-password");
-            await assertComponentVisible(page, "security-new-password");
-            await assertComponentVisible(page, "security-verify-password");
+            await assertComponentIsVisible(page, "security-current-password");
+            await assertComponentIsVisible(page, "security-new-password");
+            await assertComponentIsVisible(page, "security-verify-password");
 
             // Fill password fields to trigger change detection
             await page.getByTestId("security-current-password").fill("Password1!");
@@ -511,14 +444,14 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("security-verify-password").fill("NewPassword1!");
 
             // Verify cancel button appears (indicates change was detected)
-            await assertComponentVisible(page, "security-cancel");
+            await assertComponentIsVisible(page, "security-cancel");
 
             // Cancel
             await cancelSecurityFieldEdit(page, { password: "Password1!" });
 
             // Verify all disabled
             await assertSecurityFieldDisabled(page, "password");
-            await assertComponentVisible(page, "security-password-pen");
+            await assertComponentIsVisible(page, "security-password-pen");
          });
 
          test("should cancel all security field changes", async({ page }) => {
@@ -543,7 +476,7 @@ test.describe("Settings Page E2E Tests", () => {
             await page.getByTestId("security-verify-password").fill("NewPassword1!");
 
             // Verify cancel button appears (indicates changes were detected)
-            await assertComponentVisible(page, "security-cancel");
+            await assertComponentIsVisible(page, "security-cancel");
 
             // Cancel
             await cancelSecurityFieldEdit(page, {
@@ -566,7 +499,7 @@ test.describe("Settings Page E2E Tests", () => {
          await openSettingsPage(page);
 
          const newName = "Updated Full Name";
-         const newUsername = `user_${Date.now()}`;
+         const { username: newUsername } = generateTestCredentials();
 
          // Update details name
          await page.getByTestId("details-name").fill(newName);
@@ -634,7 +567,7 @@ test.describe("Settings Page E2E Tests", () => {
             await performDelete(page, false);
 
             // Verify still on settings
-            await assertComponentVisible(page, "settings-details");
+            await assertComponentIsVisible(page, "settings-details");
          });
       });
 

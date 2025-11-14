@@ -1,6 +1,6 @@
 import { type Cookie, type Page, type Response, type Route } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentVisible } from "@tests/utils";
+import { assertComponentIsVisible } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
 import { submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -17,7 +17,7 @@ test.describe("API Error Handling", () => {
          await navigateToPath(page, LOGIN_ROUTE);
 
          // Wait for the form to be ready before going offline
-         await assertComponentVisible(page, "username");
+         await assertComponentIsVisible(page, "username");
 
          // Go offline and submit a valid login request
          await page.context().setOffline(true);
@@ -109,7 +109,7 @@ test.describe("API Error Handling", () => {
 
          // Verify the user remains on the dashboard and the original request resumes
          await expect(page).toHaveURL(DASHBOARD_ROUTE);
-         await expect(page.getByTestId("empty-accounts-trends-overview")).toBeVisible();
+         await assertComponentIsVisible(page, "empty-accounts-trends-overview");
       });
 
       test("should redirect to login page when refresh token is missing during a token refresh attempt", async({ page }) => {

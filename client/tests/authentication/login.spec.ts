@@ -1,4 +1,5 @@
 import { expect, test } from "@tests/fixtures";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -13,14 +14,13 @@ test.describe("Login Authentication", () => {
    test.describe("UI Components and Layout", () => {
       test("should display login page with all required elements", async({ page }) => {
          // Assert that all form fields are present
-         await expect(page.getByTestId("username")).toBeVisible();
-         await expect(page.getByTestId("password")).toBeVisible();
-         await expect(page.getByTestId("submit-button")).toBeVisible();
+         await assertInputVisibility(page, "username", "Username");
+         await assertInputVisibility(page, "password", "Password");
+         await assertComponentIsVisible(page, "submit-button");
 
          // Assert that the navigation link to the registration page is visible and clickable
-         const registerLink = page.getByTestId("register-link");
-         await expect(registerLink).toBeVisible();
-         await registerLink.click();
+         await assertComponentIsVisible(page, "register-link");
+         await page.getByTestId("register-link").click();
          await expect(page).toHaveURL(REGISTER_ROUTE);
       });
 

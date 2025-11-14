@@ -1,14 +1,17 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import {
+   ACCOUNTS_ROUTE,
+   BUDGETS_ROUTE,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
    logoutUser,
+   SETTINGS_ROUTE,
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
 import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
-import { assertThemeState, toggleTheme } from "@tests/utils/dashboard/settings";
+import { assertThemeInSettingsForm, assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
 import { setupAssignedUser } from "@tests/utils/user-management";
 
 test.describe("Routing and Navigation", () => {
@@ -120,50 +123,43 @@ test.describe("Routing and Navigation", () => {
       });
 
       test("should toggle theme via sidebar switch and persist across routes", async({ page }) => {
-         // Get current theme
-         const currentThemeValue = await page.getByTestId("router").getAttribute("data-dark");
-         const currentTheme = currentThemeValue === "true" ? "dark" : "light";
-         const newTheme = currentTheme === "dark" ? "light" : "dark";
+         // Get current and new theme
+         const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
 
-         // Click sidebar theme toggle
+         // Open the sidebar
+         await page.getByTestId("sidebar-toggle").click();
+
+         // Toggle theme
          await page.getByTestId("theme-switch").click();
 
-         // Verify theme changed
-         await assertThemeState(page, newTheme);
-
-         // Navigate to different route
-         await navigateToPath(page, "/dashboard/accounts");
-         await expect(page).toHaveURL(/accounts/);
-
-         // Verify theme persists
-         await assertThemeState(page, newTheme);
-
-         // Navigate back to dashboard
-         await navigateToPath(page, DASHBOARD_ROUTE);
-         await expect(page).toHaveURL(DASHBOARD_ROUTE);
-
-         // Verify theme still persists
-         await assertThemeState(page, newTheme);
+         VERIFIED_ROUTES.forEach(async(route) => {
+            if (route !== DASHBOARD_ROUTE) {
+               await navigateToPath(page, route);
+               await expect(page).toHaveURL(route);
+               await assertThemeState(page, newTheme);
+            }
+         });
       });
 
       test("should toggle theme via settings Details form and persist across page reload", async({ page }) => {
          // Navigate to settings
-         await navigateToPath(page, "/dashboard/settings");
+         await navigateToPath(page, SETTINGS_ROUTE);
 
-         // Get current theme
-         const currentThemeValue = await page.getByTestId("router").getAttribute("data-dark");
-         const currentTheme = currentThemeValue === "true" ? "dark" : "light";
-         const newTheme = currentTheme === "dark" ? "light" : "dark";
+         // Get current and new theme
+         const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
+
+         // Open the sidebar
+         await page.getByTestId("sidebar-toggle").click();
 
          // Toggle theme in settings
-         await toggleTheme(page, newTheme);
+         await page.getByTestId("theme-switch").click();
          await assertThemeState(page, newTheme);
+         await assertThemeInSettingsForm(page, newTheme);
 
-         // Reload page
+         // Reload and verify persistence
          await page.reload();
-
-         // Verify theme persists after reload
          await assertThemeState(page, newTheme);
+         await assertThemeInSettingsForm(page, newTheme);
       });
    });
 });
