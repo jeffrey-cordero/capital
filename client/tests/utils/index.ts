@@ -35,8 +35,8 @@ export async function assertInputVisibility(
    page: Page,
    testId: string,
    labelText: string,
-   value: string = "",
-   enabledState: boolean = true
+   value: string | undefined = undefined,
+   enabledState: boolean | undefined = undefined
 ): Promise<void> {
    const input = page.getByTestId(testId);
 
@@ -52,9 +52,9 @@ export async function assertInputVisibility(
    }
 
    // Verify enabled state
-   if (enabledState) {
+   if (enabledState !== undefined && enabledState === true) {
       await expect(input).toBeEnabled();
-   } else {
+   } else if (enabledState === false) {
       await expect(input).toBeDisabled();
    }
 }

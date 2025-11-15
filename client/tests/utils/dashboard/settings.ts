@@ -3,7 +3,6 @@ import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibilit
 import { assertValidationErrors, submitForm, updateSelectValue } from "@tests/utils/forms";
 import { openSidebar } from "@tests/utils/navigation";
 import type { AssignedUserRecord } from "@tests/fixtures";
-import type { UserDetails} from "capital/user";
 import { HTTP_STATUS } from "capital/server";
 
 /**
@@ -73,20 +72,15 @@ export async function assertAccountDetails(
    page: Page,
    expectedDetails: DetailsFormData
 ): Promise<void> {
-   if (expectedDetails.name) {
-      await expect(page.getByTestId("details-name")).toHaveValue(expectedDetails.name);
-   }
+   await assertInputVisibility(page, "details-name", "Name", expectedDetails.name);
 
-   if (expectedDetails.birthday) {
-      const birthdayValue = expectedDetails.birthday.includes("T")
-         ? expectedDetails.birthday.split("T")[0]
-         : expectedDetails.birthday;
-      await expect(page.getByTestId("details-birthday")).toHaveValue(birthdayValue);
-   }
+   const birthdayValue = expectedDetails.birthday!.includes("T")
+      ? expectedDetails.birthday!.split("T")[0]
+      : expectedDetails.birthday!;
+   await assertInputVisibility(page, "details-birthday", "Birthday", birthdayValue);
 
    if (expectedDetails.theme) {
-      const expectedValue = expectedDetails.theme === "dark" ? "true" : "false";
-      await expect(page.locator("body")).toHaveAttribute("data-dark", expectedValue);
+      await assertInputVisibility(page, "details-theme", "Theme", expectedDetails.theme);
    }
 }
 
@@ -235,64 +229,6 @@ export async function assertThemeState(page: Page, expectedTheme: "light" | "dar
    await page.keyboard.press("Escape");
 }
 
-
-/**
- * Fills fields smartly, verifies change detection, then cancels and asserts revert
- */
-export async function smartFillAndCancel(
-   page: Page,
-   fields: Array<[testId: string, primaryValue: string, alternateValue: string]>,
-   originalValues: Record<string, string>
-): Promise<void> {
-   // Smart fill all fields
-   for (const [testId, primary, alternate] of fields) {
-      await smartFillField(page, testId, primary, alternate);
-   }
-
-   // Verify change detection (cancel button should appear)
-   await assertComponentIsVisible(page, "details-cancel");
-
-   // Cancel and verify revert
-   const cancelButton = page.getByTestId("details-cancel");
-   await cancelButton.click();
-   await expect(cancelButton).toBeHidden();
-
-   // Verify all fields reverted to original values
-   for (const [testId] of fields) {
-      const input = page.getByTestId(testId);
-      await expect(input).toHaveValue(originalValues[testId]);
-   }
-}
-
-/**
- * Cancels details form edits and reverts changes
- *
- * @param {Page} page - Playwright page instance
- * @param {Partial<UserDetails>} originalValues - Original values to verify revert to
- */
-export async function cancelDetailsEdit(
-   page: Page,
-   originalValues: Partial<UserDetails>
-): Promise<void> {
-   const cancelButton = page.getByTestId("details-cancel");
-   await expect(cancelButton).toBeVisible();
-   await cancelButton.click();
-
-   // Verify cancel button disappears
-   await expect(cancelButton).toBeHidden();
-
-   // Verify original values are shown
-   if (originalValues.name) {
-      const nameInput = page.getByTestId("details-name");
-      await expect(nameInput).toHaveValue(originalValues.name);
-   }
-
-   if (originalValues.birthday) {
-      const birthdayInput = page.getByTestId("details-birthday");
-      await expect(birthdayInput).toHaveValue(originalValues.birthday);
-   }
-}
-
 /**
  * Toggles a security field to enable editing
  *
@@ -309,44 +245,18 @@ export async function toggleSecurityField(page: Page, field: "username" | "email
 
    // Verify input is enabled by checking it does NOT have disabled attribute
    const testId = field === "password" ? "security-current-password" : `security-${field}`;
-   const input = page.getByTestId(testId);
-   await expect(input).not.toHaveAttribute("disabled");
+   await assertInputVisibility(page, testId, field.charAt(0).toUpperCase() + field.slice(1), undefined, true);
 
    // For password field, verify all 3 password inputs become visible
    if (field === "password") {
-      await assertInputVisibility(page, "security-current-password", "Password");
       await assertInputVisibility(page, "security-new-password", "New Password");
       await assertInputVisibility(page, "security-verify-password", "Verify Password");
    }
 
    // Verify cancel button becomes visible
-   const cancelButton = page.getByTestId("security-cancel");
-   await expect(cancelButton).toBeVisible();
+   await assertComponentIsVisible(page, "security-cancel", "Cancel");
 }
 
-/**
- * Asserts that a security field is disabled
- *
- * @param {Page} page - Playwright page instance
- * @param {string} field - Field name to check
- */
-export async function assertSecurityFieldDisabled(page: Page, field: "username" | "email" | "password"): Promise<void> {
-   const testId = field === "password" ? "security-current-password" : `security-${field}`;
-   const input = page.getByTestId(testId);
-   await expect(input).toHaveAttribute("disabled");
-}
-
-/**
- * Asserts that a security field is enabled
- *
- * @param {Page} page - Playwright page instance
- * @param {string} field - Field name to check
- */
-export async function assertSecurityFieldEnabled(page: Page, field: "username" | "email" | "password"): Promise<void> {
-   const testId = field === "password" ? "security-current-password" : `security-${field}`;
-   const input = page.getByTestId(testId);
-   await expect(input).not.toHaveAttribute("disabled");
-}
 
 /**
  * Asserts security fields are disabled and have expected values
@@ -359,18 +269,12 @@ export async function assertSecurityDetails(page: Page, expectedValues: Partial<
    const fields = ["username", "email", "current-password"];
 
    for (const field of fields) {
-      const input = page.getByTestId(`security-${field}`);
-      await expect(input).toHaveAttribute("disabled");
-
-      // Verify expected values
-      if (field === "username" && expectedValues.username !== undefined) {
-         await expect(input).toHaveValue(expectedValues.username);
-      } else if (field === "email" && expectedValues.email !== undefined) {
-         await expect(input).toHaveValue(expectedValues.email);
-      }
+      const label: string = field === "current-password" ? "Password" : field;
+      const value: string = label === "Password" ? "********" : expectedValues[field as keyof typeof expectedValues]!;
+      await assertInputVisibility(page, `security-${field}`, label, value, false);
 
       // Verify pen icon is visible (field is in view-only mode)
-      const penField = field === "current-password" ? "password" : field;
+      const penField = label.toLowerCase();
       await assertComponentIsVisible(page, `security-${penField}-pen`);
    }
 
@@ -398,17 +302,14 @@ export async function updateSecurityFields(
    // Auto-toggle fields that are being updated
    if (fields.username !== undefined) {
       await toggleSecurityField(page, "username");
-      await assertSecurityFieldEnabled(page, "username");
    }
 
    if (fields.email !== undefined) {
       await toggleSecurityField(page, "email");
-      await assertSecurityFieldEnabled(page, "email");
    }
 
    if (fields.password !== undefined || fields.newPassword !== undefined) {
       await toggleSecurityField(page, "password");
-      // Password fields become visible when toggled
    }
 
    const formData: Record<string, any> = {};
@@ -461,43 +362,6 @@ export async function performAndAssertSecurityUpdate(
    if (!expectedErrors) {
       await assertSecurityDetails(page, { ...assignedUser.current, ...securityData });
    }
-}
-
-/**
- * Cancels security field edits and reverts changes
- *
- * @param {Page} page - Playwright page instance
- * @param {Partial<SecurityFormData>} originalValues - Original values to verify
- */
-export async function cancelSecurityFieldEdit(
-   page: Page,
-   originalValues: Partial<SecurityFormData>
-): Promise<void> {
-   const cancelButton = page.getByTestId("security-cancel");
-   await expect(cancelButton).toBeVisible();
-   await cancelButton.click();
-
-   // Verify cancel button disappears
-   await expect(cancelButton).toBeHidden();
-
-   // Verify original values are shown
-   if (originalValues.username) {
-      const usernameInput = page.getByTestId("security-username");
-      await expect(usernameInput).toHaveValue(originalValues.username);
-   }
-
-   if (originalValues.email) {
-      const emailInput = page.getByTestId("security-email");
-      await expect(emailInput).toHaveValue(originalValues.email);
-   }
-
-   // Verify all pen icons are visible
-   await assertComponentIsVisible(page, "security-username-pen");
-   await assertComponentIsVisible(page, "security-email-pen");
-   await assertComponentIsVisible(page, "security-password-pen");
-
-   // Verify all visible fields are disabled with original values
-   await assertSecurityDetails(page, originalValues);
 }
 
 /**
@@ -763,7 +627,10 @@ export async function testAllPasswordVisibilityToggles(page: Page): Promise<void
  */
 export async function assertSecurityFieldViewMode(page: Page, field: "username" | "email" | "password"): Promise<void> {
    const penField = field === "password" ? "password" : field;
-   await assertSecurityFieldDisabled(page, field);
+   const testId = field === "password" ? "security-current-password" : `security-${field}`;
+   const label = field === "password" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
+   const value = field === "password" ? "********" : undefined;
+   await assertInputVisibility(page, testId, label, value, false);
    await assertComponentIsVisible(page, `security-${penField}-pen`);
 }
 
@@ -775,36 +642,11 @@ export async function assertSecurityFieldViewMode(page: Page, field: "username" 
  */
 export async function assertSecurityFieldEditMode(page: Page, field: "username" | "email" | "password"): Promise<void> {
    const penField = field === "password" ? "password" : field;
-   await assertSecurityFieldEnabled(page, field);
+   const testId = field === "password" ? "security-current-password" : `security-${field}`;
+   const label = field === "password" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
+   // Verify field is enabled (not disabled)
+   await assertInputVisibility(page, testId, label, undefined, true);
    await assertComponentIsHidden(page, `security-${penField}-pen`);
-}
-
-/**
- * Toggles a security field to edit mode and asserts the state change
- *
- * @param {Page} page - Playwright page instance
- * @param {string} field - Field name ("username", "email", or "password")
- */
-export async function enableSecurityFieldEdit(page: Page, field: "username" | "email" | "password"): Promise<void> {
-   await toggleSecurityField(page, field);
-   await assertSecurityFieldEditMode(page, field);
-   await assertComponentIsVisible(page, "security-cancel");
-}
-
-/**
- * Captures current security field value, generates new value, and updates it
- *
- * @param {Page} page - Playwright page instance
- * @param {string} field - Field name ("username" or "email")
- * @param {string} newValue - New value to set
- * @returns {Promise<string>} The original value before update
- */
-export async function captureAndUpdateSecurityField(page: Page, field: "username" | "email", newValue: string): Promise<string> {
-   const testId = `security-${field}`;
-   const originalValue = await page.getByTestId(testId).inputValue();
-   await enableSecurityFieldEdit(page, field);
-   await page.getByTestId(testId).fill(newValue);
-   return originalValue;
 }
 
 /**
@@ -816,5 +658,81 @@ export async function assertAllSecurityFieldsViewMode(page: Page): Promise<void>
    await assertSecurityFieldViewMode(page, "username");
    await assertSecurityFieldViewMode(page, "email");
    await assertSecurityFieldViewMode(page, "password");
+}
+
+/**
+ * Performs cancel operation for specified details fields and verifies revert
+ * Modifies fields, cancels, and asserts all fields are reverted to original values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {AssignedUserRecord} assignedUser - User fixture with original values
+ * @param {Array<"name" | "birthday">} fieldsToCancel - Fields to test cancel behavior on
+ */
+export async function performAndAssertCancelDetailsBehavior(
+   page: Page,
+   assignedUser: AssignedUserRecord,
+   fieldsToCancel: Array<"name" | "birthday">
+): Promise<void> {
+   const originalValues: Partial<DetailsFormData> = {};
+
+   // Modify each field
+   for (const field of fieldsToCancel) {
+      if (field === "name") {
+         const original = assignedUser.current!.name;
+         originalValues.name = original;
+         const newValue = original === "Updated Name" ? "Different Name" : "Updated Name";
+         await page.getByTestId("details-name").fill(newValue);
+      } else if (field === "birthday") {
+         const original = assignedUser.current!.birthday;
+         originalValues.birthday = original;
+         const newValue = original === "1990-01-01" ? "1995-01-01" : "1990-01-01";
+         await page.getByTestId("details-birthday").fill(newValue);
+      }
+   }
+
+   // Verify change detection and click cancel button
+   await assertComponentIsVisible(page, "details-cancel", "Cancel");
+   await page.getByTestId("details-cancel").click();
+
+   await assertAccountDetails(page, assignedUser.current!);
+}
+
+/**
+ * Performs cancel operation for specified security fields and verifies revert
+ * Enables fields, makes edits, cancels, and asserts all fields are disabled with correct values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {AssignedUserRecord} assignedUser - User fixture with original values
+ * @param {Array<"username" | "email" | "password">} fieldsToCancel - Fields to test cancel behavior on
+ */
+export async function performAndAssertCancelSecurityBehavior(
+   page: Page,
+   assignedUser: AssignedUserRecord,
+   fieldsToCancel: Array<"username" | "email" | "password">
+): Promise<void> {
+   // Enable and modify each field
+   for (const field of fieldsToCancel) {
+      if (field === "username") {
+         const newValue = assignedUser.current!.username === "ChangedUsername" ? "DifferentUsername" : "ChangedUsername";
+         await toggleSecurityField(page, "username");
+         await page.getByTestId("security-username").fill(newValue);
+      } else if (field === "email") {
+         const newValue = assignedUser.current!.email === "newemail@example.com" ? "different@example.com" : "newemail@example.com";
+         await toggleSecurityField(page, "email");
+         await page.getByTestId("security-email").fill(newValue);
+      } else if (field === "password") {
+         await toggleSecurityField(page, "password");
+         await page.getByTestId("security-current-password").fill("Password1!");
+         await page.getByTestId("security-new-password").fill("NewPassword1!");
+         await page.getByTestId("security-verify-password").fill("NewPassword1!");
+      }
+   }
+
+   // Click cancel button
+   await page.getByTestId("security-cancel").click();
+
+   // Verify all fields reverted to original state (disabled with correct values)
+   console.log("assignedUser.current!", assignedUser.current);
+   await assertSecurityDetails(page, assignedUser.current!);
 }
 

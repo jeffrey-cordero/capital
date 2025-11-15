@@ -43,16 +43,27 @@ export async function createUser(
    usersRegistry: Set<CreatedUserRecord>,
    isTestScoped: boolean = false
 ): Promise<CreatedUserRecord> {
-   const MAX_RETRIES: number = 3;
+   const MAX_RETRIES: number = 6;
    let success: boolean = false;
    let lastError: string = "";
 
    let registrationData: RegisterPayload | undefined;
+   const usernames: Set<string> = new Set(Array.from(usersRegistry).map(u => u.username));
 
    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       await navigateToPath(page, REGISTER_ROUTE);
-
       const credentials = generateTestCredentials();
+
+      for (let i = 29; i >= 2; i--) {
+         // Keep generating a substring of the current username until a unique one is found
+         const substring = credentials.username.slice(0, i);
+
+         if (!usernames.has(substring)) {
+            credentials.username = substring;
+            break;
+         }
+      }
+
       registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
       // Wait for the submit button to be visible before submitting the registration form
