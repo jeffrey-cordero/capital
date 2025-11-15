@@ -203,8 +203,9 @@ export default function Details(): React.ReactNode {
                      slotProps = {
                         {
                            input: {
-                              id: "theme"
-                           }
+                              id: "theme",
+                              "data-testid": "details-theme"
+                           } as any
                         }
                      }
                      value = { preferredTheme }

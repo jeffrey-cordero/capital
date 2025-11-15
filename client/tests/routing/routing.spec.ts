@@ -1,8 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import {
-   ACCOUNTS_ROUTE,
-   BUDGETS_ROUTE,
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
    logoutUser,
@@ -11,8 +9,9 @@ import {
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
 import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
-import { assertThemeInSettingsForm, assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
+import { assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import { assertInputVisibility } from "@tests/utils";
 
 test.describe("Routing and Navigation", () => {
    /**
@@ -126,40 +125,23 @@ test.describe("Routing and Navigation", () => {
          // Get current and new theme
          const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
 
-         // Open the sidebar
-         await page.getByTestId("sidebar-toggle").click();
-
          // Toggle theme
-         await page.getByTestId("theme-switch").click();
+         await toggleTheme(page, "sidebar", newTheme);
 
-         VERIFIED_ROUTES.forEach(async(route) => {
-            if (route !== DASHBOARD_ROUTE) {
-               await navigateToPath(page, route);
-               await expect(page).toHaveURL(route);
-               await assertThemeState(page, newTheme);
+         for (const route of VERIFIED_ROUTES) {
+            await navigateToPath(page, route);
+            await expect(page).toHaveURL(route);
+            await assertThemeState(page, newTheme);
+
+            // Reload and verify persistence
+            await page.reload();
+            await assertThemeState(page, newTheme);
+
+            if (route === SETTINGS_ROUTE) {
+               // Assert the input value matches the new theme in the settings page
+               await assertInputVisibility(page, "details-theme", "Theme", newTheme);
             }
-         });
-      });
-
-      test("should toggle theme via settings Details form and persist across page reload", async({ page }) => {
-         // Navigate to settings
-         await navigateToPath(page, SETTINGS_ROUTE);
-
-         // Get current and new theme
-         const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
-
-         // Open the sidebar
-         await page.getByTestId("sidebar-toggle").click();
-
-         // Toggle theme in settings
-         await page.getByTestId("theme-switch").click();
-         await assertThemeState(page, newTheme);
-         await assertThemeInSettingsForm(page, newTheme);
-
-         // Reload and verify persistence
-         await page.reload();
-         await assertThemeState(page, newTheme);
-         await assertThemeInSettingsForm(page, newTheme);
+         }
       });
    });
 });

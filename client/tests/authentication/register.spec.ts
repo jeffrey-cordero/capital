@@ -11,6 +11,7 @@ import {
    INVALID_PASSWORD_CASES
 } from "capital/mocks/user";
 import type { RegisterPayload } from "capital/user";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 
 test.describe("User Registration", () => {
    const validRegistration: RegisterPayload = createValidRegistration();
@@ -22,17 +23,16 @@ test.describe("User Registration", () => {
    test.describe("UI Components and Layout", () => {
       test("should display registration page with all required elements", async({ page }) => {
          // Assert that all form fields are present
-         await expect(page.getByTestId("name")).toBeVisible();
-         await expect(page.getByTestId("birthday")).toBeVisible();
-         await expect(page.getByTestId("username")).toBeVisible();
-         await expect(page.getByTestId("password")).toBeVisible();
-         await expect(page.getByTestId("verifyPassword")).toBeVisible();
-         await expect(page.getByTestId("email")).toBeVisible();
-         await expect(page.getByTestId("submit-button")).toBeVisible();
+         await assertInputVisibility(page, "name", "Name");
+         await assertInputVisibility(page, "birthday", "Birthday");
+         await assertInputVisibility(page, "username", "Username");
+         await assertInputVisibility(page, "password", "Password");
+         await assertInputVisibility(page, "verifyPassword", "Verify Password");
+         await assertInputVisibility(page, "email", "Email");
+         await assertComponentIsVisible(page, "submit-button");
 
          // Assert that the navigation link to the login page is visible and clickable
          const loginLink = page.getByTestId("login-link");
-         await expect(loginLink).toBeVisible();
          await loginLink.click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });

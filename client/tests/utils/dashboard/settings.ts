@@ -1,8 +1,8 @@
-import { expect, type Page, type Response } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { SETTINGS_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm, updateSelectValue } from "@tests/utils/forms";
-import { navigateToPath } from "@tests/utils/navigation";
+import { navigateToPath, openSidebar } from "@tests/utils/navigation";
 import type { UserDetails, UserUpdates } from "capital/user";
 import { HTTP_STATUS } from "capital/server";
 
@@ -140,7 +140,7 @@ export async function updateDetails(
 
    // Handle theme toggle (non-form-based, client-side only)
    if (data.theme !== undefined) {
-      await toggleTheme(page, data.theme);
+      await toggleTheme(page, "details", data.theme);
    }
 
    // Only submit form if there are name/birthday changes
@@ -188,22 +188,32 @@ export async function performAndAssertDetailsUpdate(
 }
 
 /**
- * Toggles the theme between light and dark
+ * Toggles the theme between light and dark via sidebar or details form
  *
  * @param {Page} page - Playwright page instance
+ * @param {"sidebar" | "details"} method - Method to toggle theme (sidebar switch or details select)
  * @param {?string} expectedTheme - Optional expected theme after toggle
  */
-export async function toggleTheme(page: Page, expectedTheme?: "light" | "dark"): Promise<void> {
-   const themeToggle = page.getByTestId("details-theme-toggle");
-   await assertComponentIsVisible(page, "details-theme-toggle");
-
-   if (expectedTheme) {
-      // Select the specific theme value
-      const themeLabel = `${expectedTheme.charAt(0).toUpperCase()}${expectedTheme.slice(1)} Mode`;
-      await updateSelectValue(page, "details-theme-toggle", themeLabel);
+export async function toggleTheme(page: Page, method: "sidebar" | "details", expectedTheme?: "light" | "dark"): Promise<void> {
+   if (method === "sidebar") {
+      // Toggle via sidebar switch
+      await openSidebar(page);
+      const themeSwitch = page.getByTestId("theme-switch");
+      await assertComponentIsVisible(page, "theme-switch");
+      await themeSwitch.click();
    } else {
-      // Just toggle without checking the exact value
-      await themeToggle.click();
+      // Toggle via details form select
+      const themeToggle = page.getByTestId("details-theme-toggle");
+      await assertComponentIsVisible(page, "details-theme-toggle");
+
+      if (expectedTheme) {
+         // Select the specific theme value
+         const themeLabel = `${expectedTheme.charAt(0).toUpperCase()}${expectedTheme.slice(1)} Mode`;
+         await updateSelectValue(page, "details-theme-toggle", themeLabel);
+      } else {
+         // Just toggle without checking the exact value
+         await themeToggle.click();
+      }
    }
 
    // Wait for theme to apply
@@ -223,52 +233,8 @@ export async function getCurrentAndOppositeTheme(page: Page): Promise<{ current:
    const themeValue = await page.getByTestId("router").getAttribute("data-dark");
    const current = themeValue === "true" ? "dark" : "light";
    const opposite = current === "dark" ? "light" : "dark";
+
    return { current, opposite };
-}
-
-/**
- * Asserts the sidebar theme switch reflects the expected theme state
- *
- * @param {Page} page - Playwright page instance
- * @param {string} expectedTheme - Expected theme value ("light" or "dark")
- */
-export async function assertSidebarTheme(page: Page, expectedTheme: "light" | "dark"): Promise<void> {
-   // Check if sidebar is visible, open if needed
-   const themeSwitch = page.getByTestId("theme-switch");
-   const wasVisible = await themeSwitch.isVisible();
-
-   if (!wasVisible) {
-      // Open the sidebar by clicking the toggle
-      const sidebarToggle = page.getByTestId("sidebar-toggle");
-      await sidebarToggle.click();
-   }
-
-   // Check the switch input's checked state
-   await assertComponentIsVisible(page, "theme-switch");
-   const switchInput = page.getByTestId("theme-switch").locator("input");
-   if (expectedTheme === "dark") {
-      await expect(switchInput).toBeChecked();
-   } else {
-      await expect(switchInput).not.toBeChecked();
-   }
-
-   // Close the sidebar if it wasn't open before
-   if (!wasVisible) {
-      await page.keyboard.press("Escape");
-      await assertComponentIsHidden(page, "theme-switch");
-   }
-}
-
-/**
- * Asserts the theme toggle in settings form displays the expected theme value
- *
- * @param {Page} page - Playwright page instance
- * @param {string} expectedTheme - Expected theme value ("light" or "dark")
- */
-export async function assertThemeInSettingsForm(page: Page, expectedTheme: "light" | "dark"): Promise<void> {
-   const themeLabel = `${expectedTheme.charAt(0).toUpperCase()}${expectedTheme.slice(1)} Mode`;
-   const themeToggle = page.getByTestId("details-theme-toggle");
-   await expect(themeToggle).toHaveAttribute("value", themeLabel);
 }
 
 /**
@@ -280,8 +246,19 @@ export async function assertThemeInSettingsForm(page: Page, expectedTheme: "ligh
 export async function assertThemeState(page: Page, expectedTheme: "light" | "dark"): Promise<void> {
    const expectedValue = expectedTheme === "dark" ? "true" : "false";
 
-   // Verify via MUI body attribute (router attribute is verified via waitForFunction in performAndAssertThemeToggle)
+   // Assert via MUI body attribute
    await expect(page.locator("body")).toHaveAttribute("data-dark", expectedValue);
+
+   // Assert via sidebar
+   await openSidebar(page);
+   await assertComponentIsVisible(page, "theme-switch");
+   const switchInput = page.getByTestId("theme-switch").locator("input");
+
+   if (expectedTheme === "dark") {
+      await expect(switchInput).toBeChecked();
+   } else {
+      await expect(switchInput).not.toBeChecked();
+   }
 }
 
 
@@ -734,22 +711,24 @@ export async function performDelete(page: Page, confirmDelete: boolean = true): 
  */
 export async function performAndAssertThemeToggle(
    page: Page,
-   newTheme: "light" | "dark"
+   method: "sidebar" | "details",
+   expectedTheme?: "light" | "dark"
 ): Promise<void> {
-   await toggleTheme(page, newTheme);
+   await toggleTheme(page, method, expectedTheme);
 
    // Wait for router data-dark attribute to update (Redux → DOM binding)
-   await page.waitForFunction(
-      (expectedTheme: string) => {
-         const router = document.querySelector('[data-testid="router"]');
-         return router?.getAttribute('data-dark') === expectedTheme;
-      },
-      newTheme === "dark" ? "true" : "false",
-      { timeout: 5000 }
-   );
+   if (expectedTheme) {
+      await page.waitForFunction(
+         (theme: string) => {
+            const router = document.querySelector('[data-testid="router"]');
+            return router?.getAttribute('data-dark') === theme;
+         },
+         expectedTheme === "dark" ? "true" : "false",
+         { timeout: 5000 }
+      );
 
-   await assertThemeState(page, newTheme);
-   await assertSidebarTheme(page, newTheme);
+      await assertThemeState(page, expectedTheme);
+   }
 }
 
 /**

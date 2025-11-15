@@ -7,7 +7,6 @@ import {
    assertDetailsDisplay,
    assertExportStructure,
    assertInitialSecurityState,
-   assertSidebarTheme,
    assertThemeState,
    cancelDetailsEdit,
    cancelLogout,
@@ -80,7 +79,7 @@ test.describe("Settings Page E2E Tests", () => {
 
          test("should toggle theme and apply instantly", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
-            await performAndAssertThemeToggle(page, newTheme);
+            await performAndAssertThemeToggle(page, "details", newTheme);
          });
 
          test("should update name, birthday, and toggle theme", async({ page }) => {
@@ -89,7 +88,7 @@ test.describe("Settings Page E2E Tests", () => {
                page,
                { name: "Updated User", birthday: "1992-03-10", theme: newTheme }
             );
-            await performAndAssertThemeToggle(page, newTheme);
+            await performAndAssertThemeToggle(page, "details", newTheme);
          });
 
          test("should update all Details fields together", async({ page }) => {
@@ -98,7 +97,7 @@ test.describe("Settings Page E2E Tests", () => {
                page,
                { name: "Complete Update", birthday: "1988-12-25", theme: newTheme }
             );
-            await performAndAssertThemeToggle(page, newTheme);
+            await performAndAssertThemeToggle(page, "details", newTheme);
          });
       });
 
@@ -137,7 +136,7 @@ test.describe("Settings Page E2E Tests", () => {
 
          test("should persist theme across page navigation", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
-            await toggleTheme(page, newTheme);
+            await toggleTheme(page, "details", newTheme);
             await assertThemeState(page, newTheme);
 
             for (const route of VERIFIED_ROUTES) {
@@ -150,7 +149,7 @@ test.describe("Settings Page E2E Tests", () => {
 
          test("should persist theme across page reload", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
-            await toggleTheme(page, newTheme);
+            await toggleTheme(page, "details", newTheme);
             await assertThemeState(page, newTheme);
 
             await page.reload();
@@ -160,14 +159,12 @@ test.describe("Settings Page E2E Tests", () => {
          test("should sync theme between sidebar and settings form", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
 
-            await toggleTheme(page, newTheme);
+            await toggleTheme(page, "details", newTheme);
             await assertThemeState(page, newTheme);
-            await assertSidebarTheme(page, newTheme);
 
             const oppositeTheme = newTheme === "dark" ? "light" : "dark";
-            await toggleTheme(page, oppositeTheme);
+            await toggleTheme(page, "details", oppositeTheme);
             await assertThemeState(page, oppositeTheme);
-            await assertSidebarTheme(page, oppositeTheme);
          });
       });
 

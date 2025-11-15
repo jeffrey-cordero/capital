@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends, dragAndDrop } from "@tests/utils/dashboard";
 import {
@@ -98,13 +98,17 @@ test.describe("Account Management", () => {
             { testId: "account-name", label: "Name" },
             { testId: "account-balance", label: "Balance" },
             { testId: "account-type", label: "Type" },
-            { testId: "account-image-button" }
+            { testId: "account-image-button", text: "Image" }
          ];
 
          await openAccountForm(page);
 
          for (const input of formInputs) {
-            await assertComponentIsVisible(page, input.testId, undefined, input.label);
+            if (input.label) {
+               await assertInputVisibility(page, input.testId, input.label);
+            } else {
+               await assertComponentIsVisible(page, input.testId, input.text);
+            }
          }
       });
    });
