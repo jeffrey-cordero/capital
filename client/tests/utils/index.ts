@@ -27,16 +27,16 @@ export async function assertComponentIsVisible(
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the input element
  * @param {string} labelText - Expected label text for the input
- * @param {string} [value=""] - Expected value in the input field. Defaults to empty string
- * @param {boolean} [enabledState=true] - Expected enabled state (true for enabled, false for disabled). Defaults to true
+ * @param {string} [value=""] - Expected value in the input field, which defaults to empty string
+ * @param {boolean} [enabledState=true] - Expected enabled state (true for enabled, false for disabled), which defaults to true
  * @returns {Promise<void>}
  */
 export async function assertInputVisibility(
    page: Page,
    testId: string,
    labelText: string,
-   value: string | undefined = undefined,
-   enabledState: boolean | undefined = undefined
+   value: string = "",
+   enabledState: boolean = true
 ): Promise<void> {
    const input = page.getByTestId(testId);
 
@@ -52,7 +52,7 @@ export async function assertInputVisibility(
    }
 
    // Verify enabled state
-   if (enabledState !== undefined && enabledState === true) {
+   if (enabledState === true) {
       await expect(input).toBeEnabled();
    } else if (enabledState === false) {
       await expect(input).toBeDisabled();

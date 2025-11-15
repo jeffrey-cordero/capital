@@ -70,7 +70,7 @@ export async function createUser(
       await assertComponentIsVisible(page, "submit-button");
       const responsePromise =  page.waitForResponse(
          response => response.url().includes("/api/v1/users") && response.request().method() === "POST"
-     );
+      );
 
       // Submit the form and check for either successful navigation or validation errors (conflict)
       await submitForm(page, registrationData);
@@ -102,7 +102,7 @@ export async function createUser(
          break;
       } else if (response.status() === HTTP_STATUS.CONFLICT) {
          // Form submission failed, likely due to username conflict
-         lastError = `User creation failed: username conflict or invalid data`;
+         lastError = "User creation failed: username conflict or invalid data";
 
          if (attempt === MAX_RETRIES) {
             throw new Error(`${lastError} after ${MAX_RETRIES} attempts`);

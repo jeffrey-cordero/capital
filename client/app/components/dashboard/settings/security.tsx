@@ -122,8 +122,14 @@ export default function Security(): React.ReactNode {
    };
 
    return (
-      <Section dataTestId = "security-section" icon = { faShieldHalved }>
-         <form noValidate onSubmit = { handleSubmit(onSubmit) }>
+      <Section
+         dataTestId = "security-section"
+         icon = { faShieldHalved }
+      >
+         <form
+            noValidate = { true }
+            onSubmit = { handleSubmit(onSubmit) }
+         >
             <Stack
                direction = "column"
                spacing = { 1.5 }

@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
+import { assertInputVisibility } from "@tests/utils";
 import {
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
@@ -8,10 +9,9 @@ import {
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
-import { getRouteLinkTitle, navigateToPath, openSidebar } from "@tests/utils/navigation";
 import { assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
+import { getRouteLinkTitle, navigateToPath, openSidebar } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
-import { assertInputVisibility } from "@tests/utils";
 
 test.describe("Routing and Navigation", () => {
    /**

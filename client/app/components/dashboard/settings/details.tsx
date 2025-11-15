@@ -104,8 +104,14 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Section dataTestId = "settings-details" icon = { faAddressCard }>
-         <form noValidate onSubmit = { handleSubmit(onSubmit) }>
+      <Section
+         dataTestId = "settings-details"
+         icon = { faAddressCard }
+      >
+         <form
+            noValidate = { true }
+            onSubmit = { handleSubmit(onSubmit) }
+         >
             <Stack
                direction = "column"
                spacing = { 1.5 }

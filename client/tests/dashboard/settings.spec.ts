@@ -1,17 +1,25 @@
 import { expect, test } from "@tests/fixtures";
 import { assertComponentIsVisible } from "@tests/utils";
-import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE, REGISTER_ROUTE, ROOT_ROUTE, SETTINGS_ROUTE, createUser } from "@tests/utils/authentication";
+import {
+   ACCOUNTS_ROUTE,
+   createUser,
+   DASHBOARD_ROUTE,
+   REGISTER_ROUTE,
+   ROOT_ROUTE,
+   SETTINGS_ROUTE
+} from "@tests/utils/authentication";
+import { createAccount } from "@tests/utils/dashboard/accounts";
 import {
    assertAccountDetails,
-   assertSecurityDetails,
    assertExportStructure,
+   assertSecurityDetails,
    cancelLogout,
    getCurrentAndOppositeTheme,
+   performAndAssertCancelDetailsBehavior,
+   performAndAssertCancelSecurityBehavior,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
    performAndAssertThemeToggle,
-   performAndAssertCancelDetailsBehavior,
-   performAndAssertCancelSecurityBehavior,
    performDelete,
    performExport,
    performLogout,
@@ -19,10 +27,9 @@ import {
    updateDetails,
    updateSecurityFields
 } from "@tests/utils/dashboard/settings";
-import { createAccount } from "@tests/utils/dashboard/accounts";
-import { setupAssignedUser, updateUsernameInRegistries, updatePasswordInRegistries } from "@tests/utils/user-management";
 import { navigateToPath } from "@tests/utils/navigation";
-import { generateTestCredentials, createUserUpdatesWithPasswordChange } from "capital/mocks/user";
+import { setupAssignedUser, updatePasswordInRegistries, updateUsernameInRegistries } from "@tests/utils/user-management";
+import { createUserUpdatesWithPasswordChange, generateTestCredentials } from "capital/mocks/user";
 
 test.describe("Settings", () => {
    test.describe("Initial State", () => {
@@ -30,17 +37,19 @@ test.describe("Settings", () => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
       });
 
-      test("should have accessible security details form inputs", async({ page, assignedUser }) => {
+      test("should have accessible security details form inputs with values corresponding to assigned user", async({ page, assignedUser }) => {
          await assertSecurityDetails(page, {
             username: assignedUser.current?.username,
             email: assignedUser.current?.email
          });
       });
 
-      test("should have accessible account details form inputs", async({ page, assignedUser }) => {
+      test("should have accessible account details form inputs with values corresponding to assigned user", async({ page, assignedUser }) => {
+         const { current: themeValue } = await getCurrentAndOppositeTheme(page);
          await assertAccountDetails(page, {
             name: assignedUser.current?.name,
             birthday: assignedUser.current?.birthday,
+            theme: themeValue
          });
       });
 
@@ -360,7 +369,7 @@ test.describe("Settings", () => {
 
       test.describe("Export Account", () => {
          test("should export account data as JSON", async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
 
             // Create 2 test accounts
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };

@@ -1,4 +1,5 @@
 import { expect, test } from "@tests/fixtures";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -11,7 +12,6 @@ import {
    INVALID_PASSWORD_CASES
 } from "capital/mocks/user";
 import type { RegisterPayload } from "capital/user";
-import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 
 test.describe("User Registration", () => {
    const validRegistration: RegisterPayload = createValidRegistration();
@@ -31,9 +31,8 @@ test.describe("User Registration", () => {
          await assertInputVisibility(page, "email", "Email");
          await assertComponentIsVisible(page, "submit-button", "Register");
 
-         // Assert that the navigation link to the login page is visible and clickable
-         const loginLink = page.getByTestId("login-link");
-         await loginLink.click();
+         // Assert that the navigation link directs user to the login page
+         await page.getByTestId("login-link").click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });
 

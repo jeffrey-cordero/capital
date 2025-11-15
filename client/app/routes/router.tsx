@@ -31,8 +31,8 @@ export default function Router(): React.ReactNode {
 
    return (
       <div
-         data-testid = "router"
          data-dark = { theme === "dark" ? "true" : "false" }
+         data-testid = "router"
       >
          <ThemeProvider theme = { constructTheme(theme) }>
             <CssBaseline />
