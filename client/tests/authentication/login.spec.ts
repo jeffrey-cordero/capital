@@ -16,7 +16,7 @@ test.describe("Login Authentication", () => {
          // Assert that all form fields are present
          await assertInputVisibility(page, "username", "Username");
          await assertInputVisibility(page, "password", "Password");
-         await assertComponentIsVisible(page, "submit-button");
+         await assertComponentIsVisible(page, "submit-button", "Login");
 
          // Assert that the navigation link to the registration page is visible and clickable
          await assertComponentIsVisible(page, "register-link");

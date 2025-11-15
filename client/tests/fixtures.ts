@@ -6,8 +6,18 @@ import { cleanupCreatedTestUsers } from "@tests/utils/authentication";
  */
 export type CreatedUserRecord = {
    username: string;
+   email: string;
+   name: string;
+   birthday: string;
    password: string;
    isTestScoped?: boolean;
+};
+
+/**
+ * Container for the currently assigned user in a test
+ */
+export type AssignedUserRecord = {
+   current: CreatedUserRecord | null;
 };
 
 /**
@@ -18,6 +28,8 @@ type SharedFixtures = {
   usersRegistry: Set<CreatedUserRecord>;
   /* Username to password map for users currently assigned to tests */
   assignedRegistry: Record<string, string>;
+  /* Currently assigned user record for the test */
+  assignedUser: AssignedUserRecord;
 };
 
 /**
@@ -44,7 +56,16 @@ export const test = base.extend<SharedFixtures>({
 
          // Make the assigned registry available to all test suites within this worker
          await use(assignedRegistry);
-      }, { scope: "worker" }] as any
+      }, { scope: "worker" }] as any,
+   assignedUser: [
+      // eslint-disable-next-line no-empty-pattern
+      async({}: Fixtures<SharedFixtures>, use: (value: AssignedUserRecord) => Promise<void>) => {
+         // Function-scoped assigned user to store the current test's assigned user
+         const assignedUser: AssignedUserRecord = { current: null };
+
+         // Make the assigned user available to the test
+         await use(assignedUser);
+      }, { scope: "test" }] as any
 });
 
 export { expect } from "@playwright/test";

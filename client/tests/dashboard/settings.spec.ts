@@ -1,18 +1,16 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
+import { assertComponentIsVisible } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE, REGISTER_ROUTE, SETTINGS_ROUTE, VERIFIED_ROUTES, createUser } from "@tests/utils/authentication";
 import {
+   assertAccountDetails,
    assertSecurityFieldDisabled,
-   assertSecurityUpdates,
-   assertDetailsDisplay,
+   assertSecurityDetails,
    assertExportStructure,
-   assertInitialSecurityState,
    assertThemeState,
    cancelDetailsEdit,
    cancelLogout,
    cancelSecurityFieldEdit,
    getCurrentAndOppositeTheme,
-   openSettingsPage,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
    performAndAssertThemeToggle,
@@ -31,48 +29,58 @@ import { navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings Page E2E Tests", () => {
-
    test.describe("Initial State", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-         await openSettingsPage(page);
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
       });
 
-      test("should have all security fields disabled initially", async({ page }) => {
-         await assertInitialSecurityState(page);
+      test("should have accessible security details form inputs", async({ page, assignedUser }) => {
+         await assertSecurityDetails(page, {
+            username: assignedUser.current?.username,
+            email: assignedUser.current?.email
+         });
       });
 
-      test("should have accessible form inputs", async({ page }) => {
-         await assertInputVisibility(page, "details-name", "Name");
-         await assertInputVisibility(page, "details-birthday", "Birthday");
-         await assertComponentIsVisible(page, "details-theme-toggle");
+      test("should have accessible account details form inputs", async({ page, assignedUser }) => {
+         await assertAccountDetails(page, {
+            name: assignedUser.current?.name,
+            birthday: assignedUser.current?.birthday,
+         });
+      });
+
+      test("should have accessible action buttons", async({ page }) => {
+         await assertComponentIsVisible(page, "settings-export", "Export Data");
+         await assertComponentIsVisible(page, "settings-logout", "Logout");
+         await assertComponentIsVisible(page, "settings-delete-account", "Delete Account");
       });
    });
 
    test.describe("Details Form", () => {
       test.describe("Successful Updates", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
          });
 
-         test("should update name only", async({ page }) => {
+         test("should update name only", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(
                page,
+               assignedUser,
                { name: "Updated Name" }
             );
          });
 
-         test("should update birthday only", async({ page }) => {
+         test("should update birthday only", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(
                page,
+               assignedUser,
                { birthday: "1995-05-15" }
             );
          });
 
-         test("should update name and birthday together", async({ page }) => {
+         test("should update name and birthday together", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(
                page,
+               assignedUser,
                { name: "New Full Name", birthday: "1990-06-20" }
             );
          });
@@ -82,19 +90,21 @@ test.describe("Settings Page E2E Tests", () => {
             await performAndAssertThemeToggle(page, "details", newTheme);
          });
 
-         test("should update name, birthday, and toggle theme", async({ page }) => {
+         test("should update name, birthday, and toggle theme", async({ page, assignedUser }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await performAndAssertDetailsUpdate(
                page,
+               assignedUser,
                { name: "Updated User", birthday: "1992-03-10", theme: newTheme }
             );
             await performAndAssertThemeToggle(page, "details", newTheme);
          });
 
-         test("should update all Details fields together", async({ page }) => {
+         test("should update all Details fields together", async({ page, assignedUser }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await performAndAssertDetailsUpdate(
                page,
+               assignedUser,
                { name: "Complete Update", birthday: "1988-12-25", theme: newTheme }
             );
             await performAndAssertThemeToggle(page, "details", newTheme);
@@ -103,8 +113,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false);
          });
 
          test("should validate name minimum length", async({ page }) => {
@@ -130,8 +139,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Theme Persistence", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false);
          });
 
          test("should persist theme across page navigation", async({ page }) => {
@@ -169,9 +177,8 @@ test.describe("Settings Page E2E Tests", () => {
       });
 
       test.describe("Cancel Behavior", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
          });
 
          test("should cancel name change and show original value", async({ page }) => {
@@ -234,27 +241,26 @@ test.describe("Settings Page E2E Tests", () => {
 
    test.describe("Security Form", () => {
       test.describe("Successful Updates", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
-         test("should update username only", async({ page, usersRegistry, assignedRegistry }) => {
+         test("should update username only", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             const originalUsername = await page.getByTestId("security-username").inputValue();
             const { username: newUsername } = generateTestCredentials();
-            await performAndAssertSecurityUpdate(page, { username: newUsername });
+            await performAndAssertSecurityUpdate(page, assignedUser, { username: newUsername });
             updateUsernameInRegistries(usersRegistry, assignedRegistry, originalUsername, newUsername);
          });
 
-         test("should update email only", async({ page }) => {
+         test("should update email only", async({ page, assignedUser }) => {
             const { email: newEmail } = generateTestCredentials();
-            await performAndAssertSecurityUpdate(page, { email: newEmail });
+            await performAndAssertSecurityUpdate(page, assignedUser, { email: newEmail });
          });
 
-         test("should update password with valid credentials", async({ page, usersRegistry, assignedRegistry }) => {
+         test("should update password with valid credentials", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             const currentUsername = await page.getByTestId("security-username").inputValue();
             const { password: currentPassword, newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
-            await performAndAssertSecurityUpdate(page, {
+            await performAndAssertSecurityUpdate(page, assignedUser, {
                password: currentPassword,
                newPassword,
                verifyPassword
@@ -268,15 +274,14 @@ test.describe("Settings Page E2E Tests", () => {
       });
 
       test.describe("Multiple Fields Together", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should update username and email together", async({ page }) => {
             const { username: newUsername, email: newEmail } = generateTestCredentials();
             await updateSecurityFields(page, { username: newUsername, email: newEmail });
-            await assertSecurityUpdates(page, { username: newUsername, email: newEmail });
+            await assertSecurityDetails(page, { username: newUsername, email: newEmail });
          });
 
          test("should update username and password together", async({ page }) => {
@@ -288,7 +293,7 @@ test.describe("Settings Page E2E Tests", () => {
                newPassword,
                verifyPassword
             });
-            await assertSecurityUpdates(page, { username: newUsername });
+            await assertSecurityDetails(page, { username: newUsername });
          });
 
          test("should update email and password together", async({ page }) => {
@@ -300,14 +305,13 @@ test.describe("Settings Page E2E Tests", () => {
                newPassword,
                verifyPassword
             });
-            await assertSecurityUpdates(page, { email: newEmail });
+            await assertSecurityDetails(page, { email: newEmail });
          });
       });
 
       test.describe("Update All Security Fields", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should update all security fields together", async({ page }) => {
@@ -320,14 +324,13 @@ test.describe("Settings Page E2E Tests", () => {
                newPassword,
                verifyPassword
             });
-            await assertSecurityUpdates(page, { username: newUsername, email: newEmail });
+            await assertSecurityDetails(page, { username: newUsername, email: newEmail });
          });
       });
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
          });
 
          test("should validate username minimum length", async({ page }) => {
@@ -383,9 +386,8 @@ test.describe("Settings Page E2E Tests", () => {
       });
 
       test.describe("Cancel Behavior", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should cancel username change and show original value", async({ page }) => {
@@ -483,17 +485,17 @@ test.describe("Settings Page E2E Tests", () => {
             });
 
             // Verify all original and disabled
-            await expect(page.getByTestId("security-username")).toHaveValue(originalUsername);
-            await expect(page.getByTestId("security-email")).toHaveValue(originalEmail);
-            await assertSecurityUpdates(page);
+            await assertSecurityDetails(page, {
+               username: originalUsername,
+               email: originalEmail
+            });
          });
       });
    });
 
    test.describe("Cross-Section Updates", () => {
       test("should update Details and Security fields together", async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-         await openSettingsPage(page);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
 
          const newName = "Updated Full Name";
          const { username: newUsername } = generateTestCredentials();
@@ -514,16 +516,15 @@ test.describe("Settings Page E2E Tests", () => {
          await page.getByTestId("security-submit").waitFor({ state: "hidden", timeout: 10000 });
 
          // Verify both updated
-         await assertDetailsDisplay(page, { name: newName });
+         await assertAccountDetails(page, { name: newName });
          await expect(page.getByTestId("security-username")).toHaveValue(newUsername);
       });
    });
 
    test.describe("Actions", () => {
       test.describe("Logout", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
          });
 
          test("should logout with confirmation", async({ page }) => {
@@ -541,8 +542,7 @@ test.describe("Settings Page E2E Tests", () => {
             const username = Object.keys(assignedRegistry)[0];
             const password = username ? assignedRegistry[username] : undefined;
 
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
 
             await performDelete(page, true);
 
@@ -558,8 +558,7 @@ test.describe("Settings Page E2E Tests", () => {
          });
 
          test("should cancel delete operation", async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
 
             await performDelete(page, false);
 
@@ -570,8 +569,7 @@ test.describe("Settings Page E2E Tests", () => {
 
       test.describe("Export Account", () => {
          test("should export account data as JSON", async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
-            await openSettingsPage(page);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false);
 
             // Create 2 test accounts
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };

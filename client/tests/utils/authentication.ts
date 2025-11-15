@@ -42,7 +42,7 @@ export async function createUser(
    keepLoggedIn: boolean = true,
    usersRegistry: Set<CreatedUserRecord>,
    isTestScoped: boolean = false
-): Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }> {
+): Promise<CreatedUserRecord> {
    const MAX_RETRIES: number = 3;
    let success: boolean = false;
    let lastError: string = "";
@@ -77,7 +77,15 @@ export async function createUser(
          }
 
          // Add the created user to the registry for the worker's final cleanup
-         usersRegistry.add({ username: registrationData.username, password: registrationData.password, isTestScoped });
+         const userRecord: CreatedUserRecord = {
+            username: registrationData.username,
+            email: registrationData.email,
+            name: registrationData.name,
+            birthday: registrationData.birthday,
+            password: registrationData.password,
+            isTestScoped
+         };
+         usersRegistry.add(userRecord);
 
          success = true;
          break;
@@ -101,9 +109,11 @@ export async function createUser(
       throw new Error(lastError || "User creation failed: unexpected error");
    }
 
-   const result: { username: string; email: string; password: string; isTestScoped?: boolean } = {
+   const result: CreatedUserRecord = {
       username: registrationData.username,
       email: registrationData.email,
+      name: registrationData.name,
+      birthday: registrationData.birthday,
       password: registrationData.password,
       isTestScoped
    };

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 import { assertComponentIsVisible } from "@tests/utils";
 import { ROOT_ROUTE } from "@tests/utils/authentication";
 
@@ -23,10 +23,9 @@ export function getRouteLinkTitle(route: string): string {
  */
 export async function openSidebar(page: Page): Promise<void> {
    const sidebarToggle: Locator = page.getByTestId("sidebar-toggle");
-   const themeSwitch: Locator = page.getByTestId("theme-switch");
+   const sidebarOpen: boolean = await sidebarToggle.getAttribute("data-sidebar-open") === "true";
 
-   if (!(await themeSwitch.isVisible())) {
-      // Open the closed sidebar as the theme switch is not visible
+   if (!sidebarOpen) {
       await sidebarToggle.click();
    }
 }
@@ -41,7 +40,7 @@ export async function clickSidebarLink(page: Page, testId: string): Promise<void
    await openSidebar(page);
    await assertComponentIsVisible(page, testId);
    await page.getByTestId(testId).click();
-   await page.waitForSelector(`[data-testid="${testId}"]`, { state: "hidden" });
+   await page.waitForSelector(testId, { state: "hidden" });
 }
 
 /**

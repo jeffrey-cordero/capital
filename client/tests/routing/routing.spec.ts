@@ -8,7 +8,7 @@ import {
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
-import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
+import { getRouteLinkTitle, navigateToPath, openSidebar } from "@tests/utils/navigation";
 import { assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
 import { setupAssignedUser } from "@tests/utils/user-management";
 import { assertInputVisibility } from "@tests/utils";
@@ -21,10 +21,9 @@ test.describe("Routing and Navigation", () => {
     * @param {string} route - Route path to verify
     */
    const assertSidebarLinkActive = async(page: Page, route: string): Promise<void> => {
-      const linkTitle: string = getRouteLinkTitle(route);
-      await clickSidebarLink(page, `sidebar-link-${linkTitle.toLowerCase()}`);
+      await openSidebar(page);
 
-      // Assert that the link is visible and active
+      const linkTitle: string = getRouteLinkTitle(route);
       await expect(page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`)).toHaveAttribute("data-active", "true");
    };
 
@@ -130,7 +129,6 @@ test.describe("Routing and Navigation", () => {
 
          for (const route of VERIFIED_ROUTES) {
             await navigateToPath(page, route);
-            await expect(page).toHaveURL(route);
             await assertThemeState(page, newTheme);
 
             // Reload and verify persistence

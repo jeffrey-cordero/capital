@@ -29,7 +29,7 @@ test.describe("User Registration", () => {
          await assertInputVisibility(page, "password", "Password");
          await assertInputVisibility(page, "verifyPassword", "Verify Password");
          await assertInputVisibility(page, "email", "Email");
-         await assertComponentIsVisible(page, "submit-button");
+         await assertComponentIsVisible(page, "submit-button", "Register");
 
          // Assert that the navigation link to the login page is visible and clickable
          const loginLink = page.getByTestId("login-link");

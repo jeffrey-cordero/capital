@@ -47,7 +47,7 @@ export async function assertInputVisibility(
    await expect(labelLocator).toBeVisible();
 
    // Verify value
-   if (value) {
+   if (value !== undefined) {
       await expect(input).toHaveValue(value);
    }
 

@@ -97,7 +97,7 @@ test.describe("Account Management", () => {
          const formInputs = [
             { testId: "account-name", label: "Name" },
             { testId: "account-balance", label: "Balance" },
-            { testId: "account-type", label: "Type" },
+            { testId: "account-type", label: "Type", value: "Checking" },
             { testId: "account-image-button", text: "Image" }
          ];
 
@@ -105,7 +105,7 @@ test.describe("Account Management", () => {
 
          for (const input of formInputs) {
             if (input.label) {
-               await assertInputVisibility(page, input.testId, input.label);
+               await assertInputVisibility(page, input.testId, input.label, input.value);
             } else {
                await assertComponentIsVisible(page, input.testId, input.text);
             }

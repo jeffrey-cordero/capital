@@ -333,6 +333,7 @@ export function SideBar(): React.ReactNode {
          <IconButton
             color = "primary"
             data-testid = "sidebar-toggle"
+            data-sidebar-open = { open ? "true" : "false" }
             onClick = { openSideBar }
             sx = {
                {
