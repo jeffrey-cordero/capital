@@ -3,6 +3,7 @@ import type { AssignedUserRecord } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { assertValidationErrors, submitForm, updateSelectValue } from "@tests/utils/forms";
 import { openSidebar } from "@tests/utils/navigation";
+import { generateTestCredentials, generateUniqueTestBirthday, generateUniqueTestName } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
 
 /**
@@ -45,52 +46,6 @@ export type PerformAndAssertSettingsActionOptions = {
    usersRegistry?: Set<any>;
    assignedRegistry?: Record<string, string>;
 };
-
-/**
- * Generates a unique name that's guaranteed to differ from the current value
- *
- * @param {string} currentName - Current name value
- * @returns {string} A unique name different from the current value
- */
-export function generateUniqueTestName(currentName: string): string {
-   const timestamp = Date.now().toString().slice(-4);
-   return `Test Name ${timestamp}`;
-}
-
-/**
- * Generates a unique birthday that's guaranteed to differ from the current value
- *
- * @param {string} currentBirthday - Current birthday in YYYY-MM-DD format
- * @returns {string} A unique birthday different from the current value
- */
-export function generateUniqueTestBirthday(currentBirthday: string): string {
-   const date = new Date(currentBirthday);
-   // Add 1 day to ensure it's different
-   date.setDate(date.getDate() + 1);
-   return date.toISOString().split("T")[0];
-}
-
-/**
- * Generates a unique username that's guaranteed to differ from the current value
- *
- * @param {string} currentUsername - Current username
- * @returns {string} A unique username different from the current value
- */
-export function generateUniqueTestUsername(currentUsername: string): string {
-   const timestamp = Date.now().toString().slice(-4);
-   return `testuser${timestamp}`;
-}
-
-/**
- * Generates a unique email that's guaranteed to differ from the current value
- *
- * @param {string} currentEmail - Current email
- * @returns {string} A unique email different from the current value
- */
-export function generateUniqueTestEmail(currentEmail: string): string {
-   const timestamp = Date.now().toString().slice(-4);
-   return `test${timestamp}@example.com`;
-}
 
 /**
  * Asserts account details (name, birthday, theme) match expected values
@@ -154,23 +109,88 @@ export async function updateDetails(
 }
 
 /**
+ * Generates unique test values for any settings field by reading current page state
+ * Supports both details and security fields
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Array<string>} fieldsToUpdate - Field names to generate unique values for
+ *   Details fields: "name", "birthday", "theme"
+ *   Security fields: "username", "email", "password", "newPassword", "verifyPassword"
+ * @returns {Promise<Record<string, string>>} Object with generated unique values for each field
+ */
+export async function generateUniqueUpdateValues(
+   page: Page,
+   fieldsToUpdate: string[]
+): Promise<Record<string, string>> {
+   const updates: Record<string, string> = {};
+
+   for (const field of fieldsToUpdate) {
+      switch (field) {
+         case "name": {
+            updates.name = generateUniqueTestName();
+            break;
+         }
+         case "birthday": {
+            const current = await page.getByTestId("details-birthday").inputValue();
+            updates.birthday = generateUniqueTestBirthday(current);
+            break;
+         }
+         case "theme": {
+            const { opposite } = await getCurrentAndOppositeTheme(page);
+            updates.theme = opposite;
+            break;
+         }
+         case "username": {
+            const { username } = generateTestCredentials();
+            updates.username = username;
+            break;
+         }
+         case "email": {
+            const { email } = generateTestCredentials();
+            updates.email = email;
+            break;
+         }
+         case "password":
+            updates.password = "CurrentPassword1!";
+            break;
+         case "newPassword":
+            updates.newPassword = "NewPassword1!";
+            break;
+         case "verifyPassword":
+            updates.verifyPassword = "NewPassword1!";
+            break;
+      }
+   }
+
+   return updates;
+}
+
+/**
  * Updates user details and asserts the changes were saved correctly
+ * Automatically generates unique values for specified fields by reading current form state
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {DetailsFormData} data - Details data to update
+ * @param {string[]} fieldsToUpdate - Fields to update: "name", "birthday", "theme"
  * @param {Record<string, string>} [expectedErrors] - Expected validation errors
  */
 export async function performAndAssertDetailsUpdate(
    page: Page,
    assignedUser: AssignedUserRecord,
-   data: DetailsFormData,
+   fieldsToUpdate: string[],
    expectedErrors?: Record<string, string>
 ): Promise<void> {
-   await updateDetails(page, data, expectedErrors);
+   const detailsData = (await generateUniqueUpdateValues(page, fieldsToUpdate)) as DetailsFormData;
+
+   await updateDetails(page, detailsData, expectedErrors);
+   const updatedDetailsData = { ...assignedUser.current, ...detailsData };
 
    if (!expectedErrors) {
-      await assertAccountDetails(page, { ...assignedUser.current, ...data });
+      await assertAccountDetails(page, updatedDetailsData);
+
+      // Reload the page to ensure the changes are persisted
+      await page.reload();
+      await assertAccountDetails(page, updatedDetailsData);
    } else {
       await assertValidationErrors(page, expectedErrors);
    }
@@ -359,25 +379,42 @@ export async function updateSecurityFields(
 
 /**
  * Updates security fields with automatic toggling and asserts the changes were saved
+ * Automatically generates unique values for specified fields by reading current form state
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {Partial<SecurityFormData>} securityData - Security data to update
+ * @param {string[]} fieldsToUpdate - Fields to update: "username", "email", "password"
  * @param {Record<string, string>} [expectedErrors] - Expected validation errors
+ * @returns {Promise<Partial<SecurityFormData>>} Updated security data merged with current user
  */
 export async function performAndAssertSecurityUpdate(
    page: Page,
    assignedUser: AssignedUserRecord,
-   securityData: Partial<SecurityFormData>,
+   fieldsToUpdate: string[],
    expectedErrors?: Record<string, string>
-): Promise<void> {
+): Promise<Partial<SecurityFormData>> {
+   const securityData = (await generateUniqueUpdateValues(page, fieldsToUpdate)) as SecurityFormData;
+
+   if (securityData.password !== undefined) {
+      // Use the current assigned user's password
+      securityData.password = assignedUser.current!.password;
+   }
+
    await updateSecurityFields(page, securityData, expectedErrors);
 
+   const updatedSecurityData = { ...assignedUser.current, ...securityData };
+
    if (!expectedErrors) {
-      await assertSecurityDetails(page, { ...assignedUser.current, ...securityData });
+      await assertSecurityDetails(page, updatedSecurityData);
+
+      // Reload the page to ensure the changes are persisted
+      await page.reload();
+      await assertSecurityDetails(page, updatedSecurityData);
    } else {
       await assertValidationErrors(page, expectedErrors);
    }
+
+   return updatedSecurityData;
 }
 
 /**
@@ -635,19 +672,12 @@ export async function performAndAssertCancelDetailsBehavior(
    fieldsToCancel: Array<"name" | "birthday">
 ): Promise<void> {
    // Capture original values BEFORE any modifications
-   const originalValues: Partial<DetailsFormData> = {};
-   for (const field of fieldsToCancel) {
-      if (field === "name") {
-         originalValues.name = assignedUser.current!.name;
-      } else if (field === "birthday") {
-         originalValues.birthday = assignedUser.current!.birthday;
-      }
-   }
+   const originalValues: Partial<DetailsFormData> = { ...assignedUser.current };
 
    // Modify each field
    for (const field of fieldsToCancel) {
       if (field === "name") {
-         const newValue = generateUniqueTestName(originalValues.name!);
+         const newValue = generateUniqueTestName();
          await page.getByTestId("details-name").fill(newValue);
       } else if (field === "birthday") {
          const newValue = generateUniqueTestBirthday(originalValues.birthday!);
@@ -678,25 +708,18 @@ export async function performAndAssertCancelSecurityBehavior(
    fieldsToCancel: Array<"username" | "email" | "password">
 ): Promise<void> {
    // Capture original values BEFORE any modifications
-   const originalValues: Partial<SecurityFormData> = {};
-   for (const field of fieldsToCancel) {
-      if (field === "username") {
-         originalValues.username = assignedUser.current!.username;
-      } else if (field === "email") {
-         originalValues.email = assignedUser.current!.email;
-      }
-   }
+   const originalValues: Partial<SecurityFormData> = { ...assignedUser.current };
 
    // Enable and modify each field
    for (const field of fieldsToCancel) {
       await toggleSecurityField(page, field);
 
       if (field === "username") {
-         const newValue = generateUniqueTestUsername(originalValues.username!);
-         await page.getByTestId("security-username").fill(newValue);
+         const { username } = generateTestCredentials();
+         await page.getByTestId("security-username").fill(username);
       } else if (field === "email") {
-         const newValue = generateUniqueTestEmail(originalValues.email!);
-         await page.getByTestId("security-email").fill(newValue);
+         const { email } = generateTestCredentials();
+         await page.getByTestId("security-email").fill(email);
       } else if (field === "password") {
          await page.getByTestId("security-current-password").fill("Password1!");
          await page.getByTestId("security-new-password").fill("NewPassword1!");

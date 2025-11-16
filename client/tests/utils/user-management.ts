@@ -10,44 +10,37 @@ import { Mutex } from "async-mutex";
 const mutex = new Mutex();
 
 /**
- * Updates username in both assigned and user registries
+ * Updates user credentials (username and/or password) in registries
+ *
+ * @param {Set<CreatedUserRecord>} usersRegistry - Registry of all created users for cleanup
+ * @param {Record<string, string>} assignedRegistry - Username to password map for users currently assigned to tests
+ * @param {string} originalUsername - Original username to update from
+ * @param {Partial<{username: string; password: string}>} updates - Object with optional username and/or password to update
  */
-export function updateUsernameInRegistries(
+export function updateUserInRegistries(
    usersRegistry: Set<CreatedUserRecord>,
    assignedRegistry: Record<string, string>,
    originalUsername: string,
-   newUsername: string
+   updates: Partial<{ username: string; password: string }>
 ): void {
-   const password = assignedRegistry[originalUsername];
-   if (password) {
-      delete assignedRegistry[originalUsername];
-      assignedRegistry[newUsername] = password;
+   const { username: newUsername, password: newPassword } = updates;
 
-      // Update the user record in registry
-      for (const user of usersRegistry) {
-         if (user.username === originalUsername) {
-            user.username = newUsername;
-            break;
-         }
-      }
-   }
-}
-
-/**
- * Updates password in both assigned and user registries
- */
-export function updatePasswordInRegistries(
-   usersRegistry: Set<CreatedUserRecord>,
-   assignedRegistry: Record<string, string>,
-   username: string,
-   newPassword: string
-): void {
-   assignedRegistry[username] = newPassword;
-
-   // Update the user record in registry
+   // Find and update the user in registry in a single pass
    for (const user of usersRegistry) {
-      if (user.username === username) {
-         user.password = newPassword;
+      if (user.username === originalUsername) {
+         // Update username in the user record
+         if (newUsername) {
+            user.username = newUsername;
+         }
+
+         // Update password in the user record
+         if (newPassword) {
+            user.password = newPassword;
+
+            delete assignedRegistry[originalUsername];
+            assignedRegistry[newUsername || originalUsername] = newPassword;
+         }
+
          break;
       }
    }

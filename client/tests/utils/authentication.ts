@@ -43,7 +43,7 @@ export async function createUser(
    usersRegistry: Set<CreatedUserRecord>,
    isTestScoped: boolean = false
 ): Promise<CreatedUserRecord> {
-   const MAX_RETRIES: number = 6;
+   const MAX_RETRIES: number = 3;
    let success: boolean = false;
    let lastError: string = "";
 
