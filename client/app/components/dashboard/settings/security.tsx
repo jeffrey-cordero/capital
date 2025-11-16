@@ -234,7 +234,7 @@ export default function Security(): React.ReactNode {
                                  disabled.passwords ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       data-testid = "security-password-pen"
+                                       data-testid = "security-current-password-pen"
                                        icon = { disabled.passwords ? faPenToSquare : visible.password ? faEye : faEyeSlash }
                                        onClick = { () => toggleEditableFields("passwords") }
                                        style = { { cursor: "pointer" } }

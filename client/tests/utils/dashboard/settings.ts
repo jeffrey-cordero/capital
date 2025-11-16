@@ -38,7 +38,7 @@ export type DetailsFormData = Partial<{
 export type SecurityFormData = Partial<{
    username: string;
    email: string;
-   password?: string;
+   currentPassword: string;
    newPassword?: string;
    verifyPassword?: string;
 }>;
@@ -47,14 +47,17 @@ export type SecurityFormData = Partial<{
  * Generates unique test values for specified settings fields
  *
  * @param {Page} page - Playwright page instance
- * @param {string[]} fieldsToUpdate - Field names: "name", "birthday", "theme", "username", "email", "password", "newPassword", "verifyPassword"
+ * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
+ * @param {string[]} fieldsToUpdate - Field names: `"name"`, `"birthday"`, `"theme"`, `"username"`, `"email"`, `"current-password"`, `"newPassword"`, and/or `"verifyPassword"`
  * @returns {Promise<Record<string, string>>} Object with generated unique values
  */
 export async function generateUniqueUpdateValues(
    page: Page,
+   assignedUser: AssignedUserRecord,
    fieldsToUpdate: string[]
 ): Promise<Record<string, string>> {
    const updates: Record<string, string> = {};
+   const newPassword: string = assignedUser.current!.password === "Password1!" ? "NewPassword1!" : assignedUser.current!.password;
 
    for (const field of fieldsToUpdate) {
       switch (field) {
@@ -63,33 +66,29 @@ export async function generateUniqueUpdateValues(
             break;
          }
          case "birthday": {
-            const current = await page.getByTestId("details-birthday").inputValue();
-            updates.birthday = generateUniqueTestBirthday(current);
+            updates.birthday = generateUniqueTestBirthday(assignedUser.current!.birthday);
             break;
          }
          case "theme": {
-            const { opposite } = await getCurrentAndOppositeTheme(page);
-            updates.theme = opposite;
+            updates.theme = (await getCurrentAndOppositeTheme(page)).opposite;
             break;
          }
          case "username": {
-            const { username } = generateTestCredentials();
-            updates.username = username;
+            updates.username = (generateTestCredentials()).username;
             break;
          }
          case "email": {
-            const { email } = generateTestCredentials();
-            updates.email = email;
+            updates.email = (generateTestCredentials()).email;
             break;
          }
-         case "password":
-            updates.password = "CurrentPassword1!";
+         case "current-password":
+            updates.currentPassword = assignedUser.current!.password;
             break;
          case "newPassword":
-            updates.newPassword = "NewPassword1!";
+            updates.newPassword = newPassword;
             break;
          case "verifyPassword":
-            updates.verifyPassword = "NewPassword1!";
+            updates.verifyPassword = newPassword;
             break;
       }
    }
@@ -137,7 +136,7 @@ export async function updateDetails(
 }
 
 /**
- * Asserts account details (name, birthday, theme) match expected values
+ * Asserts account details match expected values
  *
  * @param {Page} page - Playwright page instance
  * @param {DetailsFormData} expectedDetails - Expected details to verify
@@ -162,57 +161,23 @@ export async function assertAccountDetails(
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {string[]} fieldsToUpdate - Fields to update: "name", "birthday", "theme"
+ * @param {string[]} fieldsToUpdate - Fields to update: `"name"`, `"birthday"`, and/or `"theme"`
  */
 export async function performAndAssertDetailsUpdate(
    page: Page,
    assignedUser: AssignedUserRecord,
    fieldsToUpdate: string[]
 ): Promise<void> {
-   const detailsData = (await generateUniqueUpdateValues(page, fieldsToUpdate)) as DetailsFormData;
+   const detailsData = await generateUniqueUpdateValues(page, assignedUser, fieldsToUpdate) as DetailsFormData;
 
    await updateDetails(page, detailsData);
-   const updatedDetailsData: DetailsFormData = { ...assignedUser.current, ...detailsData };
+   const updatedDetails = { ...assignedUser.current, ...detailsData };
 
-   await assertAccountDetails(page, updatedDetailsData);
+   await assertAccountDetails(page, updatedDetails);
 
    // Reload the page to ensure the changes are persisted
    await page.reload();
-   await assertAccountDetails(page, updatedDetailsData);
-}
-
-/**
- * Tests cancel behavior by modifying fields and verifying revert to original values
- *
- * @param {Page} page - Playwright page instance
- * @param {AssignedUserRecord} assignedUser - User fixture with original values
- * @param {Array<("name" | "birthday")>} fieldsToCancel - Fields to test cancel behavior
- */
-export async function performAndAssertCancelDetailsBehavior(
-   page: Page,
-   assignedUser: AssignedUserRecord,
-   fieldsToCancel: Array<"name" | "birthday">
-): Promise<void> {
-   // Capture original values BEFORE any modifications
-   const originalValues: Partial<DetailsFormData> = { ...assignedUser.current };
-
-   for (const field of fieldsToCancel) {
-      if (field === "name") {
-         const newValue = generateUniqueTestName();
-         await page.getByTestId("details-name").fill(newValue);
-      } else if (field === "birthday") {
-         const newValue = generateUniqueTestBirthday(originalValues.birthday!);
-         await page.getByTestId("details-birthday").fill(newValue);
-      }
-   }
-
-   // Verify change detection and click cancel button
-   await assertComponentIsVisible(page, "details-cancel", "Cancel");
-   await assertComponentIsVisible(page, "details-submit", "Update");
-   await page.getByTestId("details-cancel").click();
-
-   // Verify all fields reverted to original state using captured originals
-   await assertAccountDetails(page, originalValues);
+   await assertAccountDetails(page, updatedDetails);
 }
 
 /**
@@ -326,20 +291,21 @@ export async function performAndAssertThemeToggle(
  * Toggles a security field to enable editing
  *
  * @param {Page} page - Playwright page instance
- * @param {("username" | "email" | "password")} field - Field name to toggle
+ * @param {("username" | "email" | "current-password")} field - Field name to toggle
  */
-export async function toggleSecurityField(page: Page, field: "username" | "email" | "password"): Promise<void> {
+export async function toggleSecurityField(page: Page, field: "username" | "email" | "current-password"): Promise<void> {
    const penIcon = page.getByTestId(`security-${field}-pen`);
    await expect(penIcon).toBeVisible();
    await penIcon.click();
 
    await expect(penIcon).toBeHidden();
 
-   const testId = field === "password" ? "security-current-password" : `security-${field}`;
+   const testId: string = `security-${field}`;
    const value: string = await page.getByTestId(testId).inputValue();
-   await assertInputVisibility(page, testId, field.charAt(0).toUpperCase() + field.slice(1), value, true);
+   const label: string = field === "current-password" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
+   await assertInputVisibility(page, testId, label, value, true);
 
-   if (field === "password") {
+   if (field === "current-password") {
       await assertInputVisibility(page, "security-new-password", "New Password");
       await assertInputVisibility(page, "security-verify-password", "Verify Password");
    }
@@ -364,13 +330,13 @@ export async function updateSecurityFields(
    // Ensure all of the required fields are toggled to allow editing
    if (fields.username !== undefined) await toggleSecurityField(page, "username");
    if (fields.email !== undefined) await toggleSecurityField(page, "email");
-   if (fields.password !== undefined || fields.newPassword !== undefined) await toggleSecurityField(page, "password");
+   if (fields.currentPassword !== undefined || fields.newPassword !== undefined) await toggleSecurityField(page, "current-password");
 
    const formData: Record<string, any> = {};
 
    if (fields.username !== undefined) formData["security-username"] = fields.username;
    if (fields.email !== undefined) formData["security-email"] = fields.email;
-   if (fields.password !== undefined) formData["security-current-password"] = fields.password;
+   if (fields.currentPassword !== undefined) formData["security-current-password"] = fields.currentPassword;
    if (fields.newPassword !== undefined) formData["security-new-password"] = fields.newPassword;
    if (fields.verifyPassword !== undefined) formData["security-verify-password"] = fields.verifyPassword;
 
@@ -407,7 +373,7 @@ export async function assertSecurityDetails(page: Page, expectedValues: Partial<
       const value: string = label === "Password" ? "********" : expectedValues[field as keyof typeof expectedValues]!;
 
       await assertInputVisibility(page, `security-${field}`, label, value, false);
-      await assertComponentIsVisible(page, `security-${label.toLowerCase()}-pen`);
+      await assertComponentIsVisible(page, `security-${field}-pen`);
    }
 
    await assertComponentIsHidden(page, "security-new-password");
@@ -423,7 +389,7 @@ export async function assertSecurityDetails(page: Page, expectedValues: Partial<
  * @param {Set<any>} usersRegistry - Registry of created test users (auto-updates credentials if provided)
  * @param {Record<string, string>} assignedRegistry - Registry of assigned user credentials (auto-updates if provided)
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {string[]} fieldsToUpdate - Fields to update: "username", "email", "password"
+ * @param {string[]} fieldsToUpdate - Fields to update: "username", "email", "current-password"
  * @returns {Promise<Partial<SecurityFormData>>} Updated security data merged with current user
  */
 export async function performAndAssertSecurityUpdate(
@@ -432,13 +398,8 @@ export async function performAndAssertSecurityUpdate(
    assignedRegistry: Record<string, string>,
    assignedUser: AssignedUserRecord,
    fieldsToUpdate: string[]
-): Promise<Partial<SecurityFormData>> {
-   const securityData = (await generateUniqueUpdateValues(page, fieldsToUpdate)) as SecurityFormData;
-
-   if (securityData.password !== undefined) {
-      // Use the current assigned user's password
-      securityData.password = assignedUser.current!.password;
-   }
+): Promise<SecurityFormData> {
+   const securityData = await generateUniqueUpdateValues(page, assignedUser, fieldsToUpdate) as SecurityFormData;
 
    await updateSecurityFields(page, securityData);
 
@@ -451,8 +412,8 @@ export async function performAndAssertSecurityUpdate(
    await assertSecurityDetails(page, updatedSecurityData);
 
    // Auto-verify credentials if username or password changed
-   const hasUsernameChange = fieldsToUpdate.includes("username");
-   const hasPasswordChange = fieldsToUpdate.includes("password");
+   const hasUsernameChange = securityData.username !== undefined;
+   const hasPasswordChange = securityData.newPassword !== undefined;
 
    if (hasUsernameChange || hasPasswordChange) {
       const loginUsername = hasUsernameChange ? updatedSecurityData.username! : assignedUser.current!.username;
@@ -476,44 +437,6 @@ export async function performAndAssertSecurityUpdate(
    }
 
    return updatedSecurityData;
-}
-
-/**
- * Tests security field cancel behavior by enabling, modifying, and reverting to original values
- *
- * @param {Page} page - Playwright page instance
- * @param {AssignedUserRecord} assignedUser - User fixture with original values
- * @param {Array<("username" | "email" | "password")>} fieldsToCancel - Fields to test cancel behavior
- */
-export async function performAndAssertCancelSecurityBehavior(
-   page: Page,
-   assignedUser: AssignedUserRecord,
-   fieldsToCancel: Array<"username" | "email" | "password">
-): Promise<void> {
-   // Capture original values BEFORE any modifications
-   const originalValues: Partial<SecurityFormData> = { ...assignedUser.current };
-
-   for (const field of fieldsToCancel) {
-      await toggleSecurityField(page, field);
-
-      if (field === "username") {
-         const { username } = generateTestCredentials();
-         await page.getByTestId("security-username").fill(username);
-      } else if (field === "email") {
-         const { email } = generateTestCredentials();
-         await page.getByTestId("security-email").fill(email);
-      } else if (field === "password") {
-         await page.getByTestId("security-current-password").fill("Password1!");
-         await page.getByTestId("security-new-password").fill("NewPassword1!");
-         await page.getByTestId("security-verify-password").fill("NewPassword1!");
-      }
-   }
-
-   // Click cancel button
-   await page.getByTestId("security-cancel").click();
-
-   // Verify all fields reverted to original state using captured originals
-   await assertSecurityDetails(page, originalValues);
 }
 
 /**
@@ -549,7 +472,7 @@ export async function testPasswordVisibilityToggle(page: Page, field: "current" 
  */
 export async function testAllPasswordVisibilityToggles(page: Page): Promise<void> {
    // Toggle password field to enable visibility toggles for all three password fields
-   await toggleSecurityField(page, "password");
+   await toggleSecurityField(page, "current-password");
 
    await testPasswordVisibilityToggle(page, "current");
    await testPasswordVisibilityToggle(page, "new");
@@ -695,5 +618,43 @@ export async function performDelete(page: Page, confirmDelete: boolean = true): 
    } else {
       await page.getByTestId("settings-delete-account-cancel").click();
       await assertComponentIsVisible(page, "settings-details");
+   }
+}
+
+/**
+ * Tests cancel behavior by modifying fields and verifying values revert to original values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {AssignedUserRecord} assignedUser - User fixture with original values
+ * @param {string[]} fieldsToCancel - Field names: `"name"`, `"birthday"`, `"username"`, `"email"`, and/or `"current-password"`
+ * @param {type} type - Type of form to cancel: `"details"`, `"security"`
+ */
+export async function performAndAssertCancelBehavior(
+   page: Page,
+   assignedUser: AssignedUserRecord,
+   type: "details" | "security",
+   fieldsToCancel: string[],
+): Promise<void> {
+   const updates = await generateUniqueUpdateValues(page, assignedUser, fieldsToCancel);
+
+   for (const field of fieldsToCancel) {
+      if (type === "security") {
+         await toggleSecurityField(page, field as "username" | "email" | "current-password");
+      }
+
+      const value = updates[field === "current-password" ? "currentPassword" : field];
+      await page.getByTestId(`${type}-${field}`).fill(value);
+   }
+
+   // Assert change detection and cancel the changes
+   await assertComponentIsVisible(page, `${type}-cancel`, "Cancel");
+   await assertComponentIsVisible(page, `${type}-submit`, "Update");
+   await page.getByTestId(`${type}-cancel`).click();
+
+   // Assert all fields reverted to original state
+   if (type === "details") {
+      await assertAccountDetails(page, assignedUser.current!);
+   } else if (type === "security") {
+      await assertSecurityDetails(page, assignedUser.current!);
    }
 }

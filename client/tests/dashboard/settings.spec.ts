@@ -16,8 +16,7 @@ import {
    assertSecurityDetails,
    cancelLogout,
    getCurrentAndOppositeTheme,
-   performAndAssertCancelDetailsBehavior,
-   performAndAssertCancelSecurityBehavior,
+   performAndAssertCancelBehavior,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
    performAndAssertThemeToggle,
@@ -119,15 +118,15 @@ test.describe("Settings", () => {
          });
 
          test("should cancel name change and revert to original value", async({ page, assignedUser }) => {
-            await performAndAssertCancelDetailsBehavior(page, assignedUser, ["name"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "details", ["name"]);
          });
 
          test("should cancel birthday change and revert to original value", async({ page, assignedUser }) => {
-            await performAndAssertCancelDetailsBehavior(page, assignedUser, ["birthday"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "details", ["birthday"]);
          });
 
          test("should cancel multiple field changes and revert to original values", async({ page, assignedUser }) => {
-            await performAndAssertCancelDetailsBehavior(page, assignedUser, ["name", "birthday"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "details", ["name", "birthday"]);
          });
       });
    });
@@ -147,11 +146,11 @@ test.describe("Settings", () => {
          });
 
          test("should successfully update password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["password", "newPassword", "verifyPassword"]);
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["current-password", "newPassword", "verifyPassword"]);
          });
 
          test("should successfully update username, email, and password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username", "email", "password", "newPassword", "verifyPassword"]);
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username", "email", "current-password", "newPassword", "verifyPassword"]);
          });
       });
 
@@ -171,7 +170,7 @@ test.describe("Settings", () => {
          test("should validate password verification match", async({ page }) => {
             const { password: currentPassword, newPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
-               password: currentPassword,
+               currentPassword,
                newPassword,
                verifyPassword: "DifferentPassword1!"
             }, { "security-verify-password": "Passwords don't match" });
@@ -180,7 +179,7 @@ test.describe("Settings", () => {
          test("should validate new password is not same as current", async({ page }) => {
             const { password: currentPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
-               password: currentPassword,
+               currentPassword,
                newPassword: currentPassword,
                verifyPassword: currentPassword
             }, { "security-new-password": "New password must not match the old password" });
@@ -189,7 +188,7 @@ test.describe("Settings", () => {
          test("should validate current password is correct", async({ page }) => {
             const { newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
-               password: "WrongPassword1!",
+               currentPassword: "WrongPassword1!",
                newPassword,
                verifyPassword
             }, { "security-current-password": "Invalid credentials" });
@@ -206,7 +205,7 @@ test.describe("Settings", () => {
          test("should validate new password required", async({ page }) => {
             const { password: currentPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
-               password: currentPassword,
+               currentPassword,
                verifyPassword
             }, { "security-new-password": "New password is required to set a new password" });
          });
@@ -218,20 +217,19 @@ test.describe("Settings", () => {
          });
 
          test("should cancel username change and revert to original value", async({ page, assignedUser }) => {
-            await performAndAssertCancelSecurityBehavior(page, assignedUser, ["username"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["username"]);
          });
 
          test("should cancel email change and revert to original value", async({ page, assignedUser }) => {
-            await performAndAssertCancelSecurityBehavior(page, assignedUser, ["email"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["email"]);
          });
 
          test("should cancel password change and hide password fields", async({ page, assignedUser }) => {
-            await performAndAssertCancelSecurityBehavior(page, assignedUser, ["password"]);
-            await assertComponentIsVisible(page, "security-password-pen");
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["current-password"]);
          });
 
          test("should cancel all security field changes and revert to original values", async({ page, assignedUser }) => {
-            await performAndAssertCancelSecurityBehavior(page, assignedUser, ["username", "email", "password"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["username", "email", "current-password"]);
          });
       });
    });
