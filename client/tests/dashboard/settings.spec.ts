@@ -4,6 +4,7 @@ import {
    ACCOUNTS_ROUTE,
    createUser,
    DASHBOARD_ROUTE,
+   logoutUser,
    REGISTER_ROUTE,
    ROOT_ROUTE,
    SETTINGS_ROUTE
@@ -22,7 +23,6 @@ import {
    performAndAssertThemeToggle,
    performDelete,
    performExport,
-   performLogout,
    testAllPasswordVisibilityToggles,
    updateDetails,
    updateSecurityFields
@@ -243,7 +243,7 @@ test.describe("Settings", () => {
          });
 
          test("should successfully logout with confirmation", async({ page }) => {
-            await performLogout(page);
+            await logoutUser(page, "settings");
          });
 
          test("should cancel logout and remain logged in", async({ page }) => {
