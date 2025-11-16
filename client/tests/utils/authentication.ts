@@ -42,34 +42,32 @@ export async function createUser(
    usersRegistry: Set<CreatedUserRecord>,
    isTestScoped: boolean = false
 ): Promise<CreatedUserRecord> {
+   // Retry a registration attempt up to 3 times with varying username substrings as many users may require full isolation for testing
    const MAX_RETRIES: number = 3;
-   let success: boolean = false;
-   let lastError: string = "";
-
-   let registrationData: RegisterPayload | undefined;
    const usernames: Set<string> = new Set(Array.from(usersRegistry).map(u => u.username));
+
+   let userRecord: CreatedUserRecord | undefined;
 
    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       await navigateToPath(page, REGISTER_ROUTE);
+      await assertComponentIsVisible(page, "submit-button");
+
       const credentials = generateTestCredentials();
 
-      for (let i = 29; i >= 2; i--) {
-         // Keep generating a substring of the current username until a unique one is found
-         const substring = credentials.username.slice(0, i);
+      for (let i = 30; i >= 2; i--) {
+         // Keep generating a substring from the generated username until a unique one is found
+         const username: string = credentials.username.slice(0, i);
 
-         if (!usernames.has(substring)) {
-            credentials.username = substring;
+         if (!usernames.has(username)) {
+            credentials.username = username;
             break;
          }
       }
 
-      registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
-
-      await assertComponentIsVisible(page, "submit-button");
+      const registrationData: RegisterPayload = { ...VALID_REGISTRATION, ...credentials, ...overrides };
       const responsePromise =  page.waitForResponse(
          response => response.url().includes("/api/v1/users") && response.request().method() === "POST"
       );
-
       await submitForm(page, registrationData);
       const response = await responsePromise;
 
@@ -82,23 +80,12 @@ export async function createUser(
             await assertInputVisibility(page, "username", "Username");
          }
 
-         const userRecord: CreatedUserRecord = {
-            username: registrationData.username,
-            email: registrationData.email,
-            name: registrationData.name,
-            birthday: registrationData.birthday,
-            password: registrationData.password,
-            isTestScoped
-         };
+         userRecord = { ...registrationData, isTestScoped };
          usersRegistry.add(userRecord);
-
-         success = true;
          break;
       } else if (response.status() === HTTP_STATUS.CONFLICT) {
-         lastError = "User creation failed: username conflict or invalid data";
-
          if (attempt === MAX_RETRIES) {
-            throw new Error(`${lastError} after ${MAX_RETRIES} attempts`);
+            throw new Error("User creation failed after maximum retries due to username conflicts or invalid data");
          }
 
          continue;
@@ -107,20 +94,11 @@ export async function createUser(
       }
    }
 
-   if (!success || !registrationData) {
-      throw new Error(lastError || "User creation failed: unexpected error");
+   if (userRecord === undefined) {
+      throw new Error("User creation failed after maximum retries due to unexpected errors");
    }
 
-   const result: CreatedUserRecord = {
-      username: registrationData.username,
-      email: registrationData.email,
-      name: registrationData.name,
-      birthday: registrationData.birthday,
-      password: registrationData.password,
-      isTestScoped
-   };
-
-   return result;
+   return userRecord;
 }
 
 /**
