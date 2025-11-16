@@ -19,7 +19,10 @@ export default function ExportAccount(): React.ReactNode {
          // Normalize the export data
          const data = {
             timestamp: new Date().toLocaleString(),
-            settings,
+            settings: {
+               ...settings,
+               birthday: new Date(settings.birthday).toISOString().split("T")[0]
+            },
             accounts: accounts.map((account) => ({
                ...account,
                account_order: undefined

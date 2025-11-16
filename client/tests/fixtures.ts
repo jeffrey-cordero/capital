@@ -2,7 +2,7 @@ import { type Fixtures, test as base } from "@playwright/test";
 import { cleanupCreatedTestUsers } from "@tests/utils/authentication";
 
 /**
- * Record of a created test user's credentials for the test's final cleanup
+ * Record of a created test user's credentials
  */
 export type CreatedUserRecord = {
    username: string;
@@ -39,10 +39,8 @@ export const test = base.extend<SharedFixtures>({
    usersRegistry: [
       // eslint-disable-next-line no-empty-pattern
       async({}: Fixtures<SharedFixtures>, use: (value: Set<CreatedUserRecord>) => Promise<void>) => {
-         // Worker-scoped users registry to collect created test users for the test's final cleanup
          const usersRegistry = new Set<CreatedUserRecord>();
 
-         // Make the users registry available to all test suites within this worker
          await use(usersRegistry);
 
          // Cleanup the created test users from the database before the worker exits
@@ -51,19 +49,16 @@ export const test = base.extend<SharedFixtures>({
    assignedRegistry: [
       // eslint-disable-next-line no-empty-pattern
       async({}: Fixtures<SharedFixtures>, use: (value: Record<string, string>) => Promise<void>) => {
-         // Worker-scoped assigned registry to track users currently assigned to tests
          const assignedRegistry: Record<string, string> = {};
 
-         // Make the assigned registry available to all test suites within this worker
          await use(assignedRegistry);
       }, { scope: "worker" }] as any,
    assignedUser: [
       // eslint-disable-next-line no-empty-pattern
       async({}: Fixtures<SharedFixtures>, use: (value: AssignedUserRecord) => Promise<void>) => {
-         // Function-scoped assigned user to store the current test's assigned user
+         // Function-scoped assigned user to store current test's assigned user
          const assignedUser: AssignedUserRecord = { current: null };
 
-         // Make the assigned user available to the test
          await use(assignedUser);
       }, { scope: "test" }] as any
 });

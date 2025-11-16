@@ -250,7 +250,7 @@ export const createUserUpdatesWithPasswordChange = (
 });
 
 /**
- * Generates a unique name (max 30 characters)
+ * Generates a unique name
  *
  * @returns {string} A unique name
  */

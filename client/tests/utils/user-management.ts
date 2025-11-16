@@ -25,19 +25,18 @@ export function updateUserInRegistries(
 ): void {
    const { username: newUsername, password: newPassword } = updates;
 
-   // Find and update the user in registry in a single pass
    for (const user of usersRegistry) {
       if (user.username === originalUsername) {
-         // Update username in the user record
          if (newUsername) {
             user.username = newUsername;
          }
 
-         // Update password in the user record
          if (newPassword) {
             user.password = newPassword;
 
             delete assignedRegistry[originalUsername];
+
+            // The username may have not changed, so use the original username if it's not provided
             assignedRegistry[newUsername || originalUsername] = newPassword;
          }
 
@@ -54,7 +53,7 @@ export function updateUserInRegistries(
  * @param {Record<string, string>} assignedRegistry - Username to password map for users currently assigned to tests
  * @param {string} route - Route to navigate to after login
  * @param {boolean} [requiresIsolation=true] - If true, assigns a fresh user, otherwise reuses any available user
- * @param {boolean} [markAsTestScoped=false] - If true, marks the user with isTestScoped flag to prevent future reuse (username updates, password updates, account deletions, etc.)
+ * @param {boolean} [markAsTestScoped=false] - If true, marks the user to prevent future reuse
  * @param {AssignedUserRecord} [assignedUser] - Optional fixture object to store the assigned user reference
  */
 export async function setupAssignedUser(
@@ -88,18 +87,13 @@ export async function setupAssignedUser(
          userToAssign = await createUser(page, {}, false, usersRegistry, markAsTestScoped);
       }
 
-      // Add the assigned user to the assigned registry
       assignedRegistry[userToAssign.username] = userToAssign.password;
 
-      // Store the assigned user in the fixture if provided
       if (assignedUser) {
          assignedUser.current = userToAssign;
       }
 
-      // Login with the assigned user's credentials
       await loginUser(page, userToAssign.username, userToAssign.password);
-
-      // Navigate to the specified route
       await navigateToPath(page, route);
    } finally {
       release();

@@ -29,7 +29,7 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
- * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
+ * @param {boolean} keepLoggedIn - Whether to keep user logged in after registration
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
  * @param {boolean} isTestScoped - Whether to mark the user as test-scoped (prevents future reuse)
  * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration and whether the user is test-scoped
@@ -65,28 +65,23 @@ export async function createUser(
 
       registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
 
-      // Wait for the submit button to be visible before submitting the registration form
       await assertComponentIsVisible(page, "submit-button");
       const responsePromise =  page.waitForResponse(
          response => response.url().includes("/api/v1/users") && response.request().method() === "POST"
       );
 
-      // Submit the form and check for either successful navigation or validation errors (conflict)
       await submitForm(page, registrationData);
       const response = await responsePromise;
 
       if (response.status() === HTTP_STATUS.CREATED) {
-         // Registration succeeded
          await assertComponentIsVisible(page, "accounts-trends-container");
 
          if (!keepLoggedIn) {
-            // Logout the created user, which is typically used for intermediate test users
             await clickSidebarLink(page, "sidebar-logout");
             await expect(page).toHaveURL(LOGIN_ROUTE);
             await assertInputVisibility(page, "username", "Username");
          }
 
-         // Add the created user to the registry for the worker's final cleanup
          const userRecord: CreatedUserRecord = {
             username: registrationData.username,
             email: registrationData.email,
@@ -100,17 +95,14 @@ export async function createUser(
          success = true;
          break;
       } else if (response.status() === HTTP_STATUS.CONFLICT) {
-         // Form submission failed, likely due to username conflict
          lastError = "User creation failed: username conflict or invalid data";
 
          if (attempt === MAX_RETRIES) {
             throw new Error(`${lastError} after ${MAX_RETRIES} attempts`);
          }
 
-         // Continue to next attempt with new credentials
          continue;
       } else {
-         // Unexpected response status
          throw new Error(`User registration failed with unexpected response status: ${response.status()}`);
       }
    }
@@ -141,7 +133,6 @@ export async function createUser(
 export async function loginUser(page: Page, username: string, password: string): Promise<void> {
    await navigateToPath(page, LOGIN_ROUTE);
 
-   // Wait for the submit button to be visible before submitting the login form
    await assertComponentIsVisible(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
@@ -177,12 +168,10 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
  * @param {Set<CreatedUserRecord>} usersToCleanup - Set of created test users to delete
  */
 async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRecord>): Promise<void> {
-   // If no test users were created, skip the cleanup process
    if (usersToCleanup.size === 0) {
       return;
    }
 
-   // Fetch the server URL from the environment variable
    const serverUrl: string = process.env.VITE_SERVER_URL || "http://localhost:8000/api/v1";
 
    for (const user of usersToCleanup) {
@@ -190,16 +179,13 @@ async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRec
       await page.context().clearCookies();
       await page.reload();
 
-      // Login via the API to initiate a session
       await page.request.post(`${serverUrl}/authentication/login`, {
          data: { username: user.username, password: user.password }
       });
 
-      // Delete the test user via the API
       await page.request.delete(`${serverUrl}/users`);
    }
 
-   // Remove all created test users from the registry for the worker's final cleanup
    usersToCleanup.clear();
 }
 
@@ -209,14 +195,11 @@ async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRec
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to clean up
  */
 export async function cleanupCreatedTestUsers(usersRegistry: Set<CreatedUserRecord>): Promise<void> {
-   // Create the isolated browser environment
    const { chromium } = await import("@playwright/test");
    const browser = await chromium.launch({ headless: true });
    const page = await browser.newPage();
 
-   // Remove the created test users from the database
    await deleteCreatedUsers(page, usersRegistry);
 
-   // Close the isolated browser environment
    await browser.close();
 }

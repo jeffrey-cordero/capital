@@ -42,6 +42,7 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the select element
  * @param {string} value - The value to select
+ * @returns {Promise<void>}
  */
 export async function updateSelectValue(page: Page, testId: string, value: string): Promise<void> {
    const element = page.getByTestId(testId);
@@ -61,12 +62,9 @@ export async function submitForm(
    data: Record<string, any>,
    options: FormSubmitOptions = DEFAULT_FORM_OPTIONS
 ): Promise<void> {
-   // Merge the provided options with the default options
    const opts: FormSubmitOptions = { ...DEFAULT_FORM_OPTIONS, ...options };
 
-   // Fill all form fields with the provided data
    for (const [testId, value] of Object.entries(data)) {
-      // Skip undefined and null values
       if (value !== undefined && value !== null) {
          const element: Locator = page.getByTestId(testId);
          const tagName: string = await element.evaluate(el => el.tagName.toLowerCase());
@@ -75,7 +73,6 @@ export async function submitForm(
                (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
          });
 
-         // Handle different input types (select, input, checkbox, radio, date, etc.)
          if (isSelectElement) {
             await updateSelectValue(page, testId, value.toString());
          } else if (tagName === "input") {
@@ -90,7 +87,6 @@ export async function submitForm(
             } else if (inputType === "radio") {
                await element.check();
             } else if (inputType === "date") {
-               // Ensure the date format is in the format `YYYY-MM-DD`
                await element.fill(new Date(value).toISOString().split("T")[0]);
             } else {
                await element.fill(value.toString());
@@ -108,19 +104,13 @@ export async function submitForm(
       await page.locator(submitButtonSelector).waitFor({ state: "visible", timeout: opts.timeout });
    }
 
-   // Create a promise for the form submission
-   const submitPromise = page.locator(submitButtonSelector).click({
+   await page.locator(submitButtonSelector).click({
       timeout: opts.timeout
    });
 
-   // Wait for the form submission to complete
-   await submitPromise;
-
    if (opts.containsErrors) {
-      // Ignore waiting for any context-specific conditions for validation errors
       return;
    } else if (opts.waitForNavigation) {
-      // Wait for navigation to complete
       await page.waitForURL(/.*/, { timeout: opts.timeout });
    } else if (opts.buttonType === "Update") {
       // Wait for the update button to be hidden to imply a successful request

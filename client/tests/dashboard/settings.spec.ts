@@ -4,8 +4,6 @@ import {
    ACCOUNTS_ROUTE,
    createUser,
    DASHBOARD_ROUTE,
-   loginUser,
-   logoutUser,
    REGISTER_ROUTE,
    ROOT_ROUTE,
    SETTINGS_ROUTE
@@ -30,7 +28,7 @@ import {
    updateSecurityFields
 } from "@tests/utils/dashboard/settings";
 import { navigateToPath } from "@tests/utils/navigation";
-import { setupAssignedUser, updateUserInRegistries } from "@tests/utils/user-management";
+import { setupAssignedUser } from "@tests/utils/user-management";
 import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings", () => {
@@ -39,57 +37,53 @@ test.describe("Settings", () => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
       });
 
-      test("should have accessible security details form inputs with values corresponding to assigned user", async({ page, assignedUser }) => {
+      test("should display security details form with correct initial values", async({ page, assignedUser }) => {
          await assertSecurityDetails(page, {
             username: assignedUser.current?.username,
             email: assignedUser.current?.email
          });
       });
 
-      test("should have accessible account details form inputs with values corresponding to assigned user", async({ page, assignedUser }) => {
-         const { current: themeValue } = await getCurrentAndOppositeTheme(page);
+      test("should have independent password field visibility toggles", async({ page }) => {
+         await testAllPasswordVisibilityToggles(page);
+      });
+
+      test("should display account details form with correct initial values", async({ page, assignedUser }) => {
+         const { current: currentThemeValue } = await getCurrentAndOppositeTheme(page);
          await assertAccountDetails(page, {
             name: assignedUser.current?.name,
             birthday: assignedUser.current?.birthday,
-            theme: themeValue
+            theme: currentThemeValue
          });
       });
 
-      test("should have accessible action buttons", async({ page }) => {
+      test("should display action buttons", async({ page }) => {
          await assertComponentIsVisible(page, "settings-export", "Export Data");
          await assertComponentIsVisible(page, "settings-logout", "Logout");
          await assertComponentIsVisible(page, "settings-delete-account", "Delete Account");
       });
    });
 
-   test.describe("Details Form", () => {
+   test.describe("Account Details", () => {
       test.describe("Successful Updates", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
-         test("should update name only", async({ page, assignedUser }) => {
+         test("should successfully update name", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(page, assignedUser, ["name"]);
          });
 
-         test("should update birthday only", async({ page, assignedUser }) => {
+         test("should successfully update birthday", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(page, assignedUser, ["birthday"]);
          });
 
-         test("should update name and birthday together", async({ page, assignedUser }) => {
-            await performAndAssertDetailsUpdate(page, assignedUser, ["name", "birthday"]);
-         });
-
-         test("should toggle theme and apply instantly", async({ page }) => {
+         test("should successfully toggle theme", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
             await performAndAssertThemeToggle(page, "details", newTheme);
          });
 
-         test("should update name, birthday, and toggle theme", async({ page, assignedUser }) => {
-            await performAndAssertDetailsUpdate(page, assignedUser, ["name", "birthday", "theme"]);
-         });
-
-         test("should update all Details fields together", async({ page, assignedUser }) => {
+         test("should successfully update name, birthday, and theme", async({ page, assignedUser }) => {
             await performAndAssertDetailsUpdate(page, assignedUser, ["name", "birthday", "theme"]);
          });
       });
@@ -107,15 +101,14 @@ test.describe("Settings", () => {
             await updateDetails(page, { name: "a".repeat(31) }, { "details-name": "Name must be at most 30 characters" });
          });
 
-         test("should validate birthday too early", async({ page }) => {
+         test("should validate birthday is not too early", async({ page }) => {
             await updateDetails(page, { birthday: "1799-12-31" }, { "details-birthday": "Birthday must be on or after 1800-01-01" });
          });
 
-         test("should validate birthday in future", async({ page }) => {
-            const futureDate = new Date();
+         test("should validate birthday is not in the future", async({ page }) => {
+            const futureDate: Date = new Date();
             futureDate.setFullYear(futureDate.getFullYear() + 1);
-            const futureDateString = futureDate.toISOString().split("T")[0];
-
+            const futureDateString: string = futureDate.toISOString().split("T")[0];
             await updateDetails(page, { birthday: futureDateString }, { "details-birthday": "Birthday cannot be in the future" });
          });
       });
@@ -125,88 +118,40 @@ test.describe("Settings", () => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
-         test("should cancel name change and show original value", async({ page, assignedUser }) => {
+         test("should cancel name change and revert to original value", async({ page, assignedUser }) => {
             await performAndAssertCancelDetailsBehavior(page, assignedUser, ["name"]);
          });
 
-         test("should cancel birthday change and show original value", async({ page, assignedUser }) => {
+         test("should cancel birthday change and revert to original value", async({ page, assignedUser }) => {
             await performAndAssertCancelDetailsBehavior(page, assignedUser, ["birthday"]);
          });
 
-         test("should cancel multiple field changes", async({ page, assignedUser }) => {
+         test("should cancel multiple field changes and revert to original values", async({ page, assignedUser }) => {
             await performAndAssertCancelDetailsBehavior(page, assignedUser, ["name", "birthday"]);
          });
       });
    });
 
-   test.describe("Security Form", () => {
+   test.describe("Account Security", () => {
       test.describe("Successful Updates", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
-         test("should update username only", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const originalUsername = assignedUser.current!.username;
-            const { username } = await performAndAssertSecurityUpdate(page, assignedUser, ["username"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, { username });
+         test("should successfully update username", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username"]);
          });
 
-         test("should update email only", async({ page, assignedUser }) => {
-            await performAndAssertSecurityUpdate(page, assignedUser, ["email"]);
+         test("should successfully update email", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["email"]);
          });
 
-         test("should update password with valid credentials", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const currentUsername = assignedUser.current!.username;
-            const { newPassword } = await performAndAssertSecurityUpdate(page, assignedUser, ["password", "newPassword", "verifyPassword"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, currentUsername, { password: newPassword });
-
-            // Login with new password
-            await logoutUser(page, "settings");
-            await loginUser(page, currentUsername, newPassword!);
+         test("should successfully update password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["password", "newPassword", "verifyPassword"]);
          });
 
-         test("should verify each password field has independent visibility toggle", async({ page }) => {
-            await testAllPasswordVisibilityToggles(page);
-         });
-      });
-
-      test.describe("Multiple Fields Together", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
-         });
-
-         test("should update username and email together", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const originalUsername = assignedUser.current!.username;
-            const { username } = await performAndAssertSecurityUpdate(page, assignedUser, ["username", "email"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, { username });
-         });
-
-         test("should update username and password together", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const originalUsername = assignedUser.current!.username;
-            const { username, newPassword } = await performAndAssertSecurityUpdate(page, assignedUser, ["username", "password", "newPassword", "verifyPassword"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, { username, password: newPassword });
-         });
-
-         test("should update email and password together", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const currentUsername = assignedUser.current!.username;
-            const { newPassword } = await performAndAssertSecurityUpdate(page, assignedUser, ["email", "password", "newPassword", "verifyPassword"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, currentUsername, { password: newPassword });
-
-            // Login with new password
-            await logoutUser(page, "settings");
-            await loginUser(page, currentUsername, newPassword!);
-         });
-      });
-
-      test.describe("Update All Security Fields", () => {
-         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
-         });
-
-         test("should update all security fields together", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            const originalUsername = assignedUser.current!.username;
-            const { username, newPassword } = await performAndAssertSecurityUpdate(page, assignedUser, ["username", "email", "password", "newPassword", "verifyPassword"]);
-            updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, { username, password: newPassword });
+         test("should successfully update username, email, and password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username", "email", "password", "newPassword", "verifyPassword"]);
          });
       });
 
@@ -223,7 +168,7 @@ test.describe("Settings", () => {
             await updateSecurityFields(page, { email: "invalid-email" }, { "security-email": "Invalid email address" });
          });
 
-         test("should validate password mismatch", async({ page }) => {
+         test("should validate password verification match", async({ page }) => {
             const { password: currentPassword, newPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                password: currentPassword,
@@ -232,7 +177,7 @@ test.describe("Settings", () => {
             }, { "security-verify-password": "Passwords don't match" });
          });
 
-         test("should validate new password same as old password", async({ page }) => {
+         test("should validate new password is not same as current", async({ page }) => {
             const { password: currentPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                password: currentPassword,
@@ -241,7 +186,7 @@ test.describe("Settings", () => {
             }, { "security-new-password": "New password must not match the old password" });
          });
 
-         test("should validate invalid current password", async({ page }) => {
+         test("should validate current password is correct", async({ page }) => {
             const { newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                password: "WrongPassword1!",
@@ -250,7 +195,7 @@ test.describe("Settings", () => {
             }, { "security-current-password": "Invalid credentials" });
          });
 
-         test("should validate current password required for password change", async({ page }) => {
+         test("should validate current password required", async({ page }) => {
             const { newPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                newPassword,
@@ -258,7 +203,7 @@ test.describe("Settings", () => {
             }, { "security-current-password": "Current password is required to set a new password" });
          });
 
-         test("should validate new password required for password change", async({ page }) => {
+         test("should validate new password required", async({ page }) => {
             const { password: currentPassword, verifyPassword } = createUserUpdatesWithPasswordChange();
             await updateSecurityFields(page, {
                password: currentPassword,
@@ -272,90 +217,86 @@ test.describe("Settings", () => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
-         test("should cancel username change and show original value", async({ page, assignedUser }) => {
+         test("should cancel username change and revert to original value", async({ page, assignedUser }) => {
             await performAndAssertCancelSecurityBehavior(page, assignedUser, ["username"]);
          });
 
-         test("should cancel email change and show original value", async({ page, assignedUser }) => {
+         test("should cancel email change and revert to original value", async({ page, assignedUser }) => {
             await performAndAssertCancelSecurityBehavior(page, assignedUser, ["email"]);
          });
 
-         test("should cancel password change and hide all password fields", async({ page, assignedUser }) => {
+         test("should cancel password change and hide password fields", async({ page, assignedUser }) => {
             await performAndAssertCancelSecurityBehavior(page, assignedUser, ["password"]);
             await assertComponentIsVisible(page, "security-password-pen");
          });
 
-         test("should cancel all security field changes", async({ page, assignedUser }) => {
+         test("should cancel all security field changes and revert to original values", async({ page, assignedUser }) => {
             await performAndAssertCancelSecurityBehavior(page, assignedUser, ["username", "email", "password"]);
          });
       });
    });
 
-   test.describe("Actions", () => {
+   test.describe("User Actions", () => {
       test.describe("Logout", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
          });
 
-         test("should logout with confirmation", async({ page }) => {
+         test("should successfully logout with confirmation", async({ page }) => {
             await performLogout(page);
          });
 
-         test("should cancel logout operation", async({ page }) => {
+         test("should cancel logout and remain logged in", async({ page }) => {
             await cancelLogout(page);
          });
       });
 
-      test.describe("Delete Account", () => {
-         test("should delete account with confirmation", async({ page, usersRegistry }) => {
-            const { username, password } = await createUser(page, {}, true, usersRegistry, true);
-            await navigateToPath(page, SETTINGS_ROUTE);
-            await performDelete(page, true);
+      test.describe("Account Deletion", () => {
+         test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+         });
 
-            // Verify redirect
+         test("should successfully delete account with confirmation and allow re-registration", async({ page, usersRegistry, assignedUser }) => {
+            const { username, password } = { username: assignedUser.current!.username, password: assignedUser.current!.password };
+            await performDelete(page, true);
             await expect(page).toHaveURL(ROOT_ROUTE);
 
-            // Navigate to register page and re-register
             await navigateToPath(page, REGISTER_ROUTE);
             await createUser(page, { username, password }, true, usersRegistry);
-
-            // Verify redirect to dashboard for explicitiveness
             await expect(page).toHaveURL(DASHBOARD_ROUTE);
          });
 
-         test("should cancel delete operation", async({ page, usersRegistry }) => {
-            await createUser(page, {}, true, usersRegistry, true);
-            await navigateToPath(page, SETTINGS_ROUTE);
+         test("should cancel account deletion and remain on settings", async({ page }) => {
             await performDelete(page, false);
             await expect(page).toHaveURL(SETTINGS_ROUTE);
          });
       });
 
-      test.describe("Export Account", () => {
-         test("should export account data as JSON", async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true);
+      test.describe("Data Export", () => {
+         test("should export account data as JSON with correct structure and values", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true, assignedUser);
 
-            // Create 2 test accounts
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };
             const account2Data = { name: "Savings Account", balance: 3000, type: "Savings" };
+            const account1Id = await createAccount(page, account1Data);
+            const account2Id = await createAccount(page, account2Data);
 
-            await navigateToPath(page, ACCOUNTS_ROUTE);
-            await createAccount(page, account1Data);
-            await createAccount(page, account2Data);
-
-            // Navigate back to settings
             await navigateToPath(page, SETTINGS_ROUTE);
-
-            // Export
             const exportedJSON = await performExport(page);
 
-            // Verify structure with 2 accounts
-            await assertExportStructure(exportedJSON, 2);
-
-            // Verify accounts have correct data
-            const exportedAccounts = exportedJSON.accounts;
-            expect(exportedAccounts.some((a: any) => a.name === "Checking Account" && a.balance === 5000)).toBe(true);
-            expect(exportedAccounts.some((a: any) => a.name === "Savings Account" && a.balance === 3000)).toBe(true);
+            const expectedAccounts = [{ ...account1Data, account_id: account1Id }, { ...account2Data, account_id: account2Id }];
+            await assertExportStructure(exportedJSON, {
+               settings: {
+                  username: assignedUser.current!.username,
+                  name: assignedUser.current!.name,
+                  email: assignedUser.current!.email,
+                  birthday: new Date(assignedUser.current!.birthday).toISOString().split("T")[0]
+               },
+               accounts: expectedAccounts,
+               // Future test suites will verify the following structures
+               budgets: exportedJSON.budgets,
+               transactions: []
+            });
          });
       });
    });

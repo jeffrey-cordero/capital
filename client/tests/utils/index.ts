@@ -27,8 +27,8 @@ export async function assertComponentIsVisible(
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the input element
  * @param {string} labelText - Expected label text for the input
- * @param {string} [value=""] - Expected value in the input field, which defaults to empty string
- * @param {boolean} [enabledState=true] - Expected enabled state (true for enabled, false for disabled), which defaults to true
+ * @param {string} [value=""] - Expected value in the input field
+ * @param {boolean} [enabledState=true] - Expected enabled state
  * @returns {Promise<void>}
  */
 export async function assertInputVisibility(
@@ -40,18 +40,15 @@ export async function assertInputVisibility(
 ): Promise<void> {
    const input = page.getByTestId(testId);
 
-   // Verify input is visible
    await expect(input).toBeVisible();
 
    const labelLocator = input.locator("..").locator("..").locator("label").filter({ hasText: labelText });
    await expect(labelLocator).toBeVisible();
 
-   // Verify value
    if (value !== undefined) {
       await expect(input).toHaveValue(value);
    }
 
-   // Verify enabled state
    if (enabledState === true) {
       await expect(input).toBeEnabled();
    } else if (enabledState === false) {
@@ -87,14 +84,12 @@ export async function assertComponentIsHidden(
  * Closes a modal by clicking the backdrop or pressing Escape key
  *
  * @param {Page} page - Playwright page instance
- * @param {boolean} [force=false] - If true, verifies and confirms warning modal when unsaved changes are present. Defaults to false
+ * @param {boolean} [force=false] - If true, confirms warning modal when unsaved changes are present
  * @returns {Promise<void>}
  */
 export async function closeModal(page: Page, force: boolean = false): Promise<void> {
-   // Try pressing Escape key first to mimic standard modal close behavior
    await page.keyboard.press("Escape");
 
-   // If this is a forced close, confirm through the expected warning modal container
    if (force) {
       await assertComponentIsVisible(page, "warning-modal");
       await assertComponentIsVisible(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
