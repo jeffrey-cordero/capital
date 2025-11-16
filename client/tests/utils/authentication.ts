@@ -25,16 +25,15 @@ export const SETTINGS_ROUTE = "/dashboard/settings";
 export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, SETTINGS_ROUTE] as const;
 
 /**
- * Creates a test user by registering them with unique credentials, which is retried up to 3 times
- * if the username already exists
+ * Creates a test user by registering them with unique credentials
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
  * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
  * @param {boolean} isTestScoped - Whether to mark the user as test-scoped (prevents future reuse)
- * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration (username, email, and password) and whether the user is test-scoped
- * @throws {Error} If user creation fails after 3 attempts
+ * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration and whether the user is test-scoped
+ * @throws {Error} If user creation fails
  */
 export async function createUser(
    page: Page,

@@ -3,8 +3,23 @@ import type { AssignedUserRecord } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { assertValidationErrors, submitForm, updateSelectValue } from "@tests/utils/forms";
 import { openSidebar } from "@tests/utils/navigation";
+import type { Account } from "capital/accounts";
+import type { OrganizedBudgets } from "capital/budgets";
+import type { Transaction } from "capital/transactions";
+import type { UserDetails } from "capital/user";
 import { generateTestCredentials, generateUniqueTestBirthday, generateUniqueTestName } from "capital/mocks/user";
 import { HTTP_STATUS } from "capital/server";
+
+/**
+ * Exported account data structure matching the download format
+ */
+export type ExportData = {
+   timestamp: string;
+   settings: UserDetails;
+   accounts: Account[];
+   budgets: OrganizedBudgets;
+   transactions: Transaction[];
+};
 
 /**
  * Details form data type for account details updates (name, birthday, theme)
@@ -43,12 +58,12 @@ export type PerformAndAssertSettingsActionOptions = {
    detailsData?: DetailsFormData;
    securityData?: Partial<SecurityFormData>;
    expectedErrors?: Record<string, string>;
-   usersRegistry?: Set<any>;
+   usersRegistry?: Set<unknown>;
    assignedRegistry?: Record<string, string>;
 };
 
 /**
- * Asserts account details (name, birthday, theme) match expected values
+ * Asserts account details (name, birthday, theme) match expected values.
  *
  * @param {Page} page - Playwright page instance
  * @param {DetailsFormData} expectedDetails - Expected details to verify
@@ -69,7 +84,7 @@ export async function assertAccountDetails(
 }
 
 /**
- * Updates details (name, birthday) and optionally toggles theme
+ * Updates details (name, birthday) and optionally toggles theme, with form submission.
  *
  * @param {Page} page - Playwright page instance
  * @param {DetailsFormData} data - Details data to update
@@ -109,14 +124,11 @@ export async function updateDetails(
 }
 
 /**
- * Generates unique test values for any settings field by reading current page state
- * Supports both details and security fields
+ * Generates unique test values for settings fields (details and security) by reading current page state.
  *
  * @param {Page} page - Playwright page instance
- * @param {Array<string>} fieldsToUpdate - Field names to generate unique values for
- *   Details fields: "name", "birthday", "theme"
- *   Security fields: "username", "email", "password", "newPassword", "verifyPassword"
- * @returns {Promise<Record<string, string>>} Object with generated unique values for each field
+ * @param {string[]} fieldsToUpdate - Field names: "name", "birthday", "theme", "username", "email", "password", "newPassword", "verifyPassword"
+ * @returns {Promise<Record<string, string>>} Object with generated unique values
  */
 export async function generateUniqueUpdateValues(
    page: Page,
@@ -166,8 +178,7 @@ export async function generateUniqueUpdateValues(
 }
 
 /**
- * Updates user details and asserts the changes were saved correctly
- * Automatically generates unique values for specified fields by reading current form state
+ * Updates user details with auto-generated unique values and asserts changes were saved.
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
@@ -197,11 +208,11 @@ export async function performAndAssertDetailsUpdate(
 }
 
 /**
- * Toggles the theme between light and dark via sidebar or details form
+ * Toggles the theme between light and dark via sidebar or details form.
  *
  * @param {Page} page - Playwright page instance
- * @param {"sidebar" | "details"} method - Method to toggle theme (sidebar switch or details select)
- * @param {?string} expectedTheme - Optional expected theme after toggle
+ * @param {"sidebar" | "details"} method - Toggle method (sidebar switch or details select)
+ * @param {("light" | "dark")} [expectedTheme] - Expected theme after toggle
  */
 export async function toggleTheme(page: Page, method: "sidebar" | "details", expectedTheme?: "light" | "dark"): Promise<void> {
    if (method === "sidebar") {
@@ -234,9 +245,10 @@ export async function toggleTheme(page: Page, method: "sidebar" | "details", exp
 }
 
 /**
- * Gets the current theme and returns both current and opposite theme values
+ * Gets the current theme and returns both current and opposite values.
  *
  * @param {Page} page - Playwright page instance
+ * @returns {Promise<{current: "light" | "dark"; opposite: "light" | "dark"}>} Current and opposite theme values
  */
 export async function getCurrentAndOppositeTheme(page: Page): Promise<{ current: "light" | "dark"; opposite: "light" | "dark"; }> {
    const themeValue = await page.getByTestId("router").getAttribute("data-dark");
@@ -247,10 +259,10 @@ export async function getCurrentAndOppositeTheme(page: Page): Promise<{ current:
 }
 
 /**
- * Asserts the current theme state via multiple verification methods
+ * Asserts the current theme state via multiple verification methods.
  *
  * @param {Page} page - Playwright page instance
- * @param {string} expectedTheme - Expected theme value ("light" or "dark")
+ * @param {("light" | "dark")} expectedTheme - Expected theme value
  */
 export async function assertThemeState(page: Page, expectedTheme: "light" | "dark"): Promise<void> {
    const expectedValue = expectedTheme === "dark" ? "true" : "false";
@@ -274,10 +286,10 @@ export async function assertThemeState(page: Page, expectedTheme: "light" | "dar
 }
 
 /**
- * Toggles a security field to enable editing
+ * Toggles a security field to enable editing.
  *
  * @param {Page} page - Playwright page instance
- * @param {string} field - Field name ("username", "email", or "password")
+ * @param {("username" | "email" | "password")} field - Field name to toggle
  */
 export async function toggleSecurityField(page: Page, field: "username" | "email" | "password"): Promise<void> {
    const penIcon = page.getByTestId(`security-${field}-pen`);
@@ -304,8 +316,7 @@ export async function toggleSecurityField(page: Page, field: "username" | "email
 }
 
 /**
- * Asserts security fields are disabled and have expected values
- * Verifies fields are in view-only mode with specified values
+ * Asserts security fields are disabled and match expected values in view-only mode.
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<SecurityFormData>} expectedValues - Expected field values to verify
@@ -330,8 +341,7 @@ export async function assertSecurityDetails(page: Page, expectedValues: Partial<
 }
 
 /**
- * Updates one or more security fields and submits the form
- * Automatically toggles fields that are being updated
+ * Updates security fields with automatic toggle and submits the form.
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<SecurityFormData>} fields - Fields to update
@@ -378,8 +388,7 @@ export async function updateSecurityFields(
 }
 
 /**
- * Updates security fields with automatic toggling and asserts the changes were saved
- * Automatically generates unique values for specified fields by reading current form state
+ * Updates security fields with auto-generated values, submits, and asserts changes were saved.
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
@@ -418,10 +427,10 @@ export async function performAndAssertSecurityUpdate(
 }
 
 /**
- * Asserts password field visibility state
+ * Asserts password field visibility state.
  *
  * @param {Page} page - Playwright page instance
- * @param {string} field - Password field ("current", "new", or "verify")
+ * @param {("current" | "new" | "verify")} field - Password field to check
  * @param {boolean} expectedVisible - Expected visibility state
  */
 export async function assertPasswordVisibilityToggle(
@@ -440,10 +449,10 @@ export async function assertPasswordVisibilityToggle(
 }
 
 /**
- * Toggles password visibility for a specific password field
+ * Toggles password visibility for a specific password field.
  *
  * @param {Page} page - Playwright page instance
- * @param {string} field - Password field ("current", "new", or "verify")
+ * @param {("current" | "new" | "verify")} field - Password field to toggle
  */
 export async function togglePasswordVisibility(page: Page, field: "current" | "new" | "verify"): Promise<void> {
    const toggle = page.getByTestId(`security-${field}-password-visibility`);
@@ -452,12 +461,12 @@ export async function togglePasswordVisibility(page: Page, field: "current" | "n
 }
 
 /**
- * Downloads the export file and returns the parsed JSON
+ * Downloads the export file and returns the parsed JSON data.
  *
  * @param {Page} page - Playwright page instance
- * @returns {Promise<any>} Parsed export JSON data
+ * @returns {Promise<ExportData>} Parsed export JSON data
  */
-export async function performExport(page: Page): Promise<any> {
+export async function performExport(page: Page): Promise<ExportData> {
    const downloadPromise = page.waitForEvent("download");
 
    const exportButton = page.getByTestId("settings-export");
@@ -478,13 +487,13 @@ export async function performExport(page: Page): Promise<any> {
 }
 
 /**
- * Asserts the structure of the exported JSON
+ * Asserts the exported JSON contains expected structure and account count.
  *
- * @param {any} exportedJSON - Parsed JSON data to validate
+ * @param {ExportData} exportedJSON - Parsed JSON data to validate
  * @param {number} expectedAccountCount - Expected number of accounts in export
  */
 export async function assertExportStructure(
-   exportedJSON: any,
+   exportedJSON: ExportData,
    expectedAccountCount: number
 ): Promise<void> {
    // Verify timestamp
@@ -519,7 +528,7 @@ export async function assertExportStructure(
 }
 
 /**
- * Performs logout with confirmation
+ * Performs logout with confirmation dialog.
  *
  * @param {Page} page - Playwright page instance
  */
@@ -539,7 +548,7 @@ export async function performLogout(page: Page): Promise<void> {
 }
 
 /**
- * Cancels logout operation
+ * Cancels the logout operation and verifies user remains on settings page.
  *
  * @param {Page} page - Playwright page instance
  */
@@ -559,7 +568,7 @@ export async function cancelLogout(page: Page): Promise<void> {
 }
 
 /**
- * Asserts delete confirmation dialog is visible
+ * Asserts delete confirmation dialog is visible.
  *
  * @param {Page} page - Playwright page instance
  */
@@ -569,10 +578,10 @@ export async function assertDeleteConfirmationDialog(page: Page): Promise<void> 
 }
 
 /**
- * Performs account deletion with optional confirmation
+ * Performs account deletion with optional confirmation or cancellation.
  *
  * @param {Page} page - Playwright page instance
- * @param {boolean} [confirmDelete=true] - Whether to confirm or cancel deletion
+ * @param {boolean} [confirmDelete=true] - Whether to confirm (true) or cancel (false) deletion
  */
 export async function performDelete(page: Page, confirmDelete: boolean = true): Promise<void> {
    const deleteButton = page.getByTestId("settings-delete-account");
@@ -606,7 +615,11 @@ export async function performDelete(page: Page, confirmDelete: boolean = true): 
 }
 
 /**
- * Toggles the theme and asserts the change was applied correctly
+ * Toggles theme and asserts the change was applied correctly.
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {("sidebar" | "details")} method - Toggle method (sidebar switch or details select)
+ * @param {("light" | "dark")} [expectedTheme] - Expected theme after toggle
  */
 export async function performAndAssertThemeToggle(
    page: Page,
@@ -631,10 +644,10 @@ export async function performAndAssertThemeToggle(
 }
 
 /**
- * Tests password field visibility toggle for a specific field
+ * Tests password field visibility toggle for a specific field.
  *
  * @param {Page} page - Playwright page instance
- * @param {string} field - Password field type ("current", "new", or "verify")
+ * @param {("current" | "new" | "verify")} field - Password field type
  */
 export async function testPasswordVisibilityToggle(page: Page, field: "current" | "new" | "verify"): Promise<void> {
    await assertPasswordVisibilityToggle(page, field, false);
@@ -645,7 +658,7 @@ export async function testPasswordVisibilityToggle(page: Page, field: "current" 
 }
 
 /**
- * Tests all three password fields for independent visibility toggles
+ * Tests all three password fields for independent visibility toggles.
  *
  * @param {Page} page - Playwright page instance
  */
@@ -659,12 +672,11 @@ export async function testAllPasswordVisibilityToggles(page: Page): Promise<void
 }
 
 /**
- * Performs cancel operation for specified details fields and verifies revert
- * Modifies fields, cancels, and asserts all fields are reverted to original values
+ * Tests cancel behavior by modifying fields and verifying revert to original values.
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - User fixture with original values
- * @param {Array<"name" | "birthday">} fieldsToCancel - Fields to test cancel behavior on
+ * @param {Array<("name" | "birthday")>} fieldsToCancel - Fields to test cancel behavior
  */
 export async function performAndAssertCancelDetailsBehavior(
    page: Page,
@@ -695,12 +707,11 @@ export async function performAndAssertCancelDetailsBehavior(
 }
 
 /**
- * Performs cancel operation for specified security fields and verifies revert
- * Enables fields, makes edits, cancels, and asserts all fields are disabled with correct values
+ * Tests security field cancel behavior by enabling, modifying, and reverting to original values.
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - User fixture with original values
- * @param {Array<"username" | "email" | "password">} fieldsToCancel - Fields to test cancel behavior on
+ * @param {Array<("username" | "email" | "password")>} fieldsToCancel - Fields to test cancel behavior
  */
 export async function performAndAssertCancelSecurityBehavior(
    page: Page,
