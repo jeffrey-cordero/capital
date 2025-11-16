@@ -32,6 +32,7 @@ test.describe("User Registration", () => {
          await assertComponentIsVisible(page, "submit-button", "Register");
 
          // Assert that the navigation link directs user to the login page
+         await assertComponentIsVisible(page, "login-link", "Login");
          await page.getByTestId("login-link").click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });

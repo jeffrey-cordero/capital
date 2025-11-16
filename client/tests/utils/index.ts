@@ -39,21 +39,12 @@ export async function assertInputVisibility(
    enabledState: boolean = true
 ): Promise<void> {
    const input = page.getByTestId(testId);
+   const labelLocator = input.locator("..").locator("..").locator("label").filter({ hasText: labelText });
 
    await expect(input).toBeVisible();
-
-   const labelLocator = input.locator("..").locator("..").locator("label").filter({ hasText: labelText });
    await expect(labelLocator).toBeVisible();
-
-   if (value !== undefined) {
-      await expect(input).toHaveValue(value);
-   }
-
-   if (enabledState === true) {
-      await expect(input).toBeEnabled();
-   } else if (enabledState === false) {
-      await expect(input).toBeDisabled();
-   }
+   await expect(input).toHaveValue(value);
+   await expect(input).toBeEnabled({ enabled: enabledState });
 }
 
 /**

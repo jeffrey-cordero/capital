@@ -1,7 +1,7 @@
 import { expect, type Page, type Response } from "@playwright/test";
 import type { AssignedUserRecord } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
-import { loginUser, logoutUser } from "@tests/utils/authentication";
+import { loginUser, logoutUser, SETTINGS_ROUTE } from "@tests/utils/authentication";
 import { submitForm, updateSelectValue } from "@tests/utils/forms";
 import { openSidebar } from "@tests/utils/navigation";
 import { updateUserInRegistries } from "@tests/utils/user-management";
@@ -269,6 +269,12 @@ export async function assertThemeState(page: Page, expectedTheme: "light" | "dar
       await expect(switchInput).toBeChecked();
    } else {
       await expect(switchInput).not.toBeChecked();
+   }
+
+   // Assert via settings page, if applicable
+   if (page.url().includes(SETTINGS_ROUTE)) {
+      // Assert select value within the details form is synchronized with the theme switch on the sidebar
+      await assertInputVisibility(page, "details-theme", "Theme", expectedTheme);
    }
 
    await page.keyboard.press("Escape");

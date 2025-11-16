@@ -1,11 +1,9 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertInputVisibility } from "@tests/utils";
 import {
    DASHBOARD_ROUTE,
    LOGIN_ROUTE,
    logoutUser,
-   SETTINGS_ROUTE,
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
@@ -121,24 +119,17 @@ test.describe("Routing and Navigation", () => {
       });
 
       test("should toggle theme via sidebar switch and persist across routes", async({ page }) => {
-         // Get current and new theme
          const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
 
-         // Toggle theme
          await toggleTheme(page, "sidebar", newTheme);
 
          for (const route of VERIFIED_ROUTES) {
             await navigateToPath(page, route);
             await assertThemeState(page, newTheme);
 
-            // Reload and verify persistence
+            // Reload and assert theme persistence across routes
             await page.reload();
             await assertThemeState(page, newTheme);
-
-            if (route === SETTINGS_ROUTE) {
-               // Assert the input value matches the new theme in the settings page
-               await assertInputVisibility(page, "details-theme", "Theme", newTheme);
-            }
          }
       });
    });

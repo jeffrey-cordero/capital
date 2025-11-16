@@ -56,7 +56,6 @@ export const test = base.extend<SharedFixtures>({
    assignedUser: [
       // eslint-disable-next-line no-empty-pattern
       async({}: Fixtures<SharedFixtures>, use: (value: AssignedUserRecord) => Promise<void>) => {
-         // Function-scoped assigned user to store current test's assigned user
          const assignedUser: AssignedUserRecord = { current: null };
 
          await use(assignedUser);

@@ -11,7 +11,7 @@ import { Button, Collapse, Stack, useMediaQuery } from "@mui/material";
  * @property {() => void} onCancel - Cancel action handler
  * @property {() => void} [onSubmit] - Optional submission handler
  * @property {boolean} [unmountOnExit] - Whether to unmount on exit for rendering purposes
- * @property {string} [dataTestId] - Base test ID for the component (used to generate cancel and submit IDs)
+ * @property {string} [dataTestId] - Base test ID for the component used to generate cancel and submit test IDs
  */
 interface SubmitButtonProps {
    visible: boolean;
