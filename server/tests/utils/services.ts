@@ -322,7 +322,6 @@ export function assertMethodNotCalled(module: jest.Mocked<any>, method: string):
  *
  * @param {() => Promise<ServerResponse>} serviceCall - Service call function
  * @param {string} expectedErrorMessage - Expected error message
- * @returns {Promise<void>} Void
  */
 export async function assertServiceThrows(serviceCall: () => Promise<ServerResponse>, expectedErrorMessage: string): Promise<void> {
    try {

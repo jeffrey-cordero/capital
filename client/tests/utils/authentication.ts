@@ -1,9 +1,10 @@
 import { expect, type Page } from "@playwright/test";
 import type { CreatedUserRecord } from "@tests/fixtures";
-import { assertComponentVisibility } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { submitForm } from "@tests/utils/forms";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { generateTestCredentials, VALID_REGISTRATION } from "capital/mocks/user";
+import { HTTP_STATUS } from "capital/server";
 import type { RegisterPayload } from "capital/user";
 
 /**
@@ -28,42 +29,76 @@ export const VERIFIED_ROUTES = [DASHBOARD_ROUTE, ACCOUNTS_ROUTE, BUDGETS_ROUTE, 
  *
  * @param {Page} page - Playwright page instance
  * @param {Partial<RegisterPayload>} overrides - Optional overrides for registration data
- * @param {boolean} keepLoggedIn - Whether to keep the user logged in after registration (defaults to `true`)
+ * @param {boolean} keepLoggedIn - Whether to keep user logged in after registration
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to collect for the worker's final cleanup
- * @returns {Promise<{ username: string; email: string; password: string }>} The unique credentials used for registration (username, email, and password)
+ * @param {boolean} isTestScoped - Whether to mark the user as test-scoped (prevents future reuse)
+ * @returns {Promise<{ username: string; email: string; password: string; isTestScoped?: boolean }>} The unique credentials used for registration and whether the user is test-scoped
+ * @throws {Error} If user creation fails
  */
 export async function createUser(
    page: Page,
    overrides: Partial<RegisterPayload> = {},
    keepLoggedIn: boolean = true,
-   usersRegistry: Set<CreatedUserRecord>
-): Promise<{ username: string; email: string; password: string }> {
-   await navigateToPath(page, REGISTER_ROUTE);
+   usersRegistry: Set<CreatedUserRecord>,
+   isTestScoped: boolean = false
+): Promise<CreatedUserRecord> {
+   // Retry a registration attempt up to 3 times with varying username substrings as many users may require full isolation for testing
+   const MAX_RETRIES: number = 3;
+   const usernames: Set<string> = new Set(Array.from(usersRegistry).map(u => u.username));
 
-   const credentials = generateTestCredentials();
-   const registrationData = { ...VALID_REGISTRATION, ...credentials, ...overrides };
+   let userRecord: CreatedUserRecord | undefined;
 
-   // Wait for the submit button to be visible before submitting the registration form
-   await assertComponentVisibility(page, "submit-button");
-   await submitForm(page, registrationData);
-   await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
+   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      await navigateToPath(page, REGISTER_ROUTE);
+      await assertComponentIsVisible(page, "submit-button");
 
-   if (!keepLoggedIn) {
-      // Logout the created user, which is typically used for intermediate test users
-      await clickSidebarLink(page, "sidebar-logout");
-      await expect(page).toHaveURL(LOGIN_ROUTE);
-      await assertComponentVisibility(page, "username");
+      const credentials = generateTestCredentials();
+
+      for (let i = 30; i >= 2; i--) {
+         // Keep generating a substring from the generated username until a unique one is found
+         const username: string = credentials.username.slice(0, i);
+
+         if (!usernames.has(username)) {
+            credentials.username = username;
+            break;
+         }
+      }
+
+      const registrationData: RegisterPayload = { ...VALID_REGISTRATION, ...credentials, ...overrides };
+      const responsePromise =  page.waitForResponse(
+         response => response.url().includes("/api/v1/users") && response.request().method() === "POST"
+      );
+      await submitForm(page, registrationData);
+      const response = await responsePromise;
+
+      if (response.status() === HTTP_STATUS.CREATED) {
+         await assertComponentIsVisible(page, "accounts-trends-container");
+
+         if (!keepLoggedIn) {
+            await clickSidebarLink(page, "sidebar-logout");
+            await expect(page).toHaveURL(LOGIN_ROUTE);
+            await assertInputVisibility(page, "username", "Username");
+         }
+
+         userRecord = { ...registrationData, isTestScoped };
+         usersRegistry.add(userRecord);
+         break;
+      } else if (response.status() === HTTP_STATUS.CONFLICT) {
+         if (attempt === MAX_RETRIES) {
+            throw new Error("User creation failed after maximum retries due to username conflicts or invalid data");
+         }
+
+         continue;
+      } else {
+         throw new Error(`User registration failed with unexpected response status: ${response.status()}`);
+      }
    }
 
-   // Add the created user to the registry for the worker's final cleanup
-   usersRegistry.add({ username: registrationData.username, password: registrationData.password });
+   if (userRecord === undefined) {
+      throw new Error("User creation failed after maximum retries due to unexpected errors");
+   }
 
-   return {
-      username: registrationData.username,
-      email: registrationData.email,
-      password: registrationData.password
-   };
+   return userRecord;
 }
 
 /**
@@ -76,11 +111,10 @@ export async function createUser(
 export async function loginUser(page: Page, username: string, password: string): Promise<void> {
    await navigateToPath(page, LOGIN_ROUTE);
 
-   // Wait for the submit button to be visible before submitting the login form
-   await assertComponentVisibility(page, "submit-button");
+   await assertComponentIsVisible(page, "submit-button");
    await submitForm(page, { username, password });
    await expect(page).toHaveURL(DASHBOARD_ROUTE);
-   await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
+   await assertComponentIsVisible(page, "accounts-trends-container");
 }
 
 /**
@@ -102,7 +136,7 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
    }
 
    await expect(page).toHaveURL(LOGIN_ROUTE);
-   await assertComponentVisibility(page, "username");
+   await assertInputVisibility(page, "username", "Username");
 }
 
 /**
@@ -112,12 +146,10 @@ export async function logoutUser(page: Page, method: "sidebar" | "settings"): Pr
  * @param {Set<CreatedUserRecord>} usersToCleanup - Set of created test users to delete
  */
 async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRecord>): Promise<void> {
-   // If no test users were created, skip the cleanup process
    if (usersToCleanup.size === 0) {
       return;
    }
 
-   // Fetch the server URL from the environment variable
    const serverUrl: string = process.env.VITE_SERVER_URL || "http://localhost:8000/api/v1";
 
    for (const user of usersToCleanup) {
@@ -125,16 +157,13 @@ async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRec
       await page.context().clearCookies();
       await page.reload();
 
-      // Login via the API to initiate a session
       await page.request.post(`${serverUrl}/authentication/login`, {
          data: { username: user.username, password: user.password }
       });
 
-      // Delete the test user via the API
       await page.request.delete(`${serverUrl}/users`);
    }
 
-   // Remove all created test users from the registry for the worker's final cleanup
    usersToCleanup.clear();
 }
 
@@ -144,14 +173,11 @@ async function deleteCreatedUsers(page: Page, usersToCleanup: Set<CreatedUserRec
  * @param {Set<CreatedUserRecord>} usersRegistry - Set of created test users to clean up
  */
 export async function cleanupCreatedTestUsers(usersRegistry: Set<CreatedUserRecord>): Promise<void> {
-   // Create the isolated browser environment
    const { chromium } = await import("@playwright/test");
    const browser = await chromium.launch({ headless: true });
    const page = await browser.newPage();
 
-   // Remove the created test users from the database
    await deleteCreatedUsers(page, usersRegistry);
 
-   // Close the isolated browser environment
    await browser.close();
 }

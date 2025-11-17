@@ -11,6 +11,7 @@ import { Button, Collapse, Stack, useMediaQuery } from "@mui/material";
  * @property {() => void} onCancel - Cancel action handler
  * @property {() => void} [onSubmit] - Optional submission handler
  * @property {boolean} [unmountOnExit] - Whether to unmount on exit for rendering purposes
+ * @property {string} [dataTestId] - Base test ID for the component used to generate cancel and submit test IDs
  */
 interface SubmitButtonProps {
    visible: boolean;
@@ -19,6 +20,7 @@ interface SubmitButtonProps {
    onCancel: () => void;
    onSubmit?: () => void;
    unmountOnExit?: boolean;
+   dataTestId?: string;
 }
 
 /**
@@ -27,7 +29,7 @@ interface SubmitButtonProps {
  * @param {SubmitButtonProps} props - Submit button component props
  * @returns {React.ReactNode} The SubmitButton component
  */
-export default function SubmitButton({ visible, type, isSubmitting, onCancel, onSubmit, unmountOnExit = true }: SubmitButtonProps): React.ReactNode {
+export default function SubmitButton({ visible, type, isSubmitting, onCancel, onSubmit, unmountOnExit = true, dataTestId }: SubmitButtonProps): React.ReactNode {
    const xs = useMediaQuery("(max-width: 320px)");
 
    return (
@@ -47,6 +49,7 @@ export default function SubmitButton({ visible, type, isSubmitting, onCancel, on
             <Button
                className = "btn-secondary"
                color = "secondary"
+               data-testid = { dataTestId ? `${dataTestId}-cancel` : undefined }
                disabled = { isSubmitting }
                fullWidth = { true }
                onClick = { onCancel }
@@ -59,7 +62,7 @@ export default function SubmitButton({ visible, type, isSubmitting, onCancel, on
             <Button
                className = "btn-primary"
                color = "primary"
-               data-testid = "submit-button"
+               data-testid = { dataTestId ? `${dataTestId}-submit` : "submit-button" }
                fullWidth = { true }
                loading = { isSubmitting }
                onClick = { onSubmit || undefined }

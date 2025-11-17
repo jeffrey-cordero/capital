@@ -7,10 +7,12 @@ import { Box, Divider } from "@mui/material";
  *
  * @property {IconDefinition} icon - Section header icon
  * @property {React.ReactNode} children - Section content
+ * @property {string} [dataTestId] - Data test ID for the section box
  */
 interface SectionProps {
    icon: IconDefinition;
    children: React.ReactNode;
+   dataTestId?: string;
 }
 
 /**
@@ -19,9 +21,9 @@ interface SectionProps {
  * @param {SectionProps} props - Section component props
  * @returns {React.ReactNode} The Section component
  */
-export default function Section({ icon, children }: SectionProps): React.ReactNode {
+export default function Section({ icon, children, dataTestId }: SectionProps): React.ReactNode {
    return (
-      <Box>
+      <Box data-testid = { dataTestId }>
          <Divider>
             <FontAwesomeIcon
                className = "primary"

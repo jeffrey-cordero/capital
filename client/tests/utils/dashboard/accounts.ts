@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
-import { assertComponentVisibility, assertModalClosed, closeModal } from "@tests/utils";
+import { assertComponentIsHidden, assertComponentIsVisible, assertModalIsClosed, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
@@ -66,7 +66,7 @@ export async function openAccountForm(page: Page, accountId?: string): Promise<v
       await page.getByTestId("accounts-add-button").click();
    }
 
-   await assertComponentVisibility(page, "account-name");
+   await assertComponentIsVisible(page, "account-name");
 }
 
 /**
@@ -132,15 +132,15 @@ async function submitAccountForm(
       }
 
       // Assert the new account card is visible and modal is closed
-      await expect(page.getByTestId(`account-card-${accountId}`)).toBeVisible();
-      await assertModalClosed(page);
+      await assertComponentIsVisible(page, `account-card-${accountId}`);
+      await assertModalIsClosed(page);
 
       return accountId;
    } else {
       expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
 
       // Assert that the form remains open after a successful update
-      await assertComponentVisibility(page, "account-name");
+      await assertComponentIsVisible(page, "account-name");
 
       return null;
    }
@@ -211,7 +211,7 @@ export async function assertAccountCard(
    await expect(card).toBeVisible();
 
    for (const input of formInputs) {
-      await assertComponentVisibility(page, input.testId, input.value);
+      await assertComponentIsVisible(page, input.testId, input.value);
    }
 
    const imageContainer: Locator = page.getByTestId(`account-card-image-${account.account_id}`);
@@ -323,7 +323,11 @@ export async function assertTransactionAccountDropdown(
  * @param {boolean} shouldBeVisible - Whether the image carousel navigation controls should be visible
  */
 export async function assertImageCarouselVisibility(page: Page, shouldBeVisible: boolean): Promise<void> {
-   await expect(page.getByTestId("account-image-carousel-left")).toBeVisible({ visible: shouldBeVisible });
+   if (shouldBeVisible) {
+      await assertComponentIsVisible(page, "account-image-carousel-left");
+   } else {
+      await assertComponentIsHidden(page, "account-image-carousel-left");
+   }
 }
 
 /**
@@ -521,11 +525,11 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
    await openAccountForm(page, accountId);
 
    // Wait for delete button to appear
-   await assertComponentVisibility(page, "account-delete-button");
+   await assertComponentIsVisible(page, "account-delete-button");
 
    // Click the delete button to open the confirmation dialog
    await page.getByTestId("account-delete-button").click();
-   await assertComponentVisibility(page, "account-delete-button-confirm");
+   await assertComponentIsVisible(page, "account-delete-button-confirm");
 
    // Confirm the deletion and wait for the response
    const responsePromise = page.waitForResponse((response: Response) => {
@@ -538,6 +542,6 @@ export async function deleteAccount(page: Page, accountId: string): Promise<void
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
 
    // Assert the account form is closed and the account card is hidden
-   await assertModalClosed(page);
-   await expect(page.getByTestId(`account-card-${accountId}`)).toBeHidden();
+   await assertModalIsClosed(page);
+   await assertComponentIsHidden(page, `account-card-${accountId}`);
 }

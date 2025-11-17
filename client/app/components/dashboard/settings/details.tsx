@@ -104,8 +104,14 @@ export default function Details(): React.ReactNode {
    }, [dispatch]);
 
    return (
-      <Section icon = { faAddressCard }>
-         <form onSubmit = { handleSubmit(onSubmit) }>
+      <Section
+         dataTestId = "settings-details"
+         icon = { faAddressCard }
+      >
+         <form
+            noValidate = { true }
+            onSubmit = { handleSubmit(onSubmit) }
+         >
             <Stack
                direction = "column"
                spacing = { 1.5 }
@@ -127,6 +133,7 @@ export default function Details(): React.ReactNode {
                               { ...field }
                               autoComplete = "name"
                               id = "name"
+                              inputProps = { { "data-testid": "details-name" } }
                               label = "Name"
                               value = { field.value || "" }
                            />
@@ -161,6 +168,7 @@ export default function Details(): React.ReactNode {
                               slotProps = {
                                  {
                                     htmlInput: {
+                                       "data-testid": "details-birthday",
                                        min: minDate,
                                        max: maxDate
                                     },
@@ -195,13 +203,15 @@ export default function Details(): React.ReactNode {
                      Theme
                   </InputLabel>
                   <Select
+                     data-testid = "details-theme-select"
                      label = "Theme"
                      onChange = { (e) => updateTheme(e.target.value as "light" | "dark") }
                      slotProps = {
                         {
                            input: {
-                              id: "theme"
-                           }
+                              id: "theme",
+                              "data-testid": "details-theme"
+                           } as any
                         }
                      }
                      value = { preferredTheme }
@@ -216,6 +226,7 @@ export default function Details(): React.ReactNode {
                   </Select>
                </FormControl>
                <SubmitButton
+                  dataTestId = "details"
                   isSubmitting = { isSubmitting }
                   onCancel = { onReset }
                   type = "Update"

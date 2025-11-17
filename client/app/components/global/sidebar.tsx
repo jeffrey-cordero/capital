@@ -272,7 +272,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                         >
                            <MaterialUISwitch
                               checked = { theme.palette.mode === "dark" }
-                              id = "theme-switch"
+                              data-testid = "theme-switch"
                               onChange = { () => dispatch(toggleTheme()) }
                            />
                            <IconButton
@@ -295,7 +295,7 @@ function SideBarContent({ links, onClose }: SideBarContentProps): React.ReactNod
                      <Box>
                         <MaterialUISwitch
                            checked = { theme.palette.mode === "dark" }
-                           id = "theme-switch"
+                           data-testid = "theme-switch"
                            onChange = { toggle }
                            sx = { { m: 1 } }
                         />
@@ -332,6 +332,7 @@ export function SideBar(): React.ReactNode {
       <Box>
          <IconButton
             color = "primary"
+            data-sidebar-open = { open ? "true" : "false" }
             data-testid = "sidebar-toggle"
             onClick = { openSideBar }
             sx = {

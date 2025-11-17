@@ -1,4 +1,5 @@
 import { expect, test } from "@tests/fixtures";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE, REGISTER_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -22,18 +23,17 @@ test.describe("User Registration", () => {
    test.describe("UI Components and Layout", () => {
       test("should display registration page with all required elements", async({ page }) => {
          // Assert that all form fields are present
-         await expect(page.getByTestId("name")).toBeVisible();
-         await expect(page.getByTestId("birthday")).toBeVisible();
-         await expect(page.getByTestId("username")).toBeVisible();
-         await expect(page.getByTestId("password")).toBeVisible();
-         await expect(page.getByTestId("verifyPassword")).toBeVisible();
-         await expect(page.getByTestId("email")).toBeVisible();
-         await expect(page.getByTestId("submit-button")).toBeVisible();
+         await assertInputVisibility(page, "name", "Name");
+         await assertInputVisibility(page, "birthday", "Birthday");
+         await assertInputVisibility(page, "username", "Username");
+         await assertInputVisibility(page, "password", "Password");
+         await assertInputVisibility(page, "verifyPassword", "Verify Password");
+         await assertInputVisibility(page, "email", "Email");
+         await assertComponentIsVisible(page, "submit-button", "Register");
 
-         // Assert that the navigation link to the login page is visible and clickable
-         const loginLink = page.getByTestId("login-link");
-         await expect(loginLink).toBeVisible();
-         await loginLink.click();
+         // Assert that the navigation link directs user to the login page
+         await assertComponentIsVisible(page, "login-link", "Login");
+         await page.getByTestId("login-link").click();
          await expect(page).toHaveURL(LOGIN_ROUTE);
       });
 

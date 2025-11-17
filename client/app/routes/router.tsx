@@ -30,11 +30,16 @@ export default function Router(): React.ReactNode {
    }, [authenticated]);
 
    return (
-      <ThemeProvider theme = { constructTheme(theme) }>
-         <CssBaseline />
-         <Notifications />
-         <SideBar />
-         <Outlet />
-      </ThemeProvider>
+      <div
+         data-dark = { theme === "dark" ? "true" : "false" }
+         data-testid = "router"
+      >
+         <ThemeProvider theme = { constructTheme(theme) }>
+            <CssBaseline />
+            <Notifications />
+            <SideBar />
+            <Outlet />
+         </ThemeProvider>
+      </div>
    );
 };

@@ -248,3 +248,25 @@ export const createUserUpdatesWithPasswordChange = (
    verifyPassword: newPassword,
    ...overrides
 });
+
+/**
+ * Generates a unique name
+ *
+ * @returns {string} A unique name
+ */
+export const generateUniqueTestName = (): string => {
+   const timestamp = Date.now().toString().slice(-8);
+   return `Test User ${timestamp}`.substring(0, 30);
+};
+
+/**
+ * Generates a unique birthday that differs from the current value
+ *
+ * @param {string} currentBirthday - Current birthday in YYYY-MM-DD format
+ * @returns {string} A unique birthday different from the current value
+ */
+export const generateUniqueTestBirthday = (currentBirthday: string): string => {
+   const date = new Date(currentBirthday);
+   date.setDate(date.getDate() + 1);
+   return date.toISOString().split("T")[0];
+};

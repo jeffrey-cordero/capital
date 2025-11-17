@@ -7,7 +7,8 @@ import {
    UNVERIFIED_ROUTES,
    VERIFIED_ROUTES
 } from "@tests/utils/authentication";
-import { clickSidebarLink, getRouteLinkTitle, navigateToPath } from "@tests/utils/navigation";
+import { assertThemeState, getCurrentAndOppositeTheme, toggleTheme } from "@tests/utils/dashboard/settings";
+import { getRouteLinkTitle, navigateToPath, openSidebar } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
 
 test.describe("Routing and Navigation", () => {
@@ -18,10 +19,9 @@ test.describe("Routing and Navigation", () => {
     * @param {string} route - Route path to verify
     */
    const assertSidebarLinkActive = async(page: Page, route: string): Promise<void> => {
-      const linkTitle: string = getRouteLinkTitle(route);
-      await clickSidebarLink(page, `sidebar-link-${linkTitle.toLowerCase()}`);
+      await openSidebar(page);
 
-      // Assert that the link is visible and active
+      const linkTitle: string = getRouteLinkTitle(route);
       await expect(page.getByTestId(`sidebar-link-${linkTitle.toLowerCase()}`)).toHaveAttribute("data-active", "true");
    };
 
@@ -110,6 +110,27 @@ test.describe("Routing and Navigation", () => {
 
       test("should redirect an unauthenticated user from protected routes to the login page", async({ page }) => {
          await assertRouteRedirects(page, "unverified");
+      });
+   });
+
+   test.describe("Theme Toggle", () => {
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+      });
+
+      test("should toggle theme via sidebar switch and persist across routes", async({ page }) => {
+         const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
+
+         await toggleTheme(page, "sidebar", newTheme);
+
+         for (const route of VERIFIED_ROUTES) {
+            await navigateToPath(page, route);
+            await assertThemeState(page, newTheme);
+
+            // Reload and assert theme persistence across routes
+            await page.reload();
+            await assertThemeState(page, newTheme);
+         }
       });
    });
 });
