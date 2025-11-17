@@ -16,9 +16,7 @@ export type CreatedUserRecord = {
 /**
  * Container for the currently assigned user in a test
  */
-export type AssignedUserRecord = {
-   current: CreatedUserRecord | null;
-};
+export type AssignedUserRecord = { current: CreatedUserRecord; };
 
 /**
  * Shared fixtures for all test suites
@@ -56,7 +54,15 @@ export const test = base.extend<SharedFixtures>({
    assignedUser: [
       // eslint-disable-next-line no-empty-pattern
       async({}: Fixtures<SharedFixtures>, use: (value: AssignedUserRecord) => Promise<void>) => {
-         const assignedUser: AssignedUserRecord = { current: null };
+         const assignedUser: AssignedUserRecord = {
+            current: {
+               username: "",
+               email: "",
+               name: "",
+               birthday: "",
+               password: ""
+            }
+         };
 
          await use(assignedUser);
       }, { scope: "test" }] as any

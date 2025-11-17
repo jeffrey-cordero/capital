@@ -29,6 +29,7 @@ import {
 } from "@tests/utils/dashboard/settings";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import type { Account } from "capital/accounts";
 import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings", () => {
@@ -257,7 +258,7 @@ test.describe("Settings", () => {
          });
 
          test("should successfully delete account with confirmation and allow re-registration", async({ page, usersRegistry, assignedUser }) => {
-            const { username, password } = { username: assignedUser.current!.username, password: assignedUser.current!.password };
+            const { username, password } = { username: assignedUser.current.username, password: assignedUser.current.password };
             await performDelete(page, true);
             await expect(page).toHaveURL(ROOT_ROUTE);
 
@@ -287,20 +288,20 @@ test.describe("Settings", () => {
             const expectedAccounts = [
                { ...account1Data, account_id: account1Id, last_updated: expect.any(String) },
                { ...account2Data, account_id: account2Id, last_updated: expect.any(String) }
-            ];
+            ] as unknown as Account[];
 
             await assertExportStructure(exportedJSON, {
                settings: {
-                  username: assignedUser.current!.username,
-                  name: assignedUser.current!.name,
-                  email: assignedUser.current!.email,
-                  birthday: new Date(assignedUser.current!.birthday).toISOString().split("T")[0]
+                  username: assignedUser.current.username,
+                  name: assignedUser.current.name,
+                  email: assignedUser.current.email,
+                  birthday: new Date(assignedUser.current.birthday).toISOString().split("T")[0]
                },
                accounts: expectedAccounts,
                // Future test suites will verify the following structures
                budgets: exportedJSON.budgets,
                transactions: [],
-               timestamp: expect.any(String)
+               timestamp: expect.any(String) as unknown as string
             });
          });
       });

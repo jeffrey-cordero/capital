@@ -26,22 +26,22 @@ export type ExportData = {
 /**
  * Details form data type for account details updates (name, birthday, theme)
  */
-export type DetailsFormData = Partial<{
-   name: string;
-   birthday: string;
-   theme: "light" | "dark";
-}>;
+export type DetailsFormData = {
+   name?: string;
+   birthday?: string;
+   theme?: "light" | "dark";
+};
 
 /**
  * Security form data type for updates with password change fields
  */
-export type SecurityFormData = Partial<{
-   username: string;
-   email: string;
-   currentPassword: string;
+export type SecurityFormData = {
+   username?: string;
+   email?: string;
+   currentPassword?: string;
    newPassword?: string;
    verifyPassword?: string;
-}>;
+};
 
 /**
  * Generates unique test values for specified settings fields
@@ -57,7 +57,7 @@ export async function generateUniqueUpdateValues(
    fieldsToUpdate: ("name" | "birthday" | "theme" | "username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]
 ): Promise<Record<string, string>> {
    const updates: Record<string, string> = {};
-   const newPassword: string = assignedUser.current!.password === "Password1!" ? "NewPassword1!" : assignedUser.current!.password;
+   const newPassword: string = assignedUser.current.password === "Password1!" ? "NewPassword1!" : assignedUser.current.password;
 
    for (const field of fieldsToUpdate) {
       switch (field) {
@@ -66,7 +66,7 @@ export async function generateUniqueUpdateValues(
             break;
          }
          case "birthday": {
-            updates.birthday = generateUniqueTestBirthday(assignedUser.current!.birthday);
+            updates.birthday = generateUniqueTestBirthday(assignedUser.current.birthday);
             break;
          }
          case "theme": {
@@ -82,7 +82,7 @@ export async function generateUniqueUpdateValues(
             break;
          }
          case "currentPassword": {
-            updates.currentPassword = assignedUser.current!.password;
+            updates.currentPassword = assignedUser.current.password;
             break;
          }
          case "newPassword":
@@ -146,8 +146,9 @@ export async function assertAccountDetails(
    page: Page,
    expectedDetails: DetailsFormData
 ): Promise<void> {
-   const birthdayValue: string = expectedDetails.birthday!.includes("T")
-      ? expectedDetails.birthday!.split("T")[0] : expectedDetails.birthday!;
+   const birthday = expectedDetails.birthday || "";
+   const birthdayValue: string = birthday.includes("T")
+      ? birthday.split("T")[0] : birthday;
 
    await assertInputVisibility(page, "details-name", "Name", expectedDetails.name);
    await assertInputVisibility(page, "details-birthday", "Birthday", birthdayValue);
@@ -317,13 +318,13 @@ export async function updateSecurityFields(
  * Asserts security fields are in view-only mode with expected values
  *
  * @param {Page} page - Playwright page instance
- * @param {Partial<SecurityFormData>} expectedValues - Expected field values to verify
+ * @param {SecurityFormData} expectedValues - Expected field values to verify
  */
-export async function assertSecurityDetails(page: Page, expectedValues: Partial<SecurityFormData>): Promise<void> {
+export async function assertSecurityDetails(page: Page, expectedValues: SecurityFormData): Promise<void> {
    // Security fields should be in view-only mode with expected values
    for (const field of ["username", "email", "currentPassword"]) {
       const label: string = field === "currentPassword" ? "Password" : field;
-      const value: string = label === "Password" ? "********" : expectedValues[field as keyof typeof expectedValues]!;
+      const value: string = label === "Password" ? "********" : (expectedValues[field as keyof typeof expectedValues] as string || "");
 
       await assertInputVisibility(page, `security-${field}`, label, value, false);
       await assertComponentIsVisible(page, `security-${field}-pen`);
@@ -367,22 +368,22 @@ export async function performAndAssertSecurityUpdate(
    const passwordUpdate: boolean = securityData.newPassword !== undefined;
 
    if (usernameUpdate || passwordUpdate) {
-      const loginUsername: string = usernameUpdate ? updatedSecurityData.username! : assignedUser.current!.username;
-      const loginPassword: string = passwordUpdate ? updatedSecurityData.newPassword! : assignedUser.current!.password;
+      const loginUsername: string = usernameUpdate ? (updatedSecurityData.username || "") : assignedUser.current.username;
+      const loginPassword: string = passwordUpdate ? (updatedSecurityData.newPassword || "") : assignedUser.current.password;
 
       await logoutUser(page, "settings");
       await loginUser(page, loginUsername, loginPassword);
 
       // Update users and assigned registries for credential updates
-      const originalUsername: string = assignedUser.current!.username;
+      const originalUsername: string = assignedUser.current.username;
       const registryUpdate: Record<string, string> = {};
 
       if (usernameUpdate) {
-         registryUpdate.username = updatedSecurityData.username!;
+         registryUpdate.username = updatedSecurityData.username || "";
       }
 
       if (passwordUpdate) {
-         registryUpdate.password = updatedSecurityData.newPassword!;
+         registryUpdate.password = updatedSecurityData.newPassword || "";
       }
 
       updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, registryUpdate as Record<string, string>);
@@ -577,8 +578,10 @@ export async function performAndAssertCancelBehavior(
 
    // Assert all fields reverted to original state
    if (type === "details") {
-      await assertAccountDetails(page, assignedUser.current!);
+      const { name, birthday } = assignedUser.current;
+      await assertAccountDetails(page, { name, birthday });
    } else if (type === "security") {
-      await assertSecurityDetails(page, assignedUser.current!);
+      const { username, email, password } = assignedUser.current;
+      await assertSecurityDetails(page, { username, email, currentPassword: password });
    }
 }
