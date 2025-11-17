@@ -285,8 +285,8 @@ test.describe("Settings", () => {
             const exportedJSON = await performExport(page);
 
             const expectedAccounts = [
-               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated },
-               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated }
+               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: null },
+               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated, image: null }
             ];
 
             await assertExportStructure(exportedJSON, {
