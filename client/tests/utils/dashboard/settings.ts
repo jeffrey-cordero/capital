@@ -487,11 +487,11 @@ export async function performExport(page: Page): Promise<ExportData> {
  * Asserts the exported JSON contains expected structure and data
  *
  * @param {ExportData} exportedJSON - Parsed JSON data to validate
- * @param {Partial<ExportData>} expectedExportData - Expected export data to verify
+ * @param {ExportData} expectedExportData - Expected export data to verify
  */
 export async function assertExportStructure(
    exportedJSON: ExportData,
-   expectedExportData: Partial<ExportData>
+   expectedExportData: ExportData
 ): Promise<void> {
    // Assert timestamp is within a reasonable time frame (1 minute)
    const exportTime: Date = new Date(exportedJSON.timestamp);
@@ -501,7 +501,7 @@ export async function assertExportStructure(
 
    // Assert all fields and timestamps are properly formatted
    expect(exportedJSON).toEqual(expect.objectContaining(expectedExportData));
-   exportedJSON.accounts.forEach((account: Account) => {
+   expectedExportData.accounts.forEach((account: Account) => {
       expect(!isNaN(Date.parse(account.last_updated || ""))).toBe(true);
    });
 }

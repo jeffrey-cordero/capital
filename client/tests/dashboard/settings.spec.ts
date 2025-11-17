@@ -29,7 +29,6 @@ import {
 } from "@tests/utils/dashboard/settings";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
-import type { Account } from "capital/accounts";
 import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings", () => {
@@ -286,9 +285,9 @@ test.describe("Settings", () => {
             const exportedJSON = await performExport(page);
 
             const expectedAccounts = [
-               { ...account1Data, account_id: account1Id, last_updated: expect.any(String) },
-               { ...account2Data, account_id: account2Id, last_updated: expect.any(String) }
-            ] as unknown as Account[];
+               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated },
+               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated }
+            ];
 
             await assertExportStructure(exportedJSON, {
                settings: {
@@ -301,7 +300,7 @@ test.describe("Settings", () => {
                // Future test suites will verify the following structures
                budgets: exportedJSON.budgets,
                transactions: [],
-               timestamp: expect.any(String) as unknown as string
+               timestamp: exportedJSON.timestamp
             });
          });
       });
