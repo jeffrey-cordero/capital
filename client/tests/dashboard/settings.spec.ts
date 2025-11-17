@@ -17,10 +17,10 @@ import {
    assertThemeState,
    cancelLogout,
    getCurrentAndOppositeTheme,
+   performAccountDeletion,
    performAndAssertCancelBehavior,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
-   performDelete,
    performExport,
    testAllPasswordVisibilityToggles,
    toggleTheme,
@@ -259,7 +259,7 @@ test.describe("Settings", () => {
 
          test("should successfully delete account with confirmation and allow re-registration", async({ page, usersRegistry, assignedUser }) => {
             const { username, password } = { username: assignedUser.current.username, password: assignedUser.current.password };
-            await performDelete(page, true);
+            await performAccountDeletion(page, true);
             await expect(page).toHaveURL(ROOT_ROUTE);
 
             await navigateToPath(page, REGISTER_ROUTE);
@@ -268,7 +268,7 @@ test.describe("Settings", () => {
          });
 
          test("should cancel account deletion and remain on settings", async({ page }) => {
-            await performDelete(page, false);
+            await performAccountDeletion(page, false);
             await expect(page).toHaveURL(SETTINGS_ROUTE);
          });
       });

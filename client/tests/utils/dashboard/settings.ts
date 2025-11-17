@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
-import type { AssignedUserRecord } from "@tests/fixtures";
+import type { AssignedUserRecord, CreatedUserRecord } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import { loginUser, logoutUser, ROOT_ROUTE, SETTINGS_ROUTE } from "@tests/utils/authentication";
 import { submitForm, updateSelectValue } from "@tests/utils/forms";
@@ -101,13 +101,13 @@ export async function generateUniqueUpdateValues(
  * Submits a form and validates the response, handling both success and error cases
  *
  * @param {Page} page - Playwright page instance
- * @param {Record<string, any>} formData - Form data to submit
+ * @param {Record<string, string>} formData - Form data to submit
  * @param {string} submitButtonSelector - CSS selector for the submit button
- * @param {Record<string, string>} [expectedErrors] - Expected validation errors (if provided, expects form submission to fail)
+ * @param {Record<string, string>} [expectedErrors] - Expected validation errors
  */
 async function submitAndValidateForm(
    page: Page,
-   formData: Record<string, any>,
+   formData: Record<string, string>,
    submitButtonSelector: string,
    expectedErrors?: Record<string, string>
 ): Promise<void> {
@@ -144,7 +144,7 @@ export async function updateDetails(
    data: DetailsFormData,
    expectedErrors?: Record<string, string>
 ): Promise<void> {
-   const formData: Record<string, any> = {};
+   const formData: Record<string, string> = {};
 
    if (data.name !== undefined) formData["details-name"] = data.name;
    if (data.birthday !== undefined) formData["details-birthday"] = data.birthday;
@@ -163,7 +163,7 @@ export async function assertAccountDetails(
    page: Page,
    expectedDetails: DetailsFormData
 ): Promise<void> {
-   const birthday = expectedDetails.birthday || "";
+   const birthday: string = expectedDetails.birthday || "";
    const birthdayValue: string = birthday.includes("T")
       ? birthday.split("T")[0] : birthday;
 
@@ -280,7 +280,7 @@ export async function toggleSecurityField(page: Page, field: "username" | "email
       await assertInputVisibility(page, "security-verifyPassword", "Verify Password");
    }
 
-   // Assert the cancel and submit buttons are visible
+   // Assert the cancel and submit buttons are visible for form submission
    await assertComponentIsVisible(page, "security-cancel", "Cancel");
    await assertComponentIsVisible(page, "security-submit", "Update");
 }
@@ -302,7 +302,7 @@ export async function updateSecurityFields(
    if (fields.email !== undefined) await toggleSecurityField(page, "email");
    if (fields.currentPassword !== undefined || fields.newPassword !== undefined) await toggleSecurityField(page, "currentPassword");
 
-   const formData: Record<string, any> = {};
+   const formData: Record<string, string> = {};
 
    if (fields.username !== undefined) formData["security-username"] = fields.username;
    if (fields.email !== undefined) formData["security-email"] = fields.email;
@@ -336,18 +336,19 @@ export async function assertSecurityDetails(page: Page, expectedValues: Security
 }
 
 /**
- * Updates security fields with auto-generated values, submits, and asserts changes were saved
+ * Updates security fields with auto-generated values, submits, and asserts changes were saved, handling
+ * potential credential updates
  *
  * @param {Page} page - Playwright page instance
- * @param {Set<any>} usersRegistry - Registry of created test users (auto-updates credentials if provided)
- * @param {Record<string, string>} assignedRegistry - Registry of assigned user credentials (auto-updates for credential updates if applicable)
+ * @param {Set<CreatedUserRecord>} usersRegistry - Registry of created test users
+ * @param {Record<string, string>} assignedRegistry - Registry of assigned user credentials
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
  * @param {("username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]} fieldsToUpdate - Fields to update
  * @returns {Promise<Partial<SecurityFormData>>} Updated security data merged with current user
  */
 export async function performAndAssertSecurityUpdate(
    page: Page,
-   usersRegistry: Set<any>,
+   usersRegistry: Set<CreatedUserRecord>,
    assignedRegistry: Record<string, string>,
    assignedUser: AssignedUserRecord,
    fieldsToUpdate: ("username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]
@@ -362,7 +363,7 @@ export async function performAndAssertSecurityUpdate(
    await page.reload();
    await assertSecurityDetails(page, updatedSecurityData);
 
-   // Check if credentials were updated
+   // Check if credentials were updated to potentially update the user in the registries
    const usernameUpdate: boolean = securityData.username !== undefined;
    const passwordUpdate: boolean = securityData.newPassword !== undefined;
 
@@ -370,6 +371,7 @@ export async function performAndAssertSecurityUpdate(
       const loginUsername: string = usernameUpdate ? (updatedSecurityData.username || "") : assignedUser.current.username;
       const loginPassword: string = passwordUpdate ? (updatedSecurityData.newPassword || "") : assignedUser.current.password;
 
+      // Assert that we can login with the new credentials
       await logoutUser(page, "settings");
       await loginUser(page, loginUsername, loginPassword);
 
@@ -491,14 +493,17 @@ export async function assertExportStructure(
    exportedJSON: ExportData,
    expectedExportData: Partial<ExportData>
 ): Promise<void> {
-   // Assert timestamp is within +/- 1 minute
+   // Assert timestamp is within a reasonable time frame (1 minute)
    const exportTime: Date = new Date(exportedJSON.timestamp);
    const now: Date = new Date();
-   const timeDiffMinutes = Math.abs(now.getTime() - exportTime.getTime()) / (1000 * 60);
+   const timeDiffMinutes: number = Math.abs(now.getTime() - exportTime.getTime()) / (1000 * 60);
    expect(timeDiffMinutes).toBeLessThanOrEqual(1);
 
-   // Assert all fields match to a certain degree of exactness until all test suites are implemented
+   // Assert all fields and timestamps are properly formatted
    expect(exportedJSON).toEqual(expect.objectContaining(expectedExportData));
+   exportedJSON.accounts.forEach((account: Account) => {
+      expect(!isNaN(Date.parse(account.last_updated || ""))).toBe(true);
+   });
 }
 
 /**
@@ -513,7 +518,7 @@ export async function cancelLogout(page: Page): Promise<void> {
 
    await assertComponentIsVisible(page, "settings-logout-cancel");
    await page.getByTestId("settings-logout-cancel").click();
-   await expect(page).toHaveURL(SETTINGS_ROUTE); 
+   await expect(page).toHaveURL(SETTINGS_ROUTE);
 }
 
 /**
@@ -522,7 +527,7 @@ export async function cancelLogout(page: Page): Promise<void> {
  * @param {Page} page - Playwright page instance
  * @param {boolean} [confirmDelete=true] - Whether to confirm (true) or cancel (false) deletion
  */
-export async function performDelete(page: Page, confirmDelete: boolean = true): Promise<void> {
+export async function performAccountDeletion(page: Page, confirmDelete: boolean = true): Promise<void> {
    const deleteButton = page.getByTestId("settings-delete-account");
    await expect(deleteButton).toBeVisible();
    await deleteButton.click();
@@ -570,9 +575,11 @@ export async function performAndAssertCancelBehavior(
       await page.getByTestId(`${type}-${field}`).fill(value);
    }
 
-   // Assert change detection and cancel the changes
+   // Assert change detection
    await assertComponentIsVisible(page, `${type}-cancel`, "Cancel");
    await assertComponentIsVisible(page, `${type}-submit`, "Update");
+
+   // Cancel the changes
    await page.getByTestId(`${type}-cancel`).click();
 
    // Assert all fields reverted to original state
