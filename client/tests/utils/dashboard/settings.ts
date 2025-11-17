@@ -98,6 +98,41 @@ export async function generateUniqueUpdateValues(
 }
 
 /**
+ * Submits a form and validates the response, handling both success and error cases
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Record<string, any>} formData - Form data to submit
+ * @param {string} submitButtonSelector - CSS selector for the submit button
+ * @param {Record<string, string>} [expectedErrors] - Expected validation errors (if provided, expects form submission to fail)
+ */
+async function submitAndValidateForm(
+   page: Page,
+   formData: Record<string, any>,
+   submitButtonSelector: string,
+   expectedErrors?: Record<string, string>
+): Promise<void> {
+   if (expectedErrors) {
+      await submitForm(page, formData, {
+         buttonType: "Update",
+         containsErrors: true,
+         submitButtonSelector
+      });
+   } else {
+      const responsePromise = page.waitForResponse((response: Response) => {
+         return response.url().includes("/api/v1/users") && response.request().method() === "PUT";
+      });
+
+      await submitForm(page, formData, {
+         buttonType: "Update",
+         submitButtonSelector
+      });
+
+      const response = await responsePromise;
+      expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
+   }
+}
+
+/**
  * Updates details fields and submits the form
  *
  * @param {Page} page - Playwright page instance
@@ -115,25 +150,7 @@ export async function updateDetails(
    if (data.birthday !== undefined) formData["details-birthday"] = data.birthday;
    if (data.theme !== undefined) await toggleTheme(page, "details", data.theme);
 
-   if (expectedErrors) {
-      await submitForm(page, formData, {
-         buttonType: "Update",
-         containsErrors: true,
-         submitButtonSelector: "[data-testid=\"details-submit\"]"
-      });
-   } else {
-      const responsePromise = page.waitForResponse((response: Response) => {
-         return response.url().includes("/api/v1/users") && response.request().method() === "PUT";
-      });
-
-      await submitForm(page, formData, {
-         buttonType: "Update",
-         submitButtonSelector: "[data-testid=\"details-submit\"]"
-      });
-
-      const response = await responsePromise;
-      expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
-   }
+   await submitAndValidateForm(page, formData, "[data-testid=\"details-submit\"]", expectedErrors);
 }
 
 /**
@@ -293,25 +310,7 @@ export async function updateSecurityFields(
    if (fields.newPassword !== undefined) formData["security-newPassword"] = fields.newPassword;
    if (fields.verifyPassword !== undefined) formData["security-verifyPassword"] = fields.verifyPassword;
 
-   if (expectedErrors) {
-      await submitForm(page, formData, {
-         buttonType: "Update",
-         submitButtonSelector: "[data-testid=\"security-submit\"]",
-         containsErrors: true
-      });
-   } else {
-      const responsePromise = page.waitForResponse((response: Response) => {
-         return response.url().includes("/api/v1/users") && response.request().method() === "PUT";
-      });
-
-      await submitForm(page, formData, {
-         buttonType: "Update",
-         submitButtonSelector: "[data-testid=\"security-submit\"]"
-      });
-
-      const response = await responsePromise;
-      expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
-   }
+   await submitAndValidateForm(page, formData, "[data-testid=\"security-submit\"]", expectedErrors);
 }
 
 /**
