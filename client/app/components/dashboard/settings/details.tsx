@@ -203,7 +203,7 @@ export default function Details(): React.ReactNode {
                      Theme
                   </InputLabel>
                   <Select
-                     data-testid = "details-theme-toggle"
+                     data-testid = "details-theme-select"
                      label = "Theme"
                      onChange = { (e) => updateTheme(e.target.value as "light" | "dark") }
                      slotProps = {

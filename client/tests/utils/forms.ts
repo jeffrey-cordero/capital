@@ -42,7 +42,6 @@ const DEFAULT_FORM_OPTIONS: FormSubmitOptions = {
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the select element
  * @param {string} value - The value to select
- * @returns {Promise<void>}
  */
 export async function updateSelectValue(page: Page, testId: string, value: string): Promise<void> {
    const element = page.getByTestId(testId);
@@ -62,6 +61,7 @@ export async function submitForm(
    data: Record<string, any>,
    options: FormSubmitOptions = DEFAULT_FORM_OPTIONS
 ): Promise<void> {
+   // Merge the provided options with the default options
    const opts: FormSubmitOptions = { ...DEFAULT_FORM_OPTIONS, ...options };
 
    for (const [testId, value] of Object.entries(data)) {
@@ -73,6 +73,7 @@ export async function submitForm(
                (el.tagName.toLowerCase() === "div" && el.querySelector("input[role='combobox']") !== null);
          });
 
+         // Handle different input types (select, input, checkbox, radio, date, etc.)
          if (isSelectElement) {
             await updateSelectValue(page, testId, value.toString());
          } else if (tagName === "input") {
@@ -87,6 +88,7 @@ export async function submitForm(
             } else if (inputType === "radio") {
                await element.check();
             } else if (inputType === "date") {
+               // Ensure the date format is in the format `YYYY-MM-DD`
                await element.fill(new Date(value).toISOString().split("T")[0]);
             } else {
                await element.fill(value.toString());

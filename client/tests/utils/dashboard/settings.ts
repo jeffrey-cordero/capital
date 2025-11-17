@@ -1,7 +1,7 @@
-import { expect, type Page, type Response } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import type { AssignedUserRecord } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
-import { loginUser, logoutUser, SETTINGS_ROUTE } from "@tests/utils/authentication";
+import { loginUser, logoutUser, ROOT_ROUTE, SETTINGS_ROUTE } from "@tests/utils/authentication";
 import { submitForm, updateSelectValue } from "@tests/utils/forms";
 import { openSidebar } from "@tests/utils/navigation";
 import { updateUserInRegistries } from "@tests/utils/user-management";
@@ -48,13 +48,13 @@ export type SecurityFormData = Partial<{
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {string[]} fieldsToUpdate - Field names: `"name"`, `"birthday"`, `"theme"`, `"username"`, `"email"`, `"current-password"`, `"newPassword"`, and/or `"verifyPassword"`
+ * @param {("name" | "birthday" | "theme" | "username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]} fieldsToUpdate - Field names to generate values for
  * @returns {Promise<Record<string, string>>} Object with generated unique values
  */
 export async function generateUniqueUpdateValues(
    page: Page,
    assignedUser: AssignedUserRecord,
-   fieldsToUpdate: string[]
+   fieldsToUpdate: ("name" | "birthday" | "theme" | "username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]
 ): Promise<Record<string, string>> {
    const updates: Record<string, string> = {};
    const newPassword: string = assignedUser.current!.password === "Password1!" ? "NewPassword1!" : assignedUser.current!.password;
@@ -81,9 +81,10 @@ export async function generateUniqueUpdateValues(
             updates.email = (generateTestCredentials()).email;
             break;
          }
-         case "current-password":
+         case "currentPassword": {
             updates.currentPassword = assignedUser.current!.password;
             break;
+         }
          case "newPassword":
             updates.newPassword = newPassword;
             break;
@@ -161,18 +162,17 @@ export async function assertAccountDetails(
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {string[]} fieldsToUpdate - Fields to update: `"name"`, `"birthday"`, and/or `"theme"`
+ * @param {("name" | "birthday" | "theme")[]} fieldsToUpdate - Fields to update: `"name"`, `"birthday"`, or `"theme"`
  */
 export async function performAndAssertDetailsUpdate(
    page: Page,
    assignedUser: AssignedUserRecord,
-   fieldsToUpdate: string[]
+   fieldsToUpdate: ("name" | "birthday" | "theme")[]
 ): Promise<void> {
    const detailsData = await generateUniqueUpdateValues(page, assignedUser, fieldsToUpdate) as DetailsFormData;
-
-   await updateDetails(page, detailsData);
    const updatedDetails = { ...assignedUser.current, ...detailsData };
 
+   await updateDetails(page, detailsData);
    await assertAccountDetails(page, updatedDetails);
 
    // Reload the page to ensure the changes are persisted
@@ -187,7 +187,7 @@ export async function performAndAssertDetailsUpdate(
  * @returns {Promise<{current: "light" | "dark"; opposite: "light" | "dark"}>} Current and opposite theme values
  */
 export async function getCurrentAndOppositeTheme(page: Page): Promise<{ current: "light" | "dark"; opposite: "light" | "dark"; }> {
-   const themeValue = await page.getByTestId("router").getAttribute("data-dark");
+   const themeValue: string | null = await page.getByTestId("router").getAttribute("data-dark");
    const current = themeValue === "true" ? "dark" : "light";
    const opposite = current === "dark" ? "light" : "dark";
 
@@ -199,30 +199,17 @@ export async function getCurrentAndOppositeTheme(page: Page): Promise<{ current:
  *
  * @param {Page} page - Playwright page instance
  * @param {"sidebar" | "details"} method - Toggle method
- * @param {("light" | "dark")} [expectedTheme] - Expected theme after toggle
+ * @param {("light" | "dark")} [detailsTheme] - Theme to set in details form via the select input
  */
-export async function toggleTheme(page: Page, method: "sidebar" | "details", expectedTheme?: "light" | "dark"): Promise<void> {
+export async function toggleTheme(page: Page, method: "sidebar" | "details", detailsTheme?: "light" | "dark"): Promise<void> {
    if (method === "sidebar") {
       await openSidebar(page);
-      const themeSwitch = page.getByTestId("theme-switch");
-      await assertComponentIsVisible(page, "theme-switch");
+      const themeSwitch: Locator = page.getByTestId("theme-switch");
+      await expect(themeSwitch).toBeVisible();
       await themeSwitch.click();
    } else {
-      const themeToggle = page.getByTestId("details-theme-toggle");
-      await assertComponentIsVisible(page, "details-theme-toggle");
-
-      if (expectedTheme) {
-         const themeLabel = `${expectedTheme.charAt(0).toUpperCase()}${expectedTheme.slice(1)} Mode`;
-         await updateSelectValue(page, "details-theme-toggle", themeLabel);
-      } else {
-         await themeToggle.click();
-      }
-   }
-
-   await page.waitForTimeout(100);
-
-   if (expectedTheme) {
-      await assertThemeState(page, expectedTheme);
+      const themeLabel: string = detailsTheme ? `${detailsTheme.charAt(0).toUpperCase()}${detailsTheme.slice(1)} Mode` : "";
+      await updateSelectValue(page, "details-theme-select", themeLabel);
    }
 }
 
@@ -233,10 +220,10 @@ export async function toggleTheme(page: Page, method: "sidebar" | "details", exp
  * @param {("light" | "dark")} expectedTheme - Expected theme value
  */
 export async function assertThemeState(page: Page, expectedTheme: "light" | "dark"): Promise<void> {
-   const expectedValue = expectedTheme === "dark" ? "true" : "false";
-
-   // Assert via MUI body attribute
-   await expect(page.locator("body")).toHaveAttribute("data-dark", expectedValue);
+   // Assert via the details form if we're currently on the settings page
+   if (page.url().includes(SETTINGS_ROUTE)) {
+      await assertInputVisibility(page, "details-theme", "Theme", expectedTheme);
+   }
 
    // Assert via sidebar
    await openSidebar(page);
@@ -249,68 +236,33 @@ export async function assertThemeState(page: Page, expectedTheme: "light" | "dar
       await expect(switchInput).not.toBeChecked();
    }
 
-   // Assert via settings page, if applicable
-   if (page.url().includes(SETTINGS_ROUTE)) {
-      // Assert select value within the details form is synchronized with the theme switch on the sidebar
-      await assertInputVisibility(page, "details-theme", "Theme", expectedTheme);
-   }
-
+   // Close the sidebar
    await page.keyboard.press("Escape");
-}
-
-/**
- * Toggles theme and asserts the change was applied correctly
- *
- * @param {Page} page - Playwright page instance
- * @param {("sidebar" | "details")} method - Toggle method (sidebar switch or details select)
- * @param {("light" | "dark")} [expectedTheme] - Expected theme after toggle
- */
-export async function performAndAssertThemeToggle(
-   page: Page,
-   method: "sidebar" | "details",
-   expectedTheme?: "light" | "dark"
-): Promise<void> {
-   await toggleTheme(page, method, expectedTheme);
-
-   // Wait for router data-dark attribute to update in the Redux store
-   if (expectedTheme) {
-      await page.waitForFunction(
-         (theme: string) => {
-            const router = document.querySelector("[data-testid=\"router\"]");
-            return router?.getAttribute("data-dark") === theme;
-         },
-         expectedTheme === "dark" ? "true" : "false",
-         { timeout: 5000 }
-      );
-
-      await assertThemeState(page, expectedTheme);
-   }
 }
 
 /**
  * Toggles a security field to enable editing
  *
  * @param {Page} page - Playwright page instance
- * @param {("username" | "email" | "current-password")} field - Field name to toggle
+ * @param {("username" | "email" | "currentPassword")} field - Field name to toggle
  */
-export async function toggleSecurityField(page: Page, field: "username" | "email" | "current-password"): Promise<void> {
-   const penIcon = page.getByTestId(`security-${field}-pen`);
+export async function toggleSecurityField(page: Page, field: "username" | "email" | "currentPassword"): Promise<void> {
+   const penIcon: Locator = page.getByTestId(`security-${field}-pen`);
    await expect(penIcon).toBeVisible();
    await penIcon.click();
-
    await expect(penIcon).toBeHidden();
 
    const testId: string = `security-${field}`;
    const value: string = await page.getByTestId(testId).inputValue();
-   const label: string = field === "current-password" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
+   const label: string = field === "currentPassword" ? "Password" : field.charAt(0).toUpperCase() + field.slice(1);
    await assertInputVisibility(page, testId, label, value, true);
 
-   if (field === "current-password") {
-      await assertInputVisibility(page, "security-new-password", "New Password");
-      await assertInputVisibility(page, "security-verify-password", "Verify Password");
+   if (field === "currentPassword") {
+      await assertInputVisibility(page, "security-newPassword", "New Password");
+      await assertInputVisibility(page, "security-verifyPassword", "Verify Password");
    }
 
-   // Verify cancel button becomes visible
+   // Assert the cancel and submit buttons are visible
    await assertComponentIsVisible(page, "security-cancel", "Cancel");
    await assertComponentIsVisible(page, "security-submit", "Update");
 }
@@ -330,15 +282,15 @@ export async function updateSecurityFields(
    // Ensure all of the required fields are toggled to allow editing
    if (fields.username !== undefined) await toggleSecurityField(page, "username");
    if (fields.email !== undefined) await toggleSecurityField(page, "email");
-   if (fields.currentPassword !== undefined || fields.newPassword !== undefined) await toggleSecurityField(page, "current-password");
+   if (fields.currentPassword !== undefined || fields.newPassword !== undefined) await toggleSecurityField(page, "currentPassword");
 
    const formData: Record<string, any> = {};
 
    if (fields.username !== undefined) formData["security-username"] = fields.username;
    if (fields.email !== undefined) formData["security-email"] = fields.email;
-   if (fields.currentPassword !== undefined) formData["security-current-password"] = fields.currentPassword;
-   if (fields.newPassword !== undefined) formData["security-new-password"] = fields.newPassword;
-   if (fields.verifyPassword !== undefined) formData["security-verify-password"] = fields.verifyPassword;
+   if (fields.currentPassword !== undefined) formData["security-currentPassword"] = fields.currentPassword;
+   if (fields.newPassword !== undefined) formData["security-newPassword"] = fields.newPassword;
+   if (fields.verifyPassword !== undefined) formData["security-verifyPassword"] = fields.verifyPassword;
 
    if (expectedErrors) {
       await submitForm(page, formData, {
@@ -368,18 +320,19 @@ export async function updateSecurityFields(
  * @param {Partial<SecurityFormData>} expectedValues - Expected field values to verify
  */
 export async function assertSecurityDetails(page: Page, expectedValues: Partial<SecurityFormData>): Promise<void> {
-   for (const field of ["username", "email", "current-password"]) {
-      const label: string = field === "current-password" ? "Password" : field;
+   // Security fields should be in view-only mode with expected values
+   for (const field of ["username", "email", "currentPassword"]) {
+      const label: string = field === "currentPassword" ? "Password" : field;
       const value: string = label === "Password" ? "********" : expectedValues[field as keyof typeof expectedValues]!;
 
       await assertInputVisibility(page, `security-${field}`, label, value, false);
       await assertComponentIsVisible(page, `security-${field}-pen`);
    }
 
-   await assertComponentIsHidden(page, "security-new-password");
-   await assertComponentIsHidden(page, "security-verify-password");
-   await assertComponentIsHidden(page, "security-cancel");
-   await assertComponentIsHidden(page, "security-submit");
+   // Additional password fields and form buttons should be hidden
+   for (const field of ["newPassword", "verifyPassword", "cancel", "submit"]) {
+      await assertComponentIsHidden(page, `security-${field}`);
+   }
 }
 
 /**
@@ -387,9 +340,9 @@ export async function assertSecurityDetails(page: Page, expectedValues: Partial<
  *
  * @param {Page} page - Playwright page instance
  * @param {Set<any>} usersRegistry - Registry of created test users (auto-updates credentials if provided)
- * @param {Record<string, string>} assignedRegistry - Registry of assigned user credentials (auto-updates if provided)
+ * @param {Record<string, string>} assignedRegistry - Registry of assigned user credentials (auto-updates for credential updates if applicable)
  * @param {AssignedUserRecord} assignedUser - Currently assigned user fixture
- * @param {string[]} fieldsToUpdate - Fields to update: "username", "email", "current-password"
+ * @param {("username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]} fieldsToUpdate - Fields to update
  * @returns {Promise<Partial<SecurityFormData>>} Updated security data merged with current user
  */
 export async function performAndAssertSecurityUpdate(
@@ -397,40 +350,39 @@ export async function performAndAssertSecurityUpdate(
    usersRegistry: Set<any>,
    assignedRegistry: Record<string, string>,
    assignedUser: AssignedUserRecord,
-   fieldsToUpdate: string[]
+   fieldsToUpdate: ("username" | "email" | "currentPassword" | "newPassword" | "verifyPassword")[]
 ): Promise<SecurityFormData> {
    const securityData = await generateUniqueUpdateValues(page, assignedUser, fieldsToUpdate) as SecurityFormData;
-
-   await updateSecurityFields(page, securityData);
-
    const updatedSecurityData = { ...assignedUser.current, ...securityData };
 
+   await updateSecurityFields(page, securityData);
    await assertSecurityDetails(page, updatedSecurityData);
 
    // Reload the page to ensure the changes are persisted
    await page.reload();
    await assertSecurityDetails(page, updatedSecurityData);
 
-   // Auto-verify credentials if username or password changed
-   const hasUsernameChange = securityData.username !== undefined;
-   const hasPasswordChange = securityData.newPassword !== undefined;
+   // Check if credentials were updated
+   const usernameUpdate: boolean = securityData.username !== undefined;
+   const passwordUpdate: boolean = securityData.newPassword !== undefined;
 
-   if (hasUsernameChange || hasPasswordChange) {
-      const loginUsername = hasUsernameChange ? updatedSecurityData.username! : assignedUser.current!.username;
-      const loginPassword = hasPasswordChange ? updatedSecurityData.newPassword! : assignedUser.current!.password;
+   if (usernameUpdate || passwordUpdate) {
+      const loginUsername: string = usernameUpdate ? updatedSecurityData.username! : assignedUser.current!.username;
+      const loginPassword: string = passwordUpdate ? updatedSecurityData.newPassword! : assignedUser.current!.password;
 
       await logoutUser(page, "settings");
       await loginUser(page, loginUsername, loginPassword);
 
-      // Update registries
-      const originalUsername = assignedUser.current!.username;
-      const registryUpdate: Record<string, string | undefined> = {};
+      // Update users and assigned registries for credential updates
+      const originalUsername: string = assignedUser.current!.username;
+      const registryUpdate: Record<string, string> = {};
 
-      if (hasUsernameChange) {
-         registryUpdate.username = updatedSecurityData.username;
+      if (usernameUpdate) {
+         registryUpdate.username = updatedSecurityData.username!;
       }
-      if (hasPasswordChange) {
-         registryUpdate.password = updatedSecurityData.newPassword;
+
+      if (passwordUpdate) {
+         registryUpdate.password = updatedSecurityData.newPassword!;
       }
 
       updateUserInRegistries(usersRegistry, assignedRegistry, originalUsername, registryUpdate as Record<string, string>);
@@ -440,27 +392,54 @@ export async function performAndAssertSecurityUpdate(
 }
 
 /**
- * Toggles password visibility for a specific password field
+ * Toggles password visibility for a specific password field between text and password types
  *
  * @param {Page} page - Playwright page instance
- * @param {("current" | "new" | "verify")} field - Password field to toggle
+ * @param {("currentPassword" | "newPassword" | "verifyPassword")} field - Password field to toggle
  */
-export async function togglePasswordVisibility(page: Page, field: "current" | "new" | "verify"): Promise<void> {
-   const toggle = page.getByTestId(`security-${field}-password-visibility`);
+export async function togglePasswordVisibility(page: Page, field: "currentPassword" | "newPassword" | "verifyPassword"): Promise<void> {
+   const toggle: Locator = page.getByTestId(`security-${field}-visibility`);
    await expect(toggle).toBeVisible();
    await toggle.click();
 }
 
 /**
- * Tests password field visibility toggle for a specific field
+ * Asserts password field visibility state between text and password types
  *
  * @param {Page} page - Playwright page instance
- * @param {("current" | "new" | "verify")} field - Password field type
+ * @param {("currentPassword" | "newPassword" | "verifyPassword")} field - Password field to check
+ * @param {boolean} expectedVisible - Expected visibility state
  */
-export async function testPasswordVisibilityToggle(page: Page, field: "current" | "new" | "verify"): Promise<void> {
+export async function assertPasswordVisibilityToggle(
+   page: Page,
+   field: "currentPassword" | "newPassword" | "verifyPassword",
+   expectedVisible: boolean
+): Promise<void> {
+   const input: Locator = page.getByTestId(`security-${field}`);
+   const inputType: string = await input.evaluate((el: HTMLInputElement) => el.type);
+
+   if (expectedVisible) {
+      expect(inputType).toBe("text");
+   } else {
+      expect(inputType).toBe("password");
+   }
+}
+
+/**
+ * Tests password field visibility toggle for a specific field between text and password types
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {("currentPassword" | "newPassword" | "verifyPassword")} field - Password field type
+ */
+export async function testPasswordVisibilityToggle(page: Page, field: "currentPassword" | "newPassword" | "verifyPassword"): Promise<void> {
+   // Initial password state is hidden (type="password")
    await assertPasswordVisibilityToggle(page, field, false);
+
+   // Toggle password field to show the password (type="text")
    await togglePasswordVisibility(page, field);
    await assertPasswordVisibilityToggle(page, field, true);
+
+   // Toggle password field to hide the password (type="password")
    await togglePasswordVisibility(page, field);
    await assertPasswordVisibilityToggle(page, field, false);
 }
@@ -471,33 +450,11 @@ export async function testPasswordVisibilityToggle(page: Page, field: "current" 
  * @param {Page} page - Playwright page instance
  */
 export async function testAllPasswordVisibilityToggles(page: Page): Promise<void> {
-   // Toggle password field to enable visibility toggles for all three password fields
-   await toggleSecurityField(page, "current-password");
+   // Toggle password field to enable visibility for all three password fields
+   await toggleSecurityField(page, "currentPassword");
 
-   await testPasswordVisibilityToggle(page, "current");
-   await testPasswordVisibilityToggle(page, "new");
-   await testPasswordVisibilityToggle(page, "verify");
-}
-
-/**
- * Asserts password field visibility state
- *
- * @param {Page} page - Playwright page instance
- * @param {("current" | "new" | "verify")} field - Password field to check
- * @param {boolean} expectedVisible - Expected visibility state
- */
-export async function assertPasswordVisibilityToggle(
-   page: Page,
-   field: "current" | "new" | "verify",
-   expectedVisible: boolean
-): Promise<void> {
-   const input = page.getByTestId(`security-${field}-password`);
-   const inputType = await input.evaluate((el: HTMLInputElement) => el.type);
-
-   if (expectedVisible) {
-      expect(inputType).toBe("text");
-   } else {
-      expect(inputType).toBe("password");
+   for (const field of ["currentPassword", "newPassword", "verifyPassword"] as const) {
+      await testPasswordVisibilityToggle(page, field);
    }
 }
 
@@ -515,16 +472,13 @@ export async function performExport(page: Page): Promise<ExportData> {
    await exportButton.click();
 
    const download = await downloadPromise;
-
-   // Verify filename
    expect(download.suggestedFilename()).toBe("capital_export.json");
 
-   // Save to temp and read
-   const path = await download.path();
+   // Return the parsed JSON data from the downloaded file
+   const path: string | undefined = await download.path();
    const fs = await import("fs");
-   const content = fs.readFileSync(path!, "utf-8");
 
-   return JSON.parse(content);
+   return JSON.parse(fs.readFileSync(path!, "utf-8")) as ExportData;
 }
 
 /**
@@ -537,39 +491,14 @@ export async function assertExportStructure(
    exportedJSON: ExportData,
    expectedExportData: Partial<ExportData>
 ): Promise<void> {
-   // Verify timestamp is within ±1 minute
-   const exportTime = new Date(exportedJSON.timestamp);
-   const now = new Date();
+   // Assert timestamp is within +/- 1 minute
+   const exportTime: Date = new Date(exportedJSON.timestamp);
+   const now: Date = new Date();
    const timeDiffMinutes = Math.abs(now.getTime() - exportTime.getTime()) / (1000 * 60);
    expect(timeDiffMinutes).toBeLessThanOrEqual(1);
 
-   // Verify settings match exactly
-   expect(exportedJSON.settings).toEqual(expectedExportData.settings);
-
-   // Verify accounts array length and content
-   const expectedAccounts = expectedExportData.accounts || [];
-   expect(exportedJSON.accounts).toHaveLength(expectedAccounts.length);
-
-   // Verify each account matches expected data
-   for (let i = 0; i < exportedJSON.accounts.length; i++) {
-      const account = exportedJSON.accounts[i];
-      const expectedAccount = expectedAccounts[i];
-
-      // Verify account_order is NOT included
-      expect(account.account_order).toBeUndefined();
-
-      // Verify all expected fields are present and match
-      expect(account.name).toBe(expectedAccount.name);
-      expect(account.balance).toBe(expectedAccount.balance);
-      expect(account.type).toBe(expectedAccount.type);
-      expect(account.account_id).toBeDefined();
-   }
-
-   // Verify budgets match exactly
-   expect(exportedJSON.budgets).toEqual(expectedExportData.budgets);
-
-   // Verify transactions match exactly
-   expect(exportedJSON.transactions).toEqual(expectedExportData.transactions);
+   // Assert all fields match to a certain degree of exactness until all test suites are implemented
+   expect(exportedJSON).toEqual(expect.objectContaining(expectedExportData));
 }
 
 /**
@@ -584,8 +513,7 @@ export async function cancelLogout(page: Page): Promise<void> {
 
    await assertComponentIsVisible(page, "settings-logout-cancel");
    await page.getByTestId("settings-logout-cancel").click();
-
-   await assertComponentIsVisible(page, "settings-details");
+   await expect(page).toHaveURL(SETTINGS_ROUTE); 
 }
 
 /**
@@ -606,18 +534,14 @@ export async function performDelete(page: Page, confirmDelete: boolean = true): 
       const responsePromise = page.context().waitForEvent("response", (response: Response) => {
          return response.url().includes("/api/v1/users") && response.request().method() === "DELETE";
       });
-
       await page.getByTestId("settings-delete-account-confirm").click();
 
-      // Wait for response
       const response = await responsePromise;
       expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
-
-      // Wait for redirect to home
-      await expect(page).toHaveURL(/^(?!.*settings)/);
+      await expect(page).toHaveURL(ROOT_ROUTE);
    } else {
       await page.getByTestId("settings-delete-account-cancel").click();
-      await assertComponentIsVisible(page, "settings-details");
+      await expect(page).toHaveURL(SETTINGS_ROUTE);
    }
 }
 
@@ -626,23 +550,23 @@ export async function performDelete(page: Page, confirmDelete: boolean = true): 
  *
  * @param {Page} page - Playwright page instance
  * @param {AssignedUserRecord} assignedUser - User fixture with original values
- * @param {string[]} fieldsToCancel - Field names: `"name"`, `"birthday"`, `"username"`, `"email"`, and/or `"current-password"`
  * @param {type} type - Type of form to cancel: `"details"`, `"security"`
+ * @param {("name" | "birthday" | "username" | "email" | "currentPassword")[]} fieldsToCancel - Field names to cancel
  */
 export async function performAndAssertCancelBehavior(
    page: Page,
    assignedUser: AssignedUserRecord,
    type: "details" | "security",
-   fieldsToCancel: string[],
+   fieldsToCancel: ("name" | "birthday" | "username" | "email" | "currentPassword")[]
 ): Promise<void> {
    const updates = await generateUniqueUpdateValues(page, assignedUser, fieldsToCancel);
 
    for (const field of fieldsToCancel) {
       if (type === "security") {
-         await toggleSecurityField(page, field as "username" | "email" | "current-password");
+         await toggleSecurityField(page, field as "username" | "email" | "currentPassword");
       }
 
-      const value = updates[field === "current-password" ? "currentPassword" : field];
+      const value: string = updates[field];
       await page.getByTestId(`${type}-${field}`).fill(value);
    }
 

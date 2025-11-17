@@ -20,7 +20,6 @@ export function getRouteLinkTitle(route: string): string {
  * Opens the sidebar if it's not already open
  *
  * @param {Page} page - Playwright page instance
- * @returns {Promise<void>}
  */
 export async function openSidebar(page: Page): Promise<void> {
    const sidebarToggle: Locator = page.getByTestId("sidebar-toggle");
@@ -36,7 +35,6 @@ export async function openSidebar(page: Page): Promise<void> {
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - The test ID of the element to click
- * @returns {Promise<void>}
  */
 export async function clickSidebarLink(page: Page, testId: string): Promise<void> {
    await openSidebar(page);
@@ -50,7 +48,6 @@ export async function clickSidebarLink(page: Page, testId: string): Promise<void
  *
  * @param {Page} page - Playwright page instance
  * @param {string} path - The route path to navigate to
- * @returns {Promise<void>}
  */
 export async function navigateToPath(page: Page, path: string): Promise<void> {
    const linkTitle: string = getRouteLinkTitle(path);

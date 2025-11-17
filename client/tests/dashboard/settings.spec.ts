@@ -14,15 +14,16 @@ import {
    assertAccountDetails,
    assertExportStructure,
    assertSecurityDetails,
+   assertThemeState,
    cancelLogout,
    getCurrentAndOppositeTheme,
    performAndAssertCancelBehavior,
    performAndAssertDetailsUpdate,
    performAndAssertSecurityUpdate,
-   performAndAssertThemeToggle,
    performDelete,
    performExport,
    testAllPasswordVisibilityToggles,
+   toggleTheme,
    updateDetails,
    updateSecurityFields
 } from "@tests/utils/dashboard/settings";
@@ -79,7 +80,8 @@ test.describe("Settings", () => {
 
          test("should successfully toggle theme", async({ page }) => {
             const { opposite: newTheme } = await getCurrentAndOppositeTheme(page);
-            await performAndAssertThemeToggle(page, "details", newTheme);
+            await toggleTheme(page, "details", newTheme);
+            await assertThemeState(page, newTheme);
          });
 
          test("should successfully update name, birthday, and theme", async({ page, assignedUser }) => {
@@ -146,11 +148,11 @@ test.describe("Settings", () => {
          });
 
          test("should successfully update password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["current-password", "newPassword", "verifyPassword"]);
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["currentPassword", "newPassword", "verifyPassword"]);
          });
 
          test("should successfully update username, email, and password", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username", "email", "current-password", "newPassword", "verifyPassword"]);
+            await performAndAssertSecurityUpdate(page, usersRegistry, assignedRegistry, assignedUser, ["username", "email", "currentPassword", "newPassword", "verifyPassword"]);
          });
       });
 
@@ -225,11 +227,11 @@ test.describe("Settings", () => {
          });
 
          test("should cancel password change and hide password fields", async({ page, assignedUser }) => {
-            await performAndAssertCancelBehavior(page, assignedUser, "security", ["current-password"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["currentPassword"]);
          });
 
          test("should cancel all security field changes and revert to original values", async({ page, assignedUser }) => {
-            await performAndAssertCancelBehavior(page, assignedUser, "security", ["username", "email", "current-password"]);
+            await performAndAssertCancelBehavior(page, assignedUser, "security", ["username", "email", "currentPassword"]);
          });
       });
    });
@@ -282,7 +284,11 @@ test.describe("Settings", () => {
             await navigateToPath(page, SETTINGS_ROUTE);
             const exportedJSON = await performExport(page);
 
-            const expectedAccounts = [{ ...account1Data, account_id: account1Id }, { ...account2Data, account_id: account2Id }];
+            const expectedAccounts = [
+               { ...account1Data, account_id: account1Id, last_updated: expect.any(String) },
+               { ...account2Data, account_id: account2Id, last_updated: expect.any(String) }
+            ];
+
             await assertExportStructure(exportedJSON, {
                settings: {
                   username: assignedUser.current!.username,
@@ -293,7 +299,8 @@ test.describe("Settings", () => {
                accounts: expectedAccounts,
                // Future test suites will verify the following structures
                budgets: exportedJSON.budgets,
-               transactions: []
+               transactions: [],
+               timestamp: expect.any(String)
             });
          });
       });

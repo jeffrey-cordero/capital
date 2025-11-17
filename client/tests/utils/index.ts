@@ -6,7 +6,6 @@ import { expect, type Page } from "@playwright/test";
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the component to verify is visible
  * @param {string} [text=""] - Optional text content to verify. If not provided, only visibility is checked
- * @returns {Promise<void>}
  */
 export async function assertComponentIsVisible(
    page: Page,
@@ -29,7 +28,6 @@ export async function assertComponentIsVisible(
  * @param {string} labelText - Expected label text for the input
  * @param {string} [value=""] - Expected value in the input field
  * @param {boolean} [enabledState=true] - Expected enabled state
- * @returns {Promise<void>}
  */
 export async function assertInputVisibility(
    page: Page,
@@ -51,7 +49,6 @@ export async function assertInputVisibility(
  * Asserts that the modal is closed by waiting for it to be detached from the DOM
  *
  * @param {Page} page - Playwright page instance
- * @returns {Promise<void>}
  */
 export async function assertModalIsClosed(page: Page): Promise<void> {
    await page.waitForSelector("[data-testid=\"modal\"]", { state: "detached" });
@@ -62,7 +59,6 @@ export async function assertModalIsClosed(page: Page): Promise<void> {
  *
  * @param {Page} page - Playwright page instance
  * @param {string} testId - Data test ID of the component to verify is hidden
- * @returns {Promise<void>}
  */
 export async function assertComponentIsHidden(
    page: Page,
@@ -76,7 +72,6 @@ export async function assertComponentIsHidden(
  *
  * @param {Page} page - Playwright page instance
  * @param {boolean} [force=false] - If true, confirms warning modal when unsaved changes are present
- * @returns {Promise<void>}
  */
 export async function closeModal(page: Page, force: boolean = false): Promise<void> {
    await page.keyboard.press("Escape");

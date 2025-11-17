@@ -234,7 +234,7 @@ export default function Security(): React.ReactNode {
                                  disabled.passwords ? (
                                     <FontAwesomeIcon
                                        className = "primary"
-                                       data-testid = "security-current-password-pen"
+                                       data-testid = "security-currentPassword-pen"
                                        icon = { disabled.passwords ? faPenToSquare : visible.password ? faEye : faEyeSlash }
                                        onClick = { () => toggleEditableFields("passwords") }
                                        style = { { cursor: "pointer" } }
@@ -242,7 +242,7 @@ export default function Security(): React.ReactNode {
                                  ) : (
                                     <FontAwesomeIcon
                                        className = { visible.password ? "primary" : undefined }
-                                       data-testid = "security-current-password-visibility"
+                                       data-testid = "security-currentPassword-visibility"
                                        icon = { visible.password ? faEye : faEyeSlash }
                                        onClick = { () => toggleVisiblePasswords("password") }
                                        style = { { cursor: "pointer" } }
@@ -250,7 +250,7 @@ export default function Security(): React.ReactNode {
                                  )
                               }
                               id = "password"
-                              inputProps = { { "data-testid": "security-current-password" } }
+                              inputProps = { { "data-testid": "security-currentPassword" } }
                               label = "Password"
                               type = { visible.password ? "text" : "password" }
                               value = { disabled.passwords ? "********" : field.value || "" }
@@ -292,14 +292,14 @@ export default function Security(): React.ReactNode {
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { visible.newPassword ? "primary" : undefined }
-                                          data-testid = "security-new-password-visibility"
+                                          data-testid = "security-newPassword-visibility"
                                           icon = { visible.newPassword ? faEye : faEyeSlash }
                                           onClick = { () => toggleVisiblePasswords("newPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }
                                     id = "newPassword"
-                                    inputProps = { { "data-testid": "security-new-password" } }
+                                    inputProps = { { "data-testid": "security-newPassword" } }
                                     label = "New Password"
                                     type = { visible.newPassword ? "text" : "password" }
                                     value = { disabled.passwords ? "********" : field.value || "" }
@@ -329,14 +329,14 @@ export default function Security(): React.ReactNode {
                                     endAdornment = {
                                        <FontAwesomeIcon
                                           className = { visible.verifyPassword ? "primary" : undefined }
-                                          data-testid = "security-verify-password-visibility"
+                                          data-testid = "security-verifyPassword-visibility"
                                           icon = { visible.verifyPassword ? faEye : faEyeSlash }
                                           onClick = { () => toggleVisiblePasswords("verifyPassword") }
                                           style = { { cursor: "pointer" } }
                                        />
                                     }
                                     id = "verifyPassword"
-                                    inputProps = { { "data-testid": "security-verify-password" } }
+                                    inputProps = { { "data-testid": "security-verifyPassword" } }
                                     label = "Verify Password"
                                     type = { visible.verifyPassword ? "text" : "password" }
                                     value = { disabled.passwords ? "********" : field.value || "" }
