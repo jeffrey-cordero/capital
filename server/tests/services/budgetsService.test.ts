@@ -1,8 +1,8 @@
 import { Budget, BudgetCategory, OrganizedBudgets } from "capital/budgets";
 import {
-   createBudgetWithValidation,
-   createMockOrganizedBudgets,
    createValidBudget,
+   createValidBudgetEntry,
+   createValidOrganizedBudgets,
    TEST_BUDGET_CATEGORY_ID,
    TEST_BUDGET_CATEGORY_IDS
 } from "capital/mocks/budgets";
@@ -46,10 +46,7 @@ describe("Budgets Service", () => {
 	 * @param {ServerResponse} result - Service response
 	 * @param {Record<string, string>} [expectedErrors] - Optional error fields to verify
 	 */
-   const assertBudgetValidationErrorResponse = (
-      result: ServerResponse,
-      expectedErrors?: Record<string, string>
-   ): void => {
+   const assertBudgetValidationErrorResponse = (result: ServerResponse, expectedErrors?: Record<string, string>): void => {
       assertMethodsNotCalled([
          {
             module: budgetsRepository,
@@ -85,7 +82,7 @@ describe("Budgets Service", () => {
 
    describe("fetchBudgets", () => {
       it("should return cached budgets on cache hit", async() => {
-         const cachedBudgets: OrganizedBudgets = createMockOrganizedBudgets();
+         const cachedBudgets: OrganizedBudgets = createValidOrganizedBudgets();
          const cachedData: string = JSON.stringify(cachedBudgets);
          arrangeMockCacheHit(redis, cachedData);
 
@@ -96,7 +93,7 @@ describe("Budgets Service", () => {
       });
 
       it("should fetch from database and cache on cache miss", async() => {
-         const mockBudgets: OrganizedBudgets = createMockOrganizedBudgets();
+         const mockBudgets: OrganizedBudgets = createValidOrganizedBudgets();
 
          arrangeMockCacheMiss(redis);
          arrangeMockRepositorySuccess(budgetsRepository, "findByUserId", mockBudgets);
@@ -122,37 +119,30 @@ describe("Budgets Service", () => {
 
    describe("createBudgetCategory", () => {
       it("should create budget category successfully with valid data", async() => {
-         const validCategory: Budget & BudgetCategory = createBudgetWithValidation();
+         const validCategory: BudgetCategory = createValidBudgetEntry();
 
          arrangeMockRepositorySuccess(budgetsRepository, "createCategory", categoryId);
 
          const result: ServerResponse = await budgetsService.createBudgetCategory(userId, validCategory);
 
-         assertBudgetOperationSuccess("createCategory", [userId, expect.objectContaining(validCategory)]);
+         assertBudgetOperationSuccess("createCategory", [userId, validCategory]);
          assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { budget_category_id: categoryId });
       });
 
       it("should return validation errors for missing required budget fields", async() => {
-         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-         const { budget_category_id, ...invalidCategory } = createBudgetWithValidation();
+         const { budget_category_id, ...invalidCategory } = createValidBudgetEntry();
 
-         const result: ServerResponse = await budgetsService.createBudgetCategory(
-            userId,
-				invalidCategory as Budget & BudgetCategory
-         );
+         const result: ServerResponse = await budgetsService.createBudgetCategory(userId, invalidCategory as BudgetCategory);
 
-         assertBudgetValidationErrorResponse(result, {
-            budget_category_id: "Required"
-         });
+         assertBudgetValidationErrorResponse(result, { budget_category_id: "Required" });
       });
 
       it("should return validation errors for missing required category fields", async() => {
-         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-         const { type, ...invalidCategory } = createBudgetWithValidation();
+         const { type, ...invalidCategory } = createValidBudgetEntry();
 
          const result: ServerResponse = await budgetsService.createBudgetCategory(
             userId,
-				invalidCategory as Budget & BudgetCategory
+				invalidCategory as BudgetCategory
          );
 
          assertBudgetValidationErrorResponse(result, {
@@ -161,19 +151,19 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for invalid budget category type", async() => {
-         const invalidCategory = { ...createBudgetWithValidation() };
+         const invalidCategory = { ...createValidBudgetEntry() };
          const invalidType: string = "InvalidType";
 
          const result: ServerResponse = await budgetsService.createBudgetCategory(
             userId,
-				{ ...invalidCategory, type: invalidType } as Budget & BudgetCategory
+				{ ...invalidCategory, type: invalidType } as BudgetCategory
          );
 
          assertBudgetValidationErrorResponse(result);
       });
 
       it("should return validation errors for invalid goal amount (negative)", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { goal: -100.00 }
          );
 
@@ -183,7 +173,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for goal exceeding maximum", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { goal: 1_000_000_000_000_000 }
          );
 
@@ -193,7 +183,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for invalid month (0)", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { month: 0 }
          );
 
@@ -203,7 +193,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for invalid month (13)", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { month: 13 }
          );
 
@@ -213,7 +203,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for invalid year (before 1800)", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { year: 1799 }
          );
 
@@ -225,7 +215,7 @@ describe("Budgets Service", () => {
       it("should return validation errors for future month in current year", async() => {
          const futureMonth = new Date().getMonth() + 2; // Next month
          const futureYear = new Date().getFullYear();
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { year: futureYear, month: futureMonth > 12 ? 1 : futureMonth }
          );
 
@@ -236,7 +226,7 @@ describe("Budgets Service", () => {
 
       it("should return validation errors for future year", async() => {
          const futureYear = new Date().getFullYear() + 1;
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({},
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({},
             { year: futureYear }
          );
 
@@ -246,7 +236,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for category name too short", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             name: ""
          });
 
@@ -256,7 +246,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for category name too long", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             name: "a".repeat(31)
          });
 
@@ -266,7 +256,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for reserved category name 'income'", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             name: "income"
          });
 
@@ -276,7 +266,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for reserved category name 'expenses'", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             name: "expenses"
          });
 
@@ -286,7 +276,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for reserved category name 'null'", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             name: "null"
          });
 
@@ -296,7 +286,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for category order negative", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             category_order: -1
          });
 
@@ -306,7 +296,7 @@ describe("Budgets Service", () => {
       });
 
       it("should return validation errors for category order exceeding maximum", async() => {
-         const invalidCategory: Budget & BudgetCategory = createBudgetWithValidation({
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({
             category_order: 2_147_483_648
          });
 
@@ -317,11 +307,11 @@ describe("Budgets Service", () => {
 
       it("should return validation errors for invalid budget category ID UUID", async() => {
          const invalidUUID: string = "not-a-uuid";
-         const invalidCategory = { ...createBudgetWithValidation(), budget_category_id: invalidUUID };
+         const invalidCategory = { ...createValidBudgetEntry(), budget_category_id: invalidUUID };
 
          const result: ServerResponse = await budgetsService.createBudgetCategory(
             userId,
-				invalidCategory as Budget & BudgetCategory
+				invalidCategory as BudgetCategory
          );
 
          assertBudgetValidationErrorResponse(result, {
@@ -330,7 +320,7 @@ describe("Budgets Service", () => {
       });
 
       it("should handle repository errors during creation using helper", async() => {
-         const validCategory: Budget & BudgetCategory = createBudgetWithValidation();
+         const validCategory: BudgetCategory = createValidBudgetEntry();
 
          arrangeMockRepositoryError(budgetsRepository, "createCategory", "Database connection failed");
 
@@ -339,7 +329,7 @@ describe("Budgets Service", () => {
             "Database connection failed"
          );
 
-         assertRepositoryCall(budgetsRepository, "createCategory", [userId, expect.objectContaining(validCategory)]);
+         assertRepositoryCall(budgetsRepository, "createCategory", [userId, validCategory]);
          assertCacheInvalidationNotCalled(redis);
       });
    });

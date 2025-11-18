@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { Budget, BudgetCategory, OrganizedBudgets } from "capital/budgets";
-import { createBudgetWithValidation, createValidBudget, TEST_BUDGET_CATEGORY_ID, TEST_BUDGET_CATEGORY_IDS } from "capital/mocks/budgets";
+import { createValidBudget, createValidBudgetEntry, TEST_BUDGET_CATEGORY_ID, TEST_BUDGET_CATEGORY_IDS } from "capital/mocks/budgets";
 import { TEST_USER_ID } from "capital/mocks/user";
 
 import {
@@ -241,7 +241,7 @@ describe("Budgets Repository", () => {
       };
 
       it("should create category successfully with transaction", async() => {
-         const category = createBudgetWithValidation();
+         const category = createValidBudgetEntry();
          arrangeCreateCategoryTransactionSuccess();
 
          const result: string = await budgetsRepository.createCategory(userId, category);
@@ -251,7 +251,7 @@ describe("Budgets Repository", () => {
       });
 
       it("should create category with external client for nested transaction", async() => {
-         const category = createBudgetWithValidation();
+         const category = createValidBudgetEntry();
          arrangeMockTransactionFlow(mockClient.query, [
             { rows: [{ budget_category_id: categoryId }] }, // Category INSERT
             {} // Budget INSERT
@@ -264,7 +264,7 @@ describe("Budgets Repository", () => {
       });
 
       it("should throw error on BEGIN failure", async() => {
-         const category = createBudgetWithValidation();
+         const category = createValidBudgetEntry();
          arrangeCreateCategoryTransactionError("Transaction begin failed", "begin");
 
          await assertRepositoryThrows(
@@ -275,7 +275,7 @@ describe("Budgets Repository", () => {
       });
 
       it("should rollback on category INSERT failure", async() => {
-         const category = createBudgetWithValidation();
+         const category = createValidBudgetEntry();
          arrangeCreateCategoryTransactionError("Category INSERT failed", "category_insert");
 
          await assertRepositoryThrows(
@@ -286,7 +286,7 @@ describe("Budgets Repository", () => {
       });
 
       it("should rollback on budget INSERT failure", async() => {
-         const category = createBudgetWithValidation();
+         const category = createValidBudgetEntry();
          arrangeCreateCategoryTransactionError("Budget INSERT failed", "budget_insert");
 
          await assertRepositoryThrows(

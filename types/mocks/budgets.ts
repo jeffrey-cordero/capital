@@ -180,13 +180,13 @@ export const createMockBudgetGoals = (count: number = 2): BudgetGoal[] => {
 };
 
 /**
- * Creates a mock organized budget (Income or Expenses section) for testing
+ * Creates a valid organized budget (Income or Expenses section) for testing
  *
  * @param {BudgetType} [type] - Budget type (default `Expenses`)
  * @param {number} [categoryCount] - Number of subcategories (default `2`)
  * @returns {OrganizedBudget} Organized budget structure
  */
-export const createMockOrganizedBudget = (type: BudgetType = "Expenses", categoryCount: number = 2): OrganizedBudget => {
+export const createValidOrganizedBudget = (type: BudgetType = "Expenses", categoryCount: number = 2): OrganizedBudget => {
    const categories = createMockBudgetCategories(categoryCount, type);
    const goals = createMockBudgetGoals(2);
 
@@ -204,27 +204,27 @@ export const createMockOrganizedBudget = (type: BudgetType = "Expenses", categor
 };
 
 /**
- * Creates a complete mock organized budgets structure for testing
+ * Creates a complete valid organized budgets structure for testing
  *
  * @param {number} [incomeCount] - Number of income categories (default `2`)
  * @param {number} [expenseCount] - Number of expense categories (default `2`)
  * @returns {OrganizedBudgets} Complete organized budgets with Income and Expenses
  */
-export const createMockOrganizedBudgets = (incomeCount: number = 2, expenseCount: number = 2): OrganizedBudgets => {
+export const createValidOrganizedBudgets = (incomeCount: number = 2, expenseCount: number = 2): OrganizedBudgets => {
    return {
-      Income: createMockOrganizedBudget("Income", incomeCount),
-      Expenses: createMockOrganizedBudget("Expenses", expenseCount)
+      Income: createValidOrganizedBudget("Income", incomeCount),
+      Expenses: createValidOrganizedBudget("Expenses", expenseCount)
    };
 };
 
 /**
- * Creates a budget category with an associated budget entry (for creation tests)
+ * Creates a valid budget entry with an associated budget category for testing
  *
  * @param {Partial<BudgetCategory>} [categoryOverrides] - Category field overrides
  * @param {Partial<Budget>} [budgetOverrides] - Budget field overrides
  * @returns {Budget & BudgetCategory} Combined category and budget object
  */
-export const createBudgetWithValidation = (categoryOverrides?: Partial<BudgetCategory>, budgetOverrides?: Partial<Budget>): Budget & BudgetCategory => {
+export const createValidBudgetEntry = (categoryOverrides?: Partial<BudgetCategory>, budgetOverrides?: Partial<Budget>): Budget & BudgetCategory => {
    const category = createValidBudgetCategory(categoryOverrides);
    const budget = createValidBudget(budgetOverrides);
 
