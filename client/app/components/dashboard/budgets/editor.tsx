@@ -153,7 +153,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
 
          if (budgetUpdates && budgetSuccess) {
             dispatch(updateBudget({
-               goal: Number(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
+               goal: budgetFields.data?.goal || category.goals[category.goalIndex].goal,
                type: categoryFields.data?.type || category.type,
                budget_category_id: category.budget_category_id
             }));

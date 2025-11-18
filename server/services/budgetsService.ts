@@ -62,7 +62,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
       return sendValidationErrors(budgetFields);
    }
 
-   const categoryFields = budgetCategorySchema.safeParse(category);
+   const categoryFields = budgetCategorySchema.safeParse({ ...category, user_id });
 
    if (!categoryFields.success) {
       return sendValidationErrors(categoryFields);

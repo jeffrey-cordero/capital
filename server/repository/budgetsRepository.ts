@@ -48,7 +48,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
       // Extract budget goal data
       const budget: BudgetGoal = {
-         goal: row.goal,
+         goal: Number(row.goal),
          year: row.year,
          month: row.month
       };

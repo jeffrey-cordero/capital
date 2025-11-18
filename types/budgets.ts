@@ -14,13 +14,15 @@ const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
  */
 export const budgetSchema = z.object({
    /* Unique budget category identifier */
-   budget_category_id: z.string().trim().uuid({
+   budget_category_id: z.string({
+      message: "Budget Category ID is required"
+   }).trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
 
    /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
-      message: "Goal must be a valid currency amount"
+      message: "Goal is required"
    }).min(0, {
       message: "Goal must be $0 or greater"
    }).max(999_999_999_999.99, {
@@ -29,7 +31,7 @@ export const budgetSchema = z.object({
 
    /* Budget month */
    month: zodPreprocessNumber(z.coerce.number({
-      message: "Month must be a valid month"
+      message: "Month is required"
    }).int({
       message: "Month must be a whole number between 1 and 12"
    }).min(1, {
@@ -40,7 +42,7 @@ export const budgetSchema = z.object({
 
    /* Budget year */
    year: zodPreprocessNumber(z.coerce.number({
-      message: "Year must be a valid number"
+      message: "Year is required"
    }).int({
       message: "Year must be a whole number"
    }).min(1800, {
@@ -67,17 +69,23 @@ export const budgetSchema = z.object({
  */
 export const budgetCategorySchema = z.object({
    /* Unique user identifier */
-   user_id: z.string().trim().uuid({
-      message: "User ID must be a valid UUID"
-   }).optional(),
+   user_id: z.string({
+      message: "User ID is required"
+   }).trim().min(1, {
+      message: "User ID is required"
+   }),
 
    /* Unique budget category identifier */
-   budget_category_id: z.string().trim().uuid({
+   budget_category_id: z.string({
+      message: "Budget Category ID is required"
+   }).trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
 
    /* Budget category type */
-   type: z.enum(["Income", "Expenses"], {
+   type: z.string({
+      message: "Type is required"
+   }).refine((val) => ["Income", "Expenses"].includes(val), {
       message: "Type must be either 'Income' or 'Expenses'"
    }),
 
@@ -93,7 +101,9 @@ export const budgetCategorySchema = z.object({
          return trimmed;
       }
       return value;
-   }, z.string()
+   }, z.string({
+      message: "Budget category name is required"
+   })
       .min(1, { message: "Name must be at least 1 character" })
       .max(30, { message: "Name must be at most 30 characters" })
       .refine(val => val !== "__RESERVED__", {
@@ -103,7 +113,7 @@ export const budgetCategorySchema = z.object({
 
    /* Display sequence */
    category_order: zodPreprocessNumber(z.coerce.number({
-      message: "Category order must be a valid number"
+      message: "Category order is required"
    }).int({
       message: "Category order must be a whole number"
    }).min(0, {

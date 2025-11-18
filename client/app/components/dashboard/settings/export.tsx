@@ -26,7 +26,6 @@ export default function ExportAccount(): React.ReactNode {
             accounts: accounts.map((account) => ({
                ...account,
                account_order: undefined,
-               balace: Number(account.balance),
                image: account.image || null
             })),
             budgets: {
