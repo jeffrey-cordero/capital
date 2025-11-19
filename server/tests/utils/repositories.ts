@@ -176,7 +176,7 @@ export function assertClientReleased(mockClient: MockClient): void {
  * @param {number} expectedStatements - Statements executed excluding `BEGIN` and `ROLLBACK`
  */
 export function assertTransactionRollback(mockClient: MockClient, expectedStatements: number): void {
-   const mockClientQueries: any[] = mockClient.query.mock.calls;
+   const mockClientQueries: [string, unknown[]][] = mockClient.query.mock.calls;
    const totalQueries: number = mockClientQueries.length;
 
    // Assert that BEGIN, ROLLBACK, and the expected number of statements are in the sequence
@@ -194,16 +194,40 @@ export function assertTransactionRollback(mockClient: MockClient, expectedStatem
 }
 
 /**
- * Asserts a transaction result equals expected data and the test-scoped
- * mock client is released back to the mock pool
+ * Asserts a transaction result equals expected data, the transaction executed successfully
+ * (BEGIN, intermediates, COMMIT for standard; only intermediates for nested), and the
+ * test-scoped mock client is released back to the mock pool
  *
  * @param {any} result - Actual transaction result
  * @param {any} expectedData - Expected transaction result
  * @param {MockClient} mockClient - Test-scoped mock client for the current test
+ * @param {number} [expectedStatements=1] - Expected number of statements excluding BEGIN and COMMIT
+ * @param {boolean} [isExternal=false] - Whether this is a nested transaction (skips BEGIN/COMMIT verification)
  */
-export function assertTransactionResult(result: any, expectedData: any, mockClient: MockClient): void {
+export function assertTransactionResult(result: any, expectedData: any, mockClient: MockClient, expectedStatements: number = 1, isExternal: boolean = false): void {
    assertQueryResult(result, expectedData);
-   assertClientReleased(mockClient);
+
+   const mockClientQueries: [string, unknown[]][] = mockClient.query.mock.calls;
+   const totalQueries: number = mockClientQueries.length;
+
+   if (isExternal) {
+      // For nested transactions, only verify intermediates (no BEGIN or COMMIT)
+      expect(totalQueries).toBe(expectedStatements);
+   } else {
+      // For standard transactions, verify BEGIN, intermediates, and COMMIT
+      expect(totalQueries).toBe(expectedStatements + 2);
+
+      // Assert that BEGIN is assigned to a proper isolation level
+      expect(mockClientQueries[0][0]).toMatch(
+         /^BEGIN TRANSACTION ISOLATION LEVEL (READ UNCOMMITTED|READ COMMITTED|REPEATABLE READ|SERIALIZABLE);?$/
+      );
+
+      // Assert that COMMIT is the last query
+      expect(mockClientQueries[totalQueries - 1][0]).toBe("COMMIT;");
+
+      // Assert that the test-scoped mock client is released back to the mock pool
+      assertClientReleased(mockClient);
+   }
 }
 
 /**

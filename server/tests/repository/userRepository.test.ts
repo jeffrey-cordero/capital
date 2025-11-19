@@ -567,7 +567,7 @@ describe("User Repository", () => {
          const result: boolean = await userRepository.deleteUser(userId);
 
          assertUserDeletionFlow(userId);
-         assertTransactionResult(result, true, mockClient);
+         assertTransactionResult(result, true, mockClient, 3);
       });
 
       it("should return false when the user does not exist", async() => {

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { Budget, BudgetCategory, BudgetCategoryGoal, OrganizedBudgets } from "capital/budgets";
-import { createValidBudget, createValidBudgetEntry, TEST_BUDGET_CATEGORY_ID, TEST_BUDGET_CATEGORY_IDS } from "capital/mocks/budgets";
+import { createValidBudget, createValidBudgetEntry, TEST_BUDGET_CATEGORY_IDS } from "capital/mocks/budgets";
 import { TEST_USER_ID } from "capital/mocks/user";
 
 import {
@@ -11,6 +11,7 @@ import {
    assertQueryNotCalled,
    assertQueryResult,
    assertRepositoryThrows,
+   assertTransactionResult,
    assertTransactionRollback,
    createMockClient,
    createMockPool,
@@ -27,11 +28,11 @@ const globalMockPool: MockPool = createMockPool();
 jest.mock("pg", () => ({ Pool: jest.fn(() => globalMockPool) }));
 
 import * as budgetsRepository from "@/repository/budgetsRepository";
+import { PoolClient } from "pg";
 
 describe("Budgets Repository", () => {
    const userId: string = TEST_USER_ID;
-   const categoryId: string = TEST_BUDGET_CATEGORY_ID;
-   const categoryIds: string[] = TEST_BUDGET_CATEGORY_IDS;
+   const [mainIncomeCategoryId, subIncomeCategoryId, mainExpensesCategoryId, subExpensesCategoryId] = TEST_BUDGET_CATEGORY_IDS;
 
    let mockPool: MockPool;
    let mockClient: MockClient;
@@ -58,11 +59,19 @@ describe("Budgets Repository", () => {
       };
 
       it("should return organized budgets structure on success", async() => {
-         // Mock raw query results with both Income and Expenses types, including duplicate categories with multiple goals
-         const expenseCategoryId = categoryIds[1];
+         // Ordering of Income/Expenses records should not affect the overall structure of the organized budgets
          const mockRows = [
             {
-               budget_category_id: categoryId,
+               budget_category_id: mainExpensesCategoryId,
+               name: null,
+               type: "Expenses",
+               category_order: null,
+               goal: 3000.00,
+               year: 2024,
+               month: 11
+            },
+            {
+               budget_category_id: mainIncomeCategoryId,
                name: null,
                type: "Income",
                category_order: null,
@@ -71,7 +80,7 @@ describe("Budgets Repository", () => {
                month: 11
             },
             {
-               budget_category_id: categoryId,
+               budget_category_id: subIncomeCategoryId,
                name: "Salary",
                type: "Income",
                category_order: 0,
@@ -80,31 +89,22 @@ describe("Budgets Repository", () => {
                month: 11
             },
             {
-               budget_category_id: categoryId,
-               name: "Salary",
-               type: "Income",
-               category_order: 0,
-               goal: 2500.00,
-               year: 2024,
-               month: 10
-            },
-            {
-               budget_category_id: expenseCategoryId,
-               name: null,
-               type: "Expenses",
-               category_order: null,
-               goal: 3000.00,
-               year: 2024,
-               month: 11
-            },
-            {
-               budget_category_id: expenseCategoryId,
+               budget_category_id: subExpensesCategoryId,
                name: "Groceries",
                type: "Expenses",
                category_order: 0,
                goal: 500.00,
                year: 2024,
                month: 11
+            },
+            {
+               budget_category_id: subIncomeCategoryId,
+               name: "Salary",
+               type: "Income",
+               category_order: 0,
+               goal: 2500.00,
+               year: 2024,
+               month: 10
             }
          ];
 
@@ -112,18 +112,14 @@ describe("Budgets Repository", () => {
 
          const result: OrganizedBudgets = await budgetsRepository.findByUserId(userId);
 
-         assertFindByUserIdStructure();
-
          // Build expected structure to validate complete transformation for both Income and Expenses
          const expectedIncome = {
-            goals: [
-               { goal: 5000.00, year: 2024, month: 11 }
-            ],
+            goals: [{ goal: 5000.00, year: 2024, month: 11 }],
             goalIndex: 0,
-            budget_category_id: categoryId,
+            budget_category_id: mainIncomeCategoryId,
             categories: [
                {
-                  budget_category_id: categoryId,
+                  budget_category_id: subIncomeCategoryId,
                   type: "Income",
                   name: "Salary",
                   category_order: 0,
@@ -137,14 +133,12 @@ describe("Budgets Repository", () => {
          };
 
          const expectedExpenses = {
-            goals: [
-               { goal: 3000.00, year: 2024, month: 11 }
-            ],
+            goals: [{ goal: 3000.00, year: 2024, month: 11 }],
             goalIndex: 0,
-            budget_category_id: expenseCategoryId,
+            budget_category_id: mainExpensesCategoryId,
             categories: [
                {
-                  budget_category_id: expenseCategoryId,
+                  budget_category_id: subExpensesCategoryId,
                   type: "Expenses",
                   name: "Groceries",
                   category_order: 0,
@@ -156,16 +150,14 @@ describe("Budgets Repository", () => {
             ]
          };
 
-         expect(result.Income).toEqual(expectedIncome);
-         expect(result.Expenses).toEqual(expectedExpenses);
+         assertFindByUserIdStructure();
+         assertQueryResult(result, { Income: expectedIncome, Expenses: expectedExpenses });
       });
 
       it("should return empty budgets when user has no categories", async() => {
          arrangeMockQuery([], mockPool);
 
          const result: OrganizedBudgets = await budgetsRepository.findByUserId(userId);
-
-         assertFindByUserIdStructure();
 
          const expectedEmpty = {
             goals: [],
@@ -174,8 +166,8 @@ describe("Budgets Repository", () => {
             categories: []
          };
 
-         expect(result.Income).toEqual(expectedEmpty);
-         expect(result.Expenses).toEqual(expectedEmpty);
+         assertFindByUserIdStructure();
+         assertQueryResult(result, { Income: expectedEmpty, Expenses: expectedEmpty });
       });
 
       it("should throw error when database connection fails", async() => {
@@ -192,36 +184,42 @@ describe("Budgets Repository", () => {
    describe("createCategory", () => {
       /**
        * Arranges transaction flow for successful category creation
+       *
+       * @param {MockClient} [client=mockClient] - The mock client to use for transaction flow
+       * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
-      const arrangeCreateCategoryTransactionSuccess = (): void => {
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [{ budget_category_id: categoryId }] }, // Category INSERT
-            {} // Budget INSERT
-         ]);
+      const arrangeCreateCategoryTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
+         const categoryInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Category INSERT
+         const budgetInsert = {}; // Budget INSERT
+         const flow = isNested
+            ? [categoryInsert, budgetInsert]
+            : [{}, // BEGIN
+               categoryInsert, // Category INSERT
+               budgetInsert]; // Budget INSERT
+         arrangeMockTransactionFlow(client.query, flow);
       };
 
       /**
        * Arranges transaction with error at specific stage
+       *
+       * @param {"begin" | "category_insert" | "budget_insert"} failStage - The transaction stage where error should occur
        */
-      const arrangeCreateCategoryTransactionError = (errorMessage: string, failStage: "begin" | "category_insert" | "budget_insert"): void => {
-         const error = new Error(errorMessage);
-
+      const arrangeCreateCategoryTransactionError = (failStage: "begin" | "category_insert" | "budget_insert"): void => {
          switch (failStage) {
             case "begin":
-               arrangeMockTransactionFlow(mockClient.query, [error]);
+               arrangeMockTransactionFlow(mockClient.query, [new Error("Transaction begin failed")]);
                break;
             case "category_insert":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  error // Category INSERT fails
+                  new Error("Category INSERT failed")
                ]);
                break;
             case "budget_insert":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  { rows: [{ budget_category_id: categoryId }] }, // Category INSERT
-                  error // Budget INSERT fails
+                  { rows: [{ budget_category_id: mainIncomeCategoryId }] }, // Category INSERT
+                  new Error("Budget INSERT failed")
                ]);
                break;
             default:
@@ -231,6 +229,8 @@ describe("Budgets Repository", () => {
 
       /**
        * Asserts category creation query structure
+       *
+       * @param {Omit<BudgetCategoryGoal, "budget_category_id">} category - The category data to validate in the query
        */
       const assertCreateCategoryStructure = (category: Omit<BudgetCategoryGoal, "budget_category_id">): void => {
          assertQueryCalledWithKeyPhrases([
@@ -247,25 +247,21 @@ describe("Budgets Repository", () => {
          const result: string = await budgetsRepository.createCategory(userId, category);
 
          assertCreateCategoryStructure(category);
-         assertQueryResult(result, categoryId);
+         assertTransactionResult(result, mainIncomeCategoryId, mockClient, 2);
       });
 
       it("should create category with external client for nested transaction", async() => {
          const category = createValidBudgetEntry();
-         arrangeMockTransactionFlow(mockClient.query, [
-            { rows: [{ budget_category_id: categoryId }] }, // Category INSERT
-            {} // Budget INSERT
-         ]);
+         arrangeCreateCategoryTransactionSuccess(mockClient, true);
 
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-         const result: string = await budgetsRepository.createCategory(userId, category, mockClient as any);
+         const result: string = await budgetsRepository.createCategory(userId, category, mockClient as unknown as PoolClient);
 
-         assertQueryResult(result, categoryId);
+         assertTransactionResult(result, mainIncomeCategoryId, mockClient, 2, true);
       });
 
       it("should throw error on BEGIN failure", async() => {
          const category = createValidBudgetEntry();
-         arrangeCreateCategoryTransactionError("Transaction begin failed", "begin");
+         arrangeCreateCategoryTransactionError("begin");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createCategory(userId, category),
@@ -276,7 +272,7 @@ describe("Budgets Repository", () => {
 
       it("should rollback on category INSERT failure", async() => {
          const category = createValidBudgetEntry();
-         arrangeCreateCategoryTransactionError("Category INSERT failed", "category_insert");
+         arrangeCreateCategoryTransactionError("category_insert");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createCategory(userId, category),
@@ -287,7 +283,7 @@ describe("Budgets Repository", () => {
 
       it("should rollback on budget INSERT failure", async() => {
          const category = createValidBudgetEntry();
-         arrangeCreateCategoryTransactionError("Budget INSERT failed", "budget_insert");
+         arrangeCreateCategoryTransactionError("budget_insert");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createCategory(userId, category),
@@ -306,6 +302,8 @@ describe("Budgets Repository", () => {
 
       /**
        * Asserts update query structure with dynamic field filtering and parameter validation
+       *
+       * @param {Partial<BudgetCategory>} updates - The partial budget category updates to validate in the query
        */
       const assertUpdateCategoryStructure = (updates: Partial<BudgetCategory>): void => {
          const validFields = ["name", "type", "category_order"].filter(field => field in updates);
@@ -314,7 +312,7 @@ describe("Budgets Repository", () => {
          const expectedParams: unknown[] = [
             ...validFields.map((field: string) => updates[field as keyof BudgetCategory]),
             userId,
-            categoryId
+            mainIncomeCategoryId
          ];
 
          assertQueryCalledWithKeyPhrases([
@@ -328,30 +326,30 @@ describe("Budgets Repository", () => {
       };
 
       it("should update category name successfully", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, name: mockUpdateData.name };
-         arrangeMockQuery([{ budget_category_id: categoryId }], mockPool);
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, name: mockUpdateData.name };
+         arrangeMockQuery([{ budget_category_id: mainIncomeCategoryId }], mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertUpdateCategoryStructure(updates);
          assertQueryResult(result, true);
       });
 
       it("should update category type successfully", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, type: mockUpdateData.type };
-         arrangeMockQuery([{ budget_category_id: categoryId }], mockPool);
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, type: mockUpdateData.type };
+         arrangeMockQuery([{ budget_category_id: mainIncomeCategoryId }], mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertUpdateCategoryStructure(updates);
          assertQueryResult(result, true);
       });
 
       it("should update category order successfully", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, category_order: mockUpdateData.category_order };
-         arrangeMockQuery([{ budget_category_id: categoryId }], mockPool);
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, category_order: mockUpdateData.category_order };
+         arrangeMockQuery([{ budget_category_id: mainIncomeCategoryId }], mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertUpdateCategoryStructure(updates);
          assertQueryResult(result, true);
@@ -359,51 +357,51 @@ describe("Budgets Repository", () => {
 
       it("should update multiple fields simultaneously", async() => {
          const updates: Partial<BudgetCategory> = {
-            budget_category_id: categoryId,
+            budget_category_id: mainIncomeCategoryId,
             name: mockUpdateData.name,
             type: mockUpdateData.type,
             category_order: mockUpdateData.category_order
          };
-         arrangeMockQuery([{ budget_category_id: categoryId }], mockPool);
+         arrangeMockQuery([{ budget_category_id: mainIncomeCategoryId }], mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertUpdateCategoryStructure(updates);
          assertQueryResult(result, true);
       });
 
       it("should return false when category not found", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, name: "Updated" };
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, name: "Updated" };
          arrangeMockQuery([], mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertQueryResult(result, false);
       });
 
       it("should return true immediately when no valid fields to update", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId };
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId };
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertQueryNotCalled(mockPool);
          assertQueryResult(result, true);
       });
 
       it("should return false for main category update restriction error", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, name: "Invalid" };
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, name: "Invalid" };
          arrangeMockQueryError("Main budget category cannot be updated", mockPool);
 
-         const result: boolean = await budgetsRepository.updateCategory(userId, categoryId, updates);
+         const result: boolean = await budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates);
 
          assertQueryResult(result, false);
       });
 
       it("should throw error on database connection failure", async() => {
-         const updates: Partial<BudgetCategory> = { budget_category_id: categoryId, name: "Updated" };
+         const updates: Partial<BudgetCategory> = { budget_category_id: mainIncomeCategoryId, name: "Updated" };
          arrangeMockQueryError("Database connection failed", mockPool);
 
          await assertRepositoryThrows(
-            () => budgetsRepository.updateCategory(userId, categoryId, updates),
+            () => budgetsRepository.updateCategory(userId, mainIncomeCategoryId, updates),
             "Database connection failed"
          );
       });
@@ -419,13 +417,13 @@ describe("Budgets Repository", () => {
             "WHERE user_id = $1",
             "AND budget_category_id = $2",
             "RETURNING budget_category_id"
-         ], [userId, categoryId], 0, mockPool);
+         ], [userId, mainIncomeCategoryId], 0, mockPool);
       };
 
       it("should delete category successfully", async() => {
-         arrangeMockQuery([{ budget_category_id: categoryId }], mockPool);
+         arrangeMockQuery([{ budget_category_id: mainIncomeCategoryId }], mockPool);
 
-         const result: boolean = await budgetsRepository.deleteCategory(userId, categoryId);
+         const result: boolean = await budgetsRepository.deleteCategory(userId, mainIncomeCategoryId);
 
          assertDeleteCategoryStructure();
          assertQueryResult(result, true);
@@ -434,7 +432,7 @@ describe("Budgets Repository", () => {
       it("should return false when category not found", async() => {
          arrangeMockQuery([], mockPool);
 
-         const result: boolean = await budgetsRepository.deleteCategory(userId, categoryId);
+         const result: boolean = await budgetsRepository.deleteCategory(userId, mainIncomeCategoryId);
 
          assertDeleteCategoryStructure();
          assertQueryResult(result, false);
@@ -444,7 +442,7 @@ describe("Budgets Repository", () => {
          arrangeMockQueryError("Database connection failed", mockPool);
 
          await assertRepositoryThrows(
-            () => budgetsRepository.deleteCategory(userId, categoryId),
+            () => budgetsRepository.deleteCategory(userId, mainIncomeCategoryId),
             "Database connection failed"
          );
          assertDeleteCategoryStructure();
@@ -453,63 +451,67 @@ describe("Budgets Repository", () => {
 
    describe("updateCategoryOrderings", () => {
       /**
-       * Asserts bulk update query with dynamic VALUES clause and parameter count validation
+       * Asserts bulk update query structure, parameters, and call order
+       *
+       * @param {Partial<BudgetCategory>[]} updates - Array of partial budget category updates to validate in the query
        */
-      const assertUpdateCategoryOrderingsStructure = (updateCount: number): void => {
-         const expectedParamCount = (updateCount * 2) + 1; // (categoryId + order) * count + userId
-         const queryCall = mockPool.query.mock.calls[0];
-         const sql: string = queryCall[0];
-         const params: unknown[] = queryCall[1];
+      const assertUpdateCategoryOrderingsStructure = (updates: Partial<BudgetCategory>[]): void => {
+         const expectedParams: unknown[] = [];
+         updates.forEach(update => {
+            expectedParams.push(update.budget_category_id);
+            expectedParams.push(update.category_order);
+         });
+         expectedParams.push(userId);
 
-         const hasUpdate = sql.includes("UPDATE budget_categories");
-         const hasValues = sql.includes("FROM (VALUES");
-         const hasWhere = sql.includes("WHERE budget_categories.budget_category_id");
-
-         assertQueryResult(hasUpdate && hasValues && hasWhere, true);
-         assertQueryResult(params.length, expectedParamCount);
+         assertQueryCalledWithKeyPhrases([
+            "UPDATE budget_categories",
+            "FROM (VALUES",
+            "SET category_order",
+            "WHERE budget_categories.budget_category_id"
+         ], expectedParams, 0, mockPool);
       };
 
       it("should update ordering for single category", async() => {
          const updates: Partial<BudgetCategory>[] = [
-            { budget_category_id: categoryIds[0], category_order: 0 }
+            { budget_category_id: mainIncomeCategoryId, category_order: 0 }
          ];
          arrangeMockQuery([{ user_id: userId }], mockPool);
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates.length);
+         assertUpdateCategoryOrderingsStructure(updates);
          assertQueryResult(result, true);
       });
 
       it("should update ordering for multiple categories", async() => {
          const updates: Partial<BudgetCategory>[] = [
-            { budget_category_id: categoryIds[0], category_order: 0 },
-            { budget_category_id: categoryIds[1], category_order: 1 },
-            { budget_category_id: categoryIds[2], category_order: 2 }
+            { budget_category_id: mainIncomeCategoryId, category_order: 0 },
+            { budget_category_id: subIncomeCategoryId, category_order: 1 },
+            { budget_category_id: mainExpensesCategoryId, category_order: 2 }
          ];
          arrangeMockQuery([{ user_id: userId }], mockPool);
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates.length);
+         assertUpdateCategoryOrderingsStructure(updates);
          assertQueryResult(result, true);
       });
 
       it("should return false when categories not found", async() => {
          const updates: Partial<BudgetCategory>[] = [
-            { budget_category_id: categoryIds[0], category_order: 0 }
+            { budget_category_id: mainIncomeCategoryId, category_order: 0 }
          ];
          arrangeMockQuery([], mockPool);
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates.length);
+         assertUpdateCategoryOrderingsStructure(updates);
          assertQueryResult(result, false);
       });
 
       it("should throw error on database connection failure", async() => {
          const updates: Partial<BudgetCategory>[] = [
-            { budget_category_id: categoryIds[0], category_order: 0 }
+            { budget_category_id: mainIncomeCategoryId, category_order: 0 }
          ];
          arrangeMockQueryError("Database connection failed", mockPool);
 
@@ -517,43 +519,55 @@ describe("Budgets Repository", () => {
             () => budgetsRepository.updateCategoryOrderings(userId, updates),
             "Database connection failed"
          );
-         assertUpdateCategoryOrderingsStructure(updates.length);
+         assertUpdateCategoryOrderingsStructure(updates);
       });
    });
 
    describe("createBudget", () => {
       /**
        * Arranges transaction flow for successful budget creation
+       *
+       * @param {MockClient} [client=mockClient] - The mock client to use for transaction flow
+       * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
-      const arrangeCreateBudgetTransactionSuccess = (): void => {
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [{ budget_category_id: categoryId }] }, // Ownership verification
-            { rows: [{ budget_category_id: categoryId }] } // Budget INSERT
-         ]);
+      const arrangeCreateBudgetTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
+         const ownershipVerification = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Ownership verification
+         const budgetInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Budget INSERT
+         const flow = isNested
+            ? [ownershipVerification, budgetInsert]
+            : [{}, // BEGIN
+               ownershipVerification, // Ownership verification
+               budgetInsert]; // Budget INSERT
+         arrangeMockTransactionFlow(client.query, flow);
       };
 
       /**
-       * Arranges transaction with error at specific stage
+       * Arranges transaction with error or empty rows at specific stage
+       *
+       * @param {"begin" | "ownership_check_error" | "ownership_check_empty" | "budget_insert_error"} failStage - The transaction stage where error/empty rows occur
        */
-      const arrangeCreateBudgetTransactionError = (errorMessage: string, failStage: "begin" | "ownership_check" | "budget_insert"): void => {
-         const error = new Error(errorMessage);
-
+      const arrangeCreateBudgetTransactionError = (failStage: "begin" | "ownership_check_error" | "ownership_check_empty" | "budget_insert_error"): void => {
          switch (failStage) {
             case "begin":
-               arrangeMockTransactionFlow(mockClient.query, [error]);
+               arrangeMockTransactionFlow(mockClient.query, [new Error("Transaction begin failed")]);
                break;
-            case "ownership_check":
+            case "ownership_check_error":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  error // Ownership verification fails
+                  new Error("Ownership check failed")
                ]);
                break;
-            case "budget_insert":
+            case "ownership_check_empty":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  { rows: [{ budget_category_id: categoryId }] }, // Ownership verification
-                  error // Budget INSERT fails
+                  { rows: [] } // Ownership verification returns empty (not found)
+               ]);
+               break;
+            case "budget_insert_error":
+               arrangeMockTransactionFlow(mockClient.query, [
+                  {}, // BEGIN
+                  { rows: [{ budget_category_id: mainIncomeCategoryId }] }, // Ownership verification
+                  new Error("Budget INSERT failed")
                ]);
                break;
             default:
@@ -563,6 +577,8 @@ describe("Budgets Repository", () => {
 
       /**
        * Asserts budget creation query structure
+       *
+       * @param {Budget} budget - The budget data to validate in the query
        */
       const assertCreateBudgetStructure = (budget: Budget): void => {
          assertQueryCalledWithKeyPhrases([
@@ -579,15 +595,12 @@ describe("Budgets Repository", () => {
          const result: boolean = await budgetsRepository.createBudget(userId, budget);
 
          assertCreateBudgetStructure(budget);
-         assertQueryResult(result, true);
+         assertTransactionResult(result, true, mockClient, 2);
       });
 
       it("should return false when category does not belong to user", async() => {
          const budget = createValidBudget();
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [] } // Ownership verification returns empty (not found)
-         ]);
+         arrangeCreateBudgetTransactionError("ownership_check_empty");
 
          const result: boolean = await budgetsRepository.createBudget(userId, budget);
 
@@ -596,7 +609,7 @@ describe("Budgets Repository", () => {
 
       it("should throw error on BEGIN failure", async() => {
          const budget = createValidBudget();
-         arrangeCreateBudgetTransactionError("Transaction begin failed", "begin");
+         arrangeCreateBudgetTransactionError("begin");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createBudget(userId, budget),
@@ -607,7 +620,7 @@ describe("Budgets Repository", () => {
 
       it("should throw error on ownership verification failure", async() => {
          const budget = createValidBudget();
-         arrangeCreateBudgetTransactionError("Ownership check failed", "ownership_check");
+         arrangeCreateBudgetTransactionError("ownership_check_error");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createBudget(userId, budget),
@@ -618,7 +631,7 @@ describe("Budgets Repository", () => {
 
       it("should rollback on budget INSERT failure", async() => {
          const budget = createValidBudget();
-         arrangeCreateBudgetTransactionError("Budget INSERT failed", "budget_insert");
+         arrangeCreateBudgetTransactionError("budget_insert_error");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createBudget(userId, budget),
@@ -631,36 +644,55 @@ describe("Budgets Repository", () => {
    describe("updateBudget", () => {
       /**
        * Arranges transaction flow for successful budget update
+       *
+       * @param {MockClient} [client=mockClient] - The mock client to use for transaction flow
+       * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
-      const arrangeUpdateBudgetTransactionSuccess = (): void => {
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [{ budget_category_id: categoryId }] }, // Ownership verification
-            { rows: [{ budget_category_id: categoryId }] } // Budget UPDATE
-         ]);
+      const arrangeUpdateBudgetTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
+         const ownershipVerification = { rows: [{ budget_category_id: subIncomeCategoryId }] }; // Ownership verification
+         const budgetUpdate = { rows: [{ budget_category_id: subIncomeCategoryId }] }; // Budget UPDATE
+         const flow = isNested
+            ? [ownershipVerification, budgetUpdate]
+            : [{}, // BEGIN
+               ownershipVerification, // Ownership verification
+               budgetUpdate]; // Budget UPDATE
+         arrangeMockTransactionFlow(client.query, flow);
       };
 
       /**
-       * Arranges transaction with error at specific stage
+       * Arranges transaction with error or empty rows at specific stage
+       *
+       * @param {"begin" | "ownership_check_error" | "ownership_check_empty" | "budget_update_error" | "budget_update_empty"} failStage - The transaction stage where error/empty rows occur
        */
-      const arrangeUpdateBudgetTransactionError = (errorMessage: string, failStage: "begin" | "ownership_check" | "budget_update"): void => {
-         const error = new Error(errorMessage);
-
+      const arrangeUpdateBudgetTransactionError = (failStage: "begin" | "ownership_check_error" | "ownership_check_empty" | "budget_update_error" | "budget_update_empty"): void => {
          switch (failStage) {
             case "begin":
-               arrangeMockTransactionFlow(mockClient.query, [error]);
+               arrangeMockTransactionFlow(mockClient.query, [new Error("Transaction begin failed")]);
                break;
-            case "ownership_check":
+            case "ownership_check_error":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  error // Ownership verification fails
+                  new Error("Ownership check failed")
                ]);
                break;
-            case "budget_update":
+            case "ownership_check_empty":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
-                  { rows: [{ budget_category_id: categoryId }] }, // Ownership verification
-                  error // Budget UPDATE fails
+                  { rows: [] } // Ownership verification returns empty (not found)
+               ]);
+               break;
+            case "budget_update_error":
+               arrangeMockTransactionFlow(mockClient.query, [
+                  {}, // BEGIN
+                  { rows: [{ budget_category_id: subIncomeCategoryId }] }, // Ownership verification
+                  new Error("Budget UPDATE failed")
+               ]);
+               break;
+            case "budget_update_empty":
+               arrangeMockTransactionFlow(mockClient.query, [
+                  {}, // BEGIN
+                  { rows: [{ budget_category_id: subIncomeCategoryId }] }, // Ownership verification succeeds
+                  { rows: [] } // Budget UPDATE returns empty (not found)
                ]);
                break;
             default:
@@ -670,6 +702,8 @@ describe("Budgets Repository", () => {
 
       /**
        * Asserts budget update query structure
+       *
+       * @param {Budget} budget - The budget data to validate in the query
        */
       const assertUpdateBudgetStructure = (budget: Budget): void => {
          assertQueryCalledWithKeyPhrases([
@@ -686,43 +720,36 @@ describe("Budgets Repository", () => {
          const budget = createValidBudget();
          arrangeUpdateBudgetTransactionSuccess();
 
-         const result: boolean = await budgetsRepository.updateBudget(userId, categoryId, budget);
+         const result: boolean = await budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget);
 
          assertUpdateBudgetStructure(budget);
-         assertQueryResult(result, true);
+         assertTransactionResult(result, true, mockClient, 2);
       });
 
       it("should return false when category does not belong to user", async() => {
          const budget = createValidBudget();
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [] } // Ownership verification returns empty (not found)
-         ]);
+         arrangeUpdateBudgetTransactionError("ownership_check_empty");
 
-         const result: boolean = await budgetsRepository.updateBudget(userId, categoryId, budget);
+         const result: boolean = await budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget);
 
          assertQueryResult(result, false);
       });
 
       it("should return false when budget not found for update", async() => {
          const budget = createValidBudget();
-         arrangeMockTransactionFlow(mockClient.query, [
-            {}, // BEGIN
-            { rows: [{ budget_category_id: categoryId }] }, // Ownership verification succeeds
-            { rows: [] } // Budget UPDATE returns empty (not found)
-         ]);
+         arrangeUpdateBudgetTransactionError("budget_update_empty");
 
-         const result: boolean = await budgetsRepository.updateBudget(userId, categoryId, budget);
+         const result: boolean = await budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget);
 
          assertQueryResult(result, false);
       });
 
       it("should throw error on BEGIN failure", async() => {
          const budget = createValidBudget();
-         arrangeUpdateBudgetTransactionError("Transaction begin failed", "begin");
+         arrangeUpdateBudgetTransactionError("begin");
 
          await assertRepositoryThrows(
-            () => budgetsRepository.updateBudget(userId, categoryId, budget),
+            () => budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget),
             "Transaction begin failed"
          );
          assertTransactionRollback(mockClient, 0);
@@ -730,10 +757,10 @@ describe("Budgets Repository", () => {
 
       it("should throw error on ownership verification failure", async() => {
          const budget = createValidBudget();
-         arrangeUpdateBudgetTransactionError("Ownership check failed", "ownership_check");
+         arrangeUpdateBudgetTransactionError("ownership_check_error");
 
          await assertRepositoryThrows(
-            () => budgetsRepository.updateBudget(userId, categoryId, budget),
+            () => budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget),
             "Ownership check failed"
          );
          assertTransactionRollback(mockClient, 1);
@@ -741,10 +768,10 @@ describe("Budgets Repository", () => {
 
       it("should rollback on budget UPDATE failure", async() => {
          const budget = createValidBudget();
-         arrangeUpdateBudgetTransactionError("Budget UPDATE failed", "budget_update");
+         arrangeUpdateBudgetTransactionError("budget_update_error");
 
          await assertRepositoryThrows(
-            () => budgetsRepository.updateBudget(userId, categoryId, budget),
+            () => budgetsRepository.updateBudget(userId, subIncomeCategoryId, budget),
             "Budget UPDATE failed"
          );
          assertTransactionRollback(mockClient, 2);
