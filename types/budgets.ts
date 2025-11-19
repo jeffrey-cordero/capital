@@ -15,7 +15,7 @@ const RESERVED_NAMES: readonly string[] = ["income", "expenses"];
 export const budgetSchema = z.object({
    /* Unique budget category identifier */
    budget_category_id: z.string({
-      message: "Budget Category ID is required"
+      message: "Budget category ID is required"
    }).trim().uuid({
       message: "Budget category ID must be a valid UUID"
    }),
@@ -23,8 +23,8 @@ export const budgetSchema = z.object({
    /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal is required"
-   }).min(0, {
-      message: "Goal must be $0 or greater"
+   }).min(1, {
+      message: "Goal must be at least $1"
    }).max(999_999_999_999.99, {
       message: "Goal exceeds the maximum allowed value"
    })),
@@ -68,13 +68,6 @@ export const budgetSchema = z.object({
  * @see {@link BudgetCategory} - Type inferred from this schema
  */
 export const budgetCategorySchema = z.object({
-   /* Unique user identifier */
-   user_id: z.string({
-      message: "User ID is required"
-   }).trim().min(1, {
-      message: "User ID is required"
-   }),
-
    /* Unique budget category identifier */
    budget_category_id: z.string({
       message: "Budget Category ID is required"
@@ -102,7 +95,7 @@ export const budgetCategorySchema = z.object({
       }
       return value;
    }, z.string({
-      message: "Budget category name is required"
+      message: "Name is required"
    })
       .min(1, { message: "Name must be at least 1 character" })
       .max(30, { message: "Name must be at most 30 characters" })
@@ -142,7 +135,7 @@ export type BudgetPeriod = { month: number, year: number };
  *
  * @see {@link budgetSchema} - Schema defining validation rules
  */
-export type Budget = Omit<z.infer<typeof budgetSchema>, "user_id">;
+export type Budget = z.infer<typeof budgetSchema>;
 
 /**
  * Budget amount and period without category identifier
@@ -154,12 +147,20 @@ export type BudgetGoal = Omit<Budget, "budget_category_id">;
  *
  * @see {@link budgetCategorySchema} - Schema defining validation rules
  */
-export type BudgetCategory = Omit<z.infer<typeof budgetCategorySchema>, "user_id"> & {
+export type BudgetCategory = z.infer<typeof budgetCategorySchema> & {
    /* List of goals associated with the budget category */
    goals: BudgetGoal[];
    /* Index of the current relevant goal */
    goalIndex: number;
 };
+
+/**
+ * Budget category with associated goal information
+ *
+ * @see {@link Budget} - Budget goal entry type
+ * @see {@link BudgetCategory} - Budget category type
+ */
+export type BudgetCategoryGoal = Budget & BudgetCategory;
 
 /**
  * Hierarchical budget structure for a single type (Income/Expenses)

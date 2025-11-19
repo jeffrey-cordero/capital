@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { Budget, BudgetCategory, OrganizedBudgets } from "capital/budgets";
+import { Budget, BudgetCategory, BudgetCategoryGoal, OrganizedBudgets } from "capital/budgets";
 import { createValidBudget, createValidBudgetEntry, TEST_BUDGET_CATEGORY_ID, TEST_BUDGET_CATEGORY_IDS } from "capital/mocks/budgets";
 import { TEST_USER_ID } from "capital/mocks/user";
 
@@ -232,7 +232,7 @@ describe("Budgets Repository", () => {
       /**
        * Asserts category creation query structure
        */
-      const assertCreateCategoryStructure = (category: Omit<Budget & BudgetCategory, "budget_category_id">): void => {
+      const assertCreateCategoryStructure = (category: Omit<BudgetCategoryGoal, "budget_category_id">): void => {
          assertQueryCalledWithKeyPhrases([
             "INSERT INTO budget_categories (user_id, type, name, category_order)",
             "VALUES ($1, $2, $3, $4)",

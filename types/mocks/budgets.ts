@@ -1,6 +1,7 @@
 import type {
    Budget,
    BudgetCategory,
+   BudgetCategoryGoal,
    BudgetGoal,
    BudgetType,
    OrganizedBudget,
@@ -47,7 +48,7 @@ export const VALID_BUDGET: Omit<Budget, "budget_category_id"> = {
  * @param {number} [monthsBack] - Number of months to go back (default `0` for current month)
  * @returns {{ year: number; month: number }} Year and month object
  */
-function getPastMonthAndYear(monthsBack: number = 0): { year: number; month: number } {
+export const getPastMonthAndYear = (monthsBack: number = 0): { year: number; month: number } => {
    let year = new Date().getFullYear();
    let month = new Date().getMonth() + 1 - monthsBack;
 
@@ -58,7 +59,26 @@ function getPastMonthAndYear(monthsBack: number = 0): { year: number; month: num
    }
 
    return { year, month };
-}
+};
+
+/**
+ * Gets year and month for a given number of months in the future
+ *
+ * @param {number} [monthsForward] - Number of months to go forward (default `1` for next month)
+ * @returns {{ year: number; month: number }} Year and month object
+ */
+export const getFutureMonthAndYear = (monthsForward: number = 1): { year: number; month: number } => {
+   let year = new Date().getFullYear();
+   let month = new Date().getMonth() + 1 + monthsForward;
+
+   // Wrap month to next year if it exceeds 12
+   if (month > 12) {
+      month = month - 12;
+      year += 1;
+   }
+
+   return { year, month };
+};
 
 /**
  * Creates a valid budget category for testing
@@ -222,9 +242,9 @@ export const createValidOrganizedBudgets = (incomeCount: number = 2, expenseCoun
  *
  * @param {Partial<BudgetCategory>} [categoryOverrides] - Category field overrides
  * @param {Partial<Budget>} [budgetOverrides] - Budget field overrides
- * @returns {Budget & BudgetCategory} Combined category and budget object
+ * @returns {BudgetCategoryGoal} Combined category and budget object
  */
-export const createValidBudgetEntry = (categoryOverrides?: Partial<BudgetCategory>, budgetOverrides?: Partial<Budget>): Budget & BudgetCategory => {
+export const createValidBudgetEntry = (categoryOverrides?: Partial<BudgetCategory>, budgetOverrides?: Partial<Budget>): BudgetCategoryGoal => {
    const category = createValidBudgetCategory(categoryOverrides);
    const budget = createValidBudget(budgetOverrides);
 

@@ -29,6 +29,7 @@ import {
 } from "@tests/utils/dashboard/settings";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import { IMAGE_FIXTURES } from "capital/mocks/accounts";
 import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings", () => {
@@ -276,7 +277,7 @@ test.describe("Settings", () => {
          test("should export account data as JSON with correct structure and values", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true, assignedUser);
 
-            const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };
+            const account1Data = { name: "Checking Account", balance: 5000, type: "Checking", image: IMAGE_FIXTURES.valid };
             const account2Data = { name: "Savings Account", balance: 3000, type: "Savings" };
             const account1Id = await createAccount(page, account1Data);
             const account2Id = await createAccount(page, account2Data);
@@ -285,8 +286,8 @@ test.describe("Settings", () => {
             const exportedJSON = await performExport(page);
 
             const expectedAccounts = [
-               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: null },
-               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated, image: null }
+               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: IMAGE_FIXTURES.valid },
+               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated, image: undefined }
             ];
 
             await assertExportStructure(exportedJSON, {

@@ -380,8 +380,8 @@ describe("Account Service", () => {
       });
 
       const updateRequiredFields: Array<{ field: keyof Account; errorMessage: string }> = [
-         { field: "account_id", errorMessage: "Missing account ID" },
-         { field: "last_updated", errorMessage: "Missing last updated timestamp" }
+         { field: "account_id", errorMessage: "Account ID is required" },
+         { field: "last_updated", errorMessage: "Last updated timestamp is required" }
       ];
 
       updateRequiredFields.forEach(({ field, errorMessage }) => {
@@ -562,7 +562,7 @@ describe("Account Service", () => {
 
          assertAccountValidationErrorResponse(
             result,
-            { account_id: "Missing account ID" }
+            { account_id: "Account ID is required" }
          );
       });
 
