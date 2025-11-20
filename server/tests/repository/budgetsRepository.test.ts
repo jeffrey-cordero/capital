@@ -27,8 +27,9 @@ const globalMockPool: MockPool = createMockPool();
 
 jest.mock("pg", () => ({ Pool: jest.fn(() => globalMockPool) }));
 
-import * as budgetsRepository from "@/repository/budgetsRepository";
 import { PoolClient } from "pg";
+
+import * as budgetsRepository from "@/repository/budgetsRepository";
 
 describe("Budgets Repository", () => {
    const userId: string = TEST_USER_ID;
@@ -112,7 +113,6 @@ describe("Budgets Repository", () => {
 
          const result: OrganizedBudgets = await budgetsRepository.findByUserId(userId);
 
-         // Build expected structure to validate complete transformation for both Income and Expenses
          const expectedIncome = {
             goals: [{ goal: 5000.00, year: 2024, month: 11 }],
             goalIndex: 0,
@@ -189,33 +189,30 @@ describe("Budgets Repository", () => {
        * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
       const arrangeCreateCategoryTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
-         const categoryInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Category INSERT
-         const budgetInsert = {}; // Budget INSERT
+         const categoryInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] };
          const flow = isNested
-            ? [categoryInsert, budgetInsert]
-            : [{}, // BEGIN
-               categoryInsert, // Category INSERT
-               budgetInsert]; // Budget INSERT
+            ? [categoryInsert, {}] // No BEGIN for nested transaction
+            : [{}, categoryInsert, {}]; // BEGIN, Category INSERT, Budget INSERT
          arrangeMockTransactionFlow(client.query, flow);
       };
 
       /**
        * Arranges transaction with error at specific stage
        *
-       * @param {"begin" | "category_insert" | "budget_insert"} failStage - The transaction stage where error should occur
+       * @param {"begin" | "category_insert_error" | "budget_insert_error"} failStage - The transaction stage where error should occur
        */
-      const arrangeCreateCategoryTransactionError = (failStage: "begin" | "category_insert" | "budget_insert"): void => {
+      const arrangeCreateCategoryTransactionError = (failStage: "begin" | "category_insert_error" | "budget_insert_error"): void => {
          switch (failStage) {
             case "begin":
                arrangeMockTransactionFlow(mockClient.query, [new Error("Transaction begin failed")]);
                break;
-            case "category_insert":
+            case "category_insert_error":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
                   new Error("Category INSERT failed")
                ]);
                break;
-            case "budget_insert":
+            case "budget_insert_error":
                arrangeMockTransactionFlow(mockClient.query, [
                   {}, // BEGIN
                   { rows: [{ budget_category_id: mainIncomeCategoryId }] }, // Category INSERT
@@ -272,7 +269,7 @@ describe("Budgets Repository", () => {
 
       it("should rollback on category INSERT failure", async() => {
          const category = createValidBudgetEntry();
-         arrangeCreateCategoryTransactionError("category_insert");
+         arrangeCreateCategoryTransactionError("category_insert_error");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createCategory(userId, category),
@@ -283,7 +280,7 @@ describe("Budgets Repository", () => {
 
       it("should rollback on budget INSERT failure", async() => {
          const category = createValidBudgetEntry();
-         arrangeCreateCategoryTransactionError("budget_insert");
+         arrangeCreateCategoryTransactionError("budget_insert_error");
 
          await assertRepositoryThrows(
             () => budgetsRepository.createCategory(userId, category),
@@ -307,8 +304,8 @@ describe("Budgets Repository", () => {
        */
       const assertUpdateCategoryStructure = (updates: Partial<BudgetCategory>): void => {
          const validFields = ["name", "type", "category_order"].filter(field => field in updates);
-         const paramCount = validFields.length;
-         const setClauses = validFields.map((field, index) => `${field} = $${index + 1}`);
+         const paramCount: number = validFields.length;
+         const setClauses: string[] = validFields.map((field: string, index: number) => `${field} = $${index + 1}`);
          const expectedParams: unknown[] = [
             ...validFields.map((field: string) => updates[field as keyof BudgetCategory]),
             userId,
@@ -453,22 +450,25 @@ describe("Budgets Repository", () => {
       /**
        * Asserts bulk update query structure, parameters, and call order
        *
+       * @param {string} userId - Expected `user_id` parameter
        * @param {Partial<BudgetCategory>[]} updates - Array of partial budget category updates to validate in the query
        */
-      const assertUpdateCategoryOrderingsStructure = (updates: Partial<BudgetCategory>[]): void => {
-         const expectedParams: unknown[] = [];
-         updates.forEach(update => {
-            expectedParams.push(update.budget_category_id);
-            expectedParams.push(update.category_order);
-         });
-         expectedParams.push(userId);
+      const assertUpdateCategoryOrderingsStructure = (userId: string, updates: Partial<BudgetCategory>[]): void => {
+         const params = updates.flatMap(update => [
+            String(update.budget_category_id),
+            Number(update.category_order)
+         ]);
+         const values = updates.map((_, index) => `($${(index * 2) + 1}, $${(index * 2) + 2})`).join(", ");
 
          assertQueryCalledWithKeyPhrases([
             "UPDATE budget_categories",
-            "FROM (VALUES",
-            "SET category_order",
-            "WHERE budget_categories.budget_category_id"
-         ], expectedParams, 0, mockPool);
+            "SET category_order = v.category_order::int",
+            `FROM (VALUES ${values})`,
+            "AS v(budget_category_id, category_order)",
+            "WHERE budget_categories.budget_category_id = v.budget_category_id::uuid",
+            `AND budget_categories.user_id = $${params.length + 1}`,
+            "RETURNING budget_categories.user_id"
+         ], [...params, userId], 0, mockPool);
       };
 
       it("should update ordering for single category", async() => {
@@ -479,7 +479,7 @@ describe("Budgets Repository", () => {
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates);
+         assertUpdateCategoryOrderingsStructure(userId, updates);
          assertQueryResult(result, true);
       });
 
@@ -493,7 +493,7 @@ describe("Budgets Repository", () => {
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates);
+         assertUpdateCategoryOrderingsStructure(userId, updates);
          assertQueryResult(result, true);
       });
 
@@ -505,7 +505,7 @@ describe("Budgets Repository", () => {
 
          const result: boolean = await budgetsRepository.updateCategoryOrderings(userId, updates);
 
-         assertUpdateCategoryOrderingsStructure(updates);
+         assertUpdateCategoryOrderingsStructure(userId, updates);
          assertQueryResult(result, false);
       });
 
@@ -519,7 +519,7 @@ describe("Budgets Repository", () => {
             () => budgetsRepository.updateCategoryOrderings(userId, updates),
             "Database connection failed"
          );
-         assertUpdateCategoryOrderingsStructure(updates);
+         assertUpdateCategoryOrderingsStructure(userId, updates);
       });
    });
 
@@ -531,13 +531,11 @@ describe("Budgets Repository", () => {
        * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
       const arrangeCreateBudgetTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
-         const ownershipVerification = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Ownership verification
-         const budgetInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] }; // Budget INSERT
+         const ownershipVerification = { rows: [{ budget_category_id: mainIncomeCategoryId }] };
+         const budgetInsert = { rows: [{ budget_category_id: mainIncomeCategoryId }] };
          const flow = isNested
-            ? [ownershipVerification, budgetInsert]
-            : [{}, // BEGIN
-               ownershipVerification, // Ownership verification
-               budgetInsert]; // Budget INSERT
+            ? [ownershipVerification, budgetInsert] // Ownership verification, Budget INSERT
+            : [{}, ownershipVerification, budgetInsert]; // BEGIN, Ownership verification, Budget INSERT
          arrangeMockTransactionFlow(client.query, flow);
       };
 
@@ -649,13 +647,11 @@ describe("Budgets Repository", () => {
        * @param {boolean} [isNested=false] - Whether this is a nested transaction (skips BEGIN)
        */
       const arrangeUpdateBudgetTransactionSuccess = (client: MockClient = mockClient, isNested: boolean = false): void => {
-         const ownershipVerification = { rows: [{ budget_category_id: subIncomeCategoryId }] }; // Ownership verification
-         const budgetUpdate = { rows: [{ budget_category_id: subIncomeCategoryId }] }; // Budget UPDATE
+         const ownershipVerification = { rows: [{ budget_category_id: subIncomeCategoryId }] };
+         const budgetUpdate = { rows: [{ budget_category_id: subIncomeCategoryId }] };
          const flow = isNested
-            ? [ownershipVerification, budgetUpdate]
-            : [{}, // BEGIN
-               ownershipVerification, // Ownership verification
-               budgetUpdate]; // Budget UPDATE
+            ? [ownershipVerification, budgetUpdate] // Ownership verification, Budget UPDATE
+            : [{}, ownershipVerification, budgetUpdate]; // BEGIN, Ownership verification, Budget UPDATE
          arrangeMockTransactionFlow(client.query, flow);
       };
 
