@@ -25,11 +25,8 @@ import { type RootState } from "@/redux/store";
 /**
  * Combined schema for category creation with budget goals
  */
-const constructSchema = budgetCategorySchema.omit({
-   budget_category_id: true,
-   user_id: true,
-   category_order: true,
-   type: true
+const constructSchema = budgetCategorySchema.pick({
+   name: true
 }).merge(budgetSchema.innerType().pick({
    goal: true
 }));
@@ -143,6 +140,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
             <Button
                className = "btn-primary"
                color = "primary"
+               data-testid = { `budget-category-add-${type}` }
                fullWidth = { true }
                onClick = { onOpen }
                startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
@@ -159,6 +157,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
             timeout = { 350 }
          >
             <form
+               noValidate = { true }
                onChange = { () => updateDirtyFields(dirtyFields, "constructor") }
                onSubmit = { handleSubmit(onSubmit) }
             >
@@ -181,6 +180,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
                                  aria-label = "Name"
                                  autoComplete = "none"
                                  id = "constructor-name"
+                                 inputProps = { { "data-testid": "budget-category-name-input" } }
                                  label = "Name"
                                  type = "text"
                                  value = { field.value || "" }
@@ -205,7 +205,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
                                  { ...field }
                                  aria-label = "Goal"
                                  id = "constructor-goal"
-                                 inputProps = { { step: 0.01, min: 0 } }
+                                 inputProps = { { step: 0.01, min: 0, "data-testid": "budget-category-goal-input" } }
                                  label = "Goal"
                                  type = "number"
                                  value = { field.value || "" }
@@ -218,6 +218,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
                      }
                   />
                   <SubmitButton
+                     dataTestId = { "budget-category-new" }
                      isSubmitting = { isSubmitting }
                      onCancel = { closeForm }
                      type = "Create"

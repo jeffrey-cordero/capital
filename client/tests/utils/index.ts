@@ -49,9 +49,10 @@ export async function assertInputVisibility(
  * Asserts that the modal is closed by waiting for it to be detached from the DOM
  *
  * @param {Page} page - Playwright page instance
+ * @param {string} [dataTestId] - Optional specific modal test ID to verify is closed (defaults to generic "modal")
  */
-export async function assertModalIsClosed(page: Page): Promise<void> {
-   await page.waitForSelector("[data-testid=\"modal\"]", { state: "detached" });
+export async function assertModalIsClosed(page: Page, dataTestId?: string): Promise<void> {
+   await page.waitForSelector(`[data-testid="${dataTestId || "modal"}"]`, { state: "detached" });
 }
 
 /**
@@ -68,19 +69,29 @@ export async function assertComponentIsHidden(
 }
 
 /**
- * Closes a modal by clicking the backdrop or pressing Escape key
+ * Closes a modal by pressing Escape
  *
  * @param {Page} page - Playwright page instance
  * @param {boolean} [force=false] - If true, confirms warning modal when unsaved changes are present
+ * @param {string} [dataTestId] - Optional specific modal test ID to close (defaults to waiting for any modal)
  */
-export async function closeModal(page: Page, force: boolean = false): Promise<void> {
+export async function closeModal(page: Page, force: boolean = false, dataTestId?: string): Promise<void> {
+   // Press Escape to close the modal
    await page.keyboard.press("Escape");
 
-   if (force) {
+   // Wait for any warning modal to appear if there are unsaved changes
+   const warningModal = page.getByTestId("warning-modal");
+   const isWarningVisible = await warningModal.isVisible().catch(() => false);
+
+   if (isWarningVisible) {
+      // Warning modal appeared - click confirm to close with unsaved changes warning
+      await page.getByTestId("warning-modal-confirm").click();
+   } else if (force) {
+      // Force close was requested but no warning appeared
       await assertComponentIsVisible(page, "warning-modal");
       await assertComponentIsVisible(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
       await page.getByTestId("warning-modal-confirm").click();
    }
 
-   await assertModalIsClosed(page);
+   await assertModalIsClosed(page, dataTestId);
 }

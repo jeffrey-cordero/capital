@@ -122,6 +122,7 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
 
    return (
       <Stack
+         data-testid = { `budget-chart-${type}` }
          direction = "column"
          sx = { { flexGrow: 1, textAlign: "center" } }
       >

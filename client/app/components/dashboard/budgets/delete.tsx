@@ -53,6 +53,7 @@ export default function DeleteBudget({ budget_category_id, type }: DeleteBudgetP
 
    return (
       <Confirmation
+         dataTestId = { `budget-category-delete-${budget_category_id}` }
          message = { message }
          onConfirmation = { onSubmit }
          type = "icon"

@@ -1,7 +1,8 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsHidden, assertComponentIsVisible } from "@tests/utils";
 import {
    ACCOUNTS_ROUTE,
+   BUDGETS_ROUTE,
    createUser,
    DASHBOARD_ROUTE,
    logoutUser,
@@ -10,6 +11,7 @@ import {
    SETTINGS_ROUTE
 } from "@tests/utils/authentication";
 import { createAccount } from "@tests/utils/dashboard/accounts";
+import { createBudgetCategory, openBudgetForm } from "@tests/utils/dashboard/budgets";
 import {
    assertAccountDetails,
    assertExportStructure,
@@ -275,6 +277,7 @@ test.describe("Settings", () => {
 
       test.describe("Data Export", () => {
          test("should export account data as JSON with correct structure and values", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            // Start at ACCOUNTS_ROUTE to create accounts
             await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true, assignedUser);
 
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking", image: IMAGE_FIXTURES.valid };
@@ -282,13 +285,28 @@ test.describe("Settings", () => {
             const account1Id = await createAccount(page, account1Data);
             const account2Id = await createAccount(page, account2Data);
 
+            // Navigate to budgets to create budget categories
+            await navigateToPath(page, BUDGETS_ROUTE);
+
+            await openBudgetForm(page, "Income");
+            await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
+            await page.keyboard.press("Escape");
+
+            await openBudgetForm(page, "Expenses");
+            await createBudgetCategory(page, { name: "Rent", goal: 2000 }, "Expenses");
+            await page.keyboard.press("Escape");
+            await assertComponentIsHidden(page, "budget-form-Expenses");
+
             await navigateToPath(page, SETTINGS_ROUTE);
             const exportedJSON = await performExport(page);
 
             const expectedAccounts = [
                { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: IMAGE_FIXTURES.valid },
-               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated, image: undefined }
+               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated }
             ];
+
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
 
             await assertExportStructure(exportedJSON, {
                settings: {
@@ -298,11 +316,35 @@ test.describe("Settings", () => {
                   birthday: new Date(assignedUser.current.birthday).toISOString().split("T")[0]
                },
                accounts: expectedAccounts,
-               // Future test suites will verify the following structures
-               budgets: exportedJSON.budgets,
+               budgets: {
+                  Income: {
+                     goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                     categories: [{
+                        name: "Salary",
+                        type: "Income",
+                        goal: 5000,
+                        month: currentMonth,
+                        year: currentYear,
+                        goals: [{ goal: 5000, month: currentMonth, year: currentYear }],
+                        budget_category_id: expect.any(String)
+                     }]
+                  },
+                  Expenses: {
+                     goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                     categories: [{
+                        name: "Rent",
+                        type: "Expenses",
+                        goal: 2000,
+                        month: currentMonth,
+                        year: currentYear,
+                        goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                        budget_category_id: expect.any(String)
+                     }]
+                  }
+               },
                transactions: [],
                timestamp: exportedJSON.timestamp
-            });
+            } as any);
          });
       });
    });

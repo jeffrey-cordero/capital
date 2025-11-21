@@ -95,6 +95,7 @@ const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }
 
    return (
       <Box
+         data-testid = { `budget-category-item-${category.budget_category_id}` }
          key = { category.budget_category_id }
          ref = { setNodeRef }
          style = { style }
@@ -126,6 +127,7 @@ const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }
                         style = { { cursor: "grab", touchAction: "none", outline: "none", letterSpacing: "0px", height: "1.4rem", width: "1.4rem" } }
                         { ...listeners }
                         { ...attributes }
+                        data-testid = { `budget-category-drag-${category.budget_category_id}` }
                      />
                   </ListItemIcon>
                   <ListItemText
@@ -139,6 +141,7 @@ const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }
                   >
                      <FontAwesomeIcon
                         className = "primary"
+                        data-testid = { `budget-category-edit-btn-${category.budget_category_id}` }
                         icon = { faPenToSquare }
                         onClick = { editCategory }
                         size = "lg"
@@ -276,7 +279,9 @@ export default function BudgetCategories({ type, updateDirtyFields }: BudgetCate
                items = { categoryIds }
                strategy = { verticalListSortingStrategy }
             >
-               { categories }
+               <Box data-testid = "budget-categories-list">
+                  { categories }
+               </Box>
             </SortableContext>
          </DndContext>
          <ConstructCategory

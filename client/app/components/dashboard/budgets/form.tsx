@@ -89,7 +89,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          if (Object.keys(dirtyFields).length === 0) return;
 
          const budgetFields = updateBudgetGoalSchema.safeParse({
-            goal: Number(data.goal)
+            goal: data.goal === "" ? undefined : Number(data.goal)
          });
 
          if (!budgetFields.success) {
@@ -135,6 +135,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
 
    return (
       <Modal
+         dataTestId = { `budget-form-${type}` }
          displayWarning = { displayWarning }
          onClose = { onClose }
          open = { open }
@@ -147,6 +148,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
             <Section icon = { faMoneyBill1Wave }>
                <Box>
                   <form
+                     noValidate = { true }
                      onChange = { () => updateDirtyFields(dirtyFields, "main") }
                      onSubmit = { handleSubmit(onSubmit) }
                   >
@@ -168,7 +170,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                                        { ...field }
                                        aria-label = "Goal"
                                        id = "goal"
-                                       inputProps = { { step: 0.01, min: 0 } }
+                                       inputProps = { { step: 0.01, min: 0, "data-testid": "budget-goal-input" } }
                                        label = "Goal"
                                        type = "number"
                                        value = { field.value || "" }

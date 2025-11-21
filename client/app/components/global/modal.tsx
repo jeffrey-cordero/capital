@@ -117,6 +117,7 @@ function Warning({ open, onClose, onCancel }: WarningProps): React.ReactNode {
  * @property {React.ReactNode} children - Modal content
  * @property {SxProps<any>} [sx] - Optional styles
  * @property {boolean} [displayWarning] - Whether to show the unsaved changes warning dialog
+ * @property {string} [dataTestId] - Optional test ID for the modal element
  */
 interface ModalProps {
    open: boolean;
@@ -124,6 +125,7 @@ interface ModalProps {
    children: React.ReactNode;
    sx?: SxProps<any>;
    displayWarning?: boolean;
+   dataTestId?: string;
 }
 
 /**
@@ -132,7 +134,7 @@ interface ModalProps {
  * @param {ModalProps} props - Modal component props
  * @returns {React.ReactNode} The Modal component
  */
-export default function Modal({ open, onClose, children, sx, displayWarning = false }: ModalProps): React.ReactNode {
+export default function Modal({ open, onClose, children, sx, displayWarning = false, dataTestId }: ModalProps): React.ReactNode {
    const [isWarningOpen, setIsWarningOpen] = useState<boolean>(false);
 
    // Modal handlers
@@ -154,7 +156,7 @@ export default function Modal({ open, onClose, children, sx, displayWarning = fa
 
    return (
       <MuiModal
-         data-testid = "modal"
+         data-testid = { dataTestId || "modal" }
          onClose = { closeModal }
          open = { open }
       >

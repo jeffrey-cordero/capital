@@ -97,10 +97,12 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
    return (
       <Box>
          <Stack
+            data-testid = "budget-period-display"
             direction = "row"
             sx = { { justifyContent: "space-between", alignItems: "center", textAlign: "center" } }
          >
             <IconButton
+               data-testid = "budget-period-previous"
                disabled = { period.year === 1800 }
                onClick = { viewPreviousMonth }
                size = "medium"
@@ -109,12 +111,14 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
                <FontAwesomeIcon icon = { faAnglesLeft } />
             </IconButton>
             <Typography
+               data-testid = "budget-period-label"
                fontWeight = "bold"
                variant = "h6"
             >
                { `${months[period.month - 1]} ${period.year}` }
             </Typography>
             <IconButton
+               data-testid = "budget-period-next"
                disabled = { selectNextMonthDisabled }
                onClick = { viewNextMonth }
                size = "medium"
@@ -128,16 +132,20 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
             spacing = { 4 }
             sx = { { mt: 3 } }
          >
-            <Budget
-               allocations = { allocations }
-               onEditClick = { () => openModal("Income") }
-               type = "Income"
-            />
-            <Budget
-               allocations = { allocations }
-               onEditClick = { () => openModal("Expenses") }
-               type = "Expenses"
-            />
+            <Box data-testid = "budget-section-Income">
+               <Budget
+                  allocations = { allocations }
+                  onEditClick = { () => openModal("Income") }
+                  type = "Income"
+               />
+            </Box>
+            <Box data-testid = "budget-section-Expenses">
+               <Budget
+                  allocations = { allocations }
+                  onEditClick = { () => openModal("Expenses") }
+                  type = "Expenses"
+               />
+            </Box>
          </Stack>
          <BudgetForm
             displayWarning = { editState.displayWarning }
