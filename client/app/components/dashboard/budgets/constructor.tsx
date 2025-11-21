@@ -82,7 +82,7 @@ export default function ConstructCategory({ visible, onOpen, onClose, type, upda
 
    const onSubmit = async(data: FieldValues) => {
       try {
-         const fields = constructSchema.safeParse(data);
+         const fields = constructSchema.safeParse({ ...data, goal: Number(data.goal) });
 
          if (!fields.success) {
             // Invalid budget category inputs

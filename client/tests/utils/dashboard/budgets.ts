@@ -17,9 +17,7 @@ export type BudgetCategoryState = {
 };
 
 /**
- * Budget hierarchy state for page verification
- *
- * Subset of OrganizedBudget structure with only fields needed for verification
+ * Budget hierarchy state for page verification, subset of OrganizedBudget structure with only fields needed for verification
  */
 export type BudgetTypeState = {
    goal?: number;
@@ -27,15 +25,15 @@ export type BudgetTypeState = {
 };
 
 /**
- * Complete budget page state matching OrganizedBudgets structure
+ * Complete budget page state matching OrganizedBudgets structure with both Income and Expenses required for robust assertions
  */
 export type BudgetPageState = {
-   Income?: BudgetTypeState;
-   Expenses?: BudgetTypeState;
+   Income: BudgetTypeState;
+   Expenses: BudgetTypeState;
 };
 
 /**
- * Single category assertion state (for verifying a category on page after navigation)
+ * Single category assertion state for verifying a category on page after navigation
  */
 export type SingleCategoryAssertion = {
    categoryId: string;
@@ -49,7 +47,22 @@ export type SingleCategoryAssertion = {
 export type BudgetCategoryFormData = Partial<BudgetCategory> & { goal?: number };
 
 /**
- * Opens the budget form modal for a specific type
+ * Closes the opposite budget type modal if open to ensure only one modal is visible
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {"Income" | "Expenses"} type - Budget type to keep open
+ */
+async function closeOppositeModal(page: Page, type: "Income" | "Expenses"): Promise<void> {
+   const oppositeType = type === "Income" ? "Expenses" : "Income";
+   const oppositeModal = page.getByTestId(`budget-form-${oppositeType}`);
+
+   if (await oppositeModal.isVisible()) {
+      await closeModal(page, false, `budget-form-${oppositeType}`);
+   }
+}
+
+/**
+ * Opens the budget form modal for a specific type, closing the opposite modal if needed
  *
  * @param {Page} page - Playwright page instance
  * @param {"Income" | "Expenses"} type - Budget type
@@ -63,11 +76,7 @@ export async function openBudgetForm(page: Page, type: "Income" | "Expenses"): P
    }
 
    // Close opposite modal if open to avoid conflicts
-   const oppositeType = type === "Income" ? "Expenses" : "Income";
-   const oppositeModal = page.getByTestId(`budget-form-${oppositeType}`);
-   if (await oppositeModal.isVisible()) {
-      await closeModal(page, false, `budget-form-${oppositeType}`);
-   }
+   await closeOppositeModal(page, type);
 
    // Find and click the edit button for the main budget category
    const editButton = page.getByTestId(`budget-category-edit-${type}`);
@@ -80,12 +89,22 @@ export async function openBudgetForm(page: Page, type: "Income" | "Expenses"): P
 }
 
 /**
- * Navigates the budget period carousel forward or backward
+ * Navigates the budget period carousel forward or backward, closing any open modals first
  *
  * @param {Page} page - Playwright page instance
  * @param {number} months - Number of months to navigate (positive = forward, negative = backward)
  */
 export async function navigateBudgetPeriod(page: Page, months: number): Promise<void> {
+   // Close any open modals before navigating
+   const incomeModal = page.getByTestId("budget-form-Income");
+   const expensesModal = page.getByTestId("budget-form-Expenses");
+
+   if (await incomeModal.isVisible()) {
+      await closeModal(page, false, "budget-form-Income");
+   } else if (await expensesModal.isVisible()) {
+      await closeModal(page, false, "budget-form-Expenses");
+   }
+
    const direction = months > 0 ? "next" : "previous";
    const count = Math.abs(months);
 
@@ -111,12 +130,12 @@ async function openCreateCategoryForm(page: Page): Promise<void> {
 }
 
 /**
- * Creates a new budget category
+ * Creates a new budget category with automatic modal opening if type is specified
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetCategoryFormData} categoryData - Category data
- * @param {string} [type] - Optional budget type (Income or Expenses). If provided, opens the modal and category form. If not provided, assumes they are already open.
- * @param {Record<string, string>} [expectedErrors] - Optional validation errors
+ * @param {string} [type] - Optional budget type (Income or Expenses), opens modal and form if provided
+ * @param {Record<string, string>} [expectedErrors] - Optional validation errors to expect
  * @returns {Promise<string>} Created category ID
  */
 export async function createBudgetCategory(
@@ -162,14 +181,11 @@ export async function createBudgetCategory(
 }
 
 /**
- * Cancels budget category creation or edit operation by clicking the Cancel button
- *
- * Closes the budget form without saving changes. The categoryId is required for edit
- * operations to identify which category's edit is being cancelled.
+ * Cancels budget category creation or edit operation and closes the form without saving changes
  *
  * @param {Page} page - Playwright page instance
  * @param {"create" | "edit"} operation - Type of operation being cancelled
- * @param {string} [categoryId] - Category ID (required for edit operations)
+ * @param {string} [categoryId] - Category ID, required for edit operations
  */
 export async function cancelBudgetCategoryOperation(
    page: Page,
@@ -189,7 +205,7 @@ export async function cancelBudgetCategoryOperation(
 }
 
 /**
- * Updates a budget category via the form
+ * Updates a budget category via the form, ensuring correct modal is open if type specified
  *
  * @param {Page} page - Playwright page instance
  * @param {categoryId} categoryId - Category ID to update
@@ -250,80 +266,23 @@ export async function updateBudgetCategory(
    expect([HTTP_STATUS.NO_CONTENT, HTTP_STATUS.CREATED, HTTP_STATUS.OK]).toContain(response?.status() || 0);
 }
 
-/**
- * Updates a budget goal for main category with optional time period navigation
- *
- * @param {Page} page - Playwright page instance
- * @param {"Income" | "Expenses"} type - Budget type
- * @param {number} goal - Goal amount to set
- * @param {number} [monthsOffset=0] - Months to navigate (positive = forward, negative = backward, 0 = current)
- */
-export async function updateBudgetGoal(
-   page: Page,
-   type: "Income" | "Expenses",
-   goal: number,
-   monthsOffset: number = 0
-): Promise<void> {
-   // Navigate to the target period if needed
-   if (monthsOffset !== 0) {
-      await navigateBudgetPeriod(page, monthsOffset);
-   }
 
-   // Open the budget form
-   await openBudgetForm(page, type);
-
-   // Update main budget goal
-   await page.getByTestId("budget-goal-input").fill(goal.toString());
-
-   // Submit the form
-   await page.getByRole("button", { name: "Update" }).click();
-
-   // Wait for the update to complete and modal to auto-close by checking the progress text is updated
-   const progressText = page.getByTestId(`budget-category-progress-${type}`);
-   await expect(progressText).toContainText(displayCurrency(goal));
-}
-
-/**
- * Asserts budget goal for a specific time period
- *
- * @param {Page} page - Playwright page instance
- * @param {"Income" | "Expenses"} type - Budget type
- * @param {number} expectedGoal - Expected goal amount
- * @param {number} [monthsOffset=0] - Months to navigate (positive = forward, negative = backward, 0 = current)
- */
-export async function assertBudgetGoalForPeriod(
-   page: Page,
-   type: "Income" | "Expenses",
-   expectedGoal: number,
-   monthsOffset: number = 0
-): Promise<void> {
-   // Navigate to the target period if needed
-   if (monthsOffset !== 0) {
-      await navigateBudgetPeriod(page, monthsOffset);
-   }
-
-   const progressText = page.getByTestId(`budget-category-progress-${type}`);
-   await expect(progressText).toContainText(displayCurrency(expectedGoal));
-}
 
 /**
  * Deletes a budget category
  *
  * @param {Page} page - Playwright page instance
  * @param {string} categoryId - Category ID to delete
- * @param {string} [type] - Optional budget type to ensure correct modal is open
- * @param {boolean} [confirmDelete=true] - Whether to confirm (true) or cancel (false) deletion
+ * @param {string} type - Budget type to ensure correct modal is open
+ * @param {boolean} [confirmDelete=true] - Whether to confirm deletion
  */
 export async function deleteBudgetCategory(
    page: Page,
    categoryId: string,
-   type?: "Income" | "Expenses",
+   type: "Income" | "Expenses",
    confirmDelete: boolean = true
 ): Promise<void> {
-   // Ensure correct modal is open if type is provided
-   if (type) {
-      await openBudgetForm(page, type);
-   }
+   await openBudgetForm(page, type);
 
    const item = page.getByTestId(`budget-category-item-${categoryId}`);
 
@@ -367,7 +326,7 @@ export async function deleteBudgetCategory(
 }
 
 /**
- * Asserts the budget category container displays correct information
+ * Asserts the budget category container displays correct information with optional subcategories validation
  *
  * @param {Page} page - Playwright page instance
  * @param {string} categoryId - Budget category ID
@@ -402,7 +361,7 @@ async function assertBudgetCategoryContainer(
 }
 
 /**
- * Asserts budget category is displayed correctly on the page after closing any open modals
+ * Asserts budget category is displayed correctly on the page, closing any open modals first
  *
  * @param {Page} page - Playwright page instance
  * @param {SingleCategoryAssertion} state - Single category state to verify
@@ -426,35 +385,37 @@ export async function assertBudgetCategoryPageState(
 }
 
 /**
- * Asserts full budget page state with Income and Expenses hierarchy
+ * Asserts the current budget page state matches expected Income and Expenses categories, goals, and modal content
  *
- * Verifies that all categories in the provided state are displayed on the budget page.
- * Note: Callers are responsible for closing modals if needed via closeModal().
+ * Verifies categories display on the page and validates goal values in both modals.
  *
  * @param {Page} page - Playwright page instance
- * @param {BudgetPageState} state - Budget page state with Income/Expenses categories to verify
+ * @param {BudgetPageState} state - Expected budget page state with Income/Expenses categories to verify
  */
-export async function assertBudgetOnPage(
+export async function assertBudgetPageState(
    page: Page,
    state: BudgetPageState
 ): Promise<void> {
-   // Assert Income categories if provided
-   if (state.Income?.categories) {
-      for (const category of state.Income.categories) {
-         await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
+   // Assert categories on page
+   for (const type of ["Income", "Expenses"] as const) {
+      if (state[type].categories) {
+         for (const category of state[type].categories) {
+            await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
+         }
       }
    }
 
-   // Assert Expenses categories if provided
-   if (state.Expenses?.categories) {
-      for (const category of state.Expenses.categories) {
-         await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
+   // Verify goal in each modal
+   for (const type of ["Income", "Expenses"] as const) {
+      if (state[type].goal !== undefined) {
+         await openBudgetForm(page, type);
+         await assertBudgetFormContent(page, type, { goal: state[type].goal });
       }
    }
 }
 
 /**
- * Asserts the order of budget categories
+ * Asserts budget categories are displayed in the expected order
  *
  * @param {Page} page - Playwright page instance
  * @param {string[]} expectedOrder - Expected order of category IDs
@@ -473,7 +434,7 @@ export async function assertBudgetCategoryOrder(page: Page, expectedOrder: strin
 }
 
 /**
- * Asserts budget period history navigation (2 years back and forth)
+ * Asserts budget period history navigation works correctly for 2 years back and forward
  *
  * @param {Page} page - Playwright page instance
  */
@@ -508,7 +469,7 @@ export async function assertBudgetPeriodHistory(page: Page): Promise<void> {
 }
 
 /**
- * Asserts that a budget form modal contains expected input values
+ * Asserts budget form modal contains expected input values and closes the modal
  *
  * @param {Page} page - Playwright page instance
  * @param {"Income" | "Expenses"} type - Budget type
@@ -528,10 +489,13 @@ export async function assertBudgetFormContent(
       const goalInput = modal.getByTestId("budget-goal-input");
       await expect(goalInput).toHaveValue(String(expectedValues.goal));
    }
+
+   // Close modal after assertion
+   await closeModal(page, false, `budget-form-${type}`);
 }
 
 /**
- * Asserts that a budget category form (within edit modal) contains expected values
+ * Asserts budget category form within edit modal contains expected field values
  *
  * @param {Page} page - Playwright page instance
  * @param {string} categoryId - Category ID
@@ -564,11 +528,7 @@ export async function assertBudgetCategoryFormContent(
 }
 
 /**
- * Asserts budget categories are displayed in the transaction form's category dropdown
- *
- * Opens the specified budget type modal, then verifies that Income and Expenses headers
- * are always present in the transaction form's category dropdown, and expected categories
- * appear in their respective sections. Optionally verifies auto-selection of a category.
+ * Asserts budget categories display correctly in transaction form category dropdown with proper grouping and auto-selection
  *
  * @param {Page} page - Playwright page instance
  * @param {"Income" | "Expenses"} type - Budget type modal to open
@@ -618,22 +578,12 @@ export async function assertTransactionBudgetCategoryDropdown(
       await expect(option).toContainText(category.name);
    }
 
-   // Assert auto-selection if specified
+   // Assert auto-selection if specified (Income or Expenses) - future tests will verify transactions with subcategories
    if (autoSelectedCategoryId) {
-      const allCategories = [...expectedIncomeCategories, ...expectedExpenseCategories];
-      const selectedCategory = allCategories.find(c => c.budget_category_id === autoSelectedCategoryId);
-
-      if (selectedCategory) {
-         await expect(inputElement).toHaveValue(autoSelectedCategoryId);
-         await expect(selectElement).toContainText(selectedCategory.name);
-      } else {
-         throw new Error(`Category with ID ${autoSelectedCategoryId} not found in expected categories`);
-      }
+      await expect(inputElement).toHaveValue(autoSelectedCategoryId);
+      await expect(selectElement).toContainText(type);
    }
 
-   // Close the select dropdown
-   await page.keyboard.press("Escape");
-
-   // Close the modal
+   // Close the select dropdown by pressing Escape
    await page.keyboard.press("Escape");
 }
