@@ -71,6 +71,7 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                <Typography
                   sx = { { fontWeight: "600" } }
                   variant = "h6"
+                  data-testid = { isMainCategory ? `budget-category-name-${type}` : `budget-category-name-${budget_category_id}` }
                >
                   { name }
                </Typography>

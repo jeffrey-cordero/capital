@@ -443,23 +443,27 @@ test.describe("Budget Management", () => {
       });
 
       test("should persist budget goals across 6 months with multiple updates", async({ page }) => {
+         const incomeCatId = await createBudgetCategory(page, { name: "IncomeTest", goal: 2000 }, "Income");
+         const expenseCatId = await createBudgetCategory(page, { name: "ExpenseTest", goal: 2000 }, "Expenses");
+
          const config: BudgetNavigationTestConfig = {
             updatingMonths: [0, 2, 4],
             Income: {
                goals: [1, 2, 2, 4, 4, 4],
-               categories: {}
+               categories: {
+                  [incomeCatId]: [1, 20, 20, 40, 40, 40],
+               }
             },
             Expenses: {
                goals: [1, 2, 2, 4, 4, 4],
-               categories: {}
+               categories: {
+                  [expenseCatId]: [100, 200, 200, 400, 400, 400]
+               }
             }
          };
 
-         const { Income, Expenses } = await setupBudgetNavigationTest(page, config);
-         config.Income.categories[Income.categoryId] = config.Income.goals;
-         config.Expenses.categories[Expenses.categoryId] = config.Expenses.goals;
-
-         await assertBudgetGoalPersistence(page, config, Income.categoryId, Expenses.categoryId);
+         await setupBudgetNavigationTest(page, config);
+         await assertBudgetGoalPersistence(page, config);
       });
    });
 

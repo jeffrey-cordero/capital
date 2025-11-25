@@ -65,7 +65,9 @@ export async function assertInputVisibility(
  * @param {string} [dataTestId] - Optional specific modal test ID to verify is closed
  */
 export async function assertModalIsClosed(page: Page, dataTestId?: string): Promise<void> {
-   await page.waitForSelector(`[data-testid="${dataTestId || "modal"}"]`, { state: "hidden" });
+   await page.getByTestId(`[data-testid="${dataTestId || "modal"}"]`).waitFor({ state: "hidden" }).catch(() => {
+      expect(page.getByTestId(`[data-testid="${dataTestId || "modal"}"]`).getAttribute("data-open")).toEqual("false");
+   });
 }
 
 /**

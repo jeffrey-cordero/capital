@@ -157,6 +157,7 @@ export default function Modal({ open, onClose, children, sx, displayWarning = fa
    return (
       <MuiModal
          data-testid = { dataTestId || "modal" }
+         data-open = { open ? "true" : "false" }
          onClose = { closeModal }
          open = { open }
       >

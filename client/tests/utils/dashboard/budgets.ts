@@ -402,6 +402,8 @@ export async function assertBudgetPageState(
 ): Promise<void> {
    // Assert categories on page
    for (const type of ["Income", "Expenses"] as const) {
+      await assertBudgetCategoryContainer(page, type, type, state[type].goal);
+
       for (const category of state[type].categories) {
          await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
       }
@@ -413,6 +415,9 @@ export async function assertBudgetPageState(
          await assertBudgetFormContent(page, type, { goal: state[type].goal, categories: state[type].categories });
       }
    }
+
+   // Close the modal
+   await closeModal(page, false, "budget-form-Expenses");
 }
 
 /**
@@ -481,10 +486,6 @@ export async function assertBudgetFormContent(
    } else {
       await expect(page.getByTestId(`budget-category-list-${type}`)).toBeHidden();
    }
-
-   // Close modal after assertion using Escape key (more robust than closeModal)
-   await page.keyboard.press("Escape");
-   await page.waitForTimeout(100);
 }
 
 /**
@@ -595,86 +596,47 @@ export async function assertTransactionBudgetCategoryDropdown(
 }
 
 /**
- * Sets up budget navigation test by creating categories and updating goals across multiple months
- * based on the provided configuration with goal arrays and explicit month indices to update
+ * Sets up budget navigation test by updating goals across multiple months based on the provided configuration
+ * with goal arrays and explicit month indices to update
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetNavigationTestConfig} config - Configuration with goal arrays and monthsToUpdate indices
- * @returns {Promise<{Income: {categoryId: string}, Expenses: {categoryId: string}}>} Created category IDs
  */
 export async function setupBudgetNavigationTest(
    page: Page,
    config: BudgetNavigationTestConfig
-): Promise<{ Income: { categoryId: string }; Expenses: { categoryId: string } }> {
-   // Create Income category at current month with initial goal
-   const incomeCatId = await createBudgetCategory(
-      page,
-      { name: "IncomeTest", goal: 2000 },
-      "Income"
-   );
+): Promise<void> {
+   const { updatingMonths } = config;
 
-   // Create Expenses category at current month with initial goal
-   const expenseCatId = await createBudgetCategory(
-      page,
-      { name: "ExpenseTest", goal: 2000 },
-      "Expenses"
-   );
+   // Current month index
+   let i: number = 0;
 
-   // Get months to update from config and sort in descending order (farthest back first)
-   const monthsToUpdate = config.updatingMonths;
-   const sortedMonths = [...monthsToUpdate].sort((a, b) => b - a);
+   // updatingMonths index
+   let j: number = 0;
 
-   // Update goals for each specified month
-   for (const monthIndex of sortedMonths) {
-      // If not at current month, navigate to the target month
-      if (monthIndex !== 0) {
-         const monthOffset = -monthIndex;
-         await navigateBudgetPeriod(page, monthOffset);
+   while (j < updatingMonths.length) {
+      if (i === updatingMonths[j]) {
+         const index: number = updatingMonths[j];
+
+         for (const type of ["Income", "Expenses"] as const) {
+            // Update the main category
+            await updateBudgetCategory(page, "", { goal: config[type].goals[index] }, type);
+
+            // Update the sub categories
+            for (const [category, goals] of Object.entries(config[type].categories)) {
+               await updateBudgetCategory(page, category, { goal: goals[index] }, type);
+            }
+         }
+
+         j++;
       }
 
-      // Update main Income budget goal (empty categoryId triggers main budget update)
-      await updateBudgetCategory(
-         page,
-         "",
-         { goal: config.Income.goals[monthIndex] },
-         "Income"
-      );
-
-      // Update Income category goal
-      await updateBudgetCategory(
-         page,
-         incomeCatId,
-         { goal: config.Income.goals[monthIndex] },
-         "Income"
-      );
-
-      // Update main Expenses budget goal (empty categoryId triggers main budget update)
-      await updateBudgetCategory(
-         page,
-         "",
-         { goal: config.Expenses.goals[monthIndex] },
-         "Expenses"
-      );
-
-      // Update Expenses category goal
-      await updateBudgetCategory(
-         page,
-         expenseCatId,
-         { goal: config.Expenses.goals[monthIndex] },
-         "Expenses"
-      );
-
-      // Navigate back to current month if we navigated away
-      if (monthIndex !== 0) {
-         const monthOffset = -monthIndex;
-         await navigateBudgetPeriod(page, -monthOffset);
-      }
+      i++;
+      await navigateBudgetPeriod(page, -1);
    }
 
-   return {
-      Income: { categoryId: incomeCatId },
-      Expenses: { categoryId: expenseCatId }
-   };
+   // Navigate back to the current month
+   await navigateBudgetPeriod(page, 1 + updatingMonths[j - 1]);
 }
 
 /**
@@ -683,30 +645,23 @@ export async function setupBudgetNavigationTest(
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetNavigationTestConfig} config - Configuration with expected goal arrays
- * @param {string} incomeCategoryId - Income category ID to verify
- * @param {string} expenseCategoryId - Expenses category ID to verify
  */
 export async function assertBudgetGoalPersistence(
    page: Page,
    config: BudgetNavigationTestConfig,
-   incomeCategoryId: string,
-   expenseCategoryId: string,
 ): Promise<void> {
    const goals: number = config.Income.goals.length;
 
-   // Check each month in updatingMonths going forward from farthest back
    for (let i = 0; i < goals; i++) {
-      const goal: number = config.Income.goals[i];
-
       // Verify Income main goal and category goal
       await assertBudgetPageState(page, {
          Income: {
-            goal: goal,
-            categories: [{ budget_category_id: incomeCategoryId, name: "IncomeTest", goal: goal }]
+            goal: config.Income.goals[i],
+            categories: Object.entries(config.Income.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "IncomeTest", goal: goals[i] }))
          },
          Expenses: {
-            goal: goal,
-            categories: [{ budget_category_id: expenseCategoryId, name: "ExpenseTest", goal: goal }]
+            goal: config.Expenses.goals[i],
+            categories: Object.entries(config.Expenses.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "ExpenseTest", goal: goals[i] }))
          }
       });
 
