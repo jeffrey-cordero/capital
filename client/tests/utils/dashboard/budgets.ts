@@ -1,10 +1,9 @@
 import { expect, type Page, type Response } from "@playwright/test";
-import { assertComponentIsVisible, closeModal } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility, closeModal } from "@tests/utils";
 import { assertValidationErrors, submitForm, updateSelectValue } from "@tests/utils/forms";
 import { type BudgetCategory } from "capital/budgets";
 import { HTTP_STATUS } from "capital/server";
 
-import { months } from "@/lib/dates";
 import { displayCurrency } from "@/lib/display";
 
 /**
@@ -17,85 +16,91 @@ export type BudgetCategoryState = {
 };
 
 /**
- * Budget hierarchy state for page verification, subset of OrganizedBudget structure with only fields needed for verification
+ * Budget state with goal and categories for page verification and assertions
  */
-export type BudgetTypeState = {
-   goal?: number;
-   categories?: BudgetCategoryState[];
+export type BudgetState = {
+   goal: number;
+   categories: BudgetCategoryState[];
 };
 
 /**
- * Complete budget page state matching OrganizedBudgets structure with both Income and Expenses required for robust assertions
+ * Complete budget page state with Income and Expenses for assertions
  */
 export type BudgetPageState = {
-   Income: BudgetTypeState;
-   Expenses: BudgetTypeState;
+   Income: BudgetState;
+   Expenses: BudgetState;
 };
 
 /**
- * Single category assertion state for verifying a category on page after navigation
+ * Single category assertion state for page verification after navigation
  */
 export type SingleCategoryAssertion = {
-   categoryId: string;
+   budget_category_id: string;
    name: string;
    goal: number;
+   categories: BudgetCategoryState[];
 };
 
 /**
- * Extended budget category data type for form submission
+ * Budget category form data for submission with optional goal override
  */
-export type BudgetCategoryFormData = Partial<BudgetCategory> & { goal?: number };
+export type BudgetCategoryFormData = Partial<BudgetCategory> & { goal: number };
 
 /**
- * Closes the opposite budget type modal if open to ensure only one modal is visible
- *
- * @param {Page} page - Playwright page instance
- * @param {"Income" | "Expenses"} type - Budget type to keep open
+ * Budget navigation test configuration with hierarchical goal arrays for main and subcategories
+ * Array indices correspond to month positions: 0 = current, 1 = one month back, 2 = two months back, etc.
+ * updatingMonths specifies which indices should be explicitly updated (others inherit/persist from earlier updates)
  */
-async function closeOppositeModal(page: Page, type: "Income" | "Expenses"): Promise<void> {
-   const oppositeType = type === "Income" ? "Expenses" : "Income";
-   const oppositeModal = page.getByTestId(`budget-form-${oppositeType}`);
-
-   if (await oppositeModal.isVisible()) {
-      await closeModal(page, false, `budget-form-${oppositeType}`);
-   }
-}
+export type BudgetNavigationTestConfig = {
+   updatingMonths: number[];
+   Income: {
+      goals: number[];
+      categories: {
+         [categoryId: string]: number[];
+      };
+   };
+   Expenses: {
+      goals: number[];
+      categories: {
+         [categoryId: string]: number[];
+      };
+   };
+};
 
 /**
- * Opens the budget form modal for a specific type, closing the opposite modal if needed
+ * Opens budget form modal for the specified type
  *
  * @param {Page} page - Playwright page instance
- * @param {"Income" | "Expenses"} type - Budget type
+ * @param {"Income" | "Expenses"} type - Budget type to open
  */
 export async function openBudgetForm(page: Page, type: "Income" | "Expenses"): Promise<void> {
    const targetModal = page.getByTestId(`budget-form-${type}`);
-
-   // If target modal already open, return early
    if (await targetModal.isVisible()) {
       return;
    }
 
-   // Close opposite modal if open to avoid conflicts
-   await closeOppositeModal(page, type);
+   const oppositeType = type === "Income" ? "Expenses" : "Income";
+   const oppositeModal = page.getByTestId(`budget-form-${oppositeType}`);
+   if (await oppositeModal.isVisible()) {
+      await closeModal(page, false, `budget-form-${oppositeType}`);
+   }
 
-   // Find and click the edit button for the main budget category
    const editButton = page.getByTestId(`budget-category-edit-${type}`);
    await expect(editButton).toBeVisible();
    await expect(editButton).toBeEnabled();
    await editButton.click();
 
-   // Wait for the form modal to become visible
    await assertComponentIsVisible(page, `budget-form-${type}`);
 }
 
 /**
- * Navigates the budget period carousel forward or backward, closing any open modals first
+ * Navigates budget period forward or backward
  *
  * @param {Page} page - Playwright page instance
  * @param {number} months - Number of months to navigate (positive = forward, negative = backward)
  */
 export async function navigateBudgetPeriod(page: Page, months: number): Promise<void> {
-   // Close any open modals before navigating
+   // Close any open modals before navigating using Escape key
    const incomeModal = page.getByTestId("budget-form-Income");
    const expensesModal = page.getByTestId("budget-form-Expenses");
 
@@ -118,24 +123,12 @@ export async function navigateBudgetPeriod(page: Page, months: number): Promise<
 }
 
 /**
- * Opens the create category form within the budget modal
- *
- * @param {Page} page - Playwright page instance
- */
-async function openCreateCategoryForm(page: Page): Promise<void> {
-   // The "Add Category" button is inside the modal, find it by role and text
-   const addButton = page.getByRole("button", { name: "Add Category" });
-   await addButton.click();
-   await assertComponentIsVisible(page, "budget-category-name-input");
-}
-
-/**
- * Creates a new budget category with automatic modal opening if type is specified
+ * Creates a budget category with optional automatic modal opening
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetCategoryFormData} categoryData - Category data
- * @param {string} [type] - Optional budget type (Income or Expenses), opens modal and form if provided
- * @param {Record<string, string>} [expectedErrors] - Optional validation errors to expect
+ * @param {string} [type] - Optional budget type to auto-open modal
+ * @param {Record<string, string>} [expectedErrors] - Optional validation errors
  * @returns {Promise<string>} Created category ID
  */
 export async function createBudgetCategory(
@@ -144,10 +137,11 @@ export async function createBudgetCategory(
    type?: "Income" | "Expenses",
    expectedErrors?: Record<string, string>
 ): Promise<string> {
-   // Automatically open the correct modal if type is provided
    if (type) {
       await openBudgetForm(page, type);
-      await openCreateCategoryForm(page);
+      const addButton = page.getByRole("button", { name: "Add Category" });
+      await addButton.click();
+      await assertComponentIsVisible(page, "budget-category-name-input");
    }
 
    const formData: Record<string, any> = {};
@@ -205,13 +199,14 @@ export async function cancelBudgetCategoryOperation(
 }
 
 /**
- * Updates a budget category via the form, ensuring correct modal is open if type specified
+ * Updates a budget category or main budget goal via the form
+ * If categoryId is empty/falsy, updates the main budget goal instead
  *
  * @param {Page} page - Playwright page instance
- * @param {categoryId} categoryId - Category ID to update
+ * @param {string} categoryId - Category ID to update, or empty string to update main budget goal
  * @param {BudgetCategoryFormData} categoryData - Updated category data
- * @param {string} [type] - Optional budget type to ensure correct modal is open
- * @param {Record<string, string>} [expectedErrors] - Optional map of test IDs to expected error messages
+ * @param {string} [type] - Optional budget type to auto-open modal
+ * @param {Record<string, string>} [expectedErrors] - Optional validation errors
  */
 export async function updateBudgetCategory(
    page: Page,
@@ -225,48 +220,98 @@ export async function updateBudgetCategory(
       await openBudgetForm(page, type);
    }
 
-   // Click edit button for the category
-   await page.getByTestId(`budget-category-edit-btn-${categoryId}`).click();
+   const isMainBudget = !categoryId;
 
-   const formData: Record<string, any> = {};
-   if (categoryData.name !== undefined) formData[`budget-category-name-edit-${categoryId}`] = categoryData.name;
-   if (categoryData.goal !== undefined) formData[`budget-category-goal-edit-${categoryId}`] = categoryData.goal;
-   if (categoryData.type !== undefined) formData[`budget-category-type-edit-${categoryId}`] = categoryData.type;
+   if (isMainBudget) {
+      // MAIN BUDGET GOAL UPDATE PATH
+      const formData: Record<string, any> = {};
+      if (categoryData.goal !== undefined) formData["budget-goal-input"] = categoryData.goal;
 
-   // Wait for category and/or budget goal update requests (if no errors expected)
-   let responsePromise;
-   if (!expectedErrors) {
-      responsePromise = page.waitForResponse((response: Response) => {
-         return response.url().includes("/api/v1/dashboard/budgets") && (response.request().method() === "PUT" || response.request().method() === "POST");
-      });
+      // Wait for main budget goal update request (if no errors expected)
+      let responsePromise;
+      let requestMethod: string | undefined;
+      if (!expectedErrors) {
+         responsePromise = page.waitForResponse((response: Response) => {
+            const isMatch = response.url().includes("/api/v1/dashboard/budgets")
+               && (response.request().method() === "PUT" || response.request().method() === "POST");
+            requestMethod = response.request().method();
+            return isMatch;
+         });
+      }
+
+      // Submit main budget form (submitForm will find the Update button automatically)
+      await submitForm(page, formData, { buttonType: "Update", containsErrors: expectedErrors ? true : false });
+
+      if (expectedErrors) {
+         await assertValidationErrors(page, expectedErrors);
+         return;
+      }
+
+      const response = await responsePromise;
+      expect(response).not.toBeNull();
+
+      // Main budget goal can return 201 (create) or 204 (update)
+      const status = response!.status();
+      if (requestMethod === "POST") {
+         expect(status).toBe(HTTP_STATUS.CREATED);
+      } else {
+         expect(status).toBe(HTTP_STATUS.NO_CONTENT);
+      }
+   } else {
+      // SUB-CATEGORY UPDATE PATH
+      // Click edit button for the category
+      await page.getByTestId(`budget-category-edit-btn-${categoryId}`).click();
+
+      const formData: Record<string, any> = {};
+      if (categoryData.name !== undefined) formData[`budget-category-name-edit-${categoryId}`] = categoryData.name;
+      if (categoryData.goal !== undefined) formData[`budget-category-goal-edit-${categoryId}`] = categoryData.goal;
+      if (categoryData.type !== undefined) formData[`budget-category-type-edit-${categoryId}`] = categoryData.type;
+
+      // Wait for category and/or budget goal update requests (if no errors expected)
+      let responsePromise;
+      let requestMethod: string | undefined;
+      if (!expectedErrors) {
+         responsePromise = page.waitForResponse((response: Response) => {
+            const isMatch = response.url().includes("/api/v1/dashboard/budgets")
+               && (response.request().method() === "PUT" || response.request().method() === "POST");
+            requestMethod = response.request().method();
+            return isMatch;
+         });
+      }
+
+      // Use submitForm helper with custom field handling for type dropdown
+      const submitButtonSelector = `[data-testid="budget-category-${categoryId}-submit"]`;
+
+      // Handle type separately as it's a dropdown - must update before submitForm
+      const typeTestId = `budget-category-type-edit-${categoryId}`;
+      if (formData[typeTestId]) {
+         const typeValue = formData[typeTestId];
+         delete formData[typeTestId];
+
+         // Update type first before calling submitForm
+         await updateSelectValue(page, typeTestId, String(typeValue));
+      }
+
+      // Now submit form with other fields
+      await submitForm(page, formData, { buttonType: "Update", submitButtonSelector, containsErrors: expectedErrors ? true : false });
+
+      if (expectedErrors) {
+         await assertValidationErrors(page, expectedErrors);
+         return;
+      }
+
+      const response = await responsePromise;
+      expect(response).not.toBeNull();
+
+      // Verify correct status code: 201 for POST (create), 204 for PUT (update)
+      const status = response!.status();
+      if (requestMethod === "POST") {
+         expect(status).toBe(HTTP_STATUS.CREATED);
+      } else {
+         expect(status).toBe(HTTP_STATUS.NO_CONTENT);
+      }
    }
-
-   // Use submitForm helper with custom field handling for type dropdown
-   const submitButtonSelector = `[data-testid="budget-category-${categoryId}-submit"]`;
-
-   // Handle type separately as it's a dropdown - must update before submitForm
-   const typeTestId = `budget-category-type-edit-${categoryId}`;
-   if (formData[typeTestId]) {
-      const typeValue = formData[typeTestId];
-      delete formData[typeTestId];
-
-      // Update type first before calling submitForm
-      await updateSelectValue(page, typeTestId, String(typeValue));
-   }
-
-   // Now submit form with other fields
-   await submitForm(page, formData, { buttonType: "Update", submitButtonSelector, containsErrors: expectedErrors ? true : false });
-
-   if (expectedErrors) {
-      await assertValidationErrors(page, expectedErrors);
-      return;
-   }
-
-   const response = await responsePromise;
-   expect([HTTP_STATUS.NO_CONTENT, HTTP_STATUS.CREATED, HTTP_STATUS.OK]).toContain(response?.status() || 0);
 }
-
-
 
 /**
  * Deletes a budget category
@@ -332,65 +377,24 @@ export async function deleteBudgetCategory(
  * @param {string} categoryId - Budget category ID
  * @param {string} name - Expected category name
  * @param {number} goal - Expected goal amount
- * @param {Array<{name: string, goal: number}>} [subcategories] - Expected subcategories with names and goals
  */
 async function assertBudgetCategoryContainer(
    page: Page,
    categoryId: string,
    name: string,
-   goal: number,
-   subcategories?: Array<{ name: string, goal: number }>
+   goal: number
 ): Promise<void> {
    const container = page.getByTestId(`budget-category-${categoryId}`);
    await assertComponentIsVisible(page, `budget-category-${categoryId}`);
    await expect(container).toContainText(name);
    await expect(container).toContainText(displayCurrency(goal));
-
-   // Validate subcategories if provided
-   if (subcategories && subcategories.length > 0) {
-      for (const sub of subcategories) {
-         const subItem = page.getByTestId(`budget-category-item-${categoryId}`).filter({ hasText: sub.name });
-         await expect(subItem).toBeVisible();
-         await expect(subItem).toContainText(displayCurrency(sub.goal));
-      }
-   } else if (subcategories !== undefined) {
-      // If subcategories array is provided but empty, ensure no subcategories are shown
-      const categoryList = page.getByTestId(`budget-category-list-${categoryId}`);
-      await expect(categoryList).toBeHidden();
-   }
 }
 
 /**
- * Asserts budget category is displayed correctly on the page, closing any open modals first
+ * Asserts budget page matches expected state for Income and Expenses
  *
  * @param {Page} page - Playwright page instance
- * @param {SingleCategoryAssertion} state - Single category state to verify
- */
-export async function assertBudgetCategoryPageState(
-   page: Page,
-   state: SingleCategoryAssertion
-): Promise<void> {
-   // Close any open modals first
-   const incomeModal = page.getByTestId("budget-form-Income");
-   const expensesModal = page.getByTestId("budget-form-Expenses");
-
-   if (await incomeModal.isVisible()) {
-      await closeModal(page, false, "budget-form-Income");
-   } else if (await expensesModal.isVisible()) {
-      await closeModal(page, false, "budget-form-Expenses");
-   }
-
-   // Assert category on page
-   await assertBudgetCategoryContainer(page, state.categoryId, state.name, state.goal);
-}
-
-/**
- * Asserts the current budget page state matches expected Income and Expenses categories, goals, and modal content
- *
- * Verifies categories display on the page and validates goal values in both modals.
- *
- * @param {Page} page - Playwright page instance
- * @param {BudgetPageState} state - Expected budget page state with Income/Expenses categories to verify
+ * @param {BudgetPageState} state - Expected budget page state with categories and goals
  */
 export async function assertBudgetPageState(
    page: Page,
@@ -398,18 +402,15 @@ export async function assertBudgetPageState(
 ): Promise<void> {
    // Assert categories on page
    for (const type of ["Income", "Expenses"] as const) {
-      if (state[type].categories) {
-         for (const category of state[type].categories) {
-            await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
-         }
+      for (const category of state[type].categories) {
+         await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
       }
    }
 
    // Verify goal in each modal
    for (const type of ["Income", "Expenses"] as const) {
       if (state[type].goal !== undefined) {
-         await openBudgetForm(page, type);
-         await assertBudgetFormContent(page, type, { goal: state[type].goal });
+         await assertBudgetFormContent(page, type, { goal: state[type].goal, categories: state[type].categories });
       }
    }
 }
@@ -434,107 +435,109 @@ export async function assertBudgetCategoryOrder(page: Page, expectedOrder: strin
 }
 
 /**
- * Asserts budget period history navigation works correctly for 2 years back and forward
- *
- * @param {Page} page - Playwright page instance
- */
-export async function assertBudgetPeriodHistory(page: Page): Promise<void> {
-   const currentDate = new Date();
-   const currentMonth = months[currentDate.getMonth()];
-   const currentYear = currentDate.getFullYear();
-
-   // Navigate back 24 months (2 years)
-   for (let i = 0; i < 24; i++) {
-      await page.getByTestId("budget-period-previous").click();
-      await expect(page.getByTestId("budget-period-display")).toBeVisible();
-   }
-
-   // Calculate expected month/year 24 months ago
-   const targetDate = new Date(currentDate);
-   targetDate.setMonth(targetDate.getMonth() - 24);
-   const targetMonth = months[targetDate.getMonth()];
-   const targetYear = targetDate.getFullYear();
-
-   await expect(page.getByTestId("budget-period-display")).toContainText(targetMonth);
-   await expect(page.getByTestId("budget-period-display")).toContainText(targetYear.toString());
-
-   // Navigate forward 24 months back to current
-   for (let i = 0; i < 24; i++) {
-      await page.getByTestId("budget-period-next").click();
-      await expect(page.getByTestId("budget-period-display")).toBeVisible();
-   }
-
-   await expect(page.getByTestId("budget-period-display")).toContainText(currentMonth);
-   await expect(page.getByTestId("budget-period-display")).toContainText(currentYear.toString());
-}
-
-/**
- * Asserts budget form modal contains expected input values and closes the modal
+ * Asserts budget form modal contains expected values
  *
  * @param {Page} page - Playwright page instance
  * @param {"Income" | "Expenses"} type - Budget type
- * @param {Partial<Record<string, string | number>>} expectedValues - Expected field values (goal, name, type)
+ * @param {BudgetState} [expectedContent] - Expected form content with goal and categories
  */
 export async function assertBudgetFormContent(
    page: Page,
    type: "Income" | "Expenses",
-   expectedValues: Partial<Record<string, string | number>>
+   expectedContent: BudgetState
 ): Promise<void> {
-   // Assert modal is visible
-   const modal = page.getByTestId(`budget-form-${type}`);
-   await expect(modal).toBeVisible();
+   await openBudgetForm(page, type);
 
-   // Assert goal input if provided
-   if (expectedValues.goal !== undefined) {
-      const goalInput = modal.getByTestId("budget-goal-input");
-      await expect(goalInput).toHaveValue(String(expectedValues.goal));
+   // Assert main goal if provided
+   await assertInputVisibility(
+      page,
+      "budget-goal-input",
+      "Goal",
+      String(expectedContent.goal)
+   );
+
+   // Assert sub-categories if provided
+   if (expectedContent.categories.length > 0) {
+      for (const category of expectedContent.categories) {
+         // Edit the category
+         await (page.getByTestId(`budget-category-edit-btn-${category.budget_category_id}`)).click();
+
+         // Verify category name
+         await assertInputVisibility(
+            page,
+            `budget-category-name-edit-${category.budget_category_id}`,
+            "Name",
+            category.name
+         );
+
+         // Verify category goal
+         await assertInputVisibility(
+            page,
+            `budget-category-goal-edit-${category.budget_category_id}`,
+            "Goal",
+            String(category.goal)
+         );
+      }
+   } else {
+      await expect(page.getByTestId(`budget-category-list-${type}`)).toBeHidden();
    }
 
-   // Close modal after assertion
-   await closeModal(page, false, `budget-form-${type}`);
+   // Close modal after assertion using Escape key (more robust than closeModal)
+   await page.keyboard.press("Escape");
+   await page.waitForTimeout(100);
 }
 
 /**
- * Asserts budget category form within edit modal contains expected field values
+ * Asserts budget category form contains expected field values
  *
  * @param {Page} page - Playwright page instance
  * @param {string} categoryId - Category ID
- * @param {Partial<Record<string, string | number>>} expectedValues - Expected field values (name, goal, type)
+ * @param {Partial<Record<string, string | number>>} expectedValues - Expected field values
  */
 export async function assertBudgetCategoryFormContent(
    page: Page,
    categoryId: string,
    expectedValues: Partial<Record<string, string | number>>
 ): Promise<void> {
-   const categoryItem = page.getByTestId(`budget-category-item-${categoryId}`);
-
    // Assert name if provided
    if (expectedValues.name !== undefined) {
-      const nameInput = categoryItem.getByTestId(`budget-category-name-edit-${categoryId}`);
-      await expect(nameInput).toHaveValue(String(expectedValues.name));
+      await assertInputVisibility(
+         page,
+         `budget-category-name-edit-${categoryId}`,
+         "Name",
+         String(expectedValues.name)
+      );
    }
 
    // Assert goal if provided
    if (expectedValues.goal !== undefined) {
-      const goalInput = categoryItem.getByTestId(`budget-category-goal-edit-${categoryId}`);
-      await expect(goalInput).toHaveValue(String(expectedValues.goal));
+      await assertInputVisibility(
+         page,
+         `budget-category-goal-edit-${categoryId}`,
+         "Goal",
+         String(expectedValues.goal)
+      );
    }
 
    // Assert type if provided
    if (expectedValues.type !== undefined) {
-      const typeSelect = categoryItem.getByTestId(`budget-category-type-edit-${categoryId}`);
-      await expect(typeSelect).toHaveValue(String(expectedValues.type));
+      await assertInputVisibility(
+         page,
+         `budget-category-type-edit-${categoryId}`,
+         "Type",
+         String(expectedValues.type)
+      );
    }
 }
 
 /**
- * Asserts budget categories display correctly in transaction form category dropdown with proper grouping and auto-selection
+ * Asserts budget categories in transaction dropdown with proper grouping
  *
  * @param {Page} page - Playwright page instance
  * @param {"Income" | "Expenses"} type - Budget type modal to open
  * @param {BudgetCategoryState[]} expectedIncomeCategories - Expected income categories
  * @param {BudgetCategoryState[]} expectedExpenseCategories - Expected expense categories
- * @param {string} [autoSelectedCategoryId] - Optional category ID to verify is auto-selected
+ * @param {string} [autoSelectedCategoryId] - Optional category ID to verify auto-selected
  */
 export async function assertTransactionBudgetCategoryDropdown(
    page: Page,
@@ -586,4 +589,130 @@ export async function assertTransactionBudgetCategoryDropdown(
 
    // Close the select dropdown by pressing Escape
    await page.keyboard.press("Escape");
+
+   // Close the modal
+   await page.keyboard.press("Escape");
+}
+
+/**
+ * Sets up budget navigation test by creating categories and updating goals across multiple months
+ * based on the provided configuration with goal arrays and explicit month indices to update
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetNavigationTestConfig} config - Configuration with goal arrays and monthsToUpdate indices
+ * @returns {Promise<{Income: {categoryId: string}, Expenses: {categoryId: string}}>} Created category IDs
+ */
+export async function setupBudgetNavigationTest(
+   page: Page,
+   config: BudgetNavigationTestConfig
+): Promise<{ Income: { categoryId: string }; Expenses: { categoryId: string } }> {
+   // Create Income category at current month with initial goal
+   const incomeCatId = await createBudgetCategory(
+      page,
+      { name: "IncomeTest", goal: 2000 },
+      "Income"
+   );
+
+   // Create Expenses category at current month with initial goal
+   const expenseCatId = await createBudgetCategory(
+      page,
+      { name: "ExpenseTest", goal: 2000 },
+      "Expenses"
+   );
+
+   // Get months to update from config and sort in descending order (farthest back first)
+   const monthsToUpdate = config.updatingMonths;
+   const sortedMonths = [...monthsToUpdate].sort((a, b) => b - a);
+
+   // Update goals for each specified month
+   for (const monthIndex of sortedMonths) {
+      // If not at current month, navigate to the target month
+      if (monthIndex !== 0) {
+         const monthOffset = -monthIndex;
+         await navigateBudgetPeriod(page, monthOffset);
+      }
+
+      // Update main Income budget goal (empty categoryId triggers main budget update)
+      await updateBudgetCategory(
+         page,
+         "",
+         { goal: config.Income.goals[monthIndex] },
+         "Income"
+      );
+
+      // Update Income category goal
+      await updateBudgetCategory(
+         page,
+         incomeCatId,
+         { goal: config.Income.goals[monthIndex] },
+         "Income"
+      );
+
+      // Update main Expenses budget goal (empty categoryId triggers main budget update)
+      await updateBudgetCategory(
+         page,
+         "",
+         { goal: config.Expenses.goals[monthIndex] },
+         "Expenses"
+      );
+
+      // Update Expenses category goal
+      await updateBudgetCategory(
+         page,
+         expenseCatId,
+         { goal: config.Expenses.goals[monthIndex] },
+         "Expenses"
+      );
+
+      // Navigate back to current month if we navigated away
+      if (monthIndex !== 0) {
+         const monthOffset = -monthIndex;
+         await navigateBudgetPeriod(page, -monthOffset);
+      }
+   }
+
+   return {
+      Income: { categoryId: incomeCatId },
+      Expenses: { categoryId: expenseCatId }
+   };
+}
+
+/**
+ * Verifies budget goals persist correctly across months based on configuration
+ * Navigates through all months specified in updatingMonths and validates goal values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetNavigationTestConfig} config - Configuration with expected goal arrays
+ * @param {string} incomeCategoryId - Income category ID to verify
+ * @param {string} expenseCategoryId - Expenses category ID to verify
+ */
+export async function assertBudgetGoalPersistence(
+   page: Page,
+   config: BudgetNavigationTestConfig,
+   incomeCategoryId: string,
+   expenseCategoryId: string,
+): Promise<void> {
+   const goals: number = config.Income.goals.length;
+
+   // Check each month in updatingMonths going forward from farthest back
+   for (let i = 0; i < goals; i++) {
+      const goal: number = config.Income.goals[i];
+
+      // Verify Income main goal and category goal
+      await assertBudgetPageState(page, {
+         Income: {
+            goal: goal,
+            categories: [{ budget_category_id: incomeCategoryId, name: "IncomeTest", goal: goal }]
+         },
+         Expenses: {
+            goal: goal,
+            categories: [{ budget_category_id: expenseCategoryId, name: "ExpenseTest", goal: goal }]
+         }
+      });
+
+      // Navigate back to the previous month
+      if (i < goals - 1) {
+         await navigateBudgetPeriod(page, -1);
+      }
+   }
 }

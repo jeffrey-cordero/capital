@@ -56,8 +56,8 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
 
    return (
       <Box
-         data-testid = { isMainCategory ? `budget-category-${type}` : `budget-category-${budget_category_id}` }
          data-category-id = { budget_category_id }
+         data-testid = { isMainCategory ? `budget-category-${type}` : `budget-category-${budget_category_id}` }
          sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }
       >
          <Stack
@@ -82,7 +82,7 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                         data-testid = { `budget-category-edit-${type}` }
                         onClick = { onEditClick }
                         size = "medium"
-                        sx = {{ mb: 0.25 }}
+                        sx = { { mb: 0.25 } }
                      >
                         <FontAwesomeIcon
                            icon = { faPenToSquare }

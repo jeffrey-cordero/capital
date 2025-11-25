@@ -23,8 +23,8 @@ export const budgetSchema = z.object({
    /* Target monetary amount */
    goal: zodPreprocessNumber(z.coerce.number({
       message: "Goal is required"
-   }).min(1, {
-      message: "Goal must be at least $1"
+   }).min(0, {
+      message: "Goal must be at least $0"
    }).max(999_999_999_999.99, {
       message: "Goal exceeds the maximum allowed value"
    })),

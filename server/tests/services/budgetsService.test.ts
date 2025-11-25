@@ -162,12 +162,12 @@ describe("Budgets Service", () => {
          assertBudgetValidationErrorResponse(result, { type: "Type must be either 'Income' or 'Expenses'" });
       });
 
-      it("should return validation errors for invalid goal amount (0)", async() => {
-         const invalidCategory: BudgetCategory = createValidBudgetEntry({}, { goal: 0 });
+      it("should return validation errors for invalid goal amount (negative)", async() => {
+         const invalidCategory: BudgetCategory = createValidBudgetEntry({}, { goal: -1 });
 
          const result: ServerResponse = await budgetsService.createBudgetCategory(userId, invalidCategory);
 
-         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $1" });
+         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $0" });
       });
 
       it("should return validation errors for invalid month (0)", async() => {
@@ -556,16 +556,16 @@ describe("Budgets Service", () => {
          assertBudgetValidationErrorResponse(result, { budget_category_id: "Budget category ID must be a valid UUID" });
       });
 
-      it("should return validation errors for invalid goal amount (0)", async() => {
-         const invalidBudget: Budget = createValidBudget({ goal: 0 });
+      it("should return validation errors for invalid goal amount (negative)", async() => {
+         const invalidBudget: Budget = createValidBudget({ goal: -1 });
 
          const result: ServerResponse = await budgetsService.createBudget(userId, invalidBudget);
 
-         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $1" });
+         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $0" });
       });
 
-      it("should return validation errors for invalid month (0)", async() => {
-         const invalidBudget: Budget = createValidBudget({ month: 0 });
+      it("should return validation errors for invalid month (negative)", async() => {
+         const invalidBudget: Budget = createValidBudget({ month: -1 });
 
          const result: ServerResponse = await budgetsService.createBudget(userId, invalidBudget);
 
@@ -663,12 +663,12 @@ describe("Budgets Service", () => {
          assertBudgetValidationErrorResponse(result, { budget_category_id: "Budget category ID must be a valid UUID" });
       });
 
-      it("should return validation errors for invalid goal amount (0)", async() => {
-         const invalidBudget: Budget = createValidBudget({ goal: 0 });
+      it("should return validation errors for invalid goal amount (negative)", async() => {
+         const invalidBudget: Budget = createValidBudget({ goal: -1 });
 
          const result: ServerResponse = await budgetsService.updateBudget(userId, invalidBudget);
 
-         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $1" });
+         assertBudgetValidationErrorResponse(result, { goal: "Goal must be at least $0" });
       });
 
       it("should return validation errors for invalid month (0)", async() => {

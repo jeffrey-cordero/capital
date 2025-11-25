@@ -16,6 +16,7 @@ import {
    type BudgetType
 } from "capital/budgets";
 import { HTTP_STATUS } from "capital/server";
+import { useCallback } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -64,7 +65,7 @@ const updateBudgetGoalSchema = budgetSchema.innerType().pick({
  * @param {EditCategoryProps} props - The props for the EditCategory component
  * @returns {React.ReactNode} The EditCategory component
  */
-export default function EditCategory({ visible, category, onCancel, updateDirtyFields }: EditCategoryProps): React.ReactNode {
+export default function EditCategory({ visible, category, onCancel: onCancelProp, updateDirtyFields }: EditCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
@@ -86,7 +87,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
       try {
          // Ignore requests for empty updates
          if (Object.keys(dirtyFields).length === 0) {
-            onCancel();
+            onCancelProp();
             return;
          }
 
@@ -103,7 +104,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             if (record === "name" || record === "type") {
                categoryPayload[record] = data[record];
             } else if (record === "goal") {
-               budgetPayload.goal = Number(data[record]);
+               budgetPayload.goal = data[record] === "" ? -1 : Number(data[record]);
             }
          });
 
@@ -159,7 +160,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
 
          if (budgetUpdates && budgetSuccess) {
             dispatch(updateBudget({
-               goal: budgetFields.data?.goal || category.goals[category.goalIndex].goal,
+               goal: budgetFields.data?.goal ?? category.goals[category.goalIndex].goal,
                type: (categoryFields.data?.type || category.type) as BudgetType,
                budget_category_id: category.budget_category_id
             }));
@@ -169,17 +170,27 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          if (categorySuccess && budgetSuccess) {
             reset({
                name: categoryFields.data?.name || category.name,
-               goal: String(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
+               goal: String(budgetFields.data?.goal ?? category.goals[category.goalIndex].goal),
                type: categoryFields.data?.type || category.type
             }, { keepDirty: false });
 
             updateDirtyFields({}, "editor");
-            onCancel();
+            onCancelProp();
          }
       } catch (error) {
          console.error(`Error updating category: ${error}`);
       }
    };
+
+   const onCancel = useCallback(() => {
+      reset({
+         name: category.name,
+         goal: String(category.goals[category.goalIndex].goal),
+         type: category.type
+      }, { keepDirty: false });
+      updateDirtyFields({}, "editor");
+      onCancelProp();
+   }, [category, reset, updateDirtyFields, onCancelProp]);
 
    return (
       <Collapse
