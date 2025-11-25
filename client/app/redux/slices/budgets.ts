@@ -131,8 +131,8 @@ const budgetsSlice = createSlice({
 
          // Handle a potential swap of category types
          if (updates.type && updates.type !== category.type) {
-            state.value[category.type].categories.splice(categoryIndex, 1);
-            state.value[updates.type].categories.push(updatedCategory);
+            state.value[category.type as BudgetType].categories.splice(categoryIndex, 1);
+            state.value[updates.type as BudgetType].categories.push(updatedCategory);
          } else {
             state.value[type].categories[categoryIndex] = updatedCategory;
          }
