@@ -463,7 +463,12 @@ test.describe("Budget Management", () => {
          };
 
          await setupBudgetNavigationTest(page, config);
-         await assertBudgetGoalPersistence(page, config);
+
+         // Assert backward navigation persistence to six months ago
+         await assertBudgetGoalPersistence(page, config, "backward");
+
+         // Assert forward navigation persistence from six months ago to the current month
+         await assertBudgetGoalPersistence(page, config, "forward");
       });
    });
 

@@ -645,14 +645,20 @@ export async function setupBudgetNavigationTest(
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetNavigationTestConfig} config - Configuration with expected goal arrays
+ * @param {string} direction - Direction to navigate (forward or backward)
  */
 export async function assertBudgetGoalPersistence(
    page: Page,
    config: BudgetNavigationTestConfig,
+   direction: "forward" | "backward" = "backward"
 ): Promise<void> {
    const goals: number = config.Income.goals.length;
 
-   for (let i = 0; i < goals; i++) {
+   const start = direction === "backward" ? 0 : goals - 1;
+   const increment = direction === "backward" ? 1 : -1;
+   const end = direction === "backward" ? goals : -1;
+
+   for (let i = start; i !== end; i += increment) {
       // Verify Income main goal and category goal
       await assertBudgetPageState(page, {
          Income: {
@@ -665,9 +671,10 @@ export async function assertBudgetGoalPersistence(
          }
       });
 
-      // Navigate back to the previous month
-      if (i < goals - 1) {
-         await navigateBudgetPeriod(page, -1);
+      // Navigate to assert further periods
+      if (i + increment !== end) {
+         // Negate as when navigating forward to assert previous periods, we need to navigate backward, and vice versa for forward navigation
+         await navigateBudgetPeriod(page, -increment);
       }
    }
 }
