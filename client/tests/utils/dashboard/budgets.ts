@@ -123,54 +123,57 @@ export async function navigateBudgetPeriod(page: Page, months: number): Promise<
 }
 
 /**
- * Creates a budget category with optional automatic modal opening
+ * Creates a budget category
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetCategoryFormData} categoryData - Category data
- * @param {string} [type] - Optional budget type to auto-open modal
+ * @param {string} type - Budget type to create category (defaults to `"Income"`)
  * @param {Record<string, string>} [expectedErrors] - Optional validation errors
- * @returns {Promise<string>} Created category ID
+ * @returns {Promise<string>} Created category ID or empty string for expected validation errors
  */
 export async function createBudgetCategory(
    page: Page,
    categoryData: BudgetCategoryFormData,
-   type?: "Income" | "Expenses",
+   type: "Income" | "Expenses" = "Income",
    expectedErrors?: Record<string, string>
 ): Promise<string> {
-   if (type) {
-      await openBudgetForm(page, type);
-      const addButton = page.getByRole("button", { name: "Add Category" });
-      await addButton.click();
-      await assertComponentIsVisible(page, "budget-category-name-input");
-   }
+   await openBudgetForm(page, type);
+
+   // Wait for the category creation form to be visible
+   const addButton = page.getByRole("button", { name: "Add Category" });
+   await addButton.click();
+
+   await assertInputVisibility(page, "budget-category-name-input", "Name");
+   await assertInputVisibility(page, "budget-category-goal-input", "Goal");
 
    const formData: Record<string, any> = {};
+
    if (categoryData.name !== undefined) formData["budget-category-name-input"] = categoryData.name;
    if (categoryData.goal !== undefined) formData["budget-category-goal-input"] = categoryData.goal;
 
+   let responsePromise: Promise<Response> | null = null;
+
+   if (!expectedErrors) {
+      responsePromise = page.waitForResponse((response: Response) => {
+         return response.url().includes("/api/v1/dashboard/budgets/category")
+            && response.request().method() === "POST";
+      });
+   }
+
+   await submitForm(page, formData, { buttonType: "Create", containsErrors: expectedErrors ? true : false });
+
    if (expectedErrors) {
-      await submitForm(page, formData, { buttonType: "Create", containsErrors: true });
       await assertValidationErrors(page, expectedErrors);
       return "";
    }
 
-   const responsePromise = page.waitForResponse((response: Response) => {
-      return response.url().includes("/api/v1/dashboard/budgets/category") && response.request().method() === "POST";
-   });
-
-   await submitForm(page, formData, { buttonType: "Create" });
-
-   const response = await responsePromise;
+   const response = await responsePromise as Response;
    expect(response.status()).toBe(HTTP_STATUS.CREATED);
 
    const responseBody = await response.json();
-   const categoryId = responseBody.data?.budget_category_id;
-
-   if (!categoryId) {
-      throw new Error("Failed to create budget category - budget_category_id not found in response");
-   }
-
+   const categoryId: string = responseBody.data?.budget_category_id;
    await assertComponentIsVisible(page, `budget-category-item-${categoryId}`);
+
    return categoryId;
 }
 
@@ -391,7 +394,7 @@ async function assertBudgetCategoryContainer(
 }
 
 /**
- * Asserts budget page matches expected state for Income and Expenses
+ * Asserts budget page matches expected state for both Income and Expenses sections
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetPageState} state - Expected budget page state with categories and goals
@@ -400,24 +403,21 @@ export async function assertBudgetPageState(
    page: Page,
    state: BudgetPageState
 ): Promise<void> {
-   // Assert categories on page
    for (const type of ["Income", "Expenses"] as const) {
-      await assertBudgetCategoryContainer(page, type, type, state[type].goal);
+      // Assert the containers for the current type
+      const mainCategoryName: string = type;
+      await assertBudgetCategoryContainer(page, type, mainCategoryName, state[type].goal);
 
       for (const category of state[type].categories) {
          await assertBudgetCategoryContainer(page, category.budget_category_id, category.name, category.goal);
       }
-   }
 
-   // Verify goal in each modal
-   for (const type of ["Income", "Expenses"] as const) {
-      if (state[type].goal !== undefined) {
-         await assertBudgetFormContent(page, type, { goal: state[type].goal, categories: state[type].categories });
-      }
-   }
+      // Assert that the form content within the modal is consistent with the container content
+      await assertBudgetFormContent(page, type, { goal: state[type].goal, categories: state[type].categories });
 
-   // Close the modal
-   await closeModal(page, false, "budget-form-Expenses");
+      // Close the modal for further assertions
+      await closeModal(page, false, `budget-form-${type}`);
+   }
 }
 
 /**
