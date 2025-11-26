@@ -131,6 +131,7 @@ const CategoryItem = function CategoryItem({ category, type, updateDirtyFields }
                      />
                   </ListItemIcon>
                   <ListItemText
+                     data-testid = { `budget-category-view-${category.budget_category_id}` }
                      primary = { category.name }
                      secondary = { displayCurrency(goal) }
                      sx = { { ...horizontalScroll(theme), maxWidth: "calc(100% - 5rem)", mr: "auto", userSelect: "text", cursor: "text", pl: 0.5, fontWeight: "600" } }

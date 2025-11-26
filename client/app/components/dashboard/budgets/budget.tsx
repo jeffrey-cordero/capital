@@ -94,13 +94,15 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                }
             </Stack>
             <Typography
-               data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
+               data-testid = { isMainCategory ? `budget-category-goal-${type}` : `budget-category-goal-${budget_category_id}` }
                sx = { { ...horizontalScroll(theme), maxWidth: "90%", fontWeight: "600", textAlign: "center" } }
             >
                { displayCurrency(current) } / { displayCurrency(goal) }
             </Typography>
          </Stack>
          <LinearProgress
+            data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
+            data-progress = { progress }
             color = { color }
             sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }

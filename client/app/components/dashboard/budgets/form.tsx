@@ -183,6 +183,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
                            }
                         />
                         <SubmitButton
+                           dataTestId = "budget-goal"
                            isSubmitting = { isSubmitting }
                            onCancel = { onCancel }
                            type = "Update"
