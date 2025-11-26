@@ -1,7 +1,8 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsVisible, closeModal } from "@tests/utils";
 import {
    ACCOUNTS_ROUTE,
+   BUDGETS_ROUTE,
    createUser,
    DASHBOARD_ROUTE,
    logoutUser,
@@ -10,12 +11,14 @@ import {
    SETTINGS_ROUTE
 } from "@tests/utils/authentication";
 import { createAccount } from "@tests/utils/dashboard/accounts";
+import { createBudgetCategory } from "@tests/utils/dashboard/budgets";
 import {
    assertAccountDetails,
    assertExportStructure,
    assertSecurityDetails,
    assertThemeState,
    cancelLogout,
+   type ExportData,
    getCurrentAndOppositeTheme,
    performAccountDeletion,
    performAndAssertCancelBehavior,
@@ -29,6 +32,7 @@ import {
 } from "@tests/utils/dashboard/settings";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import { IMAGE_FIXTURES } from "capital/mocks/accounts";
 import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 
 test.describe("Settings", () => {
@@ -274,20 +278,31 @@ test.describe("Settings", () => {
 
       test.describe("Data Export", () => {
          test("should export account data as JSON with correct structure and values", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+            // Start at the accounts page to create financial accounts for the export
             await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true, assignedUser);
 
-            const account1Data = { name: "Checking Account", balance: 5000, type: "Checking" };
+            const account1Data = { name: "Checking Account", balance: 5000, type: "Checking", image: IMAGE_FIXTURES.valid };
             const account2Data = { name: "Savings Account", balance: 3000, type: "Savings" };
-            const account1Id = await createAccount(page, account1Data);
-            const account2Id = await createAccount(page, account2Data);
+            const account1Id: string = await createAccount(page, account1Data);
+            const account2Id: string = await createAccount(page, account2Data);
+
+            // Navigate to the budgets page to create budget categories for the export
+            await navigateToPath(page, BUDGETS_ROUTE);
+
+            const incomeCategoryId: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
+            const expenseCategoryId: string = await createBudgetCategory(page, { name: "Rent", goal: 2000 }, "Expenses");
+            await closeModal(page, false, "budget-form-Expenses");
 
             await navigateToPath(page, SETTINGS_ROUTE);
             const exportedJSON = await performExport(page);
 
             const expectedAccounts = [
-               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated },
+               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: IMAGE_FIXTURES.valid },
                { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated }
             ];
+
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
 
             await assertExportStructure(exportedJSON, {
                settings: {
@@ -297,11 +312,35 @@ test.describe("Settings", () => {
                   birthday: new Date(assignedUser.current.birthday).toISOString().split("T")[0]
                },
                accounts: expectedAccounts,
-               // Future test suites will verify the following structures
-               budgets: exportedJSON.budgets,
+               budgets: {
+                  Income: {
+                     goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                     categories: [{
+                        name: "Salary",
+                        type: "Income",
+                        goal: 5000,
+                        month: currentMonth,
+                        year: currentYear,
+                        goals: [{ goal: 5000, month: currentMonth, year: currentYear }],
+                        budget_category_id: incomeCategoryId
+                     }]
+                  },
+                  Expenses: {
+                     goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                     categories: [{
+                        name: "Rent",
+                        type: "Expenses",
+                        goal: 2000,
+                        month: currentMonth,
+                        year: currentYear,
+                        goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
+                        budget_category_id: expenseCategoryId
+                     }]
+                  }
+               },
                transactions: [],
                timestamp: exportedJSON.timestamp
-            });
+            } as unknown as ExportData);
          });
       });
    });

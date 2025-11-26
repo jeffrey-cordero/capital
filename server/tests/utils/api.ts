@@ -5,6 +5,7 @@ import { Request, Response } from "express";
  */
 export interface MockRequest extends Partial<Request> {
    ip: string;
+   path?: string;
    body: any;
    params: Record<string, string>;
    query: Record<string, string>;
@@ -30,6 +31,7 @@ export interface MockNextFunction extends jest.Mock {
 }
 
 type MockRequestOptions = {
+   path?: string;
    cookies?: Record<string, string>;
    body?: any;
    params?: Record<string, string>;
@@ -52,6 +54,7 @@ type MockMiddleware = {
  */
 const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
    ip: "127.0.0.1",
+   path: options.path,
    cookies: options.cookies ?? {},
    body: options.body ?? {},
    params: options.params ?? {},

@@ -55,7 +55,11 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
    const color = type === "Income" ? "success" : "error";
 
    return (
-      <Box sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }>
+      <Box
+         data-category-id = { budget_category_id }
+         data-testid = { isMainCategory ? `budget-category-${type}` : `budget-category-${budget_category_id}` }
+         sx = { { px: !isMainCategory ? { xs: 2, sm: 4 } : 0 } }
+      >
          <Stack
             direction = "column"
             sx = { { width: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", mb: 1.5, mx: "auto" } }
@@ -65,6 +69,7 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                sx = { { ...horizontalScroll(theme), maxWidth: "90%", justifyContent: "flex-start", alignItems: "center", textAlign: "center" } }
             >
                <Typography
+                  data-testid = { isMainCategory ? `budget-category-name-${type}` : `budget-category-name-${budget_category_id}` }
                   sx = { { fontWeight: "600" } }
                   variant = "h6"
                >
@@ -73,9 +78,12 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                {
                   isMainCategory && (
                      <IconButton
+                        aria-label = "edit"
                         color = "primary"
+                        data-testid = { `budget-category-edit-${type}` }
                         onClick = { onEditClick }
                         size = "medium"
+                        sx = { { mb: 0.25 } }
                      >
                         <FontAwesomeIcon
                            icon = { faPenToSquare }
@@ -86,14 +94,16 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                }
             </Stack>
             <Typography
+               data-testid = { isMainCategory ? `budget-category-goal-${type}` : `budget-category-goal-${budget_category_id}` }
                sx = { { ...horizontalScroll(theme), maxWidth: "90%", fontWeight: "600", textAlign: "center" } }
-               variant = "subtitle1"
             >
                { displayCurrency(current) } / { displayCurrency(goal) }
             </Typography>
          </Stack>
          <LinearProgress
             color = { color }
+            data-progress = { progress }
+            data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
             sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
@@ -115,6 +125,7 @@ const BudgetCategory = function BudgetCategory({ type, onEditClick, allocations 
 
    return (
       <Stack
+         data-testid = { `budget-group-${type}` }
          direction = "column"
       >
          <Box

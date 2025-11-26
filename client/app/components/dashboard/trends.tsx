@@ -151,7 +151,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       // Store the rolling account balances and indices
       const balances = accounts.reduce((acc, record, index) => {
          acc[record.account_id || ""] = {
-            balance: Number(record.balance),
+            balance: record.balance,
             index: index
          };
 
@@ -171,7 +171,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             });
          }
 
-         const amount: number = Math.abs(Number(record.amount));
+         const amount: number = Math.abs(record.amount);
 
          // Increment Income/Expense stack based on the absolute transaction amount
          if (type === "budgets") {

@@ -78,9 +78,9 @@ export async function updateAccount(
 ): Promise<ServerResponse> {
    // Verify required fields are present for the update
    if (!account.account_id) {
-      return sendValidationErrors(null, { account_id: "Missing account ID" });
+      return sendValidationErrors(null, { account_id: "Account ID is required" });
    } else if (!account.last_updated) {
-      return sendValidationErrors(null, { last_updated: "Missing last updated timestamp" });
+      return sendValidationErrors(null, { last_updated: "Last updated timestamp is required" });
    }
 
    // Validate account fields against the account schema
@@ -165,7 +165,7 @@ export async function deleteAccount(user_id: string, account_id: string): Promis
    // Validate the account ID input exists
    if (!account_id) {
       return sendValidationErrors(null, {
-         account_id: "Missing account ID"
+         account_id: "Account ID is required"
       });
    }
 

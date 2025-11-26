@@ -1,6 +1,7 @@
 import {
    Budget,
    BudgetCategory,
+   BudgetCategoryGoal,
    budgetCategorySchema,
    budgetSchema,
    OrganizedBudgets
@@ -51,10 +52,10 @@ export async function fetchBudgets(user_id: string): Promise<ServerResponse> {
  * Creates a new budget category with initial budget records
  *
  * @param {string} user_id - User identifier
- * @param {Budget & BudgetCategory} category - Budget category object
+ * @param {BudgetCategoryGoal} category - Budget category and goal data
  * @returns {Promise<ServerResponse>} A server response of `HTTP_STATUS.CREATED` with the inserted budget category ID or `HTTP_STATUS.BAD_REQUEST` with validation errors
  */
-export async function createBudgetCategory(user_id: string, category: Budget & BudgetCategory): Promise<ServerResponse> {
+export async function createBudgetCategory(user_id: string, category: BudgetCategoryGoal): Promise<ServerResponse> {
    // Validate budget and category fields against their respective schemas
    const budgetFields = budgetSchema.safeParse(category);
 
@@ -69,7 +70,7 @@ export async function createBudgetCategory(user_id: string, category: Budget & B
    }
 
    // Create a complete record by combining validated data
-   const record: Budget & BudgetCategory = {
+   const record: BudgetCategoryGoal = {
       ...categoryFields.data,
       ...budgetFields.data,
       goals: [],
@@ -96,7 +97,7 @@ export async function updateCategory(user_id: string, category: Partial<BudgetCa
    // Ensure the category ID is provided to identify which record to update
    if (!category.budget_category_id) {
       return sendValidationErrors(null, {
-         budget_category_id: "Missing budget category ID"
+         budget_category_id: "Budget category ID is required"
       });
    }
 
@@ -235,7 +236,7 @@ export async function deleteCategory(user_id: string, budget_category_id: string
    // Ensure a category ID was provided
    if (!budget_category_id) {
       return sendValidationErrors(null, {
-         budget_category_id: "Missing budget category ID"
+         budget_category_id: "Budget category ID is required"
       });
    }
 

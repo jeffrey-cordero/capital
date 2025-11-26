@@ -148,7 +148,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
    // Generate account balance history data for visualization
    const history = useMemo(() => {
       // Initialize with the current account balance
-      let balance: number = Number(account?.balance) || 0;
+      let balance: number = account?.balance || 0;
       const data: { date: string, value: number }[] = [{
          value: balance,
          date: getCurrentDate().toISOString().split("T")[0]
@@ -169,7 +169,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
             });
          }
 
-         balance -= Number(transaction.amount);
+         balance -= transaction.amount;
       });
 
       // Add historical data points for trend visualization

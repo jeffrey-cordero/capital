@@ -394,6 +394,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                     </InputLabel>
                                     <Select
                                        { ...field }
+                                       inputProps = { { "data-testid": "transaction-budget-category-select" } }
                                        label = "Category"
                                        renderValue = {
                                           (value) => (

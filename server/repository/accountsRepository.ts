@@ -19,7 +19,7 @@ export async function findByUserId(user_id: string): Promise<Account[]> {
       ORDER BY account_order ASC;
    `;
 
-   return await query(search, [user_id]);
+   return (await query(search, [user_id])).map((a) => ({ ...a, balance: Number(a.balance) }));
 }
 
 /**

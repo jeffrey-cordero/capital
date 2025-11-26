@@ -27,9 +27,8 @@ export async function findByUserId(user_id: string): Promise<Transaction[]> {
       WHERE user_id = $1
       ORDER BY date DESC;
    `;
-   const result = await query(search, [user_id]) as Transaction[];
 
-   return result;
+   return (await query(search, [user_id])).map((t) => ({ ...t, amount: Number(t.amount) }));
 }
 
 /**

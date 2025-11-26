@@ -1,4 +1,10 @@
-import { Budget, BudgetCategory, BudgetGoal, OrganizedBudgets } from "capital/budgets";
+import {
+   Budget,
+   BudgetCategory,
+   BudgetCategoryGoal,
+   BudgetGoal,
+   OrganizedBudgets
+} from "capital/budgets";
 import { PoolClient } from "pg";
 
 import { FIRST_PARAM, query, transaction } from "@/lib/database";
@@ -48,7 +54,7 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
 
       // Extract budget goal data
       const budget: BudgetGoal = {
-         goal: row.goal,
+         goal: Number(row.goal),
          year: row.year,
          month: row.month
       };
@@ -82,13 +88,13 @@ export async function findByUserId(user_id: string): Promise<OrganizedBudgets> {
  * Creates a budget category with initial budget goal
  *
  * @param {string} user_id - User identifier
- * @param {Omit<Budget & BudgetCategory, "budget_category_id">} category - Category details
+ * @param {Omit<BudgetCategoryGoal, "budget_category_id">} category - Budget category and goal data
  * @param {PoolClient | null} [externalClient] - Optional client for ongoing transactions (i.e. user creation transaction)
  * @returns {Promise<string>} Created category ID
  */
 export async function createCategory(
    user_id: string,
-   category: Omit<Budget & BudgetCategory, "budget_category_id">,
+   category: Omit<BudgetCategoryGoal, "budget_category_id">,
    externalClient: PoolClient | null = null
 ): Promise<string> {
    return await transaction<string>(async(internalClient: PoolClient) => {

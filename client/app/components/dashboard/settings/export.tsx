@@ -23,14 +23,12 @@ export default function ExportAccount(): React.ReactNode {
                ...settings,
                birthday: new Date(settings.birthday).toISOString().split("T")[0]
             },
-            accounts: accounts.map((account) => ({
-               ...account,
-               account_order: undefined
-            })),
+            accounts: accounts.map((a) => ({ ...a, account_order: undefined, image: a.image || undefined })),
             budgets: {
                Income: {
                   ...budgets.Income,
                   goalIndex: undefined,
+                  budget_category_id: undefined,
                   categories: budgets.Income.categories.map((category) => ({
                      ...category,
                      goalIndex: undefined,
@@ -40,6 +38,7 @@ export default function ExportAccount(): React.ReactNode {
                Expenses: {
                   ...budgets.Expenses,
                   goalIndex: undefined,
+                  budget_category_id: undefined,
                   categories: budgets.Expenses.categories.map((category) => ({
                      ...category,
                      goalIndex: undefined,

@@ -56,7 +56,7 @@ dashboardRouter.get("/budgets", budgetsController.GET);
 /**
  * Creates a budget category - POST /dashboard/budgets/category
  *
- * @requires {BudgetCategory & Budget} req.body - Budget category and initial budget goal data
+ * @requires {BudgetCategoryGoal} req.body - Budget category and goal data
  */
 dashboardRouter.post("/budgets/category", budgetsController.POST);
 

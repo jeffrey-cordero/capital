@@ -8,8 +8,15 @@ import {
    Select,
    Stack
 } from "@mui/material";
-import { type Budget, type BudgetCategory, budgetCategorySchema, budgetSchema } from "capital/budgets";
+import {
+   type Budget,
+   type BudgetCategory,
+   budgetCategorySchema,
+   budgetSchema,
+   type BudgetType
+} from "capital/budgets";
 import { HTTP_STATUS } from "capital/server";
+import { useCallback } from "react";
 import { Controller, type FieldValues, useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -58,7 +65,7 @@ const updateBudgetGoalSchema = budgetSchema.innerType().pick({
  * @param {EditCategoryProps} props - The props for the EditCategory component
  * @returns {React.ReactNode} The EditCategory component
  */
-export default function EditCategory({ visible, category, onCancel, updateDirtyFields }: EditCategoryProps): React.ReactNode {
+export default function EditCategory({ visible, category, onCancel: onCancelProp, updateDirtyFields }: EditCategoryProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
    const { month, year } = useSelector((state: RootState) => state.budgets.value.period);
 
@@ -76,11 +83,21 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
       }
    });
 
+   const onCancel = useCallback(() => {
+      reset({
+         name: category.name,
+         goal: String(category.goals[category.goalIndex].goal),
+         type: category.type
+      }, { keepDirty: false });
+      updateDirtyFields({}, "editor");
+      onCancelProp();
+   }, [category, reset, updateDirtyFields, onCancelProp]);
+
    const onSubmit = async(data: FieldValues) => {
       try {
          // Ignore requests for empty updates
          if (Object.keys(dirtyFields).length === 0) {
-            onCancel();
+            onCancelProp();
             return;
          }
 
@@ -97,7 +114,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
             if (record === "name" || record === "type") {
                categoryPayload[record] = data[record];
             } else if (record === "goal") {
-               budgetPayload.goal = Number(data[record]);
+               budgetPayload.goal = data[record] === "" ? -1 : Number(data[record]);
             }
          });
 
@@ -143,7 +160,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          // Only update the Redux store for successful requests
          if (categoryUpdates && categorySuccess) {
             dispatch(updateBudgetCategory({
-               type: category.type,
+               type: category.type as BudgetType,
                updates: {
                   ...categoryPayload,
                   budget_category_id: category.budget_category_id
@@ -153,8 +170,8 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
 
          if (budgetUpdates && budgetSuccess) {
             dispatch(updateBudget({
-               goal: Number(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
-               type: categoryFields.data?.type || category.type,
+               goal: budgetFields.data?.goal ?? category.goals[category.goalIndex].goal,
+               type: (categoryFields.data?.type || category.type) as BudgetType,
                budget_category_id: category.budget_category_id
             }));
          }
@@ -163,12 +180,12 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          if (categorySuccess && budgetSuccess) {
             reset({
                name: categoryFields.data?.name || category.name,
-               goal: String(budgetFields.data?.goal || category.goals[category.goalIndex].goal),
+               goal: String(budgetFields.data?.goal ?? category.goals[category.goalIndex].goal),
                type: categoryFields.data?.type || category.type
             }, { keepDirty: false });
 
             updateDirtyFields({}, "editor");
-            onCancel();
+            onCancelProp();
          }
       } catch (error) {
          console.error(`Error updating category: ${error}`);
@@ -183,6 +200,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
          timeout = { 350 }
       >
          <form
+            noValidate = { true }
             onChange = { () => updateDirtyFields(dirtyFields, "editor") }
             onSubmit = { handleSubmit(onSubmit) }
          >
@@ -205,6 +223,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                               aria-label = "Name"
                               autoComplete = "none"
                               id = "editor-name"
+                              inputProps = { { "data-testid": `budget-category-name-edit-${category.budget_category_id}` } }
                               label = "Name"
                               type = "text"
                               value = { field.value || "" }
@@ -229,7 +248,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                               { ...field }
                               aria-label = "Goal"
                               id = "editor-goal"
-                              inputProps = { { step: 0.01, min: 0 } }
+                              inputProps = { { step: 0.01, min: 0, "data-testid": `budget-category-goal-edit-${category.budget_category_id}` } }
                               label = "Goal"
                               type = "number"
                               value = { field.value || "" }
@@ -258,6 +277,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                            </InputLabel>
                            <Select
                               { ...field }
+                              data-testid = { `budget-category-type-edit-${category.budget_category_id}` }
                               label = "Type"
                               slotProps = {
                                  {
@@ -279,6 +299,7 @@ export default function EditCategory({ visible, category, onCancel, updateDirtyF
                   }
                />
                <SubmitButton
+                  dataTestId = { `budget-category-${category.budget_category_id}` }
                   isSubmitting = { isSubmitting }
                   onCancel = { onCancel }
                   type = "Update"
