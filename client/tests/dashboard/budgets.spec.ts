@@ -196,8 +196,14 @@ test.describe("Budget Management", () => {
             });
          });
 
-         test("should validate empty updated goal value", async({ page }) => {
-            const categoryId: string = await createBudgetCategory(page, { name: "TestCat", goal: 1000 }, "Income");
+         test("should validate empty updated main-category goal value", async({ page }) => {
+            await updateBudgetCategory(page, "", { goal: " " as unknown as number }, "Income", {
+               "budget-goal-input": "Goal must be at least $0"
+            });
+         });
+
+         test("should validate empty updated sub-category goal value", async({ page }) => {
+            const categoryId: string = await createBudgetCategory(page, { name: "Test Category", goal: 1000 }, "Income");
 
             await updateBudgetCategory(page, categoryId, { goal: " " as unknown as number }, "Income", {
                [`budget-category-goal-edit-${categoryId}`]: "Goal must be at least $0"
@@ -205,7 +211,7 @@ test.describe("Budget Management", () => {
          });
 
          test("should validate updated goal minimum bounds", async({ page }) => {
-            const categoryId: string = await createBudgetCategory(page, { name: "TestCat", goal: 1000 }, "Income");
+            const categoryId: string = await createBudgetCategory(page, { name: "Test Category", goal: 1000 }, "Income");
 
             await updateBudgetCategory(page, categoryId, { goal: -1 }, "Income", {
                [`budget-category-goal-edit-${categoryId}`]: "Goal must be at least $0"
@@ -213,7 +219,7 @@ test.describe("Budget Management", () => {
          });
 
          test("should validate updated goal maximum bounds", async({ page }) => {
-            const categoryId: string = await createBudgetCategory(page, { name: "TestCat", goal: 1000 }, "Income");
+            const categoryId: string = await createBudgetCategory(page, { name: "Test Category", goal: 1000 }, "Income");
 
             await updateBudgetCategory(page, categoryId, { goal: 1_000_000_000_000 }, "Income", {
                [`budget-category-goal-edit-${categoryId}`]: "Goal exceeds the maximum allowed value"
@@ -332,11 +338,11 @@ test.describe("Budget Management", () => {
          await performAndAssertCancelBudgetCategory(page, baseBudget, "create_category");
       });
 
-      test("should cancel main budget goal updates", async({ page }) => {
+      test("should cancel main-budget goal updates", async({ page }) => {
          await performAndAssertCancelBudgetCategory(page, baseBudget, "update_main_category");
       });
 
-      test("should cancel sub-budget goal updates", async({ page }) => {
+      test("should cancel sub-budget goals updates", async({ page }) => {
          await performAndAssertCancelBudgetCategory(page, baseBudget, "update_sub_category");
       });
    });

@@ -89,7 +89,7 @@ export default function BudgetForm({ type, displayWarning, open, onClose, update
          if (Object.keys(dirtyFields).length === 0) return;
 
          const budgetFields = updateBudgetGoalSchema.safeParse({
-            goal: data.goal === "" ? undefined : Number(data.goal)
+            goal: data.goal === "" ? -1 : Number(data.goal)
          });
 
          if (!budgetFields.success) {

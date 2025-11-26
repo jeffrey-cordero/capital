@@ -83,6 +83,16 @@ export default function EditCategory({ visible, category, onCancel: onCancelProp
       }
    });
 
+   const onCancel = useCallback(() => {
+      reset({
+         name: category.name,
+         goal: String(category.goals[category.goalIndex].goal),
+         type: category.type
+      }, { keepDirty: false });
+      updateDirtyFields({}, "editor");
+      onCancelProp();
+   }, [category, reset, updateDirtyFields, onCancelProp]);
+
    const onSubmit = async(data: FieldValues) => {
       try {
          // Ignore requests for empty updates
@@ -181,16 +191,6 @@ export default function EditCategory({ visible, category, onCancel: onCancelProp
          console.error(`Error updating category: ${error}`);
       }
    };
-
-   const onCancel = useCallback(() => {
-      reset({
-         name: category.name,
-         goal: String(category.goals[category.goalIndex].goal),
-         type: category.type
-      }, { keepDirty: false });
-      updateDirtyFields({}, "editor");
-      onCancelProp();
-   }, [category, reset, updateDirtyFields, onCancelProp]);
 
    return (
       <Collapse
