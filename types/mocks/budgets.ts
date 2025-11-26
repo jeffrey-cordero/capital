@@ -50,10 +50,10 @@ export const VALID_BUDGET: Omit<Budget, "budget_category_id"> = {
  * @returns {{ year: number; month: number }} Year and month object
  */
 export const getPastMonthAndYear = (monthsBack: number = 0): { year: number; month: number } => {
-   let year = new Date().getFullYear();
-   let month = new Date().getMonth() + 1 - monthsBack;
+   let year: number = new Date().getFullYear();
+   let month: number = new Date().getMonth() + 1 - monthsBack;
 
-   // Wrap month to previous year if it goes below 1
+   // Wrap month to the previous year if it goes below 1 (i.e. December)
    if (month < 1) {
       month = 12 + month;
       year -= 1;
@@ -69,10 +69,10 @@ export const getPastMonthAndYear = (monthsBack: number = 0): { year: number; mon
  * @returns {{ year: number; month: number }} Year and month object
  */
 export const getFutureMonthAndYear = (monthsForward: number = 1): { year: number; month: number } => {
-   let year = new Date().getFullYear();
-   let month = new Date().getMonth() + 1 + monthsForward;
+   let year: number = new Date().getFullYear();
+   let month: number = new Date().getMonth() + 1 + monthsForward;
 
-   // Wrap month to next year if it exceeds 12
+   // Wrap month to the next year if it exceeds 12 (i.e. January)
    if (month > 12) {
       month = month - 12;
       year += 1;
@@ -102,12 +102,9 @@ export const createValidBudgetCategory = (overrides?: Partial<BudgetCategory>): 
  * @param {BudgetType} [type] - Budget type to create (default `Expenses`)
  * @returns {BudgetCategory[]} Array of budget category objects
  */
-export const createMockBudgetCategories = (
-   count: number = 2,
-   type: BudgetType = "Expenses"
-): BudgetCategory[] => {
+export const createMockBudgetCategories = (count: number = 2, type: BudgetType = "Expenses"): BudgetCategory[] => {
    const categories: BudgetCategory[] = [];
-   const categoryNames: string[] = ["Groceries", "Utilities", "Entertainment", "Transportation", "Healthcare"];
+   const categoryNames: string[] = ["Groceries", "Utilities", "Entertainment", "Transportation", "Healthcare", "Other"];
 
    for (let i = 0; i < count; i++) {
       categories.push({
@@ -167,8 +164,8 @@ export const createMockBudgets = (count: number = 2): Budget[] => {
  * @returns {BudgetGoal} Budget goal object
  */
 export const createValidBudgetGoal = (overrides?: Partial<BudgetGoal>): BudgetGoal => {
-   const currentYear = new Date().getFullYear();
-   const currentMonth = new Date().getMonth() + 1;
+   const currentYear: number = new Date().getFullYear();
+   const currentMonth: number = new Date().getMonth() + 1;
 
    return {
       goal: 500.00,
@@ -189,12 +186,7 @@ export const createMockBudgetGoals = (count: number = 2): BudgetGoal[] => {
 
    for (let i = 0; i < count; i++) {
       const { year, month } = getPastMonthAndYear(i + 1);
-
-      goals.push({
-         goal: (i + 1) * 500.00,
-         year,
-         month
-      });
+      goals.push({ goal: (i + 1) * 500.00, year, month });
    }
 
    return goals;
@@ -208,11 +200,11 @@ export const createMockBudgetGoals = (count: number = 2): BudgetGoal[] => {
  * @returns {OrganizedBudget} Organized budget structure
  */
 export const createValidOrganizedBudget = (type: BudgetType = "Expenses", categoryCount: number = 2): OrganizedBudget => {
-   const categories = createMockBudgetCategories(categoryCount, type);
-   const goals = createMockBudgetGoals(2);
+   const categories: BudgetCategory[] = createMockBudgetCategories(categoryCount, type);
+   const goals: BudgetGoal[] = createMockBudgetGoals(2);
 
    // Assign goals to categories
-   categories.forEach((category, index) => {
+   categories.forEach((category: BudgetCategory, index: number) => {
       category.goals = [goals[index % goals.length]];
    });
 
@@ -246,8 +238,8 @@ export const createValidOrganizedBudgets = (incomeCount: number = 2, expenseCoun
  * @returns {BudgetCategoryGoal} Combined category and budget object
  */
 export const createValidBudgetEntry = (categoryOverrides?: Partial<BudgetCategory>, budgetOverrides?: Partial<Budget>): BudgetCategoryGoal => {
-   const category = createValidBudgetCategory(categoryOverrides);
-   const budget = createValidBudget(budgetOverrides);
+   const budget: Budget = createValidBudget(budgetOverrides);
+   const category: BudgetCategory = createValidBudgetCategory(categoryOverrides);
 
    return { ...category, ...budget };
 };

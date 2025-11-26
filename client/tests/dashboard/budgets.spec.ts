@@ -420,7 +420,7 @@ test.describe("Budget Management", () => {
          await assertTransactionBudgetCategoryDropdown(
             page,
             "Expenses",
-            [],
+            [{ budget_category_id: incomeId, name: "Salary", goal: 5000 }],
             [{ budget_category_id: expenseId, name: "Rent", goal: 1500 }],
             mainExpenseCategory!
          );
