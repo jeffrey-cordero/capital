@@ -4,7 +4,6 @@ import { BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { dragAndDrop } from "@tests/utils/dashboard";
 import {
    assertBudgetCategoryOrder,
-   assertBudgetFormContent,
    assertBudgetGoalPersistence,
    assertBudgetPageState,
    assertTransactionBudgetCategoryDropdown,
@@ -12,12 +11,12 @@ import {
    type BudgetPageState,
    createBudgetCategory,
    deleteBudgetCategory,
-   navigateBudgetPeriod,
    performAndAssertCancelBudgetCategory,
-   setupBudgetNavigationTest,
+   setupBudgetGoalPersistence,
    updateBudgetCategory
 } from "@tests/utils/dashboard/budgets";
 import { setupAssignedUser } from "@tests/utils/user-management";
+
 import { months } from "@/lib/dates";
 
 test.describe("Budget Management", () => {
@@ -45,7 +44,7 @@ test.describe("Budget Management", () => {
          await assertComponentIsVisible(page, "budget-period-next");
          await assertComponentIsVisible(page, "budget-period-label");
 
-         // For the current month, future navigation should be disabled, prior navigation should be enabled
+         // For the current month, future navigation should be disabled and previous navigation should be enabled
          await expect(page.getByTestId("budget-period-next")).toBeDisabled();
          await expect(page.getByTestId("budget-period-previous")).toBeEnabled();
       });
@@ -110,7 +109,7 @@ test.describe("Budget Management", () => {
          });
 
          test("should validate required goal field", async({ page }) => {
-            await createBudgetCategory(page, { name: "Test Category" , goal: "" as unknown as number }, undefined, {
+            await createBudgetCategory(page, { name: "Test Category", goal: "" as unknown as number }, undefined, {
                "budget-category-goal-input": "Goal must be at least $0"
             });
          });
@@ -125,10 +124,6 @@ test.describe("Budget Management", () => {
             await createBudgetCategory(page, { name: "Test Category", goal: 1_000_000_000_000 }, undefined, {
                "budget-category-goal-input": "Goal exceeds the maximum allowed value"
             });
-         });
-
-         test("should cancel category creation", async({ page }) => {
-            await performAndAssertCancelBudgetCategory(page, baseBudget, "create");
          });
       });
    });
@@ -224,10 +219,6 @@ test.describe("Budget Management", () => {
                [`budget-category-goal-edit-${categoryId}`]: "Goal exceeds the maximum allowed value"
             });
          });
-
-         test("should cancel category updates", async({ page }) => {
-            await performAndAssertCancelBudgetCategory(page, baseBudget, "edit");
-         });
       });
    });
 
@@ -236,56 +227,75 @@ test.describe("Budget Management", () => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
       });
 
-      test("should update main budget goal for past month and persist", async({ page }) => {
-         await updateBudgetCategory(page, "", { goal: 3000 }, "Income");
-         await assertBudgetPageState(page, {
-            ...baseBudget,
-            Income: { goal: 3000, categories: [] }
-         });
+      test("should persist default budget goals across 12 months for both Income and Expenses", async({ page }) => {
+         // Default goals for the current month should persist in the past for all prior months
+         const goals: number[] = Array(12).fill(2000);
+         const config: BudgetNavigationTestConfig = {
+            updatingMonths: [],
+            Income: {
+               goals: goals,
+               categories: {}
+            },
+            Expenses: {
+               goals: goals,
+               categories: {}
+            }
+         };
 
-         // Navigate back 2 months
-         await navigateBudgetPeriod(page, -2);
-
-         // Update main goal at past month
-         await updateBudgetCategory(page, "", { goal: 5000 }, "Income");
-         await assertBudgetFormContent(page, "Income", { goal: 5000, categories: [] });
-
-         // Navigate 1 month forward
-         await navigateBudgetPeriod(page, 1);
-         await assertBudgetFormContent(page, "Income", { goal: 5000, categories: [] });
-
-         // Navigate forward to current month
-         await navigateBudgetPeriod(page, 1);
-
-         // Verify current month still has original goal
-         await assertBudgetFormContent(page, "Income", { goal: 3000, categories: [] });
+         await assertBudgetGoalPersistence(page, config, "backward");
+         await assertBudgetGoalPersistence(page, config, "forward");
       });
 
-      test("should set category goal for past month and persist", async({ page }) => {
-         const incomeCat: string = await createBudgetCategory(page, { name: "IncomeSource", goal: 4 }, "Income");
-         const expenseCat: string = await createBudgetCategory(page, { name: "ExpenseItem", goal: 4 }, "Expenses");
+      test("should persist various budget goals across 6 months with multiple intermediate updates", async({ page }) => {
+         const incomeCategoryId: string = await createBudgetCategory(page, { name: "Income Test", goal: 2000 }, "Income");
+         const expenseCategoryId: string = await createBudgetCategory(page, { name: "Expense Test", goal: 2000 }, "Expenses");
 
-         // Navigate back 3 months
-         await navigateBudgetPeriod(page, -3);
+         const config: BudgetNavigationTestConfig = {
+            // Goals extend up to months with existing records and the last goal in the past persists across all prior months
+            updatingMonths: [0, 2, 4],
+            Income: {
+               goals: [1, 2, 2, 4, 4, 4],
+               categories: {
+                  [incomeCategoryId]: [1, 20, 20, 40, 40, 40]
+               }
+            },
+            Expenses: {
+               goals: [1, 2, 2, 4, 4, 4],
+               categories: {
+                  [expenseCategoryId]: [100, 200, 200, 400, 400, 400]
+               }
+            }
+         };
 
-         // Verify categories still exist and have goal 4
+         await setupBudgetGoalPersistence(page, config);
+
+         await assertBudgetGoalPersistence(page, config, "backward");
+         await assertBudgetGoalPersistence(page, config, "forward");
+      });
+   });
+
+   test.describe("Budget Category Deletion", () => {
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
+      });
+
+      test("should delete category with confirmation", async({ page }) => {
+         const categoryId: string = await createBudgetCategory(page, { name: "To Delete", goal: 500 }, "Expenses");
+         await deleteBudgetCategory(page, categoryId, "Expenses", true);
+
          await assertBudgetPageState(page, {
             ...baseBudget,
-            Income: { goal: 2000, categories: [{ budget_category_id: incomeCat, name: "IncomeSource", goal: 4 }] },
-            Expenses: { goal: 2000, categories: [{ budget_category_id: expenseCat, name: "ExpenseItem", goal: 4 }] }
+            Expenses: { goal: 2000, categories: [] }
          });
+      });
 
-         // Navigate back to current month
-         const nextButton = page.getByTestId("budget-period-next");
-         for (let i = 0; i < 3; i++) {
-            await nextButton.click();
-         }
+      test("should cancel budget category deletion", async({ page }) => {
+         const categoryId: string = await createBudgetCategory(page, { name: "To Keep", goal: 500 }, "Expenses");
+         await deleteBudgetCategory(page, categoryId, "Expenses", false);
 
-         // Verify goals persisted to current month
          await assertBudgetPageState(page, {
             ...baseBudget,
-            Income: { goal: 2000, categories: [{ budget_category_id: incomeCat, name: "IncomeSource", goal: 4 }] },
-            Expenses: { goal: 2000, categories: [{ budget_category_id: expenseCat, name: "ExpenseItem", goal: 4 }] }
+            Expenses: { goal: 2000, categories: [{ budget_category_id: categoryId, name: "To Keep", goal: 500 }] }
          });
       });
    });
@@ -296,9 +306,9 @@ test.describe("Budget Management", () => {
       });
 
       test("should reorder budget categories via drag and drop", async({ page }) => {
-         const category1: string = await createBudgetCategory(page, { name: "Cat1", goal: 100 }, "Income");
-         const category2: string = await createBudgetCategory(page, { name: "Cat2", goal: 200 }, "Income");
-         const category3: string = await createBudgetCategory(page, { name: "Cat3", goal: 300 }, "Income");
+         const category1: string = await createBudgetCategory(page, { name: "Category 1", goal: 100 }, "Income");
+         const category2: string = await createBudgetCategory(page, { name: "Category 2", goal: 200 }, "Income");
+         const category3: string = await createBudgetCategory(page, { name: "Category 3", goal: 300 }, "Income");
 
          await assertBudgetCategoryOrder(page, [category1, category2, category3]);
 
@@ -308,148 +318,51 @@ test.describe("Budget Management", () => {
          await assertBudgetCategoryOrder(page, [category2, category1, category3]);
 
          const dragHandle3 = page.getByTestId(`budget-category-drag-${category3}`);
-         const item2_new = page.getByTestId(`budget-category-item-${category2}`);
-         await dragAndDrop(page, dragHandle3, item2_new);
+         await dragAndDrop(page, dragHandle3, item2);
          await assertBudgetCategoryOrder(page, [category3, category2, category1]);
       });
    });
 
-   test.describe("Budget Category Deletion", () => {
+   test.describe("Cancel Behavior", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
       });
 
-      test("should delete category with confirmation", async({ page }) => {
-         const categoryId: string = await createBudgetCategory(page, { name: "ToDelete", goal: 500 }, "Expenses");
-         await deleteBudgetCategory(page, categoryId, "Expenses", true);
-
-         await assertBudgetPageState(page, {
-            ...baseBudget,
-            Expenses: { goal: 2000, categories: [] }
-         });
+      test("should cancel budget category creation", async({ page }) => {
+         await performAndAssertCancelBudgetCategory(page, baseBudget, "create_category");
       });
 
-      test("should cancel category deletion", async({ page }) => {
-         const categoryId: string = await createBudgetCategory(page, { name: "ToKeep", goal: 500 }, "Expenses");
-         await deleteBudgetCategory(page, categoryId, "Expenses", false);
+      test("should cancel main budget goal updates", async({ page }) => {
+         await performAndAssertCancelBudgetCategory(page, baseBudget, "update_main_category");
+      });
 
-         await assertBudgetPageState(page, {
-            ...baseBudget,
-            Expenses: { goal: 2000, categories: [{ budget_category_id: categoryId, name: "ToKeep", goal: 500 }] }
-         });
+      test("should cancel sub-budget goal updates", async({ page }) => {
+         await performAndAssertCancelBudgetCategory(page, baseBudget, "update_sub_category");
       });
    });
 
-   test.describe("Carousel Behavior", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE);
-      });
-
-      test("should not allow selecting future months from current month", async({ page }) => {
-         const nextButton = page.getByTestId("budget-period-next");
-         await expect(nextButton).toBeDisabled();
-      });
-
-      test("should allow navigating backward and forward within 2 years", async({ page }) => {
-         // Navigate back 24 months (2 years)
-         const prevButton = page.getByTestId("budget-period-previous");
-         for (let i = 0; i < 24; i++) {
-            await prevButton.click();
-         }
-
-         // Navigate forward 24 months
-         const nextButton = page.getByTestId("budget-period-next");
-         for (let i = 0; i < 24; i++) {
-            await nextButton.click();
-         }
-
-         // Assert back at current
-         await expect(nextButton).toBeDisabled();
-      });
-
-      test("should preserve budget data across period navigation", async({ page }) => {
-         // Create category at current period (automatically opens Income modal)
-         const categoryId: string = await createBudgetCategory(page, { name: "Current", goal: 5000 }, "Income");
-
-         // Navigate backward
-         await navigateBudgetPeriod(page, -1);
-
-         // Navigate forward back to current
-         await navigateBudgetPeriod(page, 1);
-
-         // Assert category still exists on page
-         await assertBudgetPageState(page, {
-            ...baseBudget,
-            Income: { goal: 2000, categories: [{ budget_category_id: categoryId, name: "Current", goal: 5000 }] }
-         });
-      });
-   });
-
-   test.describe("Budget Goal Persistence", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
-      });
-
-      test("should persist budget goals across 6 months with multiple updates", async({ page }) => {
-         const incomeCatId: string = await createBudgetCategory(page, { name: "IncomeTest", goal: 2000 }, "Income");
-         const expenseCatId: string = await createBudgetCategory(page, { name: "ExpenseTest", goal: 2000 }, "Expenses");
-
-         const config: BudgetNavigationTestConfig = {
-            updatingMonths: [0, 2, 4],
-            Income: {
-               goals: [1, 2, 2, 4, 4, 4],
-               categories: {
-                  [incomeCatId]: [1, 20, 20, 40, 40, 40],
-               }
-            },
-            Expenses: {
-               goals: [1, 2, 2, 4, 4, 4],
-               categories: {
-                  [expenseCatId]: [100, 200, 200, 400, 400, 400]
-               }
-            }
-         };
-
-         await setupBudgetNavigationTest(page, config);
-
-         // Assert backward navigation persistence to six months ago
-         await assertBudgetGoalPersistence(page, config, "backward");
-
-         // Assert forward navigation persistence from six months ago to the current month
-         await assertBudgetGoalPersistence(page, config, "forward");
-      });
-   });
-
-   test.describe("Transaction Category Dropdown", () => {
+   test.describe("Transaction Form Integration", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
       });
 
       test("should display empty budget categories in transaction dropdown on initial load", async({ page }) => {
-         // Initial state: no budget categories, only Income/Expenses headers
          await assertTransactionBudgetCategoryDropdown(page, "Income", [], []);
       });
 
       test("should add income category and reflect in transaction dropdown", async({ page }) => {
-         // Create an income category
          const categoryId: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
 
-         // Assert it appears in transaction dropdown under Income
          await assertTransactionBudgetCategoryDropdown(page, "Income", [{ budget_category_id: categoryId, name: "Salary", goal: 5000 }], []);
       });
 
       test("should add multiple categories and reflect correct grouping in transaction dropdown", async({ page }) => {
-         // Create income categories
          const incomeCategory1: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
-
          const incomeCategory2: string = await createBudgetCategory(page, { name: "Bonus", goal: 2000 }, "Income");
 
-         // Create expense categories
          const expenseCategory1: string = await createBudgetCategory(page, { name: "Rent", goal: 1500 }, "Expenses");
-
          const expenseCategory2: string = await createBudgetCategory(page, { name: "Food", goal: 500 }, "Expenses");
 
-         // Assert all categories appear in correct sections
          await assertTransactionBudgetCategoryDropdown(
             page,
             "Income",
@@ -465,52 +378,37 @@ test.describe("Budget Management", () => {
       });
 
       test("should update category name and reflect in transaction dropdown", async({ page }) => {
-         // Create a category
          const categoryId: string = await createBudgetCategory(page, { name: "Original Name", goal: 5000 }, "Income");
-
-         // Update the category name
          await updateBudgetCategory(page, categoryId, { name: "Updated Name", goal: 5000 }, "Income");
 
-         // Assert updated name appears in dropdown
          await assertTransactionBudgetCategoryDropdown(page, "Income", [{ budget_category_id: categoryId, name: "Updated Name", goal: 5000 }], []);
       });
 
       test("should move category to different type and reflect in transaction dropdown", async({ page }) => {
-         // Create an income category
          const categoryId: string = await createBudgetCategory(page, { name: "Investment", goal: 3000 }, "Income");
-
-         // Update it to Expenses type
          await updateBudgetCategory(page, categoryId, { name: "Investment", goal: 3000, type: "Expenses" }, "Income");
 
-         // Assert it appears in Expenses section of dropdown
          await assertTransactionBudgetCategoryDropdown(page, "Expenses", [], [{ budget_category_id: categoryId, name: "Investment", goal: 3000 }]);
       });
 
       test("should delete category and remove from transaction dropdown", async({ page }) => {
-         // Create an income category
          const incomeId: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
-
-         // Create an expense category
          const expenseId: string = await createBudgetCategory(page, { name: "Rent", goal: 1500 }, "Expenses");
 
-         // Delete the income category
          await deleteBudgetCategory(page, incomeId, "Income");
-
-         // Assert only expense category appears in dropdown
          await assertTransactionBudgetCategoryDropdown(page, "Expenses", [], [{ budget_category_id: expenseId, name: "Rent", goal: 1500 }]);
       });
 
       test("should auto-select main category in transaction dropdown", async({ page }) => {
-         // Create an income category and an expense category
          const incomeId: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
          const expenseId: string = await createBudgetCategory(page, { name: "Rent", goal: 1500 }, "Expenses");
 
+         // Main budget categories should be auto-selected in the transaction dropdown with their actual UUIDs
          const mainIncomeCategory: string | null = await (page.getByTestId("budget-category-Income").getAttribute("data-category-id"));
          const mainExpenseCategory: string | null = await (page.getByTestId("budget-category-Expenses").getAttribute("data-category-id"));
          expect(mainIncomeCategory).not.toBeNull();
          expect(mainExpenseCategory).not.toBeNull();
 
-         // Assert the income category is available and can be auto-selected when creating transaction
          await assertTransactionBudgetCategoryDropdown(
             page,
             "Income",
@@ -519,7 +417,6 @@ test.describe("Budget Management", () => {
             mainIncomeCategory!
          );
 
-         // Assert the expense category is available and can be auto-selected when creating transaction
          await assertTransactionBudgetCategoryDropdown(
             page,
             "Expenses",

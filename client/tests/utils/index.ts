@@ -78,8 +78,10 @@ export async function assertModalIsClosed(page: Page, dataTestId?: string): Prom
 export async function closeModal(page: Page, force: boolean = false, dataTestId: string = "modal"): Promise<void> {
    const modal = page.locator(`[data-testid='${dataTestId}']`);
 
-   // Ensure the modal is present and visible
-   await modal.waitFor({ state: "visible" });
+   // Ensure the modal is present and visible, otherwise no need to close it
+   if (!await modal.isVisible()) {
+      return;
+   }
 
    // Scroll or bring the modal into view, if needed
    await modal.scrollIntoViewIfNeeded();

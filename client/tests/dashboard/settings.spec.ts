@@ -1,5 +1,5 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsHidden, assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsVisible, closeModal } from "@tests/utils";
 import {
    ACCOUNTS_ROUTE,
    BUDGETS_ROUTE,
@@ -11,13 +11,14 @@ import {
    SETTINGS_ROUTE
 } from "@tests/utils/authentication";
 import { createAccount } from "@tests/utils/dashboard/accounts";
-import { createBudgetCategory, openBudgetForm } from "@tests/utils/dashboard/budgets";
+import { createBudgetCategory } from "@tests/utils/dashboard/budgets";
 import {
    assertAccountDetails,
    assertExportStructure,
    assertSecurityDetails,
    assertThemeState,
    cancelLogout,
+   type ExportData,
    getCurrentAndOppositeTheme,
    performAccountDeletion,
    performAndAssertCancelBehavior,
@@ -277,25 +278,20 @@ test.describe("Settings", () => {
 
       test.describe("Data Export", () => {
          test("should export account data as JSON with correct structure and values", async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            // Start at ACCOUNTS_ROUTE to create accounts
+            // Start at the accounts page to create financial accounts for the export
             await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true, assignedUser);
 
             const account1Data = { name: "Checking Account", balance: 5000, type: "Checking", image: IMAGE_FIXTURES.valid };
             const account2Data = { name: "Savings Account", balance: 3000, type: "Savings" };
-            const account1Id = await createAccount(page, account1Data);
-            const account2Id = await createAccount(page, account2Data);
+            const account1Id: string = await createAccount(page, account1Data);
+            const account2Id: string = await createAccount(page, account2Data);
 
-            // Navigate to budgets to create budget categories
+            // Navigate to the budgets page to create budget categories for the export
             await navigateToPath(page, BUDGETS_ROUTE);
 
-            await openBudgetForm(page, "Income");
-            await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
-            await page.keyboard.press("Escape");
-
-            await openBudgetForm(page, "Expenses");
-            await createBudgetCategory(page, { name: "Rent", goal: 2000 }, "Expenses");
-            await page.keyboard.press("Escape");
-            await assertComponentIsHidden(page, "budget-form-Expenses");
+            const incomeCategoryId: string = await createBudgetCategory(page, { name: "Salary", goal: 5000 }, "Income");
+            const expenseCategoryId: string = await createBudgetCategory(page, { name: "Rent", goal: 2000 }, "Expenses");
+            await closeModal(page, false, "budget-form-Expenses");
 
             await navigateToPath(page, SETTINGS_ROUTE);
             const exportedJSON = await performExport(page);
@@ -326,7 +322,7 @@ test.describe("Settings", () => {
                         month: currentMonth,
                         year: currentYear,
                         goals: [{ goal: 5000, month: currentMonth, year: currentYear }],
-                        budget_category_id: expect.any(String)
+                        budget_category_id: incomeCategoryId
                      }]
                   },
                   Expenses: {
@@ -338,13 +334,13 @@ test.describe("Settings", () => {
                         month: currentMonth,
                         year: currentYear,
                         goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
-                        budget_category_id: expect.any(String)
+                        budget_category_id: expenseCategoryId
                      }]
                   }
                },
                transactions: [],
                timestamp: exportedJSON.timestamp
-            } as any);
+            } as unknown as ExportData);
          });
       });
    });

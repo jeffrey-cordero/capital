@@ -183,34 +183,42 @@ export async function createBudgetCategory(
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetPageState} state - Expected budget page state
- * @param {"create" | "edit"} operation - Type of operation being cancelled
+ * @param {"create_category" | "update_main_category" | "update_sub_category"} operation - Type of operation being cancelled
  */
 export async function performAndAssertCancelBudgetCategory(
    page: Page,
    state: BudgetPageState,
-   operation: "create" | "edit"
+   operation: "create_category" | "update_main_category" | "update_sub_category"
 ): Promise<void> {
    await openBudgetForm(page, "Income");
 
-   let budgetState = Object.assign({}, state);
+   const budgetState = Object.assign({}, state);
    let cancelButtonTestId: string;
+   let inputTestId: string;
 
-   if (operation === "create") {
-      cancelButtonTestId = "budget-category-new-cancel";
+   if (operation === "create_category") {
       await page.getByRole("button", { name: "Add Category" }).click();
-      await page.getByTestId("budget-category-name-input").fill("Modified");
+
+      inputTestId = "budget-category-goal-input";
+      cancelButtonTestId = "budget-category-new-cancel";
+   } else if (operation === "update_main_category") {
+      inputTestId = "budget-goal-input";
+      cancelButtonTestId = "budget-goal-cancel";
    } else {
       const categoryData: BudgetCategoryFormData = { name: "Original", goal: 1000 };
       const categoryId: string = await createBudgetCategory(page, categoryData, "Income");
+
+      inputTestId = `budget-category-goal-edit-${categoryId}`;
       cancelButtonTestId = `budget-category-${categoryId}-cancel`;
 
+      // Ensure the category is in edit mode
       await page.getByTestId(`budget-category-edit-btn-${categoryId}`).click();
-      await page.getByTestId(`budget-category-name-edit-${categoryId}`).fill("Modified");
 
       // Update the budget state with the new category
       budgetState.Income.categories.push({ ...categoryData, budget_category_id: categoryId } as BudgetCategoryState);
    }
 
+   await page.getByTestId(inputTestId).fill("0.00");
    await page.getByTestId(cancelButtonTestId).click();
 
    // Assert no changes were made from the original state
@@ -522,7 +530,7 @@ export async function assertTransactionBudgetCategoryDropdown(
  * @param {Page} page - Playwright page instance
  * @param {BudgetNavigationTestConfig} config - Configuration with goal arrays and monthsToUpdate indices
  */
-export async function setupBudgetNavigationTest(
+export async function setupBudgetGoalPersistence(
    page: Page,
    config: BudgetNavigationTestConfig
 ): Promise<void> {
@@ -561,7 +569,9 @@ export async function setupBudgetNavigationTest(
 
 /**
  * Verifies budget goals persist correctly across months based on configuration
- * Navigates through all months specified in updatingMonths and validates goal values
+ * Navigates through all months specified in updatingMonths and validates goal values,
+ * where Income categories should be called "Income Test" and Expenses categories should
+ * be called "Expense Test" for simplicity in the test assertions
  *
  * @param {Page} page - Playwright page instance
  * @param {BudgetNavigationTestConfig} config - Configuration with expected goal arrays
@@ -583,11 +593,11 @@ export async function assertBudgetGoalPersistence(
       await assertBudgetPageState(page, {
          Income: {
             goal: config.Income.goals[i],
-            categories: Object.entries(config.Income.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "IncomeTest", goal: goals[i] }))
+            categories: Object.entries(config.Income.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "Income Test", goal: goals[i] }))
          },
          Expenses: {
             goal: config.Expenses.goals[i],
-            categories: Object.entries(config.Expenses.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "ExpenseTest", goal: goals[i] }))
+            categories: Object.entries(config.Expenses.categories).map(([categoryId, goals]) => ({ budget_category_id: categoryId, name: "Expense Test", goal: goals[i] }))
          }
       });
 

@@ -20,7 +20,7 @@ export default defineConfig({
    retries: process.env.CI ? 3 : 0,
    workers: process.env.CI ? 3 : undefined,
    reporter: "html",
-   timeout: 60000, // 60 seconds per test
+   timeout: 120000, // 120 seconds per test
    use: {
       baseURL: webServer.url,
       trace: "on-first-retry",

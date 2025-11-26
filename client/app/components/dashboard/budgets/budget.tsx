@@ -69,9 +69,9 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
                sx = { { ...horizontalScroll(theme), maxWidth: "90%", justifyContent: "flex-start", alignItems: "center", textAlign: "center" } }
             >
                <Typography
+                  data-testid = { isMainCategory ? `budget-category-name-${type}` : `budget-category-name-${budget_category_id}` }
                   sx = { { fontWeight: "600" } }
                   variant = "h6"
-                  data-testid = { isMainCategory ? `budget-category-name-${type}` : `budget-category-name-${budget_category_id}` }
                >
                   { name }
                </Typography>
@@ -101,9 +101,9 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
             </Typography>
          </Stack>
          <LinearProgress
-            data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
-            data-progress = { progress }
             color = { color }
+            data-progress = { progress }
+            data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
             sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }
             variant = "determinate"
