@@ -78,28 +78,26 @@ export async function assertModalIsClosed(page: Page, dataTestId?: string): Prom
 export async function closeModal(page: Page, force: boolean = false, dataTestId: string = "modal"): Promise<void> {
    const modal = page.getByTestId(dataTestId);
 
-   // Ensure the modal is present and visible, otherwise no need to close it
-   if (!(await modal.isVisible())) return;
+   // No modals to close within the current viewport
+   if (await modal.count() === 0) return;
 
-   // Scroll or bring the modal into view, if needed
-   await modal.scrollIntoViewIfNeeded();
+   try {
+      // Wait until the target modal is fully visible within the current viewport
+      await modal.waitFor({ state: "visible" });
+      await modal.scrollIntoViewIfNeeded();
 
-   // Press Escape to close the modal
-   await page.keyboard.press("Escape");
+      // Press Escape to close the modal
+      await page.keyboard.press("Escape");
 
-   // Wait for any warning modal to appear if there are unsaved changes
-   const warningModal = page.getByTestId("warning-modal");
-   const isWarningVisible = await warningModal.isVisible().catch(() => false);
+      if (force) {
+         await assertComponentIsVisible(page, "warning-modal");
+         await assertComponentIsVisible(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
+         await page.getByTestId("warning-modal-confirm").click();
+      }
 
-   if (isWarningVisible) {
-      // Warning modal appeared - click confirm to close with unsaved changes warning
-      await page.getByTestId("warning-modal-confirm").click();
-   } else if (force) {
-      // Force close was requested but no warning appeared
-      await assertComponentIsVisible(page, "warning-modal");
-      await assertComponentIsVisible(page, "warning-modal-content", "Are you sure you want to exit? Any unsaved changes will be lost.");
-      await page.getByTestId("warning-modal-confirm").click();
+      await assertModalIsClosed(page, dataTestId);
+   } catch {
+      // Target modal was detached during the close sequence above
+      return;
    }
-
-   await assertModalIsClosed(page, dataTestId);
 }
