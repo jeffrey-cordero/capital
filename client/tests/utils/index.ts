@@ -59,13 +59,13 @@ export async function assertInputVisibility(
 }
 
 /**
- * Asserts the modal is closed by waiting for it to be hidden from the DOM
+ * Asserts the modal is closed by waiting for it to be detached from the DOM
  *
  * @param {Page} page - Playwright page instance
  * @param {string} [dataTestId] - Optional specific modal test ID to verify is closed
  */
 export async function assertModalIsClosed(page: Page, dataTestId?: string): Promise<void> {
-   await page.getByTestId(`[data-testid="${dataTestId || "modal"}"]`).waitFor({ state: "hidden" });
+   await page.getByTestId(`[data-testid="${dataTestId || "modal"}"]`).waitFor({ state: "detached" });
 }
 
 /**
@@ -76,12 +76,10 @@ export async function assertModalIsClosed(page: Page, dataTestId?: string): Prom
  * @param {string} [dataTestId="modal"] - Optional specific modal test ID to close
  */
 export async function closeModal(page: Page, force: boolean = false, dataTestId: string = "modal"): Promise<void> {
-   const modal = page.locator(`[data-testid='${dataTestId}']`);
+   const modal = page.getByTestId(dataTestId);
 
    // Ensure the modal is present and visible, otherwise no need to close it
-   if (!await modal.isVisible()) {
-      return;
-   }
+   if (!(await modal.isVisible())) return;
 
    // Scroll or bring the modal into view, if needed
    await modal.scrollIntoViewIfNeeded();
