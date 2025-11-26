@@ -8,4 +8,5 @@
 **/.artifacts/
 .DS_Store
 .vercel
+.claude/
 .artifacts/
