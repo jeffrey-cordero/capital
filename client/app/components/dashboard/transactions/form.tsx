@@ -144,6 +144,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          const type: BudgetType = data.budget_category_id ? budgetsMap[data.budget_category_id] : (data.amount >= 0 ? "Income" : "Expenses");
          const fields = transactionSchema.safeParse({
             ...data,
+            amount: data.amount === "" ? 0 : data.amount,
             type: type
          });
 
@@ -207,7 +208,10 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       >
          <Section icon = { faMoneyBillTransfer }>
             <Box sx = { { mt: 2 } }>
-               <form onSubmit = { handleSubmit(onSubmit) }>
+               <form
+                  noValidate = { true }
+                  onSubmit = { handleSubmit(onSubmit) }
+               >
                   <Stack
                      direction = "column"
                      spacing = { 1 }

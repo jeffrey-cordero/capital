@@ -8,7 +8,7 @@ import * as transactionsRepository from "@/repository/transactionsRepository";
 /**
  * Cache duration for user transactions (10 minutes)
  */
-const TRANSACTION_CACHE_DURATION = 10 * 60;
+export const TRANSACTION_CACHE_DURATION = 10 * 60;
 
 /**
  * Generates transaction cache key for Redis
@@ -74,7 +74,7 @@ export async function updateTransaction(user_id: string, transaction: Partial<Tr
    // Ensure the transaction ID is provided to identify which record to update
    if (!transaction.transaction_id) {
       return sendValidationErrors(null, {
-         transaction_id: "Missing transaction ID"
+         transaction_id: "Transaction ID is required"
       });
    }
 
@@ -108,7 +108,7 @@ export async function deleteTransactions(user_id: string, transactionIds: string
    // Verify that transaction IDs are provided as a non-empty array
    if (!Array.isArray(transactionIds) || !transactionIds?.length) {
       return sendValidationErrors(null, {
-         transactionIds: "Missing transaction IDs"
+         transactionIds: "Transaction IDs are required"
       });
    }
 
