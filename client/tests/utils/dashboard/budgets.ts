@@ -59,6 +59,23 @@ export type BudgetNavigationTestConfig = {
 };
 
 /**
+ * Gets all budget category IDs from the page for a specific type
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetType} type - Budget type (Income or Expenses)
+ * @returns {Promise<string[]>} Array of budget category IDs
+ */
+export async function getBudgetCategoryIds(page: Page, type: BudgetType): Promise<string[]> {
+   const editButtons: Locator = page.locator(`[data-testid^="budget-category-edit-"][data-testid$="-${type}"]`);
+
+   return (await editButtons.evaluateAll(els =>
+      els.map(el => el.getAttribute("data-testid"))
+   )).filter((id): id is string =>
+      id !== null && /^budget-category-edit-[\da-f-]{36}-(Income|Expenses)$/i.test(id)
+   ).map(id => id.replace("budget-category-edit-", "").replace(`-${type}`, ""));
+}
+
+/**
  * Opens budget form modal for the specified type
  *
  * @param {Page} page - Playwright page

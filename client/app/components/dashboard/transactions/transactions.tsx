@@ -38,6 +38,11 @@ type EditState = {
 export default function Transactions({ filter, identifier }: TransactionProps): React.ReactNode {
    const [editState, setEditState] = useState<EditState>({ state: "view" });
 
+   // Generate context-aware testid for the add button to avoid duplicates
+   const addButtonTestId = useMemo(() => {
+      return filter ? `transactions-add-button-${filter}` : "transactions-add-button";
+   }, [filter]);
+
    // Modal open/close handlers
    const openModal = useCallback((index?: number) => {
       setEditState({ state: index === undefined ? "create" : "edit", index });
@@ -97,6 +102,7 @@ export default function Transactions({ filter, identifier }: TransactionProps): 
                <Button
                   className = "btn-primary"
                   color = "primary"
+                  data-testid = { addButtonTestId }
                   onClick = { () => openModal() }
                   startIcon = { <FontAwesomeIcon icon = { faPlus } /> }
                   variant = "contained"

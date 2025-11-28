@@ -61,7 +61,7 @@ export async function setupAssignedUser(
    usersRegistry: Set<CreatedUserRecord>,
    assignedRegistry: Record<string, string>,
    route: string,
-   requiresIsolation: boolean = true,
+   requiresIsolation: boolean = false,
    markAsTestScoped: boolean = false,
    assignedUser?: AssignedUserRecord
 ): Promise<void> {

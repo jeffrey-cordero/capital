@@ -88,8 +88,15 @@ export async function submitForm(
             } else if (inputType === "radio") {
                await element.check();
             } else if (inputType === "date") {
-               // Ensure the date format is in the format `YYYY-MM-DD`
-               await element.fill(new Date(value).toISOString().split("T")[0]);
+               // Handle empty vs. valid date inputs
+               let formatted: string = "";
+               const date: Date | null = value ? new Date(value) : null;
+
+               if (date && !isNaN(date.getTime())) {
+                  formatted = date.toISOString().split("T")[0];
+               }
+
+               await element.fill(formatted);
             } else {
                await element.fill(value.toString());
             }

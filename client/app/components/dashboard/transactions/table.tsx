@@ -94,7 +94,9 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
 
    // Set the initial view and page size based on localStorage
    useEffect(() => {
-      setView(window.localStorage.getItem("view") === "table" ? "table" : "list");
+      const stored = window.localStorage.getItem("view");
+      setView(stored === "table" || stored === null ? "table" : "list");
+
       pageSize.current = Number(window.localStorage.getItem("pageSize")) || 25;
    }, []);
 
@@ -167,6 +169,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderAccountChip
                account_id = { params.row.account_id || "" }
+               transaction_id = { params.row.transaction_id }
             />
          ),
          valueFormatter: (_value: never, row: TransactionRowModel) => row.account_id,
@@ -198,6 +201,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
          renderCell: (params: GridRenderCellParams<TransactionRowModel, any, any, GridTreeNodeWithRender>) => (
             <RenderCategoryChip
                budget_category_id = { params.row.budget_category_id || "" }
+               transaction_id = { params.row.transaction_id }
                type = { params.row.type }
             />
          ),
@@ -301,6 +305,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
    const missingTransactionsContainer: React.ReactNode = useMemo(() => {
       return (
          <Box
+            data-testid = "transactions-empty-state"
             sx = { { display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%", fontWeight: "bold" } }
          >
             No available transactions
@@ -322,6 +327,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
             >
                <ToggleButton
                   aria-label = "Table view"
+                  data-testid = "transactions-view-toggle-table"
                   disableRipple = { true }
                   value = "table"
                >
@@ -333,6 +339,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
                </ToggleButton>
                <ToggleButton
                   aria-label = "List view"
+                  data-testid = "transactions-view-toggle-list"
                   disableRipple = { true }
                   value = "list"
                >
@@ -344,25 +351,26 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
                </ToggleButton>
             </ToggleButtonGroup>
          </Box>
-         <DataGrid
-            apiRef = { dataGridRef }
-            checkboxSelection = { view === "table" }
-            columns = { view === "table" ? columns : cards }
-            density = "standard"
-            disableColumnResize = { true }
-            disableRowSelectionOnClick = { true }
-            getRowClassName = {
+         <Box data-testid = { view === "table" ? "transactions-table-view" : "transactions-list-view" }>
+            <DataGrid
+               apiRef = { dataGridRef }
+               checkboxSelection = { view === "table" }
+               columns = { view === "table" ? columns : cards }
+               density = "standard"
+               disableColumnResize = { true }
+               disableRowSelectionOnClick = { true }
+               getRowClassName = {
                (params) =>
                   params.indexRelativeToCurrentPage % 2 === 0 ? "even" : "odd"
             }
-            getRowHeight = { () => view === "table" ? undefined : "auto" }
-            getRowId = { (row) => row.transaction_id || "" }
-            initialState = {
+               getRowHeight = { () => view === "table" ? undefined : "auto" }
+               getRowId = { (row) => row.transaction_id || "" }
+               initialState = {
                {
                   pagination: { paginationModel: { pageSize: Number(window.localStorage.getItem("pageSize")) || 25 } }
                }
             }
-            localeText = {
+               localeText = {
                {
                   footerRowSelected: () => (
                      <Stack
@@ -379,12 +387,12 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
                   )
                }
             }
-            onPaginationModelChange = { updatePageSize }
-            onRowDoubleClick = { (params) => view === "table" ? onEdit(params.row.index) : null }
-            onRowSelectionModelChange = { updateSelectedRows }
-            pageSizeOptions = { [10, 25, 50, 100] }
-            rows = { rows }
-            slotProps = {
+               onPaginationModelChange = { updatePageSize }
+               onRowDoubleClick = { (params) => view === "table" ? onEdit(params.row.index) : null }
+               onRowSelectionModelChange = { updateSelectedRows }
+               pageSizeOptions = { [10, 25, 50, 100] }
+               rows = { rows }
+               slotProps = {
                {
                   baseCheckbox: {
                      disableRipple: true
@@ -429,14 +437,14 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
                   panel: { placement: "top-start" }
                }
             }
-            slots = {
+               slots = {
                {
                   columnHeaders: view === "list" ? () => null : undefined,
                   noRowsOverlay: () => missingTransactionsContainer,
                   noResultsOverlay: () => missingTransactionsContainer
                }
             }
-            sx = {
+               sx = {
                view === "list" ? {
                   boxShadow: 2,
                   minHeight: transactions.length === 0 ? "410px" : undefined,
@@ -462,7 +470,8 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
                   boxShadow: 2
                }
             }
-         />
+            />
+         </Box>
       </Box>
    );
 }
