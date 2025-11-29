@@ -73,7 +73,7 @@ test.describe("Routing and Navigation", () => {
 
    test.describe("Authenticated User Routing", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
       });
 
       test("should highlight the sidebar link for all protected routes", async({ page }) => {
@@ -115,7 +115,7 @@ test.describe("Routing and Navigation", () => {
 
    test.describe("Theme Toggle", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true);
       });
 
       test("should toggle theme via sidebar switch and persist across routes", async({ page }) => {

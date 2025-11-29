@@ -26,7 +26,7 @@ test.describe("Transaction Management", () => {
    test.describe("Initial State", () => {
       test.describe("Accounts Page Form Inputs", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
          });
 
          test("should have accessible form inputs from main accounts page", async({ page }) => {
@@ -44,7 +44,7 @@ test.describe("Transaction Management", () => {
 
       test.describe("Budget Category Form Inputs", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false, true);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false, false);
          });
 
          test("should have accessible form inputs from budget category view", async({ page }) => {
@@ -71,12 +71,13 @@ test.describe("Transaction Management", () => {
                budget_category_id: (await getBudgetCategoryIds(page, "Income"))[0]
             };
 
-            const transactionId = await performAndAssertTransactionAction({
+            const transactionId: string = await performAndAssertTransactionAction({
                page,
                transactionData
             });
-
-            expect(transactionId).toBeTruthy();
+            const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            expect(transactionId).toBeDefined();
+            expect(transactionId).toMatch(uuidV4Regex);
          });
 
          test("should create transaction with minimal required fields", async({ page }) => {
@@ -128,7 +129,7 @@ test.describe("Transaction Management", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
          });
 
          test("should validate required date field", async({ page }) => {
@@ -205,7 +206,7 @@ test.describe("Transaction Management", () => {
 
    test.describe("View Toggle", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
 
          await createTransaction(page, {
             date: "2024-01-15",
@@ -373,7 +374,7 @@ test.describe("Transaction Management", () => {
          };
 
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
             baseTransaction.transaction_id = await createTransaction(page, baseTransaction);
          });
 

@@ -39,7 +39,7 @@ import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 test.describe("Settings", () => {
    test.describe("Initial State", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
       });
 
       test("should display security details form with correct initial values", async({ page, assignedUser }) => {
@@ -244,7 +244,7 @@ test.describe("Settings", () => {
    test.describe("User Actions", () => {
       test.describe("Logout", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should successfully logout with confirmation", async({ page }) => {
@@ -258,7 +258,7 @@ test.describe("Settings", () => {
 
       test.describe("Account Deletion", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should successfully delete account with confirmation and allow re-registration", async({ page, usersRegistry, assignedUser }) => {

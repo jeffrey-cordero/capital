@@ -27,7 +27,7 @@ test.describe("Budget Management", () => {
 
    test.describe("Initial State", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true, true);
       });
 
       test("should display budget page with Income and Expenses sections", async({ page }) => {
@@ -93,7 +93,7 @@ test.describe("Budget Management", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, true);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false, false);
          });
 
          test("should validate name minimum length", async({ page }) => {
@@ -177,7 +177,7 @@ test.describe("Budget Management", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false, false);
          });
 
          test("should validate updated name minimum length", async({ page }) => {

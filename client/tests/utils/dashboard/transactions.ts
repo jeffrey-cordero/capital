@@ -141,6 +141,8 @@ export async function updateTransaction(
    expectedErrors?: Record<string, string>,
    closeForm?: boolean
 ): Promise<void> {
+   await openTransactionForm(page, transactionId);
+
    const formData: Record<string, any> = {};
 
    if (transactionData.date !== undefined) formData["transaction-date"] = transactionData.date;
@@ -183,13 +185,12 @@ export async function performAndAssertTransactionAction(
 ): Promise<string> {
    const { page, transactionData, transactionId, baseTransaction, expectedErrors } = options;
 
-   const isUpdate = !!transactionId && baseTransaction;
+   const isUpdate: boolean = !!transactionId && baseTransaction;
 
    let resultId: string = "";
-   let finalTransaction: TransactionFormData;
+   let finalTransaction: TransactionFormData = {};
 
    if (isUpdate) {
-      await openTransactionForm(page, transactionId);
       await updateTransaction(page, transactionId, transactionData, expectedErrors, !expectedErrors);
       finalTransaction = { ...baseTransaction, ...transactionData, transaction_id: transactionId };
       resultId = transactionId;

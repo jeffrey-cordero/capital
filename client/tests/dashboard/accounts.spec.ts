@@ -76,7 +76,7 @@ test.describe("Account Management", () => {
 
    test.describe("Initial State", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
       test("should display empty accounts state on dashboard page", async({ page }) => {
@@ -116,7 +116,7 @@ test.describe("Account Management", () => {
    test.describe("Account Creation", () => {
       test.describe("Successful Account Creation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
          });
 
          test("should successfully create account with all required fields", async({ page }) => {
@@ -160,7 +160,7 @@ test.describe("Account Management", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
          });
 
          test("should validate name minimum length", async({ page }) => {
@@ -207,7 +207,7 @@ test.describe("Account Management", () => {
 
    test.describe("Image Selection", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
          await openImageForm(page);
       });
 
@@ -247,7 +247,7 @@ test.describe("Account Management", () => {
 
    test.describe("Net Worth Calculations", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
       test("should calculate net worth correctly for asset accounts (adds to total)", async({ page }) => {
@@ -353,7 +353,7 @@ test.describe("Account Management", () => {
 
    test.describe("Transaction Form Integration", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
       test("should show created accounts in transaction dropdown", async({ page }) => {
@@ -383,7 +383,7 @@ test.describe("Account Management", () => {
 
       test.describe("Successful Account Updates", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
             baseAccount.account_id = await createAccount(page, baseAccount);
          });
 
@@ -451,7 +451,7 @@ test.describe("Account Management", () => {
 
       test.describe("Form Validation", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
             baseAccount.account_id = await createAccount(page, baseAccount);
          });
 
@@ -504,7 +504,7 @@ test.describe("Account Management", () => {
 
    test.describe("Drag and Drop", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
       test("should reorder accounts via drag and drop", async({ page }) => {
@@ -536,7 +536,7 @@ test.describe("Account Management", () => {
 
    test.describe("Account Deletion", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
       test("should successfully show confirmation dialog on delete attempt", async({ page }) => {
