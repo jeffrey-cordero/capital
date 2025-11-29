@@ -1,20 +1,20 @@
-import { expect, test } from "@tests/fixtures";
+import { test } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { createAccount, getAccountCardIds } from "@tests/utils/dashboard/accounts";
 import { getBudgetCategoryIds } from "@tests/utils/dashboard/budgets";
 import {
+   assertEmptyState,
    assertTransactionFormInputs,
    assertTransactionInBothViews,
    assertTransactionOrder,
    assertViewPersistence,
    bulkDeleteTransactions,
    createTransaction,
-   deleteTransaction,
-   openTransactionForm,
    openTransactionFormFromAccountCard,
    openTransactionFormFromAccountsPage,
    openTransactionFormFromBudgetView,
+   performAndAssertDeleteAction,
    performAndAssertTransactionAction,
    toggleTransactionView,
    type TransactionFormData,
@@ -71,13 +71,8 @@ test.describe("Transaction Management", () => {
                budget_category_id: (await getBudgetCategoryIds(page, "Income"))[0]
             };
 
-            const transactionId: string = await performAndAssertTransactionAction({
-               page,
-               transactionData
-            });
-            const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-            expect(transactionId).toBeDefined();
-            expect(transactionId).toMatch(uuidV4Regex);
+            const transactionId = await performAndAssertTransactionAction({ page, transactionData });
+            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
          });
 
          test("should create transaction with minimal required fields", async({ page }) => {
@@ -261,13 +256,11 @@ test.describe("Transaction Management", () => {
             };
             const transactionId = await createTransaction(page, originalData);
 
-            await openTransactionForm(page, transactionId);
-            await updateTransaction(page, transactionId, { date: "2024-01-20" }, undefined, true);
-
-            await assertTransactionInBothViews(page, {
-               transaction_id: transactionId,
-               ...originalData,
-               date: "2024-01-20"
+            await performAndAssertTransactionAction({
+               page,
+               transactionId,
+               baseTransaction: originalData,
+               transactionData: { date: "2024-01-20" }
             });
          });
 
@@ -279,13 +272,11 @@ test.describe("Transaction Management", () => {
             };
             const transactionId = await createTransaction(page, originalData);
 
-            await openTransactionForm(page, transactionId);
-            await updateTransaction(page, transactionId, { amount: 750 }, undefined, true);
-
-            await assertTransactionInBothViews(page, {
-               transaction_id: transactionId,
-               ...originalData,
-               amount: 750
+            await performAndAssertTransactionAction({
+               page,
+               transactionId,
+               baseTransaction: originalData,
+               transactionData: { amount: 750 }
             });
          });
 
@@ -297,32 +288,28 @@ test.describe("Transaction Management", () => {
             };
             const transactionId = await createTransaction(page, originalData);
 
-            await openTransactionForm(page, transactionId);
-            await updateTransaction(page, transactionId, { description: "Updated description" }, undefined, true);
-
-            await assertTransactionInBothViews(page, {
-               transaction_id: transactionId,
-               ...originalData,
-               description: "Updated description"
+            await performAndAssertTransactionAction({
+               page,
+               transactionId,
+               baseTransaction: originalData,
+               transactionData: { description: "Updated description" }
             });
          });
 
          test("should update transaction from card view", async({ page }) => {
-            const transactionId = await createTransaction(page, {
+            const originalData: TransactionFormData = {
                date: "2024-01-15",
                amount: 500,
                description: "Original"
-            });
+            };
+            const transactionId = await createTransaction(page, originalData);
 
             await toggleTransactionView(page, "list");
-            await openTransactionForm(page, transactionId);
-            await updateTransaction(page, transactionId, { description: "Updated from card" }, undefined, true);
-
-            await assertTransactionInBothViews(page, {
-               transaction_id: transactionId,
-               date: "2024-01-15",
-               amount: 500,
-               description: "Updated from card"
+            await performAndAssertTransactionAction({
+               page,
+               transactionId,
+               baseTransaction: originalData,
+               transactionData: { description: "Updated from card" }
             });
          });
 
@@ -354,8 +341,7 @@ test.describe("Transaction Management", () => {
             ]);
 
             // Update transaction 3's date to be between transaction 1 and 2
-            await openTransactionForm(page, transaction3Id);
-            await updateTransaction(page, transaction3Id, { date: "2024-01-12" }, undefined, true);
+            await updateTransaction(page, transaction3Id, { date: "2024-01-12" });
 
             // Assert new order - transaction 3 should now be in the middle
             await assertTransactionOrder(page, [
@@ -461,8 +447,7 @@ test.describe("Transaction Management", () => {
             amount: 500
          });
 
-         await deleteTransaction(page, transactionId, "table", true);
-         await assertComponentIsHidden(page, `transaction-date-${transactionId}`);
+         await performAndAssertDeleteAction(page, transactionId);
       });
 
       test("should delete transaction from card view", async({ page }) => {
@@ -472,8 +457,7 @@ test.describe("Transaction Management", () => {
          });
 
          await toggleTransactionView(page, "list");
-         await deleteTransaction(page, transactionId, "list", true);
-         await assertComponentIsHidden(page, `transaction-card-${transactionId}`);
+         await performAndAssertDeleteAction(page, transactionId);
       });
 
       test("should cancel transaction deletion", async({ page }) => {
@@ -482,8 +466,7 @@ test.describe("Transaction Management", () => {
             amount: 500
          });
 
-         await deleteTransaction(page, transactionId, "table", false);
-         await assertComponentIsVisible(page, `transaction-date-${transactionId}`);
+         await performAndAssertDeleteAction(page, transactionId, false);
       });
 
       test("should bulk delete multiple transactions", async({ page }) => {
@@ -504,8 +487,9 @@ test.describe("Transaction Management", () => {
             amount: 500
          });
 
-         await deleteTransaction(page, transactionId, "table", true);
-         await assertComponentIsHidden(page, `transaction-date-${transactionId}`);
+         await performAndAssertDeleteAction(page, transactionId);
+         await page.reload();
+         await assertEmptyState(page);
       });
 
       test("should show empty state message when all transactions are deleted", async({ page }) => {
@@ -523,17 +507,15 @@ test.describe("Transaction Management", () => {
          });
 
          // Delete both transactions
-         await deleteTransaction(page, transaction1Id, "table", true);
-         await deleteTransaction(page, transaction2Id, "table", true);
+         await performAndAssertDeleteAction(page, transaction1Id);
+         await performAndAssertDeleteAction(page, transaction2Id);
 
          // Assert empty state message appears in table view
-         await assertComponentIsVisible(page, "transactions-empty-state");
-         await expect(page.getByTestId("transactions-empty-state")).toHaveText("No available transactions");
+         await assertEmptyState(page);
 
          // Toggle to list view and assert empty state still appears
          await toggleTransactionView(page, "list");
-         await assertComponentIsVisible(page, "transactions-empty-state");
-         await expect(page.getByTestId("transactions-empty-state")).toHaveText("No available transactions");
+         await assertEmptyState(page);
       });
    });
 
@@ -554,38 +536,37 @@ test.describe("Transaction Management", () => {
       });
 
       test("should maintain parity when updating from card view", async({ page }) => {
-         const transactionId = await createTransaction(page, {
+         const originalData: TransactionFormData = {
             date: "2024-01-15",
             amount: 500,
             description: "Original"
-         });
+         };
+         const transactionId = await createTransaction(page, originalData);
 
          await toggleTransactionView(page, "list");
-         await openTransactionForm(page, transactionId);
-         await updateTransaction(page, transactionId, { description: "Updated from card" }, undefined, true);
-
-         await assertTransactionInBothViews(page, {
-            transaction_id: transactionId,
-            date: "2024-01-15",
-            amount: 500,
-            description: "Updated from card"
+         await performAndAssertTransactionAction({
+            page,
+            transactionId,
+            baseTransaction: originalData,
+            transactionData: { description: "Updated from card" }
          });
       });
 
       test("should maintain parity for all CRUD operations", async({ page }) => {
-         const id1 = await createTransaction(page, { date: "2024-01-15", amount: 100 });
-         await assertTransactionInBothViews(page, { transaction_id: id1, date: "2024-01-15", amount: 100 });
+         const baseTransaction: TransactionFormData = { date: "2024-01-15", amount: 100 };
+         const id1 = await createTransaction(page, baseTransaction);
+         await assertTransactionInBothViews(page, { transaction_id: id1, ...baseTransaction });
 
          await toggleTransactionView(page, "list");
-         await openTransactionForm(page, id1);
-         await updateTransaction(page, id1, { amount: 150 }, undefined, true);
-         await toggleTransactionView(page, "table");
-         await assertTransactionInBothViews(page, { transaction_id: id1, date: "2024-01-15", amount: 150 });
+         await performAndAssertTransactionAction({
+            page,
+            transactionId: id1,
+            baseTransaction,
+            transactionData: { amount: 150 }
+         });
 
-         await deleteTransaction(page, id1, "table", true);
-         await assertComponentIsHidden(page, `transaction-date-${id1}`);
-         await toggleTransactionView(page, "list");
-         await assertComponentIsHidden(page, `transaction-card-${id1}`);
+         await performAndAssertDeleteAction(page, id1, true, true);
+         await assertEmptyState(page);
       });
    });
 });
