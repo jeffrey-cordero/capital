@@ -1,5 +1,5 @@
 import { expect, type Page, type Response } from "@playwright/test";
-import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility, assertModalIsClosed } from "@tests/utils";
+import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility, assertModalIsClosed, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
@@ -100,17 +100,17 @@ function getTransactionTestId(
          default:
             return `transaction-card-date-${transactionId}`;
       }
-   }
-
-   switch (elementType) {
-      case "date":
-         return `transaction-date-${transactionId}`;
-      case "edit":
-         return `transaction-edit-${transactionId}`;
-      case "delete":
-         return `transaction-delete-${transactionId}`;
-      default:
-         return `transaction-${elementType}-${transactionId}`;
+   } else {
+      switch (elementType) {
+         case "date":
+            return `transaction-date-${transactionId}`;
+         case "edit":
+            return `transaction-edit-${transactionId}`;
+         case "delete":
+            return `transaction-delete-${transactionId}`;
+         default:
+            return `transaction-${elementType}-${transactionId}`;
+      }
    }
 }
 
@@ -125,8 +125,8 @@ export async function openTransactionForm(
    transactionId?: string
 ): Promise<void> {
    if (transactionId) {
-      const view = await getCurrentView(page);
-      const testId = getTransactionTestId(view, transactionId, "edit");
+      const view: "table" | "list" = await getCurrentView(page);
+      const testId: string = getTransactionTestId(view, transactionId, "edit");
       await page.getByTestId(testId).click();
    } else {
       await page.getByTestId("transactions-add-button").click();
@@ -175,6 +175,7 @@ export async function createTransaction(
    expect(transactionId).toBeDefined();
    expect(transactionId).toBeTruthy();
 
+   // Creation requests should auto-close the modal
    await assertModalIsClosed(page);
 
    return transactionId;
@@ -214,7 +215,7 @@ export async function updateTransaction(
    const response: Response = await responsePromise;
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
 
-   await page.keyboard.press("Escape");
+   // Update requests should auto-close the modal
    await assertModalIsClosed(page);
 }
 
@@ -234,10 +235,10 @@ export async function performAndAssertTransactionAction(
    let resultId: string = "";
    let finalTransaction: TransactionFormData = {};
 
-   if (isUpdate && transactionId && baseTransaction) {
-      await updateTransaction(page, transactionId, transactionData, expectedErrors);
+   if (isUpdate) {
+      await updateTransaction(page, transactionId!, transactionData, expectedErrors);
       finalTransaction = { ...baseTransaction, ...transactionData, transaction_id: transactionId };
-      resultId = transactionId;
+      resultId = transactionId!;
    } else {
       resultId = await createTransaction(page, transactionData, expectedErrors);
 
@@ -494,8 +495,11 @@ export async function assertTransactionBudgetDropdown(
       await expect(page.getByRole("option", { name: category.name })).toBeVisible();
    }
 
+   // Close the drop down
    await page.keyboard.press("Escape");
-   await page.keyboard.press("Escape");
+
+   // Close the transaction form
+   await closeModal(page);
 }
 
 /**

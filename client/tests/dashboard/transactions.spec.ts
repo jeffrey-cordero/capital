@@ -552,7 +552,7 @@ test.describe("Transaction Management", () => {
          });
       });
 
-      test("should maintain parity for all CRUD operations", async({ page }) => {
+      test("should maintain parity for all create, read, update, delete operations", async({ page }) => {
          const baseTransaction: TransactionFormData = { date: "2024-01-15", amount: 100 };
          const id1 = await createTransaction(page, baseTransaction);
          await assertTransactionInBothViews(page, { transaction_id: id1, ...baseTransaction });
