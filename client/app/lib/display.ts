@@ -85,11 +85,11 @@ export function displayVolume(volume: number): string {
    const normalized: number = Math.abs(volume);
 
    if (normalized >= 1_000_000_000) {
-      result = (normalized / 1_000_000_000).toFixed(0) + "B";
+      result = (normalized / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
    } else if (normalized >= 1_000_000) {
-      result = (normalized / 1_000_000).toFixed(0) + "M";
+      result = (normalized / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
    } else if (normalized >= 1_000) {
-      result = (normalized / 1_000).toFixed(0) + "K";
+      result = (normalized / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
    } else {
       result = normalized.toString();
    }

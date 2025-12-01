@@ -18,6 +18,7 @@ import {
    performAndAssertBudgetPeriods,
    performAndAssertDeleteAction,
    performAndAssertTransactionAction,
+   setupAccountBalances,
    toggleTransactionView,
    type TransactionFormData,
    updateTransaction
@@ -581,14 +582,12 @@ test.describe("Transaction Management", () => {
       });
 
       test("should validate account trends and budget metrics impacted by transactions across time periods", async({ page }) => {
-         // Step 1: Create base account
          const accountId = await createAccount(page, {
             name: "Main Account",
             balance: 2000,
             type: "Checking"
          });
 
-         // Step 2: Navigate to budgets and create budget categories
          await navigateToPath(page, BUDGETS_ROUTE);
 
          const incomeCategoryId = await createBudgetCategory(page, {
@@ -602,13 +601,11 @@ test.describe("Transaction Management", () => {
          }, "Expenses");
 
          await closeModal(page, false, "budget-form-Expenses");
-
-         // Navigate to accounts page to create transactions
          await navigateToPath(page, ACCOUNTS_ROUTE);
 
-         // Step 3: Calculate dates for different time periods
+         // Calculate transaction dates for current month, 6 months ago, and 1 year ago
          const currentDate = getCurrentDate();
-         const currentMonth = currentDate.getMonth(); // 0-indexed
+         const currentMonth = currentDate.getMonth();
          const currentMonthDate = toHtmlDate(currentDate);
 
          const sixMonthsAgo = new Date(currentDate);
@@ -621,7 +618,7 @@ test.describe("Transaction Management", () => {
          const oneYearAgoMonth = oneYearAgo.getMonth();
          const oneYearAgoDate = toHtmlDate(oneYearAgo);
 
-         // Step 4: Create 4 transactions with smaller amounts to avoid negative balances
+         // Create transactions with +300/-100 current, +400 6mo ago, -600 1yr ago
          await createTransaction(page, {
             date: currentMonthDate,
             amount: 300,
@@ -654,53 +651,22 @@ test.describe("Transaction Management", () => {
             budget_category_id: expenseCategoryId
          });
 
-         // Step 5: Calculate expected 24-month balances (2 full calendar years)
-         // Structure: [lastYear Jan-Dec, currentYear Jan-Dec]
-         const STARTING_BALANCE = 2000;
          const currentYear = currentDate.getFullYear();
          const lastYear = currentYear - 1;
 
-         // Map transaction dates to their chronological order with effects
+         // Transaction effects sorted chronologically for balance calculation
          const transactions = [
-            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 }, // 1yr ago expense
-            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 }, // 6mo ago income
-            { year: currentYear, month: currentMonth, effect: +200 } // Current month net (+300 income -100 expense)
+            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 },
+            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 },
+            { year: currentYear, month: currentMonth, effect: +200 }
          ].sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
-         // Calculate balances for 24 months chronologically
-         const allBalances: (number | null)[] = [];
-         for (let yearOffset = 0; yearOffset < 2; yearOffset++) {
-            const year = lastYear + yearOffset;
-            for (let month = 0; month < 12; month++) {
-               // Future months in current year are null
-               if (year === currentYear && month > currentMonth) {
-                  allBalances.push(null);
-                  continue;
-               }
+         const { lastYearBalances, currentYearBalances } = setupAccountBalances(2000, currentYear, currentMonth, transactions);
 
-               // Calculate balance by applying all transactions up to this point
-               let balance = STARTING_BALANCE;
-               for (const txn of transactions) {
-                  // Apply transaction if it occurred before or in this month
-                  if (txn.year < year || (txn.year === year && txn.month <= month)) {
-                     balance += txn.effect;
-                  }
-               }
-               allBalances.push(balance);
-            }
-         }
-
-         // Split into last year and current year for validation
-         const lastYearBalances = allBalances.slice(0, 12);
-         const currentYearBalances = allBalances.slice(12, 24);
-
-         const accountBalance = 2000;
-
-         // Step 6: Validate account trends on dashboard and accounts page
          await performAndAssertAccountTrends(
             page,
             accountId,
-            accountBalance,
+            2000,
             currentYearBalances,
             lastYearBalances,
             currentYear,
@@ -708,7 +674,6 @@ test.describe("Transaction Management", () => {
             oneYearAgo.getFullYear() < currentDate.getFullYear()
          );
 
-         // Step 7-10: Navigate through budget periods and validate
          await performAndAssertBudgetPeriods(
             page,
             incomeCategoryId,
