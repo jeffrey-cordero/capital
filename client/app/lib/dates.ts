@@ -1,13 +1,29 @@
 import type { BudgetPeriod } from "capital/budgets";
 
 /**
- * Gets current date in UTC at midnight
+ * Gets current date at midnight
  *
- * @returns {Date} Current UTC date with zeroed time
+ * @returns {Date} Current date with zeroed time
  */
 export function getCurrentDate(): Date {
-   return new Date(new Date().setUTCHours(0, 0, 0, 0));
+   return new Date(new Date().setHours(0, 0, 0, 0));
 };
+
+/**
+ * Converts a Date to YYYY-MM-DD for HTML date input
+ *
+ * @param {Date} date - Date to convert
+ * @returns {string} Date in `YYYY-MM-DD` format
+ */
+export function toHtmlDate(date: Date): string {
+   const pad = (n: number) => String(n).padStart(2, "0");
+
+   const year = date.getFullYear();
+   const month = pad(date.getMonth() + 1);
+   const day = pad(date.getDate());
+
+   return `${year}-${month}-${day}`;
+}
 
 /**
  * Returns valid date range boundaries in ISO format
@@ -69,7 +85,7 @@ export function getYearAbbreviations(year?: number): string[] {
    const referenceDate = year ? new Date(year, 0, 1) : getCurrentDate();
 
    return monthAbbreviations.map(month =>
-      `${month} ${referenceDate.getUTCFullYear()}`
+      `${month} ${referenceDate.getFullYear()}`
    );
 }
 

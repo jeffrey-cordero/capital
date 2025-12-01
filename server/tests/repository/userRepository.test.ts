@@ -286,8 +286,8 @@ describe("User Repository", () => {
        */
       const assertCompleteUserCreationTransaction = (userData: User, expectedUserId: string): void => {
          const today = new Date(new Date().setHours(0, 0, 0, 0));
-         const expectedMonth = today.getUTCMonth() + 1;
-         const expectedYear = today.getUTCFullYear();
+         const expectedMonth = today.getMonth() + 1;
+         const expectedYear = today.getFullYear();
 
          // Assert the start of the transaction (1st call)
          assertQueryCalledWithKeyPhrases([

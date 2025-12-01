@@ -1,5 +1,11 @@
 import { expect, type Page, type Response } from "@playwright/test";
-import { assertComponentIsHidden, assertComponentIsVisible, assertInputVisibility, assertModalIsClosed, closeModal } from "@tests/utils";
+import {
+   assertComponentIsHidden,
+   assertComponentIsVisible,
+   assertInputVisibility,
+   assertModalIsClosed,
+   closeModal
+} from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";

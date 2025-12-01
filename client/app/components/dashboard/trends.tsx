@@ -65,7 +65,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
    const theme = useTheme();
    const transactions = useSelector((state: RootState) => state.transactions.value);
    const accounts = useSelector((state: RootState) => state.accounts.value);
-   const [year, setYear] = useState<number>(getCurrentDate().getUTCFullYear());
+   const [year, setYear] = useState<number>(getCurrentDate().getFullYear());
 
    // Hold references to the last valid year and the backup account indices for missing years
    const lastValidYear = useRef<number>(year);

@@ -8,16 +8,18 @@ import { brand, red } from "@/styles/mui/colors";
 /**
  * Asserts account trends including net worth, bar count, bar colors, and bar positions
  *
- * @param {Page} page - Playwright page instance
- * @param {Partial<Account>[]} accounts - Array of accounts to assert
- * @param {number} expectedNetWorth - Expected net worth value as a number
- * @param {"dashboard" | "accounts"} location - Location where trends are displayed
+ * @param page - Playwright page instance
+ * @param accounts - Array of accounts to assert
+ * @param expectedNetWorth - Expected net worth value as a number
+ * @param location - Location where trends are displayed
+ * @param monthlyBalances - Optional array of 12-month balance arrays (one per account)
  */
 export async function assertAccountTrends(
    page: Page,
    accounts: Partial<Account>[],
    expectedNetWorth: number,
-   location: "dashboard" | "accounts"
+   location: "dashboard" | "accounts",
+   monthlyBalances?: (number | null)[][]
 ): Promise<void> {
    const barChartValues: Locator = page.locator("[data-bar-chart-value]");
    const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
@@ -43,7 +45,8 @@ export async function assertAccountTrends(
       await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
 
       // Assert all bar chart colors (blue for assets, red for liabilities) and values (final expected value of the given month)
-      for (const account of accounts) {
+      for (let accountIdx = 0; accountIdx < accounts.length; accountIdx++) {
+         const account = accounts[accountIdx];
          const bars: Locator = page.locator(`.MuiBarElement-series-${account.account_id}`);
          await expect(bars).toHaveCount(12);
 
@@ -51,7 +54,15 @@ export async function assertAccountTrends(
             const bar: Locator = page.locator(`[data-testid="accounts-${account.account_id}-bar-${i}"]`);
             const value: string | null = await bar.getAttribute("data-bar-chart-value");
 
-            const expectedValue: string = i > currentMonth - 1 ? "null" : account.balance.toString();
+            // Use monthly balances if provided, otherwise use current balance for all past months
+            let expectedValue: string;
+            if (monthlyBalances && monthlyBalances[accountIdx]) {
+               const monthBalance = monthlyBalances[accountIdx][i];
+               expectedValue = monthBalance === null ? "null" : monthBalance.toString();
+            } else {
+               expectedValue = i > currentMonth - 1 ? "null" : account.balance!.toString();
+            }
+
             expect(value).toBe(expectedValue);
 
             const expectedColor: string = LIABILITIES.has(account.type!) ? red[400] : brand[400];

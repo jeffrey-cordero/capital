@@ -77,7 +77,7 @@ export default function Budgets({ allocations }: BudgetsProps): React.ReactNode 
    // Prevent selecting future budget periods
    const today = useMemo(() => getCurrentDate(), []);
    const selectNextMonthDisabled = useMemo(() => {
-      return period.month === today.getUTCMonth() + 1 && period.year === today.getUTCFullYear();
+      return period.month === today.getMonth() + 1 && period.year === today.getFullYear();
    }, [period.month, period.year, today]);
 
    // Update dirty fields for warning display when closing modal

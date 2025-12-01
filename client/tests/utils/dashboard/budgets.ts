@@ -592,3 +592,89 @@ export async function assertBudgetGoalPersistence(
       }
    }
 }
+
+/**
+ * Asserts budget pie chart displays with correct visibility
+ *
+ * @param page - Playwright page instance
+ * @param type - Budget type ("Income" or "Expenses")
+ * @param expectedUsed - Expected used amount
+ */
+export async function assertBudgetPieChart(
+   page: Page,
+   type: "Income" | "Expenses",
+   expectedUsed: number
+): Promise<void> {
+   const pieChart = page.getByTestId(`budget-pie-chart-${type}`);
+   await expect(pieChart).toBeVisible();
+
+   const centerLabel = page.getByTestId(`budget-pie-center-${type}`);
+   await expect(centerLabel).toBeVisible();
+
+   // Validate center label shows the used amount
+   const expectedText = `$${expectedUsed.toLocaleString()}`;
+   await expect(centerLabel).toHaveText(expectedText);
+}
+
+/**
+ * Asserts budget category progress bar displays correct percentage
+ *
+ * @param page - Playwright page instance
+ * @param categoryId - Budget category ID or type (for main categories)
+ * @param expectedUsed - Expected used amount
+ * @param expectedAllocated - Expected allocated goal
+ */
+export async function assertBudgetProgress(
+   page: Page,
+   categoryId: string,
+   expectedUsed: number,
+   expectedAllocated: number
+): Promise<void> {
+   const progress = page.getByTestId(`budget-category-progress-${categoryId}`);
+   await expect(progress).toBeVisible();
+
+   const expectedPercent = expectedAllocated > 0 ? (expectedUsed / expectedAllocated) * 100 : 0;
+   const actualPercent = await progress.getAttribute("data-progress-percent");
+
+   expect(parseFloat(actualPercent!)).toBeCloseTo(expectedPercent, 1);
+
+   // Also validate displayed goal text
+   const goalElement = page.getByTestId(`budget-category-goal-${categoryId}`);
+   const expectedGoalText = `${displayCurrency(expectedUsed)} / ${displayCurrency(expectedAllocated)}`;
+   await expect(goalElement).toHaveText(expectedGoalText);
+}
+
+/**
+ * Asserts budget trends bar chart displays correct used values across months
+ *
+ * @param page - Playwright page instance
+ * @param type - Budget type ("Income" or "Expenses")
+ * @param monthlyTrends - Array of [used, allocated] pairs for last 12 months
+ */
+export async function assertBudgetTrends(
+   page: Page,
+   type: "Income" | "Expenses",
+   monthlyTrends: [number, number][]
+): Promise<void> {
+   const currentMonth = new Date().getMonth() + 1;
+
+   // Validate we have 12 months of data
+   expect(monthlyTrends.length).toBe(12);
+
+   // Check each month's bar chart value
+   for (let i = 0; i < 12; i++) {
+      const bar = page.getByTestId(`budgets-${type}-bar-${i}`);
+      const [used] = monthlyTrends[i];
+
+      // Get bar value from data attribute
+      const barValue = await bar.getAttribute("data-bar-chart-value");
+
+      // Future months should be null
+      if (i >= currentMonth) {
+         expect(barValue).toBe("null");
+      } else {
+         // Past/current months should show the used value
+         expect(barValue).toBe(used.toString());
+      }
+   }
+}

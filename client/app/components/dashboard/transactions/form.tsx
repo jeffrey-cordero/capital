@@ -25,7 +25,7 @@ import Modal from "@/components/global/modal";
 import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
-import { getValidDateRange } from "@/lib/dates";
+import { getCurrentDate, getValidDateRange, toHtmlDate } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
@@ -113,7 +113,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       } else {
          reset({
             amount: "",
-            date: new Date().toISOString().split("T")[0],
+            date: toHtmlDate(getCurrentDate()),
             description: "",
             account_id: defaultAccountID,
             budget_category_id: defaultBudgetCategoryID

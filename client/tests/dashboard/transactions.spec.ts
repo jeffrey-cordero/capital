@@ -1,8 +1,15 @@
 import { test } from "@tests/fixtures";
-import { assertComponentIsHidden, assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsHidden, assertComponentIsVisible, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
+import { assertAccountTrends } from "@tests/utils/dashboard";
 import { createAccount, getAccountCardIds } from "@tests/utils/dashboard/accounts";
-import { getBudgetCategoryIds } from "@tests/utils/dashboard/budgets";
+import {
+   assertBudgetPieChart,
+   assertBudgetProgress,
+   createBudgetCategory,
+   getBudgetCategoryIds,
+   navigateBudgetPeriod
+} from "@tests/utils/dashboard/budgets";
 import {
    assertEmptyState,
    assertTransactionFormInputs,
@@ -20,7 +27,10 @@ import {
    type TransactionFormData,
    updateTransaction
 } from "@tests/utils/dashboard/transactions";
+import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+
+import { getCurrentDate, toHtmlDate } from "@/lib/dates";
 
 test.describe("Transaction Management", () => {
    test.describe("Initial State", () => {
@@ -567,6 +577,197 @@ test.describe("Transaction Management", () => {
 
          await performAndAssertDeleteAction(page, id1, true, true);
          await assertEmptyState(page);
+      });
+   });
+
+   test.describe("Account & Budgets Integration", () => {
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
+      });
+
+      test("should validate account trends and budget metrics impacted by transactions across time periods", async({ page }) => {
+         // Step 1: Create base account
+         const accountId = await createAccount(page, {
+            name: "Main Account",
+            balance: 2000,
+            type: "Checking"
+         });
+
+         // Step 2: Navigate to budgets and create budget categories
+         await navigateToPath(page, BUDGETS_ROUTE);
+
+         const incomeCategoryId = await createBudgetCategory(page, {
+            name: "Salary",
+            goal: 500
+         }, "Income");
+
+         const expenseCategoryId = await createBudgetCategory(page, {
+            name: "Groceries",
+            goal: 700
+         }, "Expenses");
+
+         await closeModal(page, false, "budget-form-Expenses");
+
+         // Navigate to accounts page to create transactions
+         await navigateToPath(page, ACCOUNTS_ROUTE);
+
+         // Step 3: Calculate dates for different time periods
+         const currentDate = getCurrentDate();
+         const currentMonth = currentDate.getMonth(); // 0-indexed
+         const currentMonthDate = toHtmlDate(currentDate);
+
+         const sixMonthsAgo = new Date(currentDate);
+         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+         const sixMonthsAgoMonth = sixMonthsAgo.getMonth();
+         const sixMonthsAgoDate = toHtmlDate(sixMonthsAgo);
+
+         const oneYearAgo = new Date(currentDate);
+         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+         const oneYearAgoMonth = oneYearAgo.getMonth();
+         const oneYearAgoDate = toHtmlDate(oneYearAgo);
+
+         // Step 4: Create 4 transactions with smaller amounts to avoid negative balances
+         await createTransaction(page, {
+            date: currentMonthDate,
+            amount: 300,
+            description: "Current Salary",
+            account_id: accountId,
+            budget_category_id: incomeCategoryId
+         });
+
+         await createTransaction(page, {
+            date: currentMonthDate,
+            amount: 100,
+            description: "Current Groceries",
+            account_id: accountId,
+            budget_category_id: expenseCategoryId
+         });
+
+         await createTransaction(page, {
+            date: sixMonthsAgoDate,
+            amount: 400,
+            description: "6mo Salary",
+            account_id: accountId,
+            budget_category_id: incomeCategoryId
+         });
+
+         await createTransaction(page, {
+            date: oneYearAgoDate,
+            amount: 600,
+            description: "1yr Groceries",
+            account_id: accountId,
+            budget_category_id: expenseCategoryId
+         });
+
+         // Step 5: Calculate expected 12-month balances
+         const monthlyBalances: (number | null)[] = new Array(12).fill(null);
+
+         // Work forward from year ago to current month - cumulative balances
+         for (let i = 0; i <= currentMonth; i++) {
+            let balance = 2000; // Starting balance
+
+            // Apply transactions cumulatively: transactions affect this month and all future months
+            // 1yr ago transaction: if it's in a previous year, it affects all months this year
+            if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
+               // Transaction was last year, affects all months this year
+               balance -= 600;
+            } else if (i >= oneYearAgoMonth) {
+               // Transaction was this year, affects this month and future months
+               balance -= 600;
+            }
+
+            // 6mo ago transaction affects this month onwards
+            if (i >= sixMonthsAgoMonth) {
+               balance += 400; // Income
+            }
+
+            // Current month transaction
+            if (i >= currentMonth) {
+               balance += 300 - 100; // +300 income -100 expense = +200
+            }
+
+            monthlyBalances[i] = balance;
+         }
+
+         console.log(monthlyBalances);
+
+         // Future months are null (already set above)
+
+         const accountBalance = 2000; // Net worth only reflects account balance, not transactions
+
+         // Step 6: Validate account trends on dashboard and accounts page
+         await assertAccountTrends(
+            page,
+            [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
+            accountBalance,
+            "dashboard",
+            [monthlyBalances]
+         );
+
+         await navigateToPath(page, ACCOUNTS_ROUTE);
+         await assertAccountTrends(
+            page,
+            [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
+            accountBalance,
+            "accounts",
+            [monthlyBalances]
+         );
+
+         // Step 7: Navigate to budgets and validate current month
+         await navigateToPath(page, BUDGETS_ROUTE);
+
+         // Validate Income pie chart and progress (current month: 300 used / 500 goal)
+         await assertBudgetPieChart(page, "Income", 300);
+         await assertBudgetProgress(page, "Income", 300, 2000);
+         await assertBudgetProgress(page, incomeCategoryId, 300, 500);
+
+         // Validate Expense pie chart and progress (current month: 100 used / 700 goal)
+         await assertBudgetPieChart(page, "Expenses", 100);
+         await assertBudgetProgress(page, "Expenses", 100, 2000);
+         await assertBudgetProgress(page, expenseCategoryId, 100, 700);
+
+         // Step 8: Navigate to 6 months ago and validate
+         const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
+         for (let i = 0; i < monthsBack6; i++) {
+            await navigateBudgetPeriod(page, -1);
+         }
+
+         // Validate 6 months ago (income: 400, expenses: 0)
+         await assertBudgetPieChart(page, "Income", 400);
+         await assertBudgetProgress(page, "Income", 400, 2000);
+         await assertBudgetProgress(page, incomeCategoryId, 400, 500);
+
+         await assertBudgetPieChart(page, "Expenses", 0);
+         await assertBudgetProgress(page, "Expenses", 0, 2000);
+         await assertBudgetProgress(page, expenseCategoryId, 0, 700);
+
+         // Step 9: Navigate to 1 year ago and validate
+         const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 12) % 12;
+         for (let i = 0; i < additionalMonths; i++) {
+            await navigateBudgetPeriod(page, -1);
+         }
+
+         // Validate 1 year ago (income: 0, expenses: 600)
+         await assertBudgetPieChart(page, "Income", 0);
+         await assertBudgetProgress(page, "Income", 0, 2000);
+         await assertBudgetProgress(page, incomeCategoryId, 0, 500);
+
+         await assertBudgetPieChart(page, "Expenses", 600);
+         await assertBudgetProgress(page, "Expenses", 600, 2000);
+         await assertBudgetProgress(page, expenseCategoryId, 600, 700);
+
+         // Step 10: Navigate back to current month (test forward navigation persistence)
+         const totalMonthsBack = monthsBack6 + additionalMonths;
+         for (let i = 0; i < totalMonthsBack; i++) {
+            await navigateBudgetPeriod(page, 1);
+         }
+
+         // Re-validate current month (persistence test)
+         await assertBudgetPieChart(page, "Income", 300);
+         await assertBudgetProgress(page, "Income", 300, 2000);
+
+         await assertBudgetPieChart(page, "Expenses", 100);
+         await assertBudgetProgress(page, "Expenses", 100, 2000);
       });
    });
 });

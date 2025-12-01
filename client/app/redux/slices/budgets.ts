@@ -30,7 +30,7 @@ const budgetsSlice = createSlice({
       value: {
          Income: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
          Expenses: { goals: [], goalIndex: 0, budget_category_id: "", categories: [], categoriesMap: {} },
-         period: { month: today.getUTCMonth() + 1, year: today.getUTCFullYear() }
+         period: { month: today.getMonth() + 1, year: today.getFullYear() }
       }
    } as BudgetsState,
    reducers: {
@@ -169,8 +169,8 @@ const budgetsSlice = createSlice({
 
          // Prevent future budget period selection
          if (isNextDirection
-            && state.value.period.month === today.getUTCMonth() + 1
-            && state.value.period.year === today.getUTCFullYear()) {
+            && state.value.period.month === today.getMonth() + 1
+            && state.value.period.year === today.getFullYear()) {
             return;
          }
 

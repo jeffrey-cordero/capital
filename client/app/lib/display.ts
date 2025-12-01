@@ -105,7 +105,6 @@ export function displayDate(date: string): string {
    return new Date(date).toLocaleDateString("en-us", {
       month: "2-digit",
       day: "2-digit",
-      year: "numeric",
-      timeZone: "UTC"
+      year: "numeric"
    });
 }

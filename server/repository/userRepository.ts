@@ -86,8 +86,8 @@ export async function create(user: User): Promise<string> {
 
       // Create default Income and Expenses categories
       const today = new Date(new Date().setHours(0, 0, 0, 0));
-      const month = today.getUTCMonth() + 1;
-      const year = today.getUTCFullYear();
+      const month = today.getMonth() + 1;
+      const year = today.getFullYear();
 
       await createCategory(result.rows[0].user_id, {
          type: "Income",
