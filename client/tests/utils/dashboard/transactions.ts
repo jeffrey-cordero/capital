@@ -7,7 +7,8 @@ import {
    closeModal
 } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
-import { assertBudgetPieChart, assertBudgetProgress } from "@tests/utils/dashboard/budgets";
+import { assertAccountTrends } from "@tests/utils/dashboard";
+import { assertBudgetPieChart, assertBudgetProgress, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { HTTP_STATUS } from "capital/server";
@@ -741,4 +742,106 @@ export async function validateBudgetPeriod(
    await assertBudgetPieChart(page, "Expenses", expenseUsed);
    await assertBudgetProgress(page, "Expenses", expenseUsed, mainGoal);
    await assertBudgetProgress(page, expenseCategoryId, expenseUsed, expenseGoal);
+}
+
+/**
+ * Validates account trends across current and previous year
+ *
+ * @param page - Playwright page instance
+ * @param accountId - Account ID to validate
+ * @param accountBalance - Static account balance
+ * @param currentYearBalances - Array of 12 monthly balances for current year
+ * @param lastYearBalances - Array of 12 monthly balances for last year
+ * @param currentYear - Current year number
+ * @param lastYear - Last year number
+ * @param shouldValidateLastYear - Whether to navigate back and validate last year
+ */
+export async function performAndAssertAccountTrends(
+   page: Page,
+   accountId: string,
+   accountBalance: number,
+   currentYearBalances: (number | null)[],
+   lastYearBalances: (number | null)[],
+   currentYear: number,
+   lastYear: number,
+   shouldValidateLastYear: boolean
+): Promise<void> {
+   const accountData = [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" as const }];
+
+   await assertAccountTrends(page, accountData, accountBalance, "dashboard", [currentYearBalances]);
+
+   await navigateToPath(page, ACCOUNTS_ROUTE);
+   await assertAccountTrends(page, accountData, accountBalance, "accounts", [currentYearBalances]);
+
+   if (shouldValidateLastYear) {
+      await page.getByTestId("accounts-navigate-back").click();
+      await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", lastYear.toString());
+
+      const lastYearNetWorth = lastYearBalances[11]!;
+      await assertAccountTrends(page, accountData, lastYearNetWorth, "accounts", [lastYearBalances]);
+
+      await page.getByTestId("accounts-navigate-forward").click();
+      await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", currentYear.toString());
+   }
+}
+
+/**
+ * Validates budget periods across multiple time periods with navigation
+ *
+ * @param page - Playwright page instance
+ * @param incomeCategoryId - Income category ID
+ * @param expenseCategoryId - Expense category ID
+ * @param currentMonth - Current month (0-indexed)
+ * @param sixMonthsAgoMonth - Six months ago month (0-indexed)
+ * @param oneYearAgoMonth - One year ago month (0-indexed)
+ * @param lastYear - Last year number
+ * @param shouldNavigateToLastYear - Whether the 1-year-ago transaction is in the previous year
+ */
+export async function performAndAssertBudgetPeriods(
+   page: Page,
+   incomeCategoryId: string,
+   expenseCategoryId: string,
+   currentMonth: number,
+   sixMonthsAgoMonth: number,
+   oneYearAgoMonth: number,
+   lastYear: number,
+   shouldNavigateToLastYear: boolean
+): Promise<void> {
+   await navigateToPath(page, BUDGETS_ROUTE);
+   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
+
+   const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
+   for (let i = 0; i < monthsBack6; i++) {
+      await navigateBudgetPeriod(page, -1);
+   }
+   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 400, 500, 0, 700, 2000);
+
+   const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 11) % 12;
+   for (let i = 0; i < additionalMonths; i++) {
+      await navigateBudgetPeriod(page, -1);
+   }
+
+   if (shouldNavigateToLastYear) {
+      await navigateBudgetPeriod(page, -1);
+      await expect(page.getByTestId("budget-period-label")).toContainText(lastYear.toString());
+   }
+
+   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 600, 700, 2000);
+
+   if (shouldNavigateToLastYear) {
+      await navigateBudgetPeriod(page, -1);
+      await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 0, 700, 2000);
+      await navigateBudgetPeriod(page, 1);
+   }
+
+   let totalMonthsBack = monthsBack6 + additionalMonths;
+   if (shouldNavigateToLastYear) {
+      totalMonthsBack += 1;
+   }
+
+   for (let i = 0; i < totalMonthsBack; i++) {
+      await navigateBudgetPeriod(page, 1);
+   }
+
+   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
 }

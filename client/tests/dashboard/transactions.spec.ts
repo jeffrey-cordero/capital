@@ -1,9 +1,8 @@
-import { expect, test } from "@tests/fixtures";
+import { test } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
-import { assertAccountTrends } from "@tests/utils/dashboard";
 import { createAccount, getAccountCardIds } from "@tests/utils/dashboard/accounts";
-import { createBudgetCategory, getBudgetCategoryIds, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
+import { createBudgetCategory, getBudgetCategoryIds } from "@tests/utils/dashboard/budgets";
 import {
    assertEmptyState,
    assertTransactionFormInputs,
@@ -15,12 +14,13 @@ import {
    openTransactionFormFromAccountCard,
    openTransactionFormFromAccountsPage,
    openTransactionFormFromBudgetView,
+   performAndAssertAccountTrends,
+   performAndAssertBudgetPeriods,
    performAndAssertDeleteAction,
    performAndAssertTransactionAction,
    toggleTransactionView,
    type TransactionFormData,
-   updateTransaction,
-   validateBudgetPeriod
+   updateTransaction
 } from "@tests/utils/dashboard/transactions";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
@@ -694,99 +694,31 @@ test.describe("Transaction Management", () => {
          const lastYearBalances = allBalances.slice(0, 12);
          const currentYearBalances = allBalances.slice(12, 24);
 
-         const accountBalance = 2000; // Net worth only reflects account balance, not transactions
+         const accountBalance = 2000;
 
-         // Step 6: Validate account trends on dashboard (current year)
-         await assertAccountTrends(
+         // Step 6: Validate account trends on dashboard and accounts page
+         await performAndAssertAccountTrends(
             page,
-            [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
-            2000,
-            "dashboard",
-            [currentYearBalances]
+            accountId,
+            accountBalance,
+            currentYearBalances,
+            lastYearBalances,
+            currentYear,
+            lastYear,
+            oneYearAgo.getFullYear() < currentDate.getFullYear()
          );
 
-         // Navigate to accounts page and validate current year
-         await navigateToPath(page, ACCOUNTS_ROUTE);
-         await assertAccountTrends(
+         // Step 7-10: Navigate through budget periods and validate
+         await performAndAssertBudgetPeriods(
             page,
-            [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
-            2000,
-            "accounts",
-            [currentYearBalances]
+            incomeCategoryId,
+            expenseCategoryId,
+            currentMonth,
+            sixMonthsAgoMonth,
+            oneYearAgoMonth,
+            lastYear,
+            oneYearAgo.getFullYear() < currentDate.getFullYear()
          );
-
-         // Navigate back one year to validate last year's balances
-         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
-            // Click the back arrow to go to last year
-            await page.getByTestId("accounts-navigate-back").click();
-
-            // Wait for the year to change
-            await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", lastYear.toString());
-
-            // Last year's net worth is the final balance of December last year
-            const lastYearNetWorth = lastYearBalances[11]!; // December balance
-
-            await assertAccountTrends(
-               page,
-               [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
-               lastYearNetWorth,
-               "accounts",
-               [lastYearBalances]
-            );
-
-            // Navigate back to current year
-            await page.getByTestId("accounts-navigate-forward").click();
-
-            // Wait for the year to change back
-            await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", currentYear.toString());
-         }
-
-         // Step 7: Navigate to budgets and validate current month
-         await navigateToPath(page, BUDGETS_ROUTE);
-         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
-
-         // Step 8: Navigate to 6 months ago and validate
-         const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
-         for (let i = 0; i < monthsBack6; i++) {
-            await navigateBudgetPeriod(page, -1);
-         }
-         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 400, 500, 0, 700, 2000);
-
-         // Step 9: Navigate to 1 year ago and validate (current year or last year)
-         const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 11) % 12;
-         for (let i = 0; i < additionalMonths; i++) {
-            await navigateBudgetPeriod(page, -1);
-         }
-
-         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
-            // Transaction was last year - navigate to last year
-            await navigateBudgetPeriod(page, -1);
-         }
-
-         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 600, 700, 2000);
-
-         // If we went to last year, navigate to other months in that year to validate 0/goal
-         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
-            // Navigate to a month before the transaction in last year
-            await navigateBudgetPeriod(page, -1);
-            await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 0, 700, 2000);
-
-            // Navigate back to transaction month
-            await navigateBudgetPeriod(page, 1);
-         }
-
-         // Step 10: Navigate back to current month (test forward navigation persistence)
-         let totalMonthsBack = monthsBack6 + additionalMonths;
-         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
-            totalMonthsBack += 1; // Add the extra year navigation
-         }
-
-         for (let i = 0; i < totalMonthsBack; i++) {
-            await navigateBudgetPeriod(page, 1);
-         }
-
-         // Re-validate current month (persistence test)
-         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
       });
    });
 });

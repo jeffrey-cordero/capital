@@ -366,7 +366,7 @@ async function assertBudgetCategoryContainer(
 
    await expect(nameLocator).toHaveText(name);
    await expect(goalLocator).toHaveText(`${displayCurrency(0)} / ${displayCurrency(goal)}`);
-   await expect(progressLocator).toHaveAttribute("data-progress", "0");
+   await expect(progressLocator).toHaveAttribute("data-progress-percent", "0");
 }
 
 /**
@@ -628,7 +628,7 @@ export async function assertBudgetProgress(
    page: Page,
    categoryId: string,
    expectedUsed: number,
-   expectedAllocated: number
+   expectedAllocated: number,
 ): Promise<void> {
    const progress = page.getByTestId(`budget-category-progress-${categoryId}`);
    await expect(progress).toBeVisible();
