@@ -7,11 +7,13 @@ import {
    closeModal
 } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
+import { assertBudgetPieChart, assertBudgetProgress } from "@tests/utils/dashboard/budgets";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { HTTP_STATUS } from "capital/server";
 import { type Transaction } from "capital/transactions";
 
+import { getCurrentDate, toHtmlDate } from "@/lib/dates";
 import { displayDate } from "@/lib/display";
 
 /**
@@ -552,7 +554,7 @@ export async function assertTransactionFormInputs(
    page: Page,
    overrides?: TransactionFormInputOverrides
 ): Promise<void> {
-   const defaultDate = new Date().toISOString().split("T")[0];
+   const defaultDate = toHtmlDate(getCurrentDate());
 
    const formInputs = [
       {
@@ -706,4 +708,37 @@ export async function assertTransactionOrder(
    if (currentView !== "table") {
       await toggleTransactionView(page, currentView);
    }
+}
+
+/**
+ * Validates budget pie charts and progress for a specific time period
+ *
+ * @param page - Playwright page instance
+ * @param incomeCategoryId - Income category ID
+ * @param expenseCategoryId - Expense category ID
+ * @param incomeUsed - Income amount used
+ * @param incomeGoal - Income goal amount
+ * @param expenseUsed - Expense amount used
+ * @param expenseGoal - Expense goal amount
+ * @param mainGoal - Main budget goal (aggregated)
+ */
+export async function validateBudgetPeriod(
+   page: Page,
+   incomeCategoryId: string,
+   expenseCategoryId: string,
+   incomeUsed: number,
+   incomeGoal: number,
+   expenseUsed: number,
+   expenseGoal: number,
+   mainGoal: number
+): Promise<void> {
+   // Validate Income
+   await assertBudgetPieChart(page, "Income", incomeUsed);
+   await assertBudgetProgress(page, "Income", incomeUsed, mainGoal);
+   await assertBudgetProgress(page, incomeCategoryId, incomeUsed, incomeGoal);
+
+   // Validate Expenses
+   await assertBudgetPieChart(page, "Expenses", expenseUsed);
+   await assertBudgetProgress(page, "Expenses", expenseUsed, mainGoal);
+   await assertBudgetProgress(page, expenseCategoryId, expenseUsed, expenseGoal);
 }

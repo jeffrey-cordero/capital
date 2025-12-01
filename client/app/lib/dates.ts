@@ -71,7 +71,8 @@ export function normalizeDate(date: string, view?: "MTD" | "YTD"): Date {
    } else if (view === "YTD") {
       return new Date(Number(date), 0, 1);
    } else {
-      return new Date(`${date}T00:00:00`);
+      const [year, month, day] = date.split("-").map(Number);
+      return new Date(year, month - 1, day);
    }
 }
 

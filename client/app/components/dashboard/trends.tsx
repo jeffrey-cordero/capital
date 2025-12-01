@@ -298,11 +298,12 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       }, 0);
 
       return () => clearTimeout(timeout);
-   }, [series, type]);
+   }, [series, type, year]);
 
    return (
       <Box
          data-testid = { `${type}-trends-container` }
+         data-year = { year }
          sx = { { position: "relative" } }
       >
          <Card
@@ -373,6 +374,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                      sx = { { color: theme.palette.primary.main } }
                   >
                      <FontAwesomeIcon
+                        data-testid = { `${type}-navigate-back` }
                         icon = { faAnglesLeft }
                         size = "sm"
                      />
@@ -390,6 +392,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                      sx = { { color: theme.palette.primary.main } }
                   >
                      <FontAwesomeIcon
+                        data-testid = { `${type}-navigate-forward` }
                         icon = { faAnglesRight }
                         size = "sm"
                      />

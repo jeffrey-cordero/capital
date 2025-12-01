@@ -1,5 +1,7 @@
 import type { Theme } from "@mui/material";
 
+import { normalizeDate } from "./dates";
+
 /**
  * CSS for horizontally scrollable text container with styled scrollbar
  */
@@ -102,7 +104,7 @@ export function displayVolume(volume: number): string {
  * @returns {string} Formatted date (MM/DD/YYYY)
  */
 export function displayDate(date: string): string {
-   return new Date(date).toLocaleDateString("en-us", {
+   return normalizeDate(date.split("T")[0]).toLocaleDateString("en-us", {
       month: "2-digit",
       day: "2-digit",
       year: "numeric"

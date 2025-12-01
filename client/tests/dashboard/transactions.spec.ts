@@ -1,15 +1,9 @@
-import { test } from "@tests/fixtures";
+import { expect, test } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
 import { createAccount, getAccountCardIds } from "@tests/utils/dashboard/accounts";
-import {
-   assertBudgetPieChart,
-   assertBudgetProgress,
-   createBudgetCategory,
-   getBudgetCategoryIds,
-   navigateBudgetPeriod
-} from "@tests/utils/dashboard/budgets";
+import { createBudgetCategory, getBudgetCategoryIds, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
 import {
    assertEmptyState,
    assertTransactionFormInputs,
@@ -25,7 +19,8 @@ import {
    performAndAssertTransactionAction,
    toggleTransactionView,
    type TransactionFormData,
-   updateTransaction
+   updateTransaction,
+   validateBudgetPeriod
 } from "@tests/utils/dashboard/transactions";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
@@ -659,115 +654,139 @@ test.describe("Transaction Management", () => {
             budget_category_id: expenseCategoryId
          });
 
-         // Step 5: Calculate expected 12-month balances
-         const monthlyBalances: (number | null)[] = new Array(12).fill(null);
+         // Step 5: Calculate expected 24-month balances (2 full calendar years)
+         // Structure: [lastYear Jan-Dec, currentYear Jan-Dec]
+         const STARTING_BALANCE = 2000;
+         const currentYear = currentDate.getFullYear();
+         const lastYear = currentYear - 1;
 
-         // Work forward from year ago to current month - cumulative balances
-         for (let i = 0; i <= currentMonth; i++) {
-            let balance = 2000; // Starting balance
+         // Map transaction dates to their chronological order with effects
+         const transactions = [
+            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 }, // 1yr ago expense
+            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 }, // 6mo ago income
+            { year: currentYear, month: currentMonth, effect: +200 } // Current month net (+300 income -100 expense)
+         ].sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
-            // Apply transactions cumulatively: transactions affect this month and all future months
-            // 1yr ago transaction: if it's in a previous year, it affects all months this year
-            if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
-               // Transaction was last year, affects all months this year
-               balance -= 600;
-            } else if (i >= oneYearAgoMonth) {
-               // Transaction was this year, affects this month and future months
-               balance -= 600;
+         // Calculate balances for 24 months chronologically
+         const allBalances: (number | null)[] = [];
+         for (let yearOffset = 0; yearOffset < 2; yearOffset++) {
+            const year = lastYear + yearOffset;
+            for (let month = 0; month < 12; month++) {
+               // Future months in current year are null
+               if (year === currentYear && month > currentMonth) {
+                  allBalances.push(null);
+                  continue;
+               }
+
+               // Calculate balance by applying all transactions up to this point
+               let balance = STARTING_BALANCE;
+               for (const txn of transactions) {
+                  // Apply transaction if it occurred before or in this month
+                  if (txn.year < year || (txn.year === year && txn.month <= month)) {
+                     balance += txn.effect;
+                  }
+               }
+               allBalances.push(balance);
             }
-
-            // 6mo ago transaction affects this month onwards
-            if (i >= sixMonthsAgoMonth) {
-               balance += 400; // Income
-            }
-
-            // Current month transaction
-            if (i >= currentMonth) {
-               balance += 300 - 100; // +300 income -100 expense = +200
-            }
-
-            monthlyBalances[i] = balance;
          }
 
-         console.log(monthlyBalances);
-
-         // Future months are null (already set above)
+         // Split into last year and current year for validation
+         const lastYearBalances = allBalances.slice(0, 12);
+         const currentYearBalances = allBalances.slice(12, 24);
 
          const accountBalance = 2000; // Net worth only reflects account balance, not transactions
 
-         // Step 6: Validate account trends on dashboard and accounts page
+         // Step 6: Validate account trends on dashboard (current year)
          await assertAccountTrends(
             page,
             [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
-            accountBalance,
+            2000,
             "dashboard",
-            [monthlyBalances]
+            [currentYearBalances]
          );
 
+         // Navigate to accounts page and validate current year
          await navigateToPath(page, ACCOUNTS_ROUTE);
          await assertAccountTrends(
             page,
             [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
-            accountBalance,
+            2000,
             "accounts",
-            [monthlyBalances]
+            [currentYearBalances]
          );
+
+         // Navigate back one year to validate last year's balances
+         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
+            // Click the back arrow to go to last year
+            await page.getByTestId("accounts-navigate-back").click();
+
+            // Wait for the year to change
+            await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", lastYear.toString());
+
+            // Last year's net worth is the final balance of December last year
+            const lastYearNetWorth = lastYearBalances[11]!; // December balance
+
+            await assertAccountTrends(
+               page,
+               [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }],
+               lastYearNetWorth,
+               "accounts",
+               [lastYearBalances]
+            );
+
+            // Navigate back to current year
+            await page.getByTestId("accounts-navigate-forward").click();
+
+            // Wait for the year to change back
+            await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", currentYear.toString());
+         }
 
          // Step 7: Navigate to budgets and validate current month
          await navigateToPath(page, BUDGETS_ROUTE);
-
-         // Validate Income pie chart and progress (current month: 300 used / 500 goal)
-         await assertBudgetPieChart(page, "Income", 300);
-         await assertBudgetProgress(page, "Income", 300, 2000);
-         await assertBudgetProgress(page, incomeCategoryId, 300, 500);
-
-         // Validate Expense pie chart and progress (current month: 100 used / 700 goal)
-         await assertBudgetPieChart(page, "Expenses", 100);
-         await assertBudgetProgress(page, "Expenses", 100, 2000);
-         await assertBudgetProgress(page, expenseCategoryId, 100, 700);
+         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
 
          // Step 8: Navigate to 6 months ago and validate
          const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
          for (let i = 0; i < monthsBack6; i++) {
             await navigateBudgetPeriod(page, -1);
          }
+         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 400, 500, 0, 700, 2000);
 
-         // Validate 6 months ago (income: 400, expenses: 0)
-         await assertBudgetPieChart(page, "Income", 400);
-         await assertBudgetProgress(page, "Income", 400, 2000);
-         await assertBudgetProgress(page, incomeCategoryId, 400, 500);
-
-         await assertBudgetPieChart(page, "Expenses", 0);
-         await assertBudgetProgress(page, "Expenses", 0, 2000);
-         await assertBudgetProgress(page, expenseCategoryId, 0, 700);
-
-         // Step 9: Navigate to 1 year ago and validate
-         const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 12) % 12;
+         // Step 9: Navigate to 1 year ago and validate (current year or last year)
+         const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 11) % 12;
          for (let i = 0; i < additionalMonths; i++) {
             await navigateBudgetPeriod(page, -1);
          }
 
-         // Validate 1 year ago (income: 0, expenses: 600)
-         await assertBudgetPieChart(page, "Income", 0);
-         await assertBudgetProgress(page, "Income", 0, 2000);
-         await assertBudgetProgress(page, incomeCategoryId, 0, 500);
+         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
+            // Transaction was last year - navigate to last year
+            await navigateBudgetPeriod(page, -1);
+         }
 
-         await assertBudgetPieChart(page, "Expenses", 600);
-         await assertBudgetProgress(page, "Expenses", 600, 2000);
-         await assertBudgetProgress(page, expenseCategoryId, 600, 700);
+         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 600, 700, 2000);
+
+         // If we went to last year, navigate to other months in that year to validate 0/goal
+         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
+            // Navigate to a month before the transaction in last year
+            await navigateBudgetPeriod(page, -1);
+            await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 0, 700, 2000);
+
+            // Navigate back to transaction month
+            await navigateBudgetPeriod(page, 1);
+         }
 
          // Step 10: Navigate back to current month (test forward navigation persistence)
-         const totalMonthsBack = monthsBack6 + additionalMonths;
+         let totalMonthsBack = monthsBack6 + additionalMonths;
+         if (oneYearAgo.getFullYear() < currentDate.getFullYear()) {
+            totalMonthsBack += 1; // Add the extra year navigation
+         }
+
          for (let i = 0; i < totalMonthsBack; i++) {
             await navigateBudgetPeriod(page, 1);
          }
 
          // Re-validate current month (persistence test)
-         await assertBudgetPieChart(page, "Income", 300);
-         await assertBudgetProgress(page, "Income", 300, 2000);
-
-         await assertBudgetPieChart(page, "Expenses", 100);
-         await assertBudgetProgress(page, "Expenses", 100, 2000);
+         await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
       });
    });
 });
