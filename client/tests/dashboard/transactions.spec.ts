@@ -716,8 +716,7 @@ test.describe("Transaction Management", () => {
             currentMonth,
             sixMonthsAgoMonth,
             oneYearAgoMonth,
-            lastYear,
-            oneYearAgo.getFullYear() < currentDate.getFullYear()
+            lastYear
          );
       });
    });

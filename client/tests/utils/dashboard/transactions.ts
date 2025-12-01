@@ -795,7 +795,6 @@ export async function performAndAssertAccountTrends(
  * @param sixMonthsAgoMonth - Six months ago month (0-indexed)
  * @param oneYearAgoMonth - One year ago month (0-indexed)
  * @param lastYear - Last year number
- * @param shouldNavigateToLastYear - Whether the 1-year-ago transaction is in the previous year
  */
 export async function performAndAssertBudgetPeriods(
    page: Page,
@@ -804,8 +803,7 @@ export async function performAndAssertBudgetPeriods(
    currentMonth: number,
    sixMonthsAgoMonth: number,
    oneYearAgoMonth: number,
-   lastYear: number,
-   shouldNavigateToLastYear: boolean
+   lastYear: number
 ): Promise<void> {
    await navigateToPath(page, BUDGETS_ROUTE);
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
@@ -821,21 +819,25 @@ export async function performAndAssertBudgetPeriods(
       await navigateBudgetPeriod(page, -1);
    }
 
-   if (shouldNavigateToLastYear) {
+   // Check if we need to navigate to previous year for trends view
+   const currentYearAttr = await page.getByTestId("budgets-trends-container").getAttribute("data-year");
+   const needsYearNavigation = currentYearAttr !== lastYear.toString();
+
+   if (needsYearNavigation) {
       await navigateBudgetPeriod(page, -1);
       await expect(page.getByTestId("budget-period-label")).toContainText(lastYear.toString());
    }
 
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 600, 700, 2000);
 
-   if (shouldNavigateToLastYear) {
+   if (needsYearNavigation) {
       await navigateBudgetPeriod(page, -1);
       await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 0, 700, 2000);
       await navigateBudgetPeriod(page, 1);
    }
 
    let totalMonthsBack = monthsBack6 + additionalMonths;
-   if (shouldNavigateToLastYear) {
+   if (needsYearNavigation) {
       totalMonthsBack += 1;
    }
 
@@ -865,22 +867,20 @@ export async function performAndAssertBudgetPeriods(
    await assertBudgetTrends(page, "Income", currentYearIncome);
    await assertBudgetTrends(page, "Expenses", currentYearExpense);
 
-   // Assert last year budget trends if applicable
-   if (shouldNavigateToLastYear) {
-      await page.getByTestId("budgets-navigate-back").click();
-      await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", lastYear.toString());
+   // Navigate back and assert last year budget trends
+   await page.getByTestId("budgets-navigate-back").click();
+   await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", lastYear.toString());
 
-      const lastYearIncome: [number, number][] = Array(12)
-         .fill(null)
-         .map(() => [0, 0]);
-      const lastYearExpense: [number, number][] = Array(12)
-         .fill(null)
-         .map((_, i) => {
-            if (i === oneYearAgoMonth) return [600, 0];
-            return [0, 0];
-         });
+   const lastYearIncome: [number, number][] = Array(12)
+      .fill(null)
+      .map(() => [0, 0]);
+   const lastYearExpense: [number, number][] = Array(12)
+      .fill(null)
+      .map((_, i) => {
+         if (i === oneYearAgoMonth) return [600, 0];
+         return [0, 0];
+      });
 
-      await assertBudgetTrends(page, "Income", lastYearIncome);
-      await assertBudgetTrends(page, "Expenses", lastYearExpense);
-   }
+   await assertBudgetTrends(page, "Income", lastYearIncome);
+   await assertBudgetTrends(page, "Expenses", lastYearExpense);
 }
