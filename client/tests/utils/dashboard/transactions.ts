@@ -8,7 +8,7 @@ import {
 } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
-import { assertBudgetPieChart, assertBudgetProgress, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
+import { assertBudgetPieChart, assertBudgetProgress, assertBudgetTrends, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { HTTP_STATUS } from "capital/server";
@@ -844,4 +844,43 @@ export async function performAndAssertBudgetPeriods(
    }
 
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
+
+   // Build expected income and expense trends for current year
+   const currentYearIncome: [number, number][] = Array(12)
+      .fill(null)
+      .map((_, i) => {
+         if (i === currentMonth) return [300, 0];
+         if (i === sixMonthsAgoMonth) return [400, 0];
+         return [0, 0];
+      });
+
+   const currentYearExpense: [number, number][] = Array(12)
+      .fill(null)
+      .map((_, i) => {
+         if (i === currentMonth) return [100, 0];
+         return [0, 0];
+      });
+
+   // Assert current year budget trends
+   await assertBudgetTrends(page, "Income", currentYearIncome);
+   await assertBudgetTrends(page, "Expenses", currentYearExpense);
+
+   // Assert last year budget trends if applicable
+   if (shouldNavigateToLastYear) {
+      await page.getByTestId("budgets-navigate-back").click();
+      await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", lastYear.toString());
+
+      const lastYearIncome: [number, number][] = Array(12)
+         .fill(null)
+         .map(() => [0, 0]);
+      const lastYearExpense: [number, number][] = Array(12)
+         .fill(null)
+         .map((_, i) => {
+            if (i === oneYearAgoMonth) return [600, 0];
+            return [0, 0];
+         });
+
+      await assertBudgetTrends(page, "Income", lastYearIncome);
+      await assertBudgetTrends(page, "Expenses", lastYearExpense);
+   }
 }

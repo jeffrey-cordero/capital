@@ -628,7 +628,7 @@ export async function assertBudgetProgress(
    page: Page,
    categoryId: string,
    expectedUsed: number,
-   expectedAllocated: number,
+   expectedAllocated: number
 ): Promise<void> {
    const progress = page.getByTestId(`budget-category-progress-${categoryId}`);
    await expect(progress).toBeVisible();
