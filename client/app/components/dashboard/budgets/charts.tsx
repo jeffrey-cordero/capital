@@ -70,11 +70,11 @@ const StyledText = styled("text", {
  * Props for the pie chart center label
  *
  * @property {string} primaryText - Amount display text
- * @property {"Income" | "Expenses"} [type] - Budget type for test ID
+ * @property {"Income" | "Expenses"} type - Budget type for test ID
  */
 interface PieCenterLabelProps {
    primaryText: string;
-   type?: "Income" | "Expenses";
+   type: "Income" | "Expenses";
 }
 
 /**
@@ -89,7 +89,7 @@ const PieCenterLabel = function PieCenterLabel({ primaryText, type }: PieCenterL
 
    return (
       <StyledText
-         data-testid = { type ? `budget-pie-center-${type}` : undefined }
+         data-testid = { `budget-pie-center-${type}` }
          variant = "primary"
          x = { left + width / 2 }
          y = { primaryY }

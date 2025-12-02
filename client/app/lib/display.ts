@@ -1,6 +1,6 @@
 import type { Theme } from "@mui/material";
 
-import { normalizeDate } from "./dates";
+import { normalizeDate } from "@/lib/dates";
 
 /**
  * CSS for horizontally scrollable text container with styled scrollbar

@@ -10,17 +10,16 @@ export function getCurrentDate(): Date {
 };
 
 /**
- * Converts a Date to YYYY-MM-DD for HTML date input
+ * Converts a `Date` to `YYYY-MM-DD` for HTML date input
  *
  * @param {Date} date - Date to convert
  * @returns {string} Date in `YYYY-MM-DD` format
  */
 export function toHtmlDate(date: Date): string {
-   const pad = (n: number) => String(n).padStart(2, "0");
-
-   const year = date.getFullYear();
-   const month = pad(date.getMonth() + 1);
-   const day = pad(date.getDate());
+   const pad: (n: number) => string = (n: number) => String(n).padStart(2, "0");
+   const year: number = date.getFullYear();
+   const month: string = pad(date.getMonth() + 1);
+   const day: string = pad(date.getDate());
 
    return `${year}-${month}-${day}`;
 }

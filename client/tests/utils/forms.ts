@@ -88,7 +88,7 @@ export async function submitForm(
             } else if (inputType === "radio") {
                await element.check();
             } else if (inputType === "date") {
-               // Handle empty vs. valid date inputs
+               // Allow for empty or invalid date inputs to test form validation
                let formatted: string = "";
                const date: Date | null = value ? new Date(value) : null;
 

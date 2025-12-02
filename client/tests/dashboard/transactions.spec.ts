@@ -9,14 +9,12 @@ import {
    assertTransactionInBothViews,
    assertTransactionOrder,
    assertViewPersistence,
-   bulkDeleteTransactions,
    createTransaction,
    openTransactionFormFromAccountCard,
    openTransactionFormFromAccountsPage,
    openTransactionFormFromBudgetView,
    performAndAssertAccountTrends,
    performAndAssertBudgetPeriods,
-   performAndAssertDeleteAction,
    performAndAssertTransactionAction,
    setupAccountBalances,
    toggleTransactionView,
@@ -41,7 +39,7 @@ test.describe("Transaction Management", () => {
          });
 
          test("should have accessible form inputs from individual account card", async({ page }) => {
-            const accountId = await createAccount(page, { name: "Savings", balance: 3000, type: "Savings" });
+            const accountId: string = await createAccount(page, { name: "Savings", balance: 3000, type: "Savings" });
 
             await openTransactionFormFromAccountCard(page, accountId);
             await assertTransactionFormInputs(page, { accountId });
@@ -53,11 +51,15 @@ test.describe("Transaction Management", () => {
             await setupAssignedUser(page, usersRegistry, assignedRegistry, BUDGETS_ROUTE, false, false);
          });
 
-         test("should have accessible form inputs from budget category view", async({ page }) => {
+         test("should have accessible form inputs from all budget form interfaces", async({ page }) => {
             const mainIncomeCategory: string | null = await (page.getByTestId("budget-category-Income").getAttribute("data-category-id"));
+            const mainExpenseCategory: string | null = await (page.getByTestId("budget-category-Expenses").getAttribute("data-category-id"));
 
             await openTransactionFormFromBudgetView(page, "Income");
             await assertTransactionFormInputs(page, { budgetCategoryId: mainIncomeCategory! });
+
+            await openTransactionFormFromBudgetView(page, "Expenses");
+            await assertTransactionFormInputs(page, { budgetCategoryId: mainExpenseCategory! });
          });
       });
    });
@@ -69,62 +71,62 @@ test.describe("Transaction Management", () => {
          });
 
          test("should create transaction with all fields populated", async({ page }) => {
-            const transactionData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 1500.50,
-               description: "Monthly salary payment",
-               account_id: (await getAccountCardIds(page))[0],
-               budget_category_id: (await getBudgetCategoryIds(page, "Income"))[0]
-            };
-
-            const transactionId = await performAndAssertTransactionAction({ page, transactionData });
-            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
+            await performAndAssertTransactionAction({
+               page,
+               transactionData: {
+                  date: "2024-01-15",
+                  amount: 1500.50,
+                  description: "Monthly salary payment",
+                  account_id: (await getAccountCardIds(page))[0],
+                  budget_category_id: (await getBudgetCategoryIds(page, "Income"))[0]
+               }
+            });
          });
 
          test("should create transaction with minimal required fields", async({ page }) => {
-            const transactionData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 100.00
-            };
-
-            const transactionId = await createTransaction(page, transactionData);
-            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
+            await performAndAssertTransactionAction({
+               page,
+               transactionData: {
+                  date: "2024-01-15",
+                  amount: 100.00
+               }
+            });
          });
 
          test("should create transaction with account but no category", async({ page }) => {
-            const transactionData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 250,
-               account_id: (await getAccountCardIds(page))[0],
-               budget_category_id: null
-            };
-
-            const transactionId = await createTransaction(page, transactionData);
-            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
+            await performAndAssertTransactionAction({
+               page,
+               transactionData: {
+                  date: "2024-01-15",
+                  amount: 250,
+                  account_id: (await getAccountCardIds(page))[0],
+                  budget_category_id: null
+               }
+            });
          });
 
          test("should create transaction with category but no account", async({ page }) => {
-            const transactionData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 150,
-               account_id: null,
-               budget_category_id: (await getBudgetCategoryIds(page, "Expenses"))[0]
-            };
-
-            const transactionId = await createTransaction(page, transactionData);
-            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
+            await performAndAssertTransactionAction({
+               page,
+               transactionData: {
+                  date: "2024-01-15",
+                  amount: 150,
+                  account_id: null,
+                  budget_category_id: (await getBudgetCategoryIds(page, "Expenses"))[0]
+               }
+            });
          });
 
          test("should create transaction with neither account nor category", async({ page }) => {
-            const transactionData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 500,
-               account_id: null,
-               budget_category_id: null
-            };
-
-            const transactionId = await createTransaction(page, transactionData);
-            await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
+            await performAndAssertTransactionAction({
+               page,
+               transactionData: {
+                  date: "2024-01-15",
+                  amount: 500,
+                  account_id: null,
+                  budget_category_id: null
+               }
+            });
          });
       });
 
@@ -142,9 +144,9 @@ test.describe("Transaction Management", () => {
          });
 
          test("should validate date cannot be in the future", async({ page }) => {
-            const futureDate = new Date();
+            const futureDate: Date = new Date();
             futureDate.setFullYear(futureDate.getFullYear() + 1);
-            const futureDateString = futureDate.toISOString().split("T")[0];
+            const futureDateString: string = futureDate.toISOString().split("T")[0];
 
             await performAndAssertTransactionAction({
                page,
@@ -205,49 +207,6 @@ test.describe("Transaction Management", () => {
       });
    });
 
-   test.describe("View Toggle", () => {
-      test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
-
-         await createTransaction(page, {
-            date: "2024-01-15",
-            amount: 500,
-            description: "Test transaction"
-         });
-      });
-
-      test("should toggle from table to list view", async({ page }) => {
-         await toggleTransactionView(page, "list");
-
-         // Assert list view is visible
-         await assertComponentIsVisible(page, "transactions-list-view");
-         await assertComponentIsHidden(page, "transactions-table-view");
-      });
-
-      test("should toggle from list to table view", async({ page }) => {
-         await toggleTransactionView(page, "list");
-         await toggleTransactionView(page, "table");
-
-         // Assert table view is visible
-         await assertComponentIsVisible(page, "transactions-table-view");
-         await assertComponentIsHidden(page, "transactions-list-view");
-      });
-
-      test("should persist view preference after reload", async({ page }) => {
-         await toggleTransactionView(page, "list");
-         await assertViewPersistence(page, "list");
-      });
-
-      test("should default to table view on first visit", async({ page }) => {
-         await page.evaluate(() => window.localStorage.clear());
-         await page.reload();
-
-         // Assert table view is visible by default
-         await assertComponentIsVisible(page, "transactions-table-view");
-         await assertComponentIsHidden(page, "transactions-list-view");
-      });
-   });
-
    test.describe("Transaction Updates", () => {
       test.describe("Successful Updates", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
@@ -260,7 +219,7 @@ test.describe("Transaction Management", () => {
                amount: 500,
                description: "Original"
             };
-            const transactionId = await createTransaction(page, originalData);
+            const transactionId: string = await createTransaction(page, originalData);
 
             await performAndAssertTransactionAction({
                page,
@@ -276,7 +235,7 @@ test.describe("Transaction Management", () => {
                amount: 500,
                description: "Original"
             };
-            const transactionId = await createTransaction(page, originalData);
+            const transactionId: string = await createTransaction(page, originalData);
 
             await performAndAssertTransactionAction({
                page,
@@ -292,7 +251,7 @@ test.describe("Transaction Management", () => {
                amount: 500,
                description: "Original"
             };
-            const transactionId = await createTransaction(page, originalData);
+            const transactionId: string = await createTransaction(page, originalData);
 
             await performAndAssertTransactionAction({
                page,
@@ -302,54 +261,34 @@ test.describe("Transaction Management", () => {
             });
          });
 
-         test("should update transaction from card view", async({ page }) => {
-            const originalData: TransactionFormData = {
-               date: "2024-01-15",
-               amount: 500,
-               description: "Original"
-            };
-            const transactionId = await createTransaction(page, originalData);
-
-            await toggleTransactionView(page, "list");
-            await performAndAssertTransactionAction({
-               page,
-               transactionId,
-               baseTransaction: originalData,
-               transactionData: { description: "Updated from card" }
-            });
-         });
-
          test("should reorder transactions when date is updated", async({ page }) => {
-            // Create 3 transactions in reverse chronological order
-            const transaction1Id = await createTransaction(page, {
+            const transaction1Id: string = await createTransaction(page, {
                date: "2024-01-15",
                amount: 100,
                description: "Transaction 1"
             });
-
-            const transaction2Id = await createTransaction(page, {
+            const transaction2Id: string = await createTransaction(page, {
                date: "2024-01-10",
                amount: 200,
                description: "Transaction 2"
             });
-
-            const transaction3Id = await createTransaction(page, {
+            const transaction3Id: string = await createTransaction(page, {
                date: "2024-01-05",
                amount: 300,
                description: "Transaction 3"
             });
 
-            // Assert initial order (newest to oldest)
+            // Assert the initial order of transactions
             await assertTransactionOrder(page, [
                { transaction_id: transaction1Id, date: "2024-01-15", description: "Transaction 1" },
                { transaction_id: transaction2Id, date: "2024-01-10", description: "Transaction 2" },
                { transaction_id: transaction3Id, date: "2024-01-05", description: "Transaction 3" }
             ]);
 
-            // Update transaction 3's date to be between transaction 1 and 2
+            // Update the third transaction's date to be between the first and second transactions
             await updateTransaction(page, transaction3Id, { date: "2024-01-12" });
 
-            // Assert new order - transaction 3 should now be in the middle
+            // Assert the new order of transactions, where the third transaction is now in the middle
             await assertTransactionOrder(page, [
                { transaction_id: transaction1Id, date: "2024-01-15", description: "Transaction 1" },
                { transaction_id: transaction3Id, date: "2024-01-12", description: "Transaction 3" },
@@ -381,17 +320,15 @@ test.describe("Transaction Management", () => {
          });
 
          test("should validate date cannot be in the future", async({ page }) => {
-            const futureDate = new Date();
+            const futureDate: Date = new Date();
             futureDate.setFullYear(futureDate.getFullYear() + 1);
-            const futureDateString = futureDate.toISOString().split("T")[0];
+            const futureDateString: string = futureDate.toISOString().split("T")[0];
 
             await performAndAssertTransactionAction({
                page,
                transactionId: baseTransaction.transaction_id!,
                baseTransaction,
-               transactionData: {
-                  date: futureDateString
-               },
+               transactionData: { date: futureDateString },
                expectedErrors: { "transaction-date": "Date cannot be in the future" }
             });
          });
@@ -401,9 +338,7 @@ test.describe("Transaction Management", () => {
                page,
                transactionId: baseTransaction.transaction_id!,
                baseTransaction,
-               transactionData: {
-                  date: "1799-12-31"
-               },
+               transactionData: { date: "1799-12-31" },
                expectedErrors: { "transaction-date": "Date must be on or after 1800-01-01" }
             });
          });
@@ -433,9 +368,7 @@ test.describe("Transaction Management", () => {
                page,
                transactionId: baseTransaction.transaction_id!,
                baseTransaction,
-               transactionData: {
-                  description: "a".repeat(256)
-               },
+               transactionData: { description: "a".repeat(256) },
                expectedErrors: { "transaction-description": "Description must be at most 255 characters" }
             });
          });
@@ -447,44 +380,58 @@ test.describe("Transaction Management", () => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
       });
 
-      test("should delete transaction from table view", async({ page }) => {
-         const transactionId = await createTransaction(page, {
+      test("should delete single transaction", async({ page }) => {
+         const transactionId: string = await createTransaction(page, {
             date: "2024-01-15",
             amount: 500
          });
 
-         await performAndAssertDeleteAction(page, transactionId);
-      });
-
-      test("should delete transaction from card view", async({ page }) => {
-         const transactionId = await createTransaction(page, {
-            date: "2024-01-15",
-            amount: 500
+         await performAndAssertTransactionAction({
+            page,
+            transactionId,
+            isDeletion: true
          });
-
-         await toggleTransactionView(page, "list");
-         await performAndAssertDeleteAction(page, transactionId);
       });
 
       test("should cancel transaction deletion", async({ page }) => {
-         const transactionId = await createTransaction(page, {
+         const transactionId: string = await createTransaction(page, {
             date: "2024-01-15",
             amount: 500
          });
 
-         await performAndAssertDeleteAction(page, transactionId, false);
+         await performAndAssertTransactionAction({
+            page,
+            transactionId,
+            isDeletion: false
+         });
       });
 
       test("should bulk delete multiple transactions", async({ page }) => {
-         const id1 = await createTransaction(page, { date: "2024-01-15", amount: 100 });
-         const id2 = await createTransaction(page, { date: "2024-01-16", amount: 200 });
-         const id3 = await createTransaction(page, { date: "2024-01-17", amount: 300 });
+         const transactionId1: string = await createTransaction(page, {
+            date: "2024-01-15",
+            amount: 100
+         });
+         const transactionId2: string = await createTransaction(page, {
+            date: "2024-01-16",
+            amount: 200
+         });
+         const transactionId3: string = await createTransaction(page, {
+            date: "2024-01-17",
+            amount: 300
+         });
 
-         await bulkDeleteTransactions(page, [id1, id3], true);
+         await performAndAssertTransactionAction({
+            page,
+            transactionIds: [transactionId1, transactionId3],
+            isDeletion: true
+         });
 
-         await assertComponentIsHidden(page, `transaction-date-${id1}`);
-         await assertComponentIsVisible(page, `transaction-date-${id2}`);
-         await assertComponentIsHidden(page, `transaction-date-${id3}`);
+         // Only the second transaction should remain
+         await assertTransactionInBothViews(page, {
+            transaction_id: transactionId2,
+            date: "2024-01-16",
+            amount: 200
+         });
       });
 
       test("should persist deletion after page reload", async({ page }) => {
@@ -493,86 +440,73 @@ test.describe("Transaction Management", () => {
             amount: 500
          });
 
-         await performAndAssertDeleteAction(page, transactionId);
+         await performAndAssertTransactionAction({
+            page,
+            transactionId,
+            isDeletion: true
+         });
          await page.reload();
          await assertEmptyState(page);
       });
 
-      test("should show empty state message when all transactions are deleted", async({ page }) => {
-         // Create 2 transactions
+      test("should show empty state when all transactions are deleted through bulk deletion", async({ page }) => {
          const transaction1Id = await createTransaction(page, {
             date: "2024-01-15",
             amount: 100,
             description: "Transaction 1"
          });
-
          const transaction2Id = await createTransaction(page, {
             date: "2024-01-10",
             amount: 200,
             description: "Transaction 2"
          });
 
-         // Delete both transactions
-         await performAndAssertDeleteAction(page, transaction1Id);
-         await performAndAssertDeleteAction(page, transaction2Id);
-
-         // Assert empty state message appears in table view
-         await assertEmptyState(page);
-
-         // Toggle to list view and assert empty state still appears
-         await toggleTransactionView(page, "list");
+         await performAndAssertTransactionAction({
+            page,
+            transactionIds: [transaction1Id, transaction2Id],
+            isDeletion: true
+         });
          await assertEmptyState(page);
       });
    });
 
-   test.describe("View Parity", () => {
+   test.describe("View Toggle", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, true, true);
-      });
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, ACCOUNTS_ROUTE, false, false);
 
-      test("should maintain parity when creating from table view", async({ page }) => {
-         const transactionData: TransactionFormData = {
-            date: "2024-01-15",
-            amount: 750,
-            description: "Parity test transaction"
-         };
-
-         const transactionId = await createTransaction(page, transactionData);
-         await assertTransactionInBothViews(page, { transaction_id: transactionId, ...transactionData });
-      });
-
-      test("should maintain parity when updating from card view", async({ page }) => {
-         const originalData: TransactionFormData = {
+         await createTransaction(page, {
             date: "2024-01-15",
             amount: 500,
-            description: "Original"
-         };
-         const transactionId = await createTransaction(page, originalData);
-
-         await toggleTransactionView(page, "list");
-         await performAndAssertTransactionAction({
-            page,
-            transactionId,
-            baseTransaction: originalData,
-            transactionData: { description: "Updated from card" }
+            description: "Test transaction"
          });
       });
 
-      test("should maintain parity for all create, read, update, delete operations", async({ page }) => {
-         const baseTransaction: TransactionFormData = { date: "2024-01-15", amount: 100 };
-         const id1 = await createTransaction(page, baseTransaction);
-         await assertTransactionInBothViews(page, { transaction_id: id1, ...baseTransaction });
+      test("should default to table view on first visit", async({ page }) => {
+         await page.evaluate(() => window.localStorage.clear());
+         await page.reload();
 
+         await assertComponentIsVisible(page, "transactions-table-view");
+         await assertComponentIsHidden(page, "transactions-list-view");
+      });
+
+      test("should toggle from table to list view", async({ page }) => {
          await toggleTransactionView(page, "list");
-         await performAndAssertTransactionAction({
-            page,
-            transactionId: id1,
-            baseTransaction,
-            transactionData: { amount: 150 }
-         });
 
-         await performAndAssertDeleteAction(page, id1, true, true);
-         await assertEmptyState(page);
+         await assertComponentIsVisible(page, "transactions-list-view");
+         await assertComponentIsHidden(page, "transactions-table-view");
+      });
+
+      test("should toggle from list to table view", async({ page }) => {
+         await toggleTransactionView(page, "list");
+         await toggleTransactionView(page, "table");
+
+         await assertComponentIsVisible(page, "transactions-table-view");
+         await assertComponentIsHidden(page, "transactions-list-view");
+      });
+
+      test("should persist view preference after page reload", async({ page }) => {
+         await toggleTransactionView(page, "list");
+         await assertViewPersistence(page, "list");
       });
    });
 
@@ -582,20 +516,19 @@ test.describe("Transaction Management", () => {
       });
 
       test("should validate account trends and budget metrics impacted by transactions across time periods", async({ page }) => {
-         const accountId = await createAccount(page, {
+         // Create the base accounts and budget categories
+         const accountId: string = await createAccount(page, {
             name: "Main Account",
             balance: 2000,
             type: "Checking"
          });
 
          await navigateToPath(page, BUDGETS_ROUTE);
-
-         const incomeCategoryId = await createBudgetCategory(page, {
+         const incomeCategoryId: string = await createBudgetCategory(page, {
             name: "Salary",
             goal: 500
          }, "Income");
-
-         const expenseCategoryId = await createBudgetCategory(page, {
+         const expenseCategoryId: string = await createBudgetCategory(page, {
             name: "Groceries",
             goal: 700
          }, "Expenses");
@@ -603,22 +536,21 @@ test.describe("Transaction Management", () => {
          await closeModal(page, false, "budget-form-Expenses");
          await navigateToPath(page, ACCOUNTS_ROUTE);
 
-         // Calculate transaction dates for current month, 6 months ago, and 1 year ago
-         const currentDate = getCurrentDate();
-         const currentMonth = currentDate.getMonth();
-         const currentMonthDate = toHtmlDate(currentDate);
+         const currentDate: Date = getCurrentDate();
+         const currentMonth: number = currentDate.getMonth();
+         const currentMonthDate: string = toHtmlDate(currentDate);
 
-         const sixMonthsAgo = new Date(currentDate);
+         const sixMonthsAgo: Date = new Date(currentDate);
          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-         const sixMonthsAgoMonth = sixMonthsAgo.getMonth();
-         const sixMonthsAgoDate = toHtmlDate(sixMonthsAgo);
+         const sixMonthsAgoMonth: number = sixMonthsAgo.getMonth();
+         const sixMonthsAgoDate: string = toHtmlDate(sixMonthsAgo);
 
-         const oneYearAgo = new Date(currentDate);
+         const oneYearAgo: Date = new Date(currentDate);
          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-         const oneYearAgoMonth = oneYearAgo.getMonth();
-         const oneYearAgoDate = toHtmlDate(oneYearAgo);
+         const oneYearAgoMonth: number = oneYearAgo.getMonth();
+         const oneYearAgoDate: string = toHtmlDate(oneYearAgo);
 
-         // Create transactions with +300/-100 current, +400 6mo ago, -600 1yr ago
+         // Create transactions with +$300/-$100 for the current month, +$400 for 6 months ago, and -$600 for 1 year ago
          await createTransaction(page, {
             date: currentMonthDate,
             amount: 300,
@@ -626,7 +558,6 @@ test.describe("Transaction Management", () => {
             account_id: accountId,
             budget_category_id: incomeCategoryId
          });
-
          await createTransaction(page, {
             date: currentMonthDate,
             amount: 100,
@@ -634,7 +565,6 @@ test.describe("Transaction Management", () => {
             account_id: accountId,
             budget_category_id: expenseCategoryId
          });
-
          await createTransaction(page, {
             date: sixMonthsAgoDate,
             amount: 400,
@@ -642,7 +572,6 @@ test.describe("Transaction Management", () => {
             account_id: accountId,
             budget_category_id: incomeCategoryId
          });
-
          await createTransaction(page, {
             date: oneYearAgoDate,
             amount: 600,
@@ -651,18 +580,15 @@ test.describe("Transaction Management", () => {
             budget_category_id: expenseCategoryId
          });
 
-         const currentYear = currentDate.getFullYear();
-         const lastYear = currentYear - 1;
-
-         // Transaction effects sorted chronologically for balance calculation
-         const transactions = [
-            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 },
-            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 },
-            { year: currentYear, month: currentMonth, effect: +200 }
+         const currentYear: number = currentDate.getFullYear();
+         const lastYear: number = currentYear - 1;
+         const transactions: Array<{ year: number; month: number; effect: number }> = [
+            { year: currentYear, month: currentMonth, effect: +200 }, // Net income ($300 Income - $100 Expense = +$200)
+            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 }, // Income ($400 Income - $0 Expense = +$400)
+            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 } // Expense ($0 Income - $600 Expense = -$600)
          ].sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
          const { lastYearBalances, currentYearBalances } = setupAccountBalances(2000, currentYear, currentMonth, transactions);
-
          await performAndAssertAccountTrends(
             page,
             accountId,
@@ -670,10 +596,8 @@ test.describe("Transaction Management", () => {
             currentYearBalances,
             lastYearBalances,
             currentYear,
-            lastYear,
-            oneYearAgo.getFullYear() < currentDate.getFullYear()
+            lastYear
          );
-
          await performAndAssertBudgetPeriods(
             page,
             incomeCategoryId,

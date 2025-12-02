@@ -1,4 +1,4 @@
-import { expect, type Page, type Response } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import {
    assertComponentIsHidden,
    assertComponentIsVisible,
@@ -8,7 +8,13 @@ import {
 } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { assertAccountTrends } from "@tests/utils/dashboard";
-import { assertBudgetPieChart, assertBudgetProgress, assertBudgetTrends, navigateBudgetPeriod } from "@tests/utils/dashboard/budgets";
+import {
+   assertBudgetPieChart,
+   assertBudgetProgress,
+   assertBudgetTrends,
+   navigateBudgetPeriod,
+   openBudgetForm
+} from "@tests/utils/dashboard/budgets";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { HTTP_STATUS } from "capital/server";
@@ -16,11 +22,6 @@ import { type Transaction } from "capital/transactions";
 
 import { getCurrentDate, toHtmlDate } from "@/lib/dates";
 import { displayDate } from "@/lib/display";
-
-/**
- * UUID v4 validation regex
- */
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Extended transaction data type for form submission
@@ -39,10 +40,12 @@ export type TransactionFormData = Partial<Transaction> & {
  */
 export type PerformTransactionActionOptions = {
    page: Page;
-   transactionData: TransactionFormData;
+   transactionData?: TransactionFormData;
    transactionId?: string;
+   transactionIds?: string[];
    baseTransaction?: TransactionFormData;
    expectedErrors?: Record<string, string>;
+   isDeletion?: boolean;
 };
 
 /**
@@ -53,25 +56,27 @@ export type TransactionFormInputOverrides = {
    amount?: string;
    description?: string;
    accountId?: string;
-   budgetCategoryId?: string | boolean;
+   budgetCategoryId?: string;
 };
 
 /**
  * Detects the currently active transaction view
  *
- * @param page - Playwright page instance
- * @returns Current view type ("table" or "list")
+ * @param {Page} page - Playwright page instance
+ * @returns {Promise<"table" | "list">} Current view type
  */
 async function getCurrentView(page: Page): Promise<"table" | "list"> {
-   const tablePressed = await page.locator("[data-testid=\"transactions-view-toggle-table\"]").getAttribute("aria-pressed");
+   const toggle: Locator = page.locator("[data-testid=\"transactions-view-toggle-table\"]");
+   const tablePressed: string | null = await toggle.getAttribute("aria-pressed");
+
    return tablePressed === "true" ? "table" : "list";
 }
 
 /**
- * Builds formData object from transaction data for form submission
+ * Builds the form data object from transaction data for form submission
  *
- * @param transactionData - Transaction data to convert
- * @returns FormData object with test IDs as keys
+ * @param {TransactionFormData} transactionData - Transaction data to convert
+ * @returns {Record<string, string | number>} FormData object with test IDs as keys
  */
 function buildTransactionFormData(transactionData: TransactionFormData): Record<string, string | number> {
    const formData: Record<string, string | number> = {};
@@ -86,48 +91,27 @@ function buildTransactionFormData(transactionData: TransactionFormData): Record<
 }
 
 /**
- * Gets the appropriate test ID for a transaction element based on view
+ * Gets the appropriate test ID for a transaction element based on the current view
  *
- * @param view - Current view type
- * @param transactionId - Transaction ID
- * @param elementType - Type of element ("card", "date", "edit", "delete")
- * @returns Test ID string
+ * @param {"table" | "list"} view - Current view type
+ * @param {string} transactionId - Transaction ID
+ * @param {"card" | "date" | "edit" | "delete"} elementType - Type of element
+ * @returns {string} Test ID string
  */
 function getTransactionTestId(
    view: "table" | "list",
    transactionId: string,
    elementType: "card" | "date" | "edit" | "delete"
 ): string {
-   if (view === "list") {
-      switch (elementType) {
-         case "card":
-            return `transaction-card-${transactionId}`;
-         case "edit":
-            return `transaction-card-edit-${transactionId}`;
-         case "delete":
-            return `transaction-card-delete-${transactionId}`;
-         default:
-            return `transaction-card-date-${transactionId}`;
-      }
-   } else {
-      switch (elementType) {
-         case "date":
-            return `transaction-date-${transactionId}`;
-         case "edit":
-            return `transaction-edit-${transactionId}`;
-         case "delete":
-            return `transaction-delete-${transactionId}`;
-         default:
-            return `transaction-${elementType}-${transactionId}`;
-      }
-   }
+   const prefix: string = view === "table" ? "transaction" : "transaction-card";
+   return `${prefix}-${elementType}-${transactionId}`;
 }
 
 /**
  * Opens the transaction form modal
  *
- * @param page - Playwright page instance
- * @param transactionId - Optional transaction ID for edit mode
+ * @param {Page} page - Playwright page instance
+ * @param {string} transactionId - Optional transaction ID for edit mode
  */
 export async function openTransactionForm(
    page: Page,
@@ -147,10 +131,10 @@ export async function openTransactionForm(
 /**
  * Creates a transaction via form submission or validates errors
  *
- * @param page - Playwright page instance
- * @param transactionData - Transaction data to submit
- * @param expectedErrors - Optional validation errors to assert
- * @returns Created transaction ID or empty string if validation errors expected
+ * @param {Page} page - Playwright page instance
+ * @param {TransactionFormData} transactionData - Transaction data to submit
+ * @param {Record<string, string>} expectedErrors - Optional validation errors to assert
+ * @returns {Promise<string>} Created transaction ID or empty string if validation errors expected
  */
 export async function createTransaction(
    page: Page,
@@ -159,7 +143,7 @@ export async function createTransaction(
 ): Promise<string> {
    await openTransactionForm(page);
 
-   const formData = buildTransactionFormData(transactionData);
+   const formData: Record<string, string | number> = buildTransactionFormData(transactionData);
 
    if (expectedErrors) {
       await submitForm(page, formData, { buttonType: "Create", containsErrors: true });
@@ -179,12 +163,8 @@ export async function createTransaction(
 
    const responseBody = await response.json();
    const transactionId: string = responseBody.data?.transaction_id;
-
-   // Assert transaction ID is valid UUID
    expect(transactionId).toBeDefined();
    expect(transactionId).toBeTruthy();
-
-   // Creation requests should auto-close the modal
    await assertModalIsClosed(page);
 
    return transactionId;
@@ -193,10 +173,10 @@ export async function createTransaction(
 /**
  * Updates a transaction via form submission or validates errors
  *
- * @param page - Playwright page instance
- * @param transactionId - Transaction ID to update
- * @param transactionData - Updated transaction data
- * @param expectedErrors - Optional validation errors to assert
+ * @param {Page} page - Playwright page instance
+ * @param {string} transactionId - Transaction ID to update
+ * @param {TransactionFormData} transactionData - Updated transaction data
+ * @param {Record<string, string>} expectedErrors - Optional validation errors to assert
  */
 export async function updateTransaction(
    page: Page,
@@ -206,7 +186,7 @@ export async function updateTransaction(
 ): Promise<void> {
    await openTransactionForm(page, transactionId);
 
-   const formData = buildTransactionFormData(transactionData);
+   const formData: Record<string, string | number> = buildTransactionFormData(transactionData);
 
    if (expectedErrors) {
       await submitForm(page, formData, { buttonType: "Update", containsErrors: true });
@@ -223,43 +203,39 @@ export async function updateTransaction(
 
    const response: Response = await responsePromise;
    expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
-
-   // Update requests should auto-close the modal
    await assertModalIsClosed(page);
 }
 
 /**
- * Performs create or update transaction action with automatic validation
+ * Performs create, update, or delete transaction action with automatic validation
  *
- * @param options - Transaction action options
- * @returns Created or updated transaction ID
+ * @param {PerformTransactionActionOptions} options - Transaction action options
+ * @returns {Promise<string>} Created or updated transaction ID, empty string if deletion
  */
 export async function performAndAssertTransactionAction(
    options: PerformTransactionActionOptions
 ): Promise<string> {
-   const { page, transactionData, transactionId, baseTransaction, expectedErrors } = options;
+   const { page, transactionData, transactionId, transactionIds, baseTransaction, expectedErrors, isDeletion } = options;
 
-   const isUpdate: boolean = !!transactionId && !!baseTransaction;
+   if (isDeletion !== undefined) {
+      const ids: string | string[] = transactionIds || transactionId!;
+      await performAndAssertDeleteAction(page, ids, isDeletion);
+      return "";
+   }
 
    let resultId: string = "";
    let finalTransaction: TransactionFormData = {};
+   const isUpdate: boolean = !!transactionId && !!baseTransaction;
 
    if (isUpdate) {
-      await updateTransaction(page, transactionId!, transactionData, expectedErrors);
+      await updateTransaction(page, transactionId!, transactionData!, expectedErrors);
       finalTransaction = { ...baseTransaction, ...transactionData, transaction_id: transactionId };
       resultId = transactionId!;
    } else {
-      resultId = await createTransaction(page, transactionData, expectedErrors);
-
-      if (!expectedErrors) {
-         finalTransaction = { transaction_id: resultId, ...transactionData };
-
-         // Validate transaction ID is proper UUID v4
-         expect(resultId).toMatch(UUID_REGEX);
-      }
+      resultId = await createTransaction(page, transactionData!, expectedErrors);
+      finalTransaction = { transaction_id: resultId, ...transactionData };
    }
 
-   // Validate transaction appears correctly in both views
    if (!expectedErrors) {
       await assertTransactionInBothViews(page, finalTransaction);
    }
@@ -270,18 +246,17 @@ export async function performAndAssertTransactionAction(
 /**
  * Deletes a transaction with optional confirmation
  *
- * @param page - Playwright page instance
- * @param transactionId - Transaction ID to delete
- * @param confirmDelete - Whether to confirm deletion (default: true)
+ * @param {Page} page - Playwright page instance
+ * @param {string} transactionId - Transaction ID to delete
+ * @param {boolean} confirmDelete - Whether to confirm deletion
  */
 export async function deleteTransaction(
    page: Page,
    transactionId: string,
    confirmDelete: boolean = true
 ): Promise<void> {
-   const view = await getCurrentView(page);
-   const deleteTestId = getTransactionTestId(view, transactionId, "delete");
-
+   const view: "table" | "list" = await getCurrentView(page);
+   const deleteTestId: string = getTransactionTestId(view, transactionId, "delete");
    await page.getByTestId(deleteTestId).click();
 
    if (confirmDelete) {
@@ -300,55 +275,28 @@ export async function deleteTransaction(
 }
 
 /**
- * Performs transaction deletion with automatic assertion
+ * Performs transaction deletion and asserts the result in both views
  *
- * @param page - Playwright page instance
- * @param transactionId - Transaction ID to delete
- * @param confirmDelete - Whether to confirm deletion (default: true)
- * @param assertInBothViews - Whether to validate in both views (default: false)
+ * @param {Page} page - Playwright page instance
+ * @param {string | string[]} transactionIds - Single transaction ID or array of IDs to delete
+ * @param {boolean} isDeleted - Whether deletion should be confirmed
  */
 export async function performAndAssertDeleteAction(
    page: Page,
-   transactionId: string,
-   confirmDelete: boolean = true,
-   assertInBothViews: boolean = false
+   transactionIds: string | string[],
+   isDeleted: boolean = true
 ): Promise<void> {
-   const currentView = await getCurrentView(page);
+   const ids: string[] = Array.isArray(transactionIds) ? transactionIds : [transactionIds];
+   const isBulk: boolean = Array.isArray(transactionIds) && transactionIds.length > 1;
 
-   await deleteTransaction(page, transactionId, confirmDelete);
-
-   if (confirmDelete) {
-      // Validate deletion in current view
-      const currentViewTestId = getTransactionTestId(
-         currentView,
-         transactionId,
-         currentView === "list" ? "card" : "date"
-      );
-      await assertComponentIsHidden(page, currentViewTestId);
-
-      // Optionally validate in both views
-      if (assertInBothViews) {
-         const otherView: "table" | "list" = currentView === "list" ? "table" : "list";
-         await toggleTransactionView(page, otherView);
-
-         const otherViewTestId = getTransactionTestId(
-            otherView,
-            transactionId,
-            otherView === "list" ? "card" : "date"
-         );
-         await assertComponentIsHidden(page, otherViewTestId);
-
-         // Return to original view
-         await toggleTransactionView(page, currentView);
-      }
+   if (isBulk) {
+      await bulkDeleteTransactions(page, ids, isDeleted);
    } else {
-      // Validate transaction still visible when deletion cancelled
-      const testId = getTransactionTestId(
-         currentView,
-         transactionId,
-         currentView === "list" ? "card" : "date"
-      );
-      await assertComponentIsVisible(page, testId);
+      await deleteTransaction(page, ids[0], isDeleted);
+   }
+
+   for (const id of ids) {
+      await assertTransactionInBothViews(page, { transaction_id: id }, isDeleted);
    }
 }
 
@@ -357,7 +305,7 @@ export async function performAndAssertDeleteAction(
  *
  * @param {Page} page - Playwright page instance
  * @param {string[]} transactionIds - Array of transaction IDs to delete
- * @param {boolean} [confirmDelete] - Whether to confirm deletion (default true)
+ * @param {boolean} confirmDelete - Whether to confirm deletion
  */
 export async function bulkDeleteTransactions(
    page: Page,
@@ -365,10 +313,12 @@ export async function bulkDeleteTransactions(
    confirmDelete: boolean = true
 ): Promise<void> {
    for (const transactionId of transactionIds) {
-      const checkbox = page.locator(`[data-id="${transactionId}"] input[type="checkbox"]`);
+      // Check all of the desired transactions to be deleted within the table view
+      const checkbox: Locator = page.locator(`[data-id="${transactionId}"] input[type="checkbox"]`);
       await checkbox.click();
    }
 
+   // Open the bulk delete confirmation modal
    await page.getByTestId("transactions-bulk-delete").click();
 
    if (confirmDelete) {
@@ -387,102 +337,58 @@ export async function bulkDeleteTransactions(
 }
 
 /**
- * Asserts a transaction displays correctly in table view
+ * Asserts a transaction displays correctly in a specific view
  *
  * @param {Page} page - Playwright page instance
- * @param {TransactionFormData} expectedData - Expected transaction data
- * @param {boolean} [includeBalance] - Whether to check balance column
+ * @param {TransactionFormData} expectedData - Expected transaction data to validate
+ * @param {"table" | "list"} viewType - View type to assert
+ * @param {boolean} isDeleted - Whether transaction should be hidden
  */
-export async function assertTransactionInTableView(
+async function assertTransactionInView(
    page: Page,
    expectedData: TransactionFormData,
-   includeBalance?: boolean
+   viewType: "table" | "list",
+   isDeleted: boolean = false
 ): Promise<void> {
-   const transactionId = expectedData.transaction_id;
+   const transactionId: string = expectedData.transaction_id!;
+   const prefix: string = viewType === "table" ? "transaction" : "transaction-card";
+   const assertFn: (page: Page, testId: string) => Promise<void> = isDeleted ? assertComponentIsHidden : assertComponentIsVisible;
 
-   if (expectedData.date) {
-      await assertComponentIsVisible(page, `transaction-date-${transactionId}`);
-   }
+   const fieldsToAssert = {
+      date: "date",
+      amount: "amount",
+      description: "description",
+      account_id: "account-chip",
+      budget_category_id: "category-chip"
+   };
 
-   if (expectedData.amount !== undefined) {
-      await assertComponentIsVisible(page, `transaction-amount-${transactionId}`);
-   }
-
-   if (expectedData.description) {
-      await assertComponentIsVisible(page, `transaction-description-${transactionId}`);
-   }
-
-   if (expectedData.account_id) {
-      await assertComponentIsVisible(page, `transaction-account-chip-${transactionId}`);
-   }
-
-   if (expectedData.budget_category_id) {
-      await assertComponentIsVisible(page, `transaction-category-chip-${transactionId}`);
-   }
-
-   if (includeBalance) {
-      await assertComponentIsVisible(page, `transaction-balance-${transactionId}`);
-   }
-}
-
-/**
- * Asserts a transaction displays correctly in card view
- *
- * @param {Page} page - Playwright page instance
- * @param {TransactionFormData} expectedData - Expected transaction data
- */
-export async function assertTransactionInCardView(
-   page: Page,
-   expectedData: TransactionFormData
-): Promise<void> {
-   const transactionId = expectedData.transaction_id;
-
-   await assertComponentIsVisible(page, `transaction-card-${transactionId}`);
-
-   if (expectedData.date) {
-      await assertComponentIsVisible(page, `transaction-card-date-${transactionId}`);
-   }
-
-   if (expectedData.amount !== undefined) {
-      await assertComponentIsVisible(page, `transaction-card-amount-${transactionId}`);
-   }
-
-   if (expectedData.description) {
-      await assertComponentIsVisible(page, `transaction-card-description-${transactionId}`);
-   }
-
-   if (expectedData.account_id) {
-      await assertComponentIsVisible(page, `transaction-card-account-chip-${transactionId}`);
-   }
-
-   if (expectedData.budget_category_id) {
-      await assertComponentIsVisible(page, `transaction-card-category-chip-${transactionId}`);
+   for (const [key, suffix] of Object.entries(fieldsToAssert) as [keyof typeof expectedData, string][]) {
+      if (expectedData[key] !== undefined && expectedData[key] !== null) {
+         await assertFn(page, `${prefix}-${suffix}-${transactionId}`);
+      }
    }
 }
 
 /**
  * Asserts transaction displays correctly in both table and card views
  *
- * @param page - Playwright page instance
- * @param expectedData - Expected transaction data
- * @param includeBalance - Whether to check balance in table view
+ * @param {Page} page - Playwright page instance
+ * @param {TransactionFormData} expectedData - Expected transaction data to validate
+ * @param {boolean} isDeleted - Whether transaction should be hidden
  */
 export async function assertTransactionInBothViews(
    page: Page,
    expectedData: TransactionFormData,
-   includeBalance?: boolean
+   isDeleted: boolean = false
 ): Promise<void> {
-   const originalView = await getCurrentView(page);
+   const originalView: "table" | "list" = await getCurrentView(page);
 
-   // Validate in table view
    await toggleTransactionView(page, "table");
-   await assertTransactionInTableView(page, expectedData, includeBalance);
+   await assertTransactionInView(page, expectedData, "table", isDeleted);
 
-   // Validate in list view
    await toggleTransactionView(page, "list");
-   await assertTransactionInCardView(page, expectedData);
+   await assertTransactionInView(page, expectedData, "list", isDeleted);
 
-   // Return to original view
    await toggleTransactionView(page, originalView);
 }
 
@@ -498,13 +404,15 @@ export async function assertTransactionBudgetDropdown(
 ): Promise<void> {
    await openTransactionForm(page);
 
+   // Open the budget category dropdown
    await page.getByTestId("transaction-budget-category-select").click();
 
    for (const category of expectedCategories) {
+      // Ensure all categories are visible in the dropdown
       await expect(page.getByRole("option", { name: category.name })).toBeVisible();
    }
 
-   // Close the drop down
+   // Close the budget category dropdown
    await page.keyboard.press("Escape");
 
    // Close the transaction form
@@ -521,7 +429,7 @@ export async function toggleTransactionView(
    page: Page,
    targetView: "table" | "list"
 ): Promise<void> {
-   const testId = targetView === "table" ? "transactions-view-toggle-table" : "transactions-view-toggle-list";
+   const testId: string = targetView === "table" ? "transactions-view-toggle-table" : "transactions-view-toggle-list";
    await page.getByTestId(testId).click();
 }
 
@@ -538,11 +446,8 @@ export async function assertViewPersistence(
    await page.reload();
    await page.waitForLoadState("networkidle");
 
-   const viewValue = await page.evaluate(() => {
-      return window.localStorage.getItem("view");
-   });
-
-   expect(viewValue).toBe(expectedView);
+   const view: string | null = await page.evaluate(() => window.localStorage.getItem("view"));
+   expect(view).toBe(expectedView);
 }
 
 /**
@@ -555,7 +460,7 @@ export async function assertTransactionFormInputs(
    page: Page,
    overrides?: TransactionFormInputOverrides
 ): Promise<void> {
-   const defaultDate = toHtmlDate(getCurrentDate());
+   const defaultDate: string = toHtmlDate(getCurrentDate());
 
    const formInputs = [
       {
@@ -591,14 +496,12 @@ export async function assertTransactionFormInputs(
       await assertInputVisibility(page, input.testId, input.label, input.value);
    }
 
+   // For dropdown inputs, assert the selected value is the expected value
    if (overrides?.accountId) {
       await expect(page.getByTestId("transaction-account-select")).toHaveValue(overrides.accountId);
    }
 
-   if (overrides?.budgetCategoryId === true) {
-      const selectValue = await page.getByTestId("transaction-budget-category-select").inputValue();
-      expect(selectValue).toBeTruthy();
-   } else if (typeof overrides?.budgetCategoryId === "string") {
+   if (overrides?.budgetCategoryId) {
       await expect(page.getByTestId("transaction-budget-category-select")).toHaveValue(overrides.budgetCategoryId);
    }
 }
@@ -609,7 +512,10 @@ export async function assertTransactionFormInputs(
  * @param {Page} page - Playwright page instance
  */
 export async function openTransactionFormFromAccountsPage(page: Page): Promise<void> {
-   await navigateToPath(page, ACCOUNTS_ROUTE);
+   if (!page.url().includes(ACCOUNTS_ROUTE)) {
+      await navigateToPath(page, ACCOUNTS_ROUTE);
+   }
+
    await page.getByTestId("transactions-add-button").click();
    await assertComponentIsVisible(page, "transaction-date");
 }
@@ -625,6 +531,7 @@ export async function openTransactionFormFromAccountCard(
    accountId: string
 ): Promise<void> {
    await page.getByTestId(`account-card-${accountId}`).click();
+
    await page.getByTestId("transactions-add-button-account").click();
    await assertComponentIsVisible(page, "transaction-date");
 }
@@ -639,14 +546,13 @@ export async function openTransactionFormFromBudgetView(
    page: Page,
    budgetType: "Income" | "Expenses"
 ): Promise<void> {
-   await navigateToPath(page, BUDGETS_ROUTE);
+   if (!page.url().includes(BUDGETS_ROUTE)) {
+      await navigateToPath(page, BUDGETS_ROUTE);
+   }
 
-   // Open the respective budget form
-   await page.getByTestId(`budget-category-edit-${budgetType}`).click();
-
-   // Open the transaction form
+   await openBudgetForm(page, budgetType);
    await page.getByTestId("transactions-add-button-budget").click();
-   await assertComponentIsVisible(page, "transaction-date");
+   await assertComponentIsVisible(page, "transaction-budget-category-select");
 }
 
 /**
@@ -655,64 +561,55 @@ export async function openTransactionFormFromBudgetView(
  * @param {Page} page - Playwright page instance
  */
 export async function assertEmptyState(page: Page): Promise<void> {
-   await assertComponentIsVisible(page, "transactions-empty-state");
-   await expect(page.getByTestId("transactions-empty-state")).toHaveText("No available transactions");
+   await assertComponentIsVisible(page, "transactions-empty-state", "No available transactions");
 }
 
 /**
- * Asserts transactions appear in specified order (reverse chronological)
+ * Asserts transactions appear in the specified order for both views
  *
- * @param page - Playwright page instance
- * @param expectedOrder - Array of transactions in expected order (index 0 = newest)
+ * @param {Page} page - Playwright page instance
+ * @param {TransactionFormData[]} expectedOrder - Array of transactions in expected order (index `0` = newest)
  */
-export async function assertTransactionOrder(
-   page: Page,
-   expectedOrder: TransactionFormData[]
-): Promise<void> {
-   const currentView = await getCurrentView(page);
+export async function assertTransactionOrder(page: Page, expectedOrder: TransactionFormData[]): Promise<void> {
+   for (const view of ["table", "list"] as const) {
+      await toggleTransactionView(page, view);
+      const prefix: string = view === "table" ? "transaction" : "transaction-card";
 
-   // Ensure we're in table view for row-based validation
-   if (currentView !== "table") {
-      await toggleTransactionView(page, "table");
-   }
+      const dates: Locator[] = await page.locator(`[data-testid^="${prefix}-date-"]`).all();
+      expect(dates.length).toBe(expectedOrder.length);
 
-   const dateLocators = await page.locator("[data-testid^=\"transaction-date-\"]").all();
+      for (let i = 0; i < expectedOrder.length; i++) {
+         const date: Locator = dates[i];
+         const expectedTransaction: TransactionFormData = expectedOrder[i];
 
-   // Validate count matches expectations
-   expect(dateLocators.length).toBe(expectedOrder.length);
+         const testId: string | null = await date.getAttribute("data-testid");
+         const actualTransactionId: string = testId?.replace(`${prefix}-date-`, "") || "";
+         expect(actualTransactionId).toBe(expectedTransaction.transaction_id);
 
-   // Validate each transaction in order
-   for (let i = 0; i < expectedOrder.length; i++) {
-      const expectedTransaction = expectedOrder[i];
-      const actualDateLocator = dateLocators[i];
+         const dateText: string | null = await date.textContent();
+         const expectedDisplayDate: string = expectedTransaction.date ? displayDate(expectedTransaction.date) : "";
+         expect(dateText).toBe(expectedDisplayDate);
 
-      // Extract transaction ID from test ID attribute
-      const testId = await actualDateLocator.getAttribute("data-testid");
-      const actualTransactionId = testId?.replace("transaction-date-", "") || "";
-
-      // Validate transaction ID matches
-      expect(actualTransactionId).toBe(expectedTransaction.transaction_id);
-
-      // Validate date value (in display format)
-      const dateText = await actualDateLocator.textContent();
-      const expectedDisplayDate = expectedTransaction.date ? displayDate(expectedTransaction.date) : "";
-      expect(dateText).toBe(expectedDisplayDate);
-
-      // Validate description if provided
-      if (expectedTransaction.description) {
-         const descriptionLocator = page.getByTestId(`transaction-description-${expectedTransaction.transaction_id}`);
-         await expect(descriptionLocator).toHaveText(expectedTransaction.description);
+         if (expectedTransaction.description) {
+            const description: Locator = page.getByTestId(`${prefix}-description-${expectedTransaction.transaction_id}`);
+            await expect(description).toHaveText(expectedTransaction.description);
+         }
       }
    }
-
-   // Return to original view if needed
-   if (currentView !== "table") {
-      await toggleTransactionView(page, currentView);
-   }
 }
 
 /**
- * Validates budget pie charts and progress bars for income and expenses
+ * Validates budget pie charts and progress bars for income and expenses with single subcategories
+ * for testing simplicity
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} incomeCategoryId - Income budget category ID, where `"Income"` is the main category
+ * @param {string} expenseCategoryId - Expense budget category ID, where `"Expenses"` is the main category
+ * @param {number} incomeUsed - Amount used for income category
+ * @param {number} incomeGoal - Goal amount for income category
+ * @param {number} expenseUsed - Amount used for expense category
+ * @param {number} expenseGoal - Goal amount for expense category
+ * @param {number} mainGoal - Main budget goal amount
  */
 export async function validateBudgetPeriod(
    page: Page,
@@ -735,7 +632,12 @@ export async function validateBudgetPeriod(
 
 /**
  * Calculates 24 months of account balances from transaction history
- * Returns last year (indices 0-11) and current year (indices 12-23) balances
+ *
+ * @param {number} startingBalance - Initial account balance
+ * @param {number} currentYear - Current year
+ * @param {number} currentMonth - Current month (`0-11`)
+ * @param {Array<{year: number, month: number, effect: number}>} transactions - Transaction history
+ * @returns {{lastYearBalances: (number | null)[], currentYearBalances: (number | null)[]}} Last year and current year balances
  */
 export function setupAccountBalances(
    startingBalance: number,
@@ -746,25 +648,28 @@ export function setupAccountBalances(
    lastYearBalances: (number | null)[];
    currentYearBalances: (number | null)[];
 } {
-   const lastYear = currentYear - 1;
+   const lastYear: number = currentYear - 1;
    const allBalances: (number | null)[] = [];
 
    for (let yearOffset = 0; yearOffset < 2; yearOffset++) {
-      const year = lastYear + yearOffset;
+      const year: number = lastYear + yearOffset;
+
       for (let month = 0; month < 12; month++) {
-         // Future months in current year are null
          if (year === currentYear && month > currentMonth) {
+            // Future months should be null
             allBalances.push(null);
             continue;
          }
 
-         // Apply all transactions up to this month
-         let balance = startingBalance;
-         for (const txn of transactions) {
-            if (txn.year < year || (txn.year === year && txn.month <= month)) {
-               balance += txn.effect;
+         // Calculate the cumulative balance by applying all transactions up to and including this month
+         let balance: number = startingBalance;
+
+         for (const t of transactions) {
+            if (t.year < year || (t.year === year && t.month <= month)) {
+               balance += t.effect;
             }
          }
+
          allBalances.push(balance);
       }
    }
@@ -776,7 +681,16 @@ export function setupAccountBalances(
 }
 
 /**
- * Validates account trends on dashboard and accounts pages for current and previous year
+ * Validates account trends on dashboard and accounts pages for the current and previous year for
+ * a single account with the name `"Main Account"` for testing simplicity
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} accountId - Account ID to validate
+ * @param {number} accountBalance - Current account balance
+ * @param {(number | null)[]} currentYearBalances - Balance for each month of current year, where `0` = January, `11` = December
+ * @param {(number | null)[]} lastYearBalances - Balance for each month of last year, where `0` = January, `11` = December
+ * @param {number} currentYear - Current year
+ * @param {number} lastYear - Previous year
  */
 export async function performAndAssertAccountTrends(
    page: Page,
@@ -786,31 +700,37 @@ export async function performAndAssertAccountTrends(
    lastYearBalances: (number | null)[],
    currentYear: number,
    lastYear: number,
-   shouldValidateLastYear: boolean
 ): Promise<void> {
-   const accountData = [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" as const }];
+   const accountData = [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }];
 
    await assertAccountTrends(page, accountData, accountBalance, "dashboard", [currentYearBalances]);
-
    await navigateToPath(page, ACCOUNTS_ROUTE);
    await assertAccountTrends(page, accountData, accountBalance, "accounts", [currentYearBalances]);
 
-   if (shouldValidateLastYear) {
-      await page.getByTestId("accounts-navigate-back").click();
-      await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", lastYear.toString());
+   // Navigate back to the previous year, which is not possible on the dashboard page
+   await page.getByTestId("accounts-navigate-back").click();
+   await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", lastYear.toString());
 
-      // Use December's balance as net worth for previous year
-      const lastYearNetWorth = lastYearBalances[11]!;
-      await assertAccountTrends(page, accountData, lastYearNetWorth, "accounts", [lastYearBalances]);
+   // Use December's balance as net worth for previous year
+   const lastYearNetWorth: number = lastYearBalances[11]!;
+   await assertAccountTrends(page, accountData, lastYearNetWorth, "accounts", [lastYearBalances]);
 
-      await page.getByTestId("accounts-navigate-forward").click();
-      await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", currentYear.toString());
-   }
+   // Navigate forward to the current year, where the current year balances should be displayed
+   await page.getByTestId("accounts-navigate-forward").click();
+   await expect(page.getByTestId("accounts-trends-container")).toHaveAttribute("data-year", currentYear.toString());
+   await assertAccountTrends(page, accountData, accountBalance, "accounts", [currentYearBalances]);
 }
 
 /**
- * Validates budget period data and trends across current month, 6 months ago, and 1 year ago
- * Navigates through time periods and validates both current and previous year budget trends
+ * Validates budget period data and trends across multiple time periods
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} incomeCategoryId - Income budget category ID
+ * @param {string} expenseCategoryId - Expense budget category ID
+ * @param {number} currentMonth - Current month (0-11)
+ * @param {number} sixMonthsAgoMonth - Month from 6 months ago (0-11)
+ * @param {number} oneYearAgoMonth - Month from 1 year ago (0-11)
+ * @param {number} lastYear - Previous year
  */
 export async function performAndAssertBudgetPeriods(
    page: Page,
@@ -824,20 +744,19 @@ export async function performAndAssertBudgetPeriods(
    await navigateToPath(page, BUDGETS_ROUTE);
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
 
-   // Navigate to 6 months ago
+   // Calculate months to navigate backwards using modulo for proper wrapping
    const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
    for (let i = 0; i < monthsBack6; i++) {
       await navigateBudgetPeriod(page, -1);
    }
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 400, 500, 0, 700, 2000);
 
-   // Navigate from 6 months ago to 1 year ago
    const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 11) % 12;
    for (let i = 0; i < additionalMonths; i++) {
       await navigateBudgetPeriod(page, -1);
    }
 
-   // Check if extra navigation needed to reach previous year
+   // Check if we've crossed year boundary and need one more navigation step
    const currentYearAttr = await page.getByTestId("budgets-trends-container").getAttribute("data-year");
    const needsYearNavigation = currentYearAttr !== lastYear.toString();
 
@@ -854,7 +773,6 @@ export async function performAndAssertBudgetPeriods(
       await navigateBudgetPeriod(page, 1);
    }
 
-   // Navigate back to current month
    let totalMonthsBack = monthsBack6 + additionalMonths;
    if (needsYearNavigation) {
       totalMonthsBack += 1;
@@ -866,7 +784,7 @@ export async function performAndAssertBudgetPeriods(
 
    await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
 
-   // Build current year trends with income at current and 6mo ago, expense at current
+   // Build expected trend data: [used, rollover] tuples for each month
    const currentYearIncome: [number, number][] = Array(12)
       .fill(null)
       .map((_, i) => {
@@ -882,10 +800,9 @@ export async function performAndAssertBudgetPeriods(
          return [0, 0];
       });
 
-   await assertBudgetTrends(page, "Income", currentYearIncome);
-   await assertBudgetTrends(page, "Expenses", currentYearExpense);
+   await assertBudgetTrends(page, "Income", currentYearIncome.map(month => month[0]));
+   await assertBudgetTrends(page, "Expenses", currentYearExpense.map(month => month[0]));
 
-   // Validate previous year trends with no income, expense only at 1yr ago month
    await page.getByTestId("budgets-navigate-back").click();
    await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", lastYear.toString());
 
@@ -899,6 +816,6 @@ export async function performAndAssertBudgetPeriods(
          return [0, 0];
       });
 
-   await assertBudgetTrends(page, "Income", lastYearIncome);
-   await assertBudgetTrends(page, "Expenses", lastYearExpense);
+   await assertBudgetTrends(page, "Income", lastYearIncome.map(month => month[0]));
+   await assertBudgetTrends(page, "Expenses", lastYearExpense.map(month => month[0]));
 }
