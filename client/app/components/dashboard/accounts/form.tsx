@@ -158,14 +158,14 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
          // Process only transactions tied to the current account
          if (transaction.account_id !== account?.account_id) return;
 
-         const [year, month] = transaction.date.split("-");
+         const [year, month] = transaction.date!.split("-");
          const [lastYear, lastMonth] = data[data.length - 1].date.split("-");
 
          if (lastMonth !== month || lastYear !== year) {
             // Add data point for each new month based on the current rolling balance
             data.push({
                value: balance,
-               date: transaction.date.split("T")[0]
+               date: transaction.date!.split("T")[0]
             });
          }
 
@@ -173,7 +173,7 @@ export default function AccountForm({ account, open, onClose }: AccountFormProps
       });
 
       // Add historical data points for trend visualization
-      const [lastYear, lastMonth] = data[data.length - 1].date.split("-");
+      const [lastYear, lastMonth] = data[data.length - 1].date!.split("-");
       data.push({
          value: balance,
          date: new Date(Number(lastYear), Number(lastMonth) - 2, 1).toISOString().split("T")[0]

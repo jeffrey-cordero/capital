@@ -9,7 +9,7 @@
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
     "lint": "npx eslint . --ignore-pattern '.react-router/' --ignore-pattern 'build/' --ignore-pattern 'playwright-report/' && npx stylelint '**/*.scss'",
     "lint:fix": "npx eslint . --fix --ignore-pattern '.react-router/' --ignore-pattern 'build/' --ignore-pattern 'playwright-report/' && npx stylelint '**/*.scss' --fix",
-    "typecheck": "react-router typegen && tsc",
+    "typecheck": "react-router typegen && tsc -p tsconfig.json",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
   },

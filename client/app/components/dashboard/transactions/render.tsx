@@ -44,7 +44,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
          break;
       }
       case "date": {
-         value = displayDate(params.row.date);
+         value = displayDate(params.row.date!);
          break;
       }
       case "description": {

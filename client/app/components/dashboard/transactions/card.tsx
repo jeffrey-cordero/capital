@@ -61,12 +61,12 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                      sx = { { fontSize: "0.8rem", fontWeight: "650", pl: 0.5 } }
                      variant = "body1"
                   >
-                     { displayDate(transaction.date) }
+                     { displayDate(transaction.date!) }
                   </Typography>
                   <RenderCategoryChip
                      budget_category_id = { transaction.budget_category_id || "" }
                      transaction_id = { transaction.transaction_id }
-                     type = { transaction.type }
+                     type = { transaction.type! }
                   />
                </Stack>
                <Stack

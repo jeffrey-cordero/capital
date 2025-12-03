@@ -159,8 +159,8 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
       }, {} as Record<string, { balance: number; index: number; }>);
 
       const trends = transactions.reduce((acc, record) => {
-         const year: number = Number(record.date.substring(0, 4));
-         const month: number = Number(record.date.substring(5, 7));
+         const year: number = Number(record.date!.substring(0, 4));
+         const month: number = Number(record.date!.substring(5, 7));
 
          if (!acc[year]) {
             // Format the respective trends object
@@ -175,14 +175,14 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
 
          // Increment Income/Expense stack based on the absolute transaction amount
          if (type === "budgets") {
-            acc[year].budgets[record.type === "Income" ? 0 : 1].data[month - 1] += amount;
+            acc[year].budgets[record.type! === "Income" ? 0 : 1].data[month - 1] += amount;
          }
 
          // Decrement the potential account balance based on the real transaction amount
          if (type === "accounts") {
             if (record.account_id && balances[record.account_id] !== undefined) {
                // Generally, income-related transactions should decrement the balance, while expenses should increment it
-               balances[record.account_id].balance += record.type === "Income" ? -amount : amount;
+               balances[record.account_id].balance += record.type! === "Income" ? -amount : amount;
 
                for (let i = 0; i < month - 1; i++) {
                   // Propagate the new balance to the previous months

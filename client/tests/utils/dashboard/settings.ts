@@ -505,7 +505,7 @@ export async function assertExportStructure(
       expect(!isNaN(Date.parse(account.last_updated || ""))).toBe(true);
    });
    expectedExportData.transactions.forEach((transaction: Transaction) => {
-      expect(!isNaN(Date.parse(transaction.date))).toBe(true);
+      expect(!isNaN(Date.parse(transaction.date!))).toBe(true);
    });
 }
 

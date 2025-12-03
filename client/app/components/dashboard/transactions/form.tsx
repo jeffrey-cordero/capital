@@ -106,7 +106,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       if (transaction) {
          reset({
             ...transaction,
-            date: transaction.date.split("T")[0],
+            date: transaction.date!.split("T")[0],
             account_id: transaction.account_id || "",
             budget_category_id: transaction.budget_category_id || ""
          });
