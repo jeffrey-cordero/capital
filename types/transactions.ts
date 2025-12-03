@@ -24,15 +24,42 @@ export const transactionSchema = z.object({
    }).or(z.literal("")).optional().nullable(),
 
    /* Monetary amount */
-   amount: zodPreprocessNumber(z.coerce.number({
-      message: "Amount must be a valid currency amount"
-   }).min(1, {
-      message: "Amount must be $1 or greater"
-   }).max(999_999_999_999.99, {
-      message: "Amount exceeds the maximum allowed value"
-   })).refine((amount) => amount !== 0, {
-      message: "Amount cannot be $0"
-   }),
+   amount: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) return undefined;
+
+         // Pre-validate string inputs before zodPreprocessNumber
+         if (typeof val === "string") {
+            const trimmed = val.trim();
+
+            if (trimmed === "" || isNaN(Number(trimmed))) {
+               return "INVALID_NUMBER";
+            }
+         }
+
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Amount is required"
+         }),
+         z.literal("INVALID_NUMBER").refine(() => false, {
+            message: "Amount must be a valid currency amount"
+         }),
+         zodPreprocessNumber(z.number()).refine((amount) => {
+            const decimals = (amount.toString().split(".")[1] || "").length;
+
+            return decimals <= 2;
+         }, {
+            message: "Amount must be a valid currency amount"
+         }).refine((amount) => amount >= 1, {
+            message: "Amount must be at least $1"
+         }).refine((amount) => amount <= 999_999_999_999.99, {
+            message: "Amount exceeds the maximum allowed value"
+         })
+      ])
+   ),
 
    /* Simple description */
    description: z.string().trim().max(255, {
@@ -40,18 +67,87 @@ export const transactionSchema = z.object({
    }).default(""),
 
    /* Type of the transaction */
-   type: z.enum(["Income", "Expenses"], {
-      message: "Transaction type must be either Income or Expenses"
-   }),
+   type: z.preprocess(
+      (val: any) => {
+         // Preserve undefined to allow required check
+         if (val === null || val === undefined) return undefined;
+
+         return val;
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Type is required"
+         }),
+         z.string().refine((val) => val === "Income" || val === "Expenses", {
+            message: "Transaction type must be either Income or Expenses"
+         })
+      ])
+   ),
 
    /* Date of the given transaction */
-   date: z.coerce.date({
-      message: "Date must be a valid date"
-   }).min(new Date("1800-01-01"), {
-      message: "Date must be on or after 1800-01-01"
-   }).max(new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" })), {
-      message: "Date cannot be in the future"
-   }).transform((date) => date.toISOString())
+   date: z.preprocess(
+      (val: any) => {
+         // Preserve undefined/null for required check
+         if (val === null || val === undefined) {
+            return undefined;
+         } else if (typeof val === "string") {
+            // Handle the empty string case
+            const trimmed = val.trim();
+
+            if (trimmed === "") {
+               return undefined;
+            }
+
+            // Handle the invalid date representation case
+            const date = new Date(trimmed);
+
+            if (isNaN(date.getTime())) {
+               return "INVALID_DATE";
+            }
+
+            return date;
+         } else {
+            return val;
+         }
+      },
+      z.union([
+         z.literal(undefined).refine(() => false, {
+            message: "Date is required"
+         }),
+         z.literal("INVALID_DATE").refine(() => false, {
+            message: "Date must be a valid date"
+         }),
+         z.date()
+      ]).refine((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return true;
+         }
+
+         const date = val as Date;
+         const minDate = new Date("1800-01-01");
+
+         return date >= minDate;
+      }, {
+         message: "Date must be on or after 1800-01-01"
+      }).refine((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return true;
+         }
+
+         const date = val as Date;
+         const maxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Pacific/Kiritimati" }));
+
+         return date <= maxDate;
+      }, {
+         message: "Date cannot be in the future"
+      }).transform((val) => {
+         if (val === undefined || val === "INVALID_DATE") {
+            return val;
+         } else {
+            return val.toISOString();
+         }
+      })
+   )
 });
 
 /**

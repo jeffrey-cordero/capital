@@ -142,11 +142,11 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
          // Format the yearly view as YYYY
          case "Year": {
             // Extract all unique years from the filtered data
-            const years = Array.from(new Set(range.map(d => d.date.getUTCFullYear())));
+            const years = Array.from(new Set(range.map(d => d.date.getFullYear())));
 
             const data = years.map((year) => {
                // Gather all data points for the current year
-               const yearlyData = range.filter(d => d.date.getUTCFullYear() === year);
+               const yearlyData = range.filter(d => d.date.getFullYear() === year);
 
                // Calculate value based on average vs. last value
                const value = yearlyData.length === 0 ? 0
@@ -174,7 +174,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
             const months: Record<string, number> = {};
             const data = range.reduce((acc, record) => {
                const date = record.date;
-               const title = (date.getUTCMonth() + 1).toString().padStart(2, "0") + "/" + (date.getUTCFullYear().toString());
+               const title = (date.getMonth() + 1).toString().padStart(2, "0") + "/" + (date.getFullYear().toString());
 
                // Update or create the month data point
                if (title in months) {

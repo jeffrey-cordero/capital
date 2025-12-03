@@ -18,7 +18,7 @@ export default function Page(): React.ReactNode {
    // Calculate budget allocations from transaction history
    const allocations = useMemo(() => {
       return transactions.reduce((acc, record) => {
-         const period: string = record.date.substring(0, 7);
+         const period: string = record.date!.substring(0, 7);
 
          // Initialize the period
          if (!acc[period]) {
@@ -33,7 +33,7 @@ export default function Page(): React.ReactNode {
          // Add the absolute amount to the category and respective type allocations
          const amount = Math.abs(record.amount);
          acc[period][record.budget_category_id || ""] += amount;
-         acc[period][record.type] += amount;
+         acc[period][record.type!] += amount;
 
          return acc;
       }, {} as Record<string, Record<string, number>>);

@@ -1,15 +1,15 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { assertComponentIsHidden, assertComponentIsVisible, assertModalIsClosed, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
-import { assertAccountTrends } from "@tests/utils/dashboard";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
 import { navigateToPath } from "@tests/utils/navigation";
 import { assertNotificationStatus } from "@tests/utils/notifications";
-import { type Account, IMAGES } from "capital/accounts";
+import { type Account, IMAGES, LIABILITIES } from "capital/accounts";
 import { IMAGE_FIXTURES } from "capital/mocks/accounts";
 import { HTTP_STATUS } from "capital/server";
 
 import { displayCurrency, displayDate } from "@/lib/display";
+import { brand, red } from "@/styles/mui/colors";
 
 /**
  * Extended account data type for form submission with optional image selection, where
@@ -498,6 +498,74 @@ export async function assertAndUnblockInvalidImageURL(
    // Close the image form after a successful input validation
    await page.keyboard.press("Escape");
    await assertImageCarouselVisibility(page, false);
+}
+
+/**
+ * Asserts account trends including net worth, bar count, bar colors, and bar positions
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Partial<Account>[]} accounts - Array of accounts to assert
+ * @param {number} expectedNetWorth - Expected net worth value as a number
+ * @param {"dashboard" | "accounts"} location - Location where trends are displayed
+ * @param {(number | null)[][]} [monthlyBalances] - Optional array of 12-month balance arrays
+ */
+export async function assertAccountTrends(
+   page: Page,
+   accounts: Partial<Account>[],
+   expectedNetWorth: number,
+   location: "dashboard" | "accounts",
+   monthlyBalances?: (number | null)[][]
+): Promise<void> {
+   const barChartValues: Locator = page.locator("[data-bar-chart-value]");
+   const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
+   const expectedFormattedNetWorth: string = displayCurrency(expectedNetWorth);
+
+   if (accounts.length === 0) {
+      await expect(barChartValues).toHaveCount(0);
+
+      if (location === "dashboard") {
+         await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
+         await assertComponentIsVisible(page, "empty-accounts-trends-overview");
+      } else {
+         await expect(netWorthElement).not.toBeVisible();
+         await assertComponentIsVisible(page, "accounts-empty-message");
+         await expect(page.getByTestId("accounts-empty-message")).toHaveText("No available accounts");
+      }
+   } else {
+      // There should be a bar for each account every month of the current year
+      const currentMonth: number = new Date().getMonth() + 1;
+      await expect(barChartValues).toHaveCount(12 * accounts.length);
+
+      // Assert net worth (current aggregation of all account balances)
+      await expect(netWorthElement).toHaveText(expectedFormattedNetWorth);
+
+      // Assert all bar chart colors (blue for assets, red for liabilities) and values (final expected value of the given month)
+      for (let accountIndex = 0; accountIndex < accounts.length; accountIndex++) {
+         const account: Partial<Account> = accounts[accountIndex];
+         const bars: Locator = page.locator(`.MuiBarElement-series-${account.account_id}`);
+         await expect(bars).toHaveCount(12);
+
+         for (let i = 0; i < 12; i++) {
+            const bar: Locator = page.locator(`[data-testid="accounts-${account.account_id}-bar-${i}"]`);
+            const value: string | null = await bar.getAttribute("data-bar-chart-value");
+
+            // Use monthly balances if provided, otherwise use current balance for all past months
+            let expectedValue: string = "";
+
+            if (monthlyBalances && monthlyBalances[accountIndex]) {
+               const monthBalance: number | null = monthlyBalances[accountIndex][i];
+               expectedValue = monthBalance === null ? "null" : monthBalance.toString();
+            } else {
+               expectedValue = i > currentMonth - 1 ? "null" : account.balance.toString();
+            }
+
+            expect(value).toBe(expectedValue);
+
+            const expectedColor: string = LIABILITIES.has(account.type!) ? red[400] : brand[400];
+            await expect(bar).toHaveAttribute("data-bar-chart-color", expectedColor);
+         }
+      }
+   }
 }
 
 /**

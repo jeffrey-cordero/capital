@@ -1,6 +1,6 @@
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Box, Chip, Stack, Typography } from "@mui/material";
 import { GridActionsCellItem, type GridRenderCellParams, type GridTreeNodeWithRender } from "@mui/x-data-grid";
 import { type Account } from "capital/accounts";
 import { type BudgetCategory, type BudgetType } from "capital/budgets";
@@ -44,7 +44,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
          break;
       }
       case "date": {
-         value = displayDate(params.row.date);
+         value = displayDate(params.row.date!);
          break;
       }
       case "description": {
@@ -60,6 +60,7 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
    return (
       <Typography
          color = { color }
+         data-testid = { `transaction-${type}-${params.row.transaction_id}` }
          sx = { { fontWeight: "550", fontSize: "0.85rem" } }
          variant = "caption"
       >
@@ -71,10 +72,10 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
 /**
  * Renders account chip with account name
  *
- * @param {{account_id: string}} props - Account ID to display
+ * @param {{account_id: string, transaction_id?: string}} props - Account ID and optional transaction ID
  * @returns {React.ReactNode} Account chip component
  */
-export function RenderAccountChip({ account_id }: { account_id: string }): React.ReactNode {
+export function RenderAccountChip({ account_id, transaction_id }: { account_id: string, transaction_id?: string }): React.ReactNode {
    const accounts: Account[] = useSelector((state: RootState) => state.accounts.value);
    const account: Account | undefined = useMemo(() => {
       return accounts.find((a) => a.account_id === account_id);
@@ -84,6 +85,7 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
       account ? (
          <Chip
             color = "primary"
+            data-testid = { `transaction-account-chip-${transaction_id}` }
             label = { account?.name || "" }
             size = "small"
             sx = { { m: "0 !important" } }
@@ -96,10 +98,10 @@ export function RenderAccountChip({ account_id }: { account_id: string }): React
 /**
  * Renders category chip with appropriate color
  *
- * @param {{budget_category_id: string, type: BudgetType}} props - Budget category ID and type props
+ * @param {{budget_category_id: string, type: BudgetType, transaction_id?: string}} props - Budget category ID, type, and optional transaction ID
  * @returns {React.ReactNode} Category chip component
  */
-export function RenderCategoryChip({ budget_category_id, type }: { budget_category_id: string, type: BudgetType }): React.ReactNode {
+export function RenderCategoryChip({ budget_category_id, type, transaction_id }: { budget_category_id: string, type: BudgetType, transaction_id?: string }): React.ReactNode {
    const budgets = useSelector((state: RootState) => state.budgets.value);
    const budgetCategory: BudgetCategory | undefined = useMemo(() => {
       return budgets[type].categories.find((c) => {
@@ -113,6 +115,7 @@ export function RenderCategoryChip({ budget_category_id, type }: { budget_catego
    return (
       <Chip
          color = { color }
+         data-testid = { `transaction-category-chip-${transaction_id}` }
          label = { label }
          size = "small"
          sx = { { m: "0 !important" } }
@@ -148,11 +151,13 @@ export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps
             className = "primary"
             disableRipple = { true }
             icon = {
-               <FontAwesomeIcon
-                  icon = { faPenToSquare }
-                  size = "sm"
-                  style = { { fontSize: "1.1rem", cursor: "pointer" } }
-               />
+               <Box data-testid = { `transaction-edit-${params.row.transaction_id}` }>
+                  <FontAwesomeIcon
+                     icon = { faPenToSquare }
+                     size = "sm"
+                     style = { { fontSize: "1.1rem", cursor: "pointer" } }
+                  />
+               </Box>
             }
             key = { `edit-${params.row.index}` }
             label = "Edit"
@@ -165,6 +170,7 @@ export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps
             icon = {
                <TransactionDeletion
                   index = { params.row.index }
+                  testId = { `transaction-delete-${params.row.transaction_id}` }
                   transaction = { params.row }
                />
             }

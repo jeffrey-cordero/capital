@@ -36,7 +36,7 @@ const transactionsSlice = createSlice({
 
          // Insert the transaction in the correct order
          for (let i = 0; i < state.value.length; i++) {
-            if (transaction.date >= state.value[i].date) {
+            if (transaction.date! >= state.value[i].date!) {
                state.value.splice(i, 0, transaction);
                return;
             }
@@ -54,13 +54,13 @@ const transactionsSlice = createSlice({
          const { index, transaction } = action.payload;
          const updates: Transaction = { ...state.value[index], ...transaction };
 
-         if (state.value[index].date !== updates.date) {
+         if (state.value[index].date! !== updates.date!) {
             // Transaction date changed, so we treat it as a new transaction
             state.value.splice(index, 1);
 
             // Insert the updated transaction in the correct order
             for (let i = 0; i < state.value.length; i++) {
-               if (updates.date >= state.value[i].date) {
+               if (updates.date! >= state.value[i].date!) {
                   state.value.splice(i, 0, updates);
                   return;
                }

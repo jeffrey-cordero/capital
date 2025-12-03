@@ -40,6 +40,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
 
    return (
       <Card
+         data-testid = { `transaction-card-${transaction.transaction_id}` }
          sx = { { width: "100%", height: "100%", border: "none", borderRadius: "0px", backgroundColor: theme.palette.mode === "dark" ? "#2B2B2B" : "#FFFFFF" } }
          variant = "outlined"
       >
@@ -56,14 +57,16 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                >
                   <Typography
                      color = "text.secondary"
+                     data-testid = { `transaction-card-date-${transaction.transaction_id}` }
                      sx = { { fontSize: "0.8rem", fontWeight: "650", pl: 0.5 } }
                      variant = "body1"
                   >
-                     { displayDate(transaction.date) }
+                     { displayDate(transaction.date!) }
                   </Typography>
                   <RenderCategoryChip
                      budget_category_id = { transaction.budget_category_id || "" }
-                     type = { transaction.type }
+                     transaction_id = { transaction.transaction_id }
+                     type = { transaction.type! }
                   />
                </Stack>
                <Stack
@@ -73,6 +76,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                >
                   <Typography
                      color = { color }
+                     data-testid = { `transaction-card-amount-${transaction.transaction_id}` }
                      sx = { { fontWeight: "650", fontSize: "0.9rem", pl: 0.25 } }
                      variant = "subtitle1"
                   >
@@ -81,6 +85,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   <Box>
                      <RenderAccountChip
                         account_id = { transaction.account_id || "" }
+                        transaction_id = { transaction.transaction_id }
                      />
                   </Box>
                </Stack>
@@ -90,6 +95,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   sx = { { flexWrap: "nowrap", justifyContent: "space-between", alignItems: "flex-start", width: "100%", m: "0px !important" } }
                >
                   <Typography
+                     data-testid = { `transaction-card-description-${transaction.transaction_id}` }
                      sx = { { fontWeight: "550", wordBreak: "break-word", m: "0px !important", maxWidth: "calc(100% - 5rem)", pl: 0.5 } }
                      variant = "body1"
                   >
@@ -102,6 +108,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                   >
                      <FontAwesomeIcon
                         className = "primary"
+                        data-testid = { `transaction-card-edit-${transaction.transaction_id}` }
                         icon = { faPenToSquare }
                         onClick = { () => onEdit(transaction.index) }
                         style = { { fontSize: "1.1rem", cursor: "pointer" } }
@@ -109,6 +116,7 @@ export function TransactionCard({ transaction, onEdit, pageSize }: TransactionCa
                      <Box sx = { { pt: 0.4 } }>
                         <TransactionDeletion
                            index = { transaction.index }
+                           testId = { `transaction-card-delete-${transaction.transaction_id}` }
                            transaction = { transaction }
                         />
                      </Box>

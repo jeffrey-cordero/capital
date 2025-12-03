@@ -500,9 +500,12 @@ export async function assertExportStructure(
    expect(timeDiffMinutes).toBeLessThanOrEqual(1);
 
    // Assert all fields and timestamps are properly formatted
-   expect(exportedJSON).toEqual(expect.objectContaining(expectedExportData));
+   expect(exportedJSON).toEqual(expectedExportData);
    expectedExportData.accounts.forEach((account: Account) => {
       expect(!isNaN(Date.parse(account.last_updated || ""))).toBe(true);
+   });
+   expectedExportData.transactions.forEach((transaction: Transaction) => {
+      expect(!isNaN(Date.parse(transaction.date!))).toBe(true);
    });
 }
 

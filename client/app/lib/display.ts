@@ -1,5 +1,7 @@
 import type { Theme } from "@mui/material";
 
+import { normalizeDate } from "@/lib/dates";
+
 /**
  * CSS for horizontally scrollable text container with styled scrollbar
  */
@@ -83,11 +85,11 @@ export function displayVolume(volume: number): string {
    const normalized: number = Math.abs(volume);
 
    if (normalized >= 1_000_000_000) {
-      result = (normalized / 1_000_000_000).toFixed(0) + "B";
+      result = (normalized / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
    } else if (normalized >= 1_000_000) {
-      result = (normalized / 1_000_000).toFixed(0) + "M";
+      result = (normalized / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
    } else if (normalized >= 1_000) {
-      result = (normalized / 1_000).toFixed(0) + "K";
+      result = (normalized / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
    } else {
       result = normalized.toString();
    }
@@ -102,10 +104,9 @@ export function displayVolume(volume: number): string {
  * @returns {string} Formatted date (MM/DD/YYYY)
  */
 export function displayDate(date: string): string {
-   return new Date(date).toLocaleDateString("en-us", {
+   return normalizeDate(date.split("T")[0]).toLocaleDateString("en-us", {
       month: "2-digit",
       day: "2-digit",
-      year: "numeric",
-      timeZone: "UTC"
+      year: "numeric"
    });
 }

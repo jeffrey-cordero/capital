@@ -85,7 +85,7 @@ export function filterTransactions(
    }, {} as Record<string, number>);
 
    return transactions.reduce((acc, record, index) => {
-      const budgetCategory = getCategoryInfo(budgets, record.budget_category_id, record.type);
+      const budgetCategory = getCategoryInfo(budgets, record.budget_category_id, record.type!);
       const transaction: TransactionRowModel = {
          ...record,
          index,
@@ -93,8 +93,8 @@ export function filterTransactions(
          account: accountsMap[record.account_id || ""]?.name || "",
          category: budgetCategory?.name || "",
          balance: balances[record.account_id || ""] || undefined,
-         type: record.type,
-         budget_category_id: record.budget_category_id || budgets[record.type]?.budget_category_id
+         type: record.type!,
+         budget_category_id: record.budget_category_id || budgets[record.type!]?.budget_category_id
       };
 
       if (record.account_id && balances[record.account_id]) {
@@ -113,8 +113,8 @@ export function filterTransactions(
          }
          case "budget": {
             // Match transactions based on the current budget period
-            const isValidType = identifier === record.type;
-            const [year, month] = transaction.date.split("T")[0].split("-");
+            const isValidType = identifier === record.type!;
+            const [year, month] = transaction.date!.split("T")[0].split("-");
 
             if (isValidType && Number(year) === period.year && Number(month) === period.month) {
                acc.push(transaction);

@@ -30,6 +30,7 @@ import {
    updateDetails,
    updateSecurityFields
 } from "@tests/utils/dashboard/settings";
+import { createTransaction } from "@tests/utils/dashboard/transactions";
 import { navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
 import { IMAGE_FIXTURES } from "capital/mocks/accounts";
@@ -38,7 +39,7 @@ import { createUserUpdatesWithPasswordChange } from "capital/mocks/user";
 test.describe("Settings", () => {
    test.describe("Initial State", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
       });
 
       test("should display security details form with correct initial values", async({ page, assignedUser }) => {
@@ -243,7 +244,7 @@ test.describe("Settings", () => {
    test.describe("User Actions", () => {
       test.describe("Logout", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should successfully logout with confirmation", async({ page }) => {
@@ -257,7 +258,7 @@ test.describe("Settings", () => {
 
       test.describe("Account Deletion", () => {
          test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
-            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, false, false, assignedUser);
+            await setupAssignedUser(page, usersRegistry, assignedRegistry, SETTINGS_ROUTE, true, true, assignedUser);
          });
 
          test("should successfully delete account with confirmation and allow re-registration", async({ page, usersRegistry, assignedUser }) => {
@@ -293,13 +294,28 @@ test.describe("Settings", () => {
             const expenseCategoryId: string = await createBudgetCategory(page, { name: "Rent", goal: 2000 }, "Expenses");
             await closeModal(page, false, "budget-form-Expenses");
 
+            // Navigate back to accounts page to create transactions
+            await navigateToPath(page, ACCOUNTS_ROUTE);
+
+            // Create one transaction with account and budget category tied to it
+            const transaction1Id: string = await createTransaction(page, {
+               date: "2024-01-15",
+               amount: 2500,
+               description: "Rent Payment",
+               account_id: account1Id,
+               budget_category_id: expenseCategoryId
+            });
+
+            // Create another transaction with no account or budget category tied to it
+            const transaction2Id: string = await createTransaction(page, {
+               date: "2024-01-20",
+               amount: 1500,
+               description: "Freelance Payment #1",
+               account_id: null
+            });
+
             await navigateToPath(page, SETTINGS_ROUTE);
             const exportedJSON = await performExport(page);
-
-            const expectedAccounts = [
-               { ...account1Data, account_id: account1Id, last_updated: exportedJSON.accounts[0].last_updated, image: IMAGE_FIXTURES.valid },
-               { ...account2Data, account_id: account2Id, last_updated: exportedJSON.accounts[1].last_updated }
-            ];
 
             const currentMonth = new Date().getMonth() + 1;
             const currentYear = new Date().getFullYear();
@@ -311,7 +327,16 @@ test.describe("Settings", () => {
                   email: assignedUser.current.email,
                   birthday: new Date(assignedUser.current.birthday).toISOString().split("T")[0]
                },
-               accounts: expectedAccounts,
+               accounts: [{
+                  ...account1Data,
+                  account_id: account1Id,
+                  last_updated: exportedJSON.accounts[0].last_updated,
+                  image: IMAGE_FIXTURES.valid
+               }, {
+                  ...account2Data,
+                  account_id: account2Id,
+                  last_updated: exportedJSON.accounts[1].last_updated
+               }],
                budgets: {
                   Income: {
                      goals: [{ goal: 2000, month: currentMonth, year: currentYear }],
@@ -338,7 +363,21 @@ test.describe("Settings", () => {
                      }]
                   }
                },
-               transactions: [],
+               transactions: [{
+                  amount: 1500,
+                  date: new Date("2024-01-20").toISOString(),
+                  description: "Freelance Payment #1",
+                  transaction_id: transaction2Id,
+                  type: "Income"
+               }, {
+                  account_id: account1Id,
+                  amount: 2500,
+                  budget_category_id: expenseCategoryId,
+                  date: new Date("2024-01-15").toISOString(),
+                  description: "Rent Payment",
+                  transaction_id: transaction1Id,
+                  type: "Expenses"
+               }],
                timestamp: exportedJSON.timestamp
             } as unknown as ExportData);
          });

@@ -102,7 +102,7 @@ const CategoryItem = function CategoryItem(props: CategoryItemProps): React.Reac
          </Stack>
          <LinearProgress
             color = { color }
-            data-progress = { progress }
+            data-progress-percent = { progress }
             data-testid = { isMainCategory ? `budget-category-progress-${type}` : `budget-category-progress-${budget_category_id}` }
             sx = { { height: "1.50rem", borderRadius: "16px" } }
             value = { progress }

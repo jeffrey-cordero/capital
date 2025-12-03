@@ -32,6 +32,28 @@ export type BudgetPageState = {
 };
 
 /**
+ * Budget trend data for Income and Expenses across 12 months
+ */
+export type BudgetTrendData = {
+   Income: number[];
+   Expenses: number[];
+};
+
+/**
+ * Budget progress data with [used, allocated] tuples for main and subcategories
+ */
+export type BudgetProgressData = {
+   Income: {
+      main: Array<[number, number]>;
+      sub: Array<[number, number]>;
+   };
+   Expenses: {
+      main: Array<[number, number]>;
+      sub: Array<[number, number]>;
+   };
+};
+
+/**
  * Budget category form data with goal amount
  */
 export type BudgetCategoryFormData = Partial<BudgetCategory> & { goal: number };
@@ -59,6 +81,43 @@ export type BudgetNavigationTestConfig = {
 };
 
 /**
+ * Gets all budget category IDs from the page for a specific type
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetType} type - Budget type (`"Income"` or `"Expenses"`)
+ * @returns {Promise<string[]>} Array of budget category IDs
+ */
+export async function getBudgetCategoryIds(page: Page, type: BudgetType): Promise<string[]> {
+   const editButtons: Locator = page.locator(`[data-testid^="budget-category-edit-"][data-testid$="-${type}"]`);
+
+   return (await editButtons.evaluateAll(els =>
+      els.map(el => el.getAttribute("data-testid"))
+   )).filter((id): id is string =>
+      id !== null && /^budget-category-edit-[\da-f-]{36}-(Income|Expenses)$/i.test(id)
+   ).map(id => id.replace("budget-category-edit-", "").replace(`-${type}`, ""));
+}
+
+/**
+ * Gets the main budget category IDs for Income and Expenses
+ *
+ * @param {Page} page - Playwright page instance
+ * @returns {Promise<{mainIncomeCategoryId: string, mainExpenseCategoryId: string}>} Object with main category IDs
+ */
+export async function getMainBudgetCategoryIds(page: Page): Promise<{
+   mainIncomeCategoryId: string;
+   mainExpenseCategoryId: string;
+}> {
+   const mainIncomeCategoryId: string | null = await page.getByTestId("budget-category-Income").getAttribute("data-category-id");
+   const mainExpenseCategoryId: string | null = await page.getByTestId("budget-category-Expenses").getAttribute("data-category-id");
+
+   if (!mainIncomeCategoryId || !mainExpenseCategoryId) {
+      throw new Error("Main budget category IDs not found on page");
+   }
+
+   return { mainIncomeCategoryId, mainExpenseCategoryId };
+}
+
+/**
  * Opens budget form modal for the specified type
  *
  * @param {Page} page - Playwright page
@@ -72,6 +131,11 @@ export async function openBudgetForm(page: Page, type: BudgetType): Promise<void
    const oppositeModal: Locator = page.getByTestId(`budget-form-${oppositeType}`);
 
    if (await oppositeModal.isVisible()) {
+      if (await page.getByTestId("transaction-budget-category-select").isVisible()) {
+         // Close any visible transaction form
+         await closeModal(page);
+      }
+
       await closeModal(page, false, `budget-form-${oppositeType}`);
    }
 
@@ -349,7 +413,7 @@ async function assertBudgetCategoryContainer(
 
    await expect(nameLocator).toHaveText(name);
    await expect(goalLocator).toHaveText(`${displayCurrency(0)} / ${displayCurrency(goal)}`);
-   await expect(progressLocator).toHaveAttribute("data-progress", "0");
+   await expect(progressLocator).toHaveAttribute("data-progress-percent", "0");
 }
 
 /**
@@ -572,6 +636,198 @@ export async function assertBudgetGoalPersistence(
       if (i + increment !== end) {
          // Going forward in array implies moving backward in time, but the navigation helper requires a negative increment
          await navigateBudgetPeriod(page, -increment);
+      }
+   }
+}
+
+/**
+ * Asserts budget pie chart displays with correct visibility
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetType} type - Budget type (`"Income"` or `"Expenses"`)
+ * @param {number} expectedUsed - Expected used amount
+ */
+export async function assertBudgetPieChart(
+   page: Page,
+   type: BudgetType,
+   expectedUsed: number
+): Promise<void> {
+   const pieChart: Locator = page.getByTestId(`budget-pie-chart-${type}`);
+   await expect(pieChart).toBeVisible();
+
+   const centerLabel: Locator = page.getByTestId(`budget-pie-center-${type}`);
+   await expect(centerLabel).toBeVisible();
+
+   const expectedText: string = `$${expectedUsed.toLocaleString()}`;
+   await expect(centerLabel).toHaveText(expectedText);
+}
+
+/**
+ * Asserts budget category progress bar displays correct percentage and goal text
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} categoryId - Budget category ID or type (`"Income"` or `"Expenses"`) for main categories only
+ * @param {number} expectedUsed - Expected used amount
+ * @param {number} expectedAllocated - Expected allocated goal
+ */
+export async function assertBudgetProgress(
+   page: Page,
+   categoryId: string,
+   expectedUsed: number,
+   expectedAllocated: number
+): Promise<void> {
+   const progress: Locator = page.getByTestId(`budget-category-progress-${categoryId}`);
+   await expect(progress).toBeVisible();
+
+   const expectedPercent: number = expectedAllocated > 0 ? (expectedUsed / expectedAllocated) * 100 : 0;
+   const actualPercent: string | null = await progress.getAttribute("data-progress-percent");
+   expect(parseFloat(actualPercent!)).toBeCloseTo(expectedPercent, 2);
+
+   const goalElement: Locator = page.getByTestId(`budget-category-goal-${categoryId}`);
+   const expectedGoalText: string = `${displayCurrency(expectedUsed)} / ${displayCurrency(expectedAllocated)}`;
+   await expect(goalElement).toHaveText(expectedGoalText);
+}
+
+/**
+ * Asserts single budget period progress for all single budget categories tied to each type
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} incomeCategoryId - Income budget category ID
+ * @param {string} expenseCategoryId - Expense budget category ID
+ * @param {BudgetProgressData} progress - Budget progress data with [used, allocated] tuples
+ * @param {number} month - Month index (0-11)
+ */
+export async function assertBudgetPeriodProgress(
+   page: Page,
+   incomeCategoryId: string,
+   expenseCategoryId: string,
+   progress: BudgetProgressData,
+   month: number
+): Promise<void> {
+   const [incomeUsed, incomeGoal] = progress.Income.main[month];
+   const [incomeSubUsed, incomeSubGoal] = progress.Income.sub[month];
+   const [expenseUsed, expenseGoal] = progress.Expenses.main[month];
+   const [expenseSubUsed, expenseSubGoal] = progress.Expenses.sub[month];
+
+   await assertBudgetPieChart(page, "Income", incomeUsed);
+   await assertBudgetProgress(page, "Income", incomeUsed, incomeGoal);
+   await assertBudgetProgress(page, incomeCategoryId, incomeSubUsed, incomeSubGoal);
+
+   await assertBudgetPieChart(page, "Expenses", expenseUsed);
+   await assertBudgetProgress(page, "Expenses", expenseUsed, expenseGoal);
+   await assertBudgetProgress(page, expenseCategoryId, expenseSubUsed, expenseSubGoal);
+}
+
+/**
+ * Asserts budget trends bar chart displays correct used values across months for a single year
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetType} type - Budget type (`"Income"` or `"Expenses"`)
+ * @param {number[]} monthlyTrends - Array of used amounts for 12 months
+ */
+async function assertBudgetTrendsForYear(
+   page: Page,
+   type: BudgetType,
+   monthlyTrends: number[]
+): Promise<void> {
+   const currentMonth: number = new Date().getMonth() + 1;
+   expect(monthlyTrends.length).toBe(12);
+
+   // Check each month's bar chart value
+   for (let i = 0; i < 12; i++) {
+      const used: number = monthlyTrends[i];
+      const bar: Locator = page.getByTestId(`budgets-${type}-bar-${i}`);
+
+      // Get the bar value from the data attribute for simplicity
+      const barValue: string | null = await bar.getAttribute("data-bar-chart-value");
+
+      if (i >= currentMonth) {
+         // Future months should be null
+         expect(barValue).toBe("null");
+      } else {
+         // Current months should show the used value
+         expect(barValue).toBe(used.toString());
+      }
+   }
+}
+
+/**
+ * Asserts budget trends persist correctly across years by navigating and validating trend values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {BudgetTrendData} currentYearTrends - Current year trend data for Income and Expenses
+ * @param {BudgetTrendData} lastYearTrends - Last year trend data for Income and Expenses
+ * @param {number} currentYear - Current year
+ * @param {number} lastYear - Previous year
+ * @param {("forward" | "backward")} direction - Navigation direction
+ */
+export async function assertBudgetTrends(
+   page: Page,
+   currentYearTrends: BudgetTrendData,
+   lastYearTrends: BudgetTrendData,
+   currentYear: number,
+   lastYear: number,
+   direction: "forward" | "backward"
+): Promise<void> {
+   const years: number = 2;
+   const start: number = direction === "backward" ? 0 : years - 1;
+   const end: number = direction === "backward" ? years : -1;
+   const increment: number = direction === "backward" ? 1 : -1;
+
+   for (let i = start; i !== end; i += increment) {
+      const isCurrentYear: boolean = i === 0;
+      const trends: BudgetTrendData = isCurrentYear ? currentYearTrends : lastYearTrends;
+      const year: number = isCurrentYear ? currentYear : lastYear;
+
+      await assertBudgetTrendsForYear(page, "Income", trends.Income);
+      await assertBudgetTrendsForYear(page, "Expenses", trends.Expenses);
+      await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", year.toString());
+
+      if (i + increment !== end) {
+         const navigationDirection: string = direction === "backward" ? "back" : "forward";
+         await page.getByTestId(`budgets-navigate-${navigationDirection}`).click();
+         await expect(page.getByTestId("budgets-trends-container")).toBeVisible();
+      }
+   }
+}
+
+/**
+ * Asserts budget goals persist correctly across months by navigating and validating goal values
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} incomeCategoryId - Income budget category ID
+ * @param {string} expenseCategoryId - Expense budget category ID
+ * @param {BudgetProgressData} currentYearProgress - Current year progress data
+ * @param {BudgetProgressData} lastYearProgress - Last year progress data
+ * @param {number} currentMonth - Current month (0-11)
+ * @param {("forward" | "backward")} direction - Navigation direction
+ */
+export async function assertBudgetProgressPersistence(
+   page: Page,
+   incomeCategoryId: string,
+   expenseCategoryId: string,
+   currentYearProgress: BudgetProgressData,
+   lastYearProgress: BudgetProgressData,
+   currentMonth: number,
+   direction: "forward" | "backward"
+): Promise<void> {
+   const totalMonths: number = 12;
+   const start: number = direction === "backward" ? 0 : totalMonths - 1;
+   const end: number = direction === "backward" ? totalMonths : -1;
+   const increment: number = direction === "backward" ? 1 : -1;
+
+   for (let i = start; i !== end; i += increment) {
+      const monthsBack: number = i;
+      const isCurrentYear: boolean = monthsBack <= currentMonth;
+      const progress: BudgetProgressData = isCurrentYear ? currentYearProgress : lastYearProgress;
+      const month: number = isCurrentYear ? currentMonth - monthsBack : 12 + currentMonth - monthsBack;
+
+      await assertBudgetPeriodProgress(page, incomeCategoryId, expenseCategoryId, progress, month);
+
+      if (i + increment !== end) {
+         const navigationDirection: string = direction === "backward" ? "previous" : "next";
+         await page.getByTestId(`budget-period-${navigationDirection}`).click();
+         await expect(page.getByTestId("budget-period-label")).toBeVisible();
       }
    }
 }

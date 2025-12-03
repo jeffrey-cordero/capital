@@ -5,7 +5,7 @@ import { FIRST_PARAM, query } from "@/lib/database";
 /**
  * Updatable transaction fields
  */
-const TRANSACTION_UPDATES = [
+export const TRANSACTION_UPDATES = [
    "amount",
    "description",
    "date",
@@ -90,15 +90,15 @@ export async function update(user_id: string, transaction_id: string, updates: P
    // Skip if no fields to update
    if (fields.length === 0) return true;
 
-   // Add transaction and user IDs
-   values.push(transaction_id, user_id);
+   // Add user and transaction IDs
+   values.push(user_id, transaction_id);
    param++;
 
    const update = `
       UPDATE transactions
       SET ${fields.join(", ")}
-      WHERE transaction_id = $${param - 1}
-      AND user_id = $${param}
+      WHERE user_id = $${param - 1}
+      AND transaction_id = $${param}
       RETURNING transaction_id;
    `;
    const result = await query(update, values);

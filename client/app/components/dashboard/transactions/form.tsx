@@ -25,7 +25,7 @@ import Modal from "@/components/global/modal";
 import Section from "@/components/global/section";
 import SubmitButton from "@/components/global/submit";
 import { sendApiRequest } from "@/lib/api";
-import { getValidDateRange } from "@/lib/dates";
+import { getCurrentDate, getValidDateRange, toHtmlDate } from "@/lib/dates";
 import { handleValidationErrors } from "@/lib/validation";
 import { addTransaction, updateTransaction } from "@/redux/slices/transactions";
 import type { RootState } from "@/redux/store";
@@ -74,7 +74,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       clearErrors,
       formState: { isSubmitting, errors, dirtyFields } } = useForm({
       defaultValues: {
-         amount: 0,
+         amount: "",
          date: "",
          description: "",
          account_id: "",
@@ -106,20 +106,20 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       if (transaction) {
          reset({
             ...transaction,
-            date: transaction.date.split("T")[0],
+            date: transaction.date!.split("T")[0],
             account_id: transaction.account_id || "",
             budget_category_id: transaction.budget_category_id || ""
          });
       } else {
          reset({
-            amount: 0,
-            date: maxDate,
+            amount: "",
+            date: toHtmlDate(getCurrentDate()),
             description: "",
             account_id: defaultAccountID,
             budget_category_id: defaultBudgetCategoryID
          });
       }
-   }, [transaction, reset, defaultAccountID, defaultBudgetCategoryID, maxDate]);
+   }, [transaction, reset, defaultAccountID, defaultBudgetCategoryID]);
 
    const onCancel = useCallback(() => {
       onReset();
@@ -144,6 +144,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
          const type: BudgetType = data.budget_category_id ? budgetsMap[data.budget_category_id] : (data.amount >= 0 ? "Income" : "Expenses");
          const fields = transactionSchema.safeParse({
             ...data,
+            amount: data.amount === "" ? undefined : data.amount,
             type: type
          });
 
@@ -207,7 +208,10 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
       >
          <Section icon = { faMoneyBillTransfer }>
             <Box sx = { { mt: 2 } }>
-               <form onSubmit = { handleSubmit(onSubmit) }>
+               <form
+                  noValidate = { true }
+                  onSubmit = { handleSubmit(onSubmit) }
+               >
                   <Stack
                      direction = "column"
                      spacing = { 1 }
@@ -235,7 +239,8 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                           {
                                              htmlInput: {
                                                 min: minDate,
-                                                max: maxDate
+                                                max: maxDate,
+                                                "data-testid": "transaction-date"
                                              },
                                              inputLabel: {
                                                 shrink: true
@@ -273,7 +278,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                        { ...field }
                                        aria-label = "Amount"
                                        id = "amount"
-                                       inputProps = { { step: 0.01, min: 1 } }
+                                       inputProps = { { step: 0.01, min: 1, "data-testid": "transaction-amount" } }
                                        label = "Amount"
                                        type = "number"
                                        value = { field.value || "" }
@@ -302,6 +307,13 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                                     label = "Description"
                                     minRows = { 3 }
                                     multiline = { true }
+                                    slotProps = {
+                                       {
+                                          htmlInput: {
+                                             "data-testid": "transaction-description"
+                                          }
+                                       }
+                                    }
                                     variant = "outlined"
                                  />
                                  <FormHelperText>
@@ -457,6 +469,7 @@ export default function TransactionForm({ transaction, accountsMap, budgetsMap, 
                         />
                      </Stack>
                      <SubmitButton
+                        dataTestId = "transaction"
                         isSubmitting = { isSubmitting }
                         onCancel = { onCancel }
                         type = { updating ? "Update" : "Create" }

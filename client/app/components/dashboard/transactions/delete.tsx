@@ -14,10 +14,12 @@ import { deleteTransaction, deleteTransactions } from "@/redux/slices/transactio
  *
  * @property {Transaction} transaction - Transaction to delete
  * @property {number} index - Index of the transaction in the store
+ * @property {string} testId - Data test ID for the delete icon
  */
 interface TransactionDeletionProps {
    transaction: Transaction;
    index: number;
+   testId: string;
 }
 
 /**
@@ -36,7 +38,7 @@ const bulkMessage = "Are you sure you want to delete these transactions? This ac
  * @param {TransactionDeletionProps} props - The TransactionDeletion component props
  * @returns {React.ReactNode} Deletion confirmation component
  */
-export function TransactionDeletion({ transaction, index }: TransactionDeletionProps): React.ReactNode {
+export function TransactionDeletion({ transaction, index, testId }: TransactionDeletionProps): React.ReactNode {
    const dispatch = useDispatch(), navigate = useNavigate();
 
    const onSubmit = useCallback(async() => {
@@ -57,6 +59,7 @@ export function TransactionDeletion({ transaction, index }: TransactionDeletionP
 
    return (
       <Confirmation
+         dataTestId = { testId }
          fontSize = "1.1rem"
          message = { message }
          onConfirmation = { onSubmit }
@@ -101,6 +104,7 @@ export function BulkTransactionDeletion({ selectedRows }: BulkTransactionDeletio
 
    return (
       <Confirmation
+         dataTestId = "transactions-bulk-delete"
          fontSize = "1rem"
          message = { bulkMessage }
          onConfirmation = { onSubmit }

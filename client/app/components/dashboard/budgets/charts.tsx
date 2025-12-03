@@ -70,9 +70,11 @@ const StyledText = styled("text", {
  * Props for the pie chart center label
  *
  * @property {string} primaryText - Amount display text
+ * @property {"Income" | "Expenses"} type - Budget type for test ID
  */
 interface PieCenterLabelProps {
    primaryText: string;
+   type: "Income" | "Expenses";
 }
 
 /**
@@ -81,12 +83,13 @@ interface PieCenterLabelProps {
  * @param {PieCenterLabelProps} props - The props for the PieCenterLabel component
  * @returns {React.ReactNode} The PieCenterLabel component
  */
-const PieCenterLabel = function PieCenterLabel({ primaryText }: PieCenterLabelProps): React.ReactNode {
+const PieCenterLabel = function PieCenterLabel({ primaryText, type }: PieCenterLabelProps): React.ReactNode {
    const { width, height, left, top } = useDrawingArea();
    const primaryY = top + height / 2;
 
    return (
       <StyledText
+         data-testid = { `budget-pie-center-${type}` }
          variant = "primary"
          x = { left + width / 2 }
          y = { primaryY }
@@ -136,40 +139,43 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                direction = "column"
                sx = { { justifyContent: "center", alignItems: "center", gap: 2, pb: 2 } }
             >
-               <PieChart
-                  height = { 265 }
-                  margin = {
-                     {
-                        left: 80,
-                        right: 80,
-                        top: 80,
-                        bottom: 80
-                     }
-                  }
-                  series = {
-                     [
+               <Box data-testid = { `budget-pie-chart-${type}` }>
+                  <PieChart
+                     height = { 265 }
+                     margin = {
                         {
-                           data: data,
-                           innerRadius: 85,
-                           outerRadius: 105,
-                           paddingAngle: 0,
-                           highlightScope: { faded: "global", highlighted: "item" }
-                        }
-                     ]
-                  }
-                  slotProps = {
-                     {
-                        legend: {
-                           hidden: true
+                           left: 80,
+                           right: 80,
+                           top: 80,
+                           bottom: 80
                         }
                      }
-                  }
-                  width = { 265 }
-               >
-                  <PieCenterLabel
-                     primaryText = { `$${displayVolume(current)}` }
-                  />
-               </PieChart>
+                     series = {
+                        [
+                           {
+                              data: data,
+                              innerRadius: 85,
+                              outerRadius: 105,
+                              paddingAngle: 0,
+                              highlightScope: { faded: "global", highlighted: "item" }
+                           }
+                        ]
+                     }
+                     slotProps = {
+                        {
+                           legend: {
+                              hidden: true
+                           }
+                        }
+                     }
+                     width = { 265 }
+                  >
+                     <PieCenterLabel
+                        primaryText = { `$${displayVolume(current)}` }
+                        type = { type }
+                     />
+                  </PieChart>
+               </Box>
             </Stack>
          </ChartContainer>
          {
@@ -202,6 +208,8 @@ function BudgetProgressChart({ title, data, type, current }: BudgetProgressChart
                         <LinearProgress
                            aria-label = { `${category.label} progress` }
                            color = { type === "Income" ? "success" : "error" }
+                           data-progress-percent = { category.percentage }
+                           data-testid = { `budget-progress-${category.label}` }
                            sx = { { height: "1.50rem", borderRadius: "16px", boxShadow: 0 } }
                            value = { category.percentage }
                            variant = "determinate"
