@@ -297,7 +297,7 @@ test.describe("Settings", () => {
             // Navigate back to accounts page to create transactions
             await navigateToPath(page, ACCOUNTS_ROUTE);
 
-            // Create one transaction with account and subcategory tied to it
+            // Create one transaction with account and budget category tied to it
             const transaction1Id: string = await createTransaction(page, {
                date: "2024-01-15",
                amount: 2500,
@@ -306,7 +306,7 @@ test.describe("Settings", () => {
                budget_category_id: expenseCategoryId
             });
 
-            // Create another transaction with no account or subcategory tied to it
+            // Create another transaction with no account or budget category tied to it
             const transaction2Id: string = await createTransaction(page, {
                date: "2024-01-20",
                amount: 1500,

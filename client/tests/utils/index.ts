@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * Asserts a component is visible and optionally verifies its text content
@@ -100,4 +100,44 @@ export async function closeModal(page: Page, force: boolean = false, dataTestId:
       // Target modal was detached during the close sequence above
       return;
    }
+}
+
+/**
+ * Performs drag and drop operation from drag handle to drop target
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {Locator} dragHandle - Locator for the drag handle element
+ * @param {Locator} dropTarget - Locator for the drop target element
+ */
+export async function dragAndDrop(
+   page: Page,
+   dragHandle: Locator,
+   dropTarget: Locator
+): Promise<void> {
+   // Scroll the drag handle into view and hover over it to ensure it's visible
+   await dragHandle.scrollIntoViewIfNeeded();
+   await dragHandle.hover();
+
+   // Get the bounding boxes of the drag handle and drop target elements
+   const handleBox = await dragHandle.boundingBox();
+   const targetBox = await dropTarget.boundingBox();
+
+   if (!handleBox || !targetBox) {
+      throw new Error("Bounding box missing");
+   }
+
+   // Determine the starting and ending coordinates for the drag and drop operation
+   const startX = handleBox.x + handleBox.width / 2;
+   const startY = handleBox.y + handleBox.height / 2;
+   const endX = targetBox.x + targetBox.width / 2;
+   const endY = targetBox.y + targetBox.height / 2;
+
+   // Perform the drag and drop operation by mimicking a user mouse click and drag
+   await page.mouse.move(startX, startY);
+   await page.mouse.down();
+   await page.waitForTimeout(150);
+   await page.mouse.move(startX + 12, startY, { steps: 5 });
+   await page.mouse.move(endX, endY, { steps: 20 });
+   await page.waitForTimeout(300);
+   await page.mouse.up();
 }

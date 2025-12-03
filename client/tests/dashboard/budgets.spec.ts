@@ -1,7 +1,6 @@
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible } from "@tests/utils";
+import { assertComponentIsVisible, dragAndDrop } from "@tests/utils";
 import { BUDGETS_ROUTE } from "@tests/utils/authentication";
-import { dragAndDrop } from "@tests/utils/dashboard";
 import {
    assertBudgetCategoryOrder,
    assertBudgetGoalPersistence,
@@ -11,6 +10,7 @@ import {
    type BudgetPageState,
    createBudgetCategory,
    deleteBudgetCategory,
+   getMainBudgetCategoryIds,
    performAndAssertCancelBudgetCategory,
    setupBudgetGoalPersistence,
    updateBudgetCategory
@@ -410,17 +410,14 @@ test.describe("Budget Management", () => {
          const expenseId: string = await createBudgetCategory(page, { name: "Rent", goal: 1500 }, "Expenses");
 
          // Main budget categories should be auto-selected in the transaction dropdown with their actual UUIDs
-         const mainIncomeCategory: string | null = await (page.getByTestId("budget-category-Income").getAttribute("data-category-id"));
-         const mainExpenseCategory: string | null = await (page.getByTestId("budget-category-Expenses").getAttribute("data-category-id"));
-         expect(mainIncomeCategory).not.toBeNull();
-         expect(mainExpenseCategory).not.toBeNull();
+         const { mainIncomeCategoryId, mainExpenseCategoryId } = await getMainBudgetCategoryIds(page);
 
          await assertTransactionBudgetCategoryDropdown(
             page,
             "Income",
             [{ budget_category_id: incomeId, name: "Salary", goal: 5000 }],
             [{ budget_category_id: expenseId, name: "Rent", goal: 1500 }],
-            mainIncomeCategory!
+            mainIncomeCategoryId!
          );
 
          await assertTransactionBudgetCategoryDropdown(
@@ -428,7 +425,7 @@ test.describe("Budget Management", () => {
             "Expenses",
             [{ budget_category_id: incomeId, name: "Salary", goal: 5000 }],
             [{ budget_category_id: expenseId, name: "Rent", goal: 1500 }],
-            mainExpenseCategory!
+            mainExpenseCategoryId!
          );
       });
    });

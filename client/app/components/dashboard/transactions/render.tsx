@@ -57,12 +57,10 @@ export function RenderTextColumn({ params, type }: RenderTextColumnProps): React
       }
    }
 
-   const testId = `transaction-${type}-${params.row.transaction_id}`;
-
    return (
       <Typography
          color = { color }
-         data-testid = { testId }
+         data-testid = { `transaction-${type}-${params.row.transaction_id}` }
          sx = { { fontWeight: "550", fontSize: "0.85rem" } }
          variant = "caption"
       >
@@ -83,13 +81,11 @@ export function RenderAccountChip({ account_id, transaction_id }: { account_id: 
       return accounts.find((a) => a.account_id === account_id);
    }, [accounts, account_id]);
 
-   const testId = transaction_id ? `transaction-account-chip-${transaction_id}` : undefined;
-
    return (
       account ? (
          <Chip
             color = "primary"
-            data-testid = { testId }
+            data-testid = { `transaction-account-chip-${transaction_id}` }
             label = { account?.name || "" }
             size = "small"
             sx = { { m: "0 !important" } }
@@ -115,12 +111,11 @@ export function RenderCategoryChip({ budget_category_id, type, transaction_id }:
 
    const label: string = budgetCategory?.name || type;
    const color: "success" | "error" = type === "Income" ? "success" : "error";
-   const testId = transaction_id ? `transaction-category-chip-${transaction_id}` : undefined;
 
    return (
       <Chip
          color = { color }
-         data-testid = { testId }
+         data-testid = { `transaction-category-chip-${transaction_id}` }
          label = { label }
          size = "small"
          sx = { { m: "0 !important" } }
@@ -147,9 +142,6 @@ interface RenderActionsColumnProps {
  * @returns {React.ReactNode} Actions column content
  */
 export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps): React.ReactNode {
-   const editTestId = `transaction-edit-${params.row.transaction_id}`;
-   const deleteTestId = `transaction-delete-${params.row.transaction_id}`;
-
    return (
       <Stack
          direction = "row"
@@ -159,7 +151,7 @@ export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps
             className = "primary"
             disableRipple = { true }
             icon = {
-               <Box data-testid = { editTestId }>
+               <Box data-testid = { `transaction-edit-${params.row.transaction_id}` }>
                   <FontAwesomeIcon
                      icon = { faPenToSquare }
                      size = "sm"
@@ -178,7 +170,7 @@ export function RenderActionsColumn({ params, onEdit }: RenderActionsColumnProps
             icon = {
                <TransactionDeletion
                   index = { params.row.index }
-                  testId = { deleteTestId }
+                  testId = { `transaction-delete-${params.row.transaction_id}` }
                   transaction = { params.row }
                />
             }

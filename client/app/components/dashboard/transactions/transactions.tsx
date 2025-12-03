@@ -38,8 +38,7 @@ type EditState = {
 export default function Transactions({ filter, identifier }: TransactionProps): React.ReactNode {
    const [editState, setEditState] = useState<EditState>({ state: "view" });
 
-   // Generate context-aware testid for the add button to avoid duplicates
-   const addButtonTestId = useMemo(() => {
+   const addButtonTestId: string = useMemo(() => {
       return filter ? `transactions-add-button-${filter}` : "transactions-add-button";
    }, [filter]);
 

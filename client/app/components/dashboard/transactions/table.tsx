@@ -94,7 +94,7 @@ export default function TransactionsTable({ accountsMap, budgetsMap, onEdit, fil
 
    // Set the initial view and page size based on localStorage
    useEffect(() => {
-      const stored = window.localStorage.getItem("view");
+      const stored: string | null = window.localStorage.getItem("view");
       setView(stored === "table" || stored === null ? "table" : "list");
 
       pageSize.current = Number(window.localStorage.getItem("pageSize")) || 25;

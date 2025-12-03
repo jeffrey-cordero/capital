@@ -14,12 +14,12 @@ import { deleteTransaction, deleteTransactions } from "@/redux/slices/transactio
  *
  * @property {Transaction} transaction - Transaction to delete
  * @property {number} index - Index of the transaction in the store
- * @property {string} [testId] - Optional data test ID for the delete icon
+ * @property {string} testId - Data test ID for the delete icon
  */
 interface TransactionDeletionProps {
    transaction: Transaction;
    index: number;
-   testId?: string;
+   testId: string;
 }
 
 /**

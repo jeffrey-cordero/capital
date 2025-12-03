@@ -1,12 +1,12 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
+import { assertComponentIsVisible, assertInputVisibility, dragAndDrop } from "@tests/utils";
 import { ACCOUNTS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
-import { assertAccountTrends, dragAndDrop } from "@tests/utils/dashboard";
 import {
    type AccountFormData,
    assertAccountCard,
    assertAccountCardsOrder,
+   assertAccountTrends,
    assertAndUnblockInvalidImageURL,
    assertImageCarouselNavigation,
    assertImageCarouselVisibility,

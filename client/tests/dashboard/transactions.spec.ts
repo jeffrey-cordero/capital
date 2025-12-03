@@ -2,7 +2,13 @@ import { test } from "@tests/fixtures";
 import { assertComponentIsHidden, assertComponentIsVisible, closeModal } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
 import { createAccount, getAccountCardIds } from "@tests/utils/dashboard/accounts";
-import { createBudgetCategory, getBudgetCategoryIds } from "@tests/utils/dashboard/budgets";
+import {
+   type BudgetProgressData,
+   type BudgetTrendData,
+   createBudgetCategory,
+   getBudgetCategoryIds,
+   getMainBudgetCategoryIds
+} from "@tests/utils/dashboard/budgets";
 import {
    assertEmptyState,
    assertTransactionFormInputs,
@@ -14,9 +20,10 @@ import {
    openTransactionFormFromAccountsPage,
    openTransactionFormFromBudgetView,
    performAndAssertAccountTrends,
-   performAndAssertBudgetPeriods,
+   performAndAssertBudgetTrends,
    performAndAssertTransactionAction,
    setupAccountBalances,
+   setupBudgetTrends,
    toggleTransactionView,
    type TransactionFormData,
    updateTransaction
@@ -52,14 +59,13 @@ test.describe("Transaction Management", () => {
          });
 
          test("should have accessible form inputs from all budget form interfaces", async({ page }) => {
-            const mainIncomeCategory: string | null = await (page.getByTestId("budget-category-Income").getAttribute("data-category-id"));
-            const mainExpenseCategory: string | null = await (page.getByTestId("budget-category-Expenses").getAttribute("data-category-id"));
+            const { mainIncomeCategoryId, mainExpenseCategoryId } = await getMainBudgetCategoryIds(page);
 
             await openTransactionFormFromBudgetView(page, "Income");
-            await assertTransactionFormInputs(page, { budgetCategoryId: mainIncomeCategory! });
+            await assertTransactionFormInputs(page, { budgetCategoryId: mainIncomeCategoryId! });
 
             await openTransactionFormFromBudgetView(page, "Expenses");
-            await assertTransactionFormInputs(page, { budgetCategoryId: mainExpenseCategory! });
+            await assertTransactionFormInputs(page, { budgetCategoryId: mainExpenseCategoryId! });
          });
       });
    });
@@ -524,6 +530,8 @@ test.describe("Transaction Management", () => {
          });
 
          await navigateToPath(page, BUDGETS_ROUTE);
+         const { mainExpenseCategoryId } = await getMainBudgetCategoryIds(page);
+
          const incomeCategoryId: string = await createBudgetCategory(page, {
             name: "Salary",
             goal: 500
@@ -536,6 +544,7 @@ test.describe("Transaction Management", () => {
          await closeModal(page, false, "budget-form-Expenses");
          await navigateToPath(page, ACCOUNTS_ROUTE);
 
+         // Format all required date types for the current month, 6 months ago, and 1 year ago
          const currentDate: Date = getCurrentDate();
          const currentMonth: number = currentDate.getMonth();
          const currentMonthDate: string = toHtmlDate(currentDate);
@@ -575,20 +584,66 @@ test.describe("Transaction Management", () => {
          await createTransaction(page, {
             date: oneYearAgoDate,
             amount: 600,
-            description: "1yr Groceries",
+            description: "1yr Rent Payment",
             account_id: accountId,
-            budget_category_id: expenseCategoryId
+            budget_category_id: mainExpenseCategoryId
          });
 
          const currentYear: number = currentDate.getFullYear();
          const lastYear: number = currentYear - 1;
-         const transactions: Array<{ year: number; month: number; effect: number }> = [
+         const accountTransactions: Array<{ year: number; month: number; effect: number }> = [
             { year: currentYear, month: currentMonth, effect: +200 }, // Net income ($300 Income - $100 Expense = +$200)
             { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, effect: +400 }, // Income ($400 Income - $0 Expense = +$400)
             { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, effect: -600 } // Expense ($0 Income - $600 Expense = -$600)
-         ].sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+         ];
+         const budgetTransactions: Array<{ year: number; month: number; income: number; expense: number }> = [
+            { year: currentYear, month: currentMonth, income: 300, expense: 100 },
+            { year: sixMonthsAgo.getFullYear(), month: sixMonthsAgoMonth, income: 400, expense: 0 },
+            { year: oneYearAgo.getFullYear(), month: oneYearAgoMonth, income: 0, expense: 600 }
+         ];
 
-         const { lastYearBalances, currentYearBalances } = setupAccountBalances(2000, currentYear, currentMonth, transactions);
+         const { lastYearBalances, currentYearBalances } = setupAccountBalances(2000, currentYear, currentMonth, accountTransactions);
+         const { lastYearIncome, currentYearIncome, lastYearExpense, currentYearExpense } = setupBudgetTrends(currentYear, currentMonth, budgetTransactions);
+
+         // Build the budget trend data objects for the current and last year
+         const currentYearTrends: BudgetTrendData = {
+            Income: currentYearIncome,
+            Expenses: currentYearExpense
+         };
+         const lastYearTrends: BudgetTrendData = {
+            Income: lastYearIncome,
+            Expenses: lastYearExpense
+         };
+
+         // Build the budget progress data objects for the current and last year ([used, allocated] tuples for main and subcategories)
+         const currentYearProgress: BudgetProgressData = {
+            Income: {
+               main: Array(12).fill(null).map((_, i) => [currentYearIncome[i], 2000]),
+               sub: Array(12).fill(null).map((_, i) => [currentYearIncome[i], 500])
+            },
+            Expenses: {
+               main: Array(12).fill(null).map((_, i) => [currentYearExpense[i], 2000]),
+               sub: Array(12).fill(null).map((_, i) => [currentYearExpense[i], 700])
+            }
+         };
+         const lastYearProgress: BudgetProgressData = {
+            Income: {
+               main: Array(12).fill(null).map((_, i) => [lastYearIncome[i], 2000]),
+               sub: Array(12).fill(null).map((_, i) => [lastYearIncome[i], 500])
+            },
+            Expenses: {
+               main: Array(12).fill(null).map((_, i) => [lastYearExpense[i], 2000]),
+               sub: Array(12).fill(null).map((_, i) => {
+                  if (i === oneYearAgoMonth) {
+                     // Edge case where the main category is used in place of the subcategory
+                     return [0, 700];
+                  }
+
+                  return [lastYearExpense[i], 700];
+               })
+            }
+         };
+
          await performAndAssertAccountTrends(
             page,
             accountId,
@@ -598,14 +653,17 @@ test.describe("Transaction Management", () => {
             currentYear,
             lastYear
          );
-         await performAndAssertBudgetPeriods(
+         await performAndAssertBudgetTrends(
             page,
+            currentYearTrends,
+            lastYearTrends,
+            currentYearProgress,
+            lastYearProgress,
             incomeCategoryId,
             expenseCategoryId,
-            currentMonth,
-            sixMonthsAgoMonth,
-            oneYearAgoMonth,
-            lastYear
+            currentYear,
+            lastYear,
+            currentMonth
          );
       });
    });

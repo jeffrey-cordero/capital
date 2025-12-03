@@ -7,12 +7,12 @@ import {
    closeModal
 } from "@tests/utils";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE } from "@tests/utils/authentication";
-import { assertAccountTrends } from "@tests/utils/dashboard";
+import { assertAccountTrends } from "@tests/utils/dashboard/accounts";
 import {
-   assertBudgetPieChart,
-   assertBudgetProgress,
+   assertBudgetProgressPersistence,
    assertBudgetTrends,
-   navigateBudgetPeriod,
+   type BudgetProgressData,
+   type BudgetTrendData,
    openBudgetForm
 } from "@tests/utils/dashboard/budgets";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
@@ -599,38 +599,6 @@ export async function assertTransactionOrder(page: Page, expectedOrder: Transact
 }
 
 /**
- * Validates budget pie charts and progress bars for income and expenses with single subcategories
- * for testing simplicity
- *
- * @param {Page} page - Playwright page instance
- * @param {string} incomeCategoryId - Income budget category ID, where `"Income"` is the main category
- * @param {string} expenseCategoryId - Expense budget category ID, where `"Expenses"` is the main category
- * @param {number} incomeUsed - Amount used for income category
- * @param {number} incomeGoal - Goal amount for income category
- * @param {number} expenseUsed - Amount used for expense category
- * @param {number} expenseGoal - Goal amount for expense category
- * @param {number} mainGoal - Main budget goal amount
- */
-export async function validateBudgetPeriod(
-   page: Page,
-   incomeCategoryId: string,
-   expenseCategoryId: string,
-   incomeUsed: number,
-   incomeGoal: number,
-   expenseUsed: number,
-   expenseGoal: number,
-   mainGoal: number
-): Promise<void> {
-   await assertBudgetPieChart(page, "Income", incomeUsed);
-   await assertBudgetProgress(page, "Income", incomeUsed, mainGoal);
-   await assertBudgetProgress(page, incomeCategoryId, incomeUsed, incomeGoal);
-
-   await assertBudgetPieChart(page, "Expenses", expenseUsed);
-   await assertBudgetProgress(page, "Expenses", expenseUsed, mainGoal);
-   await assertBudgetProgress(page, expenseCategoryId, expenseUsed, expenseGoal);
-}
-
-/**
  * Calculates 24 months of account balances from transaction history
  *
  * @param {number} startingBalance - Initial account balance
@@ -681,7 +649,50 @@ export function setupAccountBalances(
 }
 
 /**
- * Validates account trends on dashboard and accounts pages for the current and previous year for
+ * Calculates 24 months of budget trends from transaction history
+ *
+ * @param {number} currentYear - Current year
+ * @param {number} currentMonth - Current month (0-11)
+ * @param {Array<{year: number, month: number, income: number, expense: number}>} transactions - Transaction history by month
+ * @returns {{lastYearIncome: number[], currentYearIncome: number[], lastYearExpense: number[], currentYearExpense: number[]}} Budget trends for income and expenses
+ */
+export function setupBudgetTrends(
+   currentYear: number,
+   currentMonth: number,
+   transactions: Array<{ year: number; month: number; income: number; expense: number }>
+): {
+   lastYearIncome: number[];
+   currentYearIncome: number[];
+   lastYearExpense: number[];
+   currentYearExpense: number[];
+} {
+   const lastYear: number = currentYear - 1;
+   const allIncome: number[] = [];
+   const allExpense: number[] = [];
+
+   for (let yearOffset = 0; yearOffset < 2; yearOffset++) {
+      const year: number = lastYear + yearOffset;
+
+      for (let month = 0; month < 12; month++) {
+         // Find transaction for this year and month
+         const transaction = transactions.find(t => t.year === year && t.month === month);
+         const isFutureMonth: boolean = year === currentYear && month > currentMonth;
+
+         allIncome.push(isFutureMonth ? 0 : (transaction?.income ?? 0));
+         allExpense.push(isFutureMonth ? 0 : (transaction?.expense ?? 0));
+      }
+   }
+
+   return {
+      lastYearIncome: allIncome.slice(0, 12),
+      currentYearIncome: allIncome.slice(12, 24),
+      lastYearExpense: allExpense.slice(0, 12),
+      currentYearExpense: allExpense.slice(12, 24)
+   };
+}
+
+/**
+ * Asserts account trends on dashboard and accounts pages for the current and previous year for
  * a single account with the name `"Main Account"` for testing simplicity
  *
  * @param {Page} page - Playwright page instance
@@ -699,7 +710,7 @@ export async function performAndAssertAccountTrends(
    currentYearBalances: (number | null)[],
    lastYearBalances: (number | null)[],
    currentYear: number,
-   lastYear: number,
+   lastYear: number
 ): Promise<void> {
    const accountData = [{ account_id: accountId, name: "Main Account", balance: accountBalance, type: "Checking" }];
 
@@ -722,100 +733,48 @@ export async function performAndAssertAccountTrends(
 }
 
 /**
- * Validates budget period data and trends across multiple time periods
+ * Asserts budget trends on dashboard and budgets pages for current and previous year and
+ * all applicable budget periods
  *
  * @param {Page} page - Playwright page instance
+ * @param {BudgetTrendData} currentYearTrends - Current year trend data for Income and Expenses
+ * @param {BudgetTrendData} lastYearTrends - Last year trend data for Income and Expenses
+ * @param {BudgetProgressData} currentYearProgress - Current year progress data with [used, allocated] tuples
+ * @param {BudgetProgressData} lastYearProgress - Last year progress data with [used, allocated] tuples
  * @param {string} incomeCategoryId - Income budget category ID
  * @param {string} expenseCategoryId - Expense budget category ID
- * @param {number} currentMonth - Current month (0-11)
- * @param {number} sixMonthsAgoMonth - Month from 6 months ago (0-11)
- * @param {number} oneYearAgoMonth - Month from 1 year ago (0-11)
+ * @param {number} currentYear - Current year
  * @param {number} lastYear - Previous year
+ * @param {number} currentMonth - Current month (0-11)
  */
-export async function performAndAssertBudgetPeriods(
+export async function performAndAssertBudgetTrends(
    page: Page,
+   currentYearTrends: BudgetTrendData,
+   lastYearTrends: BudgetTrendData,
+   currentYearProgress: BudgetProgressData,
+   lastYearProgress: BudgetProgressData,
    incomeCategoryId: string,
    expenseCategoryId: string,
-   currentMonth: number,
-   sixMonthsAgoMonth: number,
-   oneYearAgoMonth: number,
-   lastYear: number
+   currentYear: number,
+   lastYear: number,
+   currentMonth: number
 ): Promise<void> {
+   // Navigate to budgets page and validate all data points with backward/forward navigation
    await navigateToPath(page, BUDGETS_ROUTE);
-   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
 
-   // Calculate months to navigate backwards using modulo for proper wrapping
-   const monthsBack6 = (currentMonth - sixMonthsAgoMonth + 12) % 12;
-   for (let i = 0; i < monthsBack6; i++) {
-      await navigateBudgetPeriod(page, -1);
-   }
-   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 400, 500, 0, 700, 2000);
-
-   const additionalMonths = (sixMonthsAgoMonth - oneYearAgoMonth + 11) % 12;
-   for (let i = 0; i < additionalMonths; i++) {
-      await navigateBudgetPeriod(page, -1);
+   for (const direction of ["backward", "forward"] as const) {
+      await assertBudgetTrends(page, currentYearTrends, lastYearTrends, currentYear, lastYear, direction);
    }
 
-   // Check if we've crossed year boundary and need one more navigation step
-   const currentYearAttr = await page.getByTestId("budgets-trends-container").getAttribute("data-year");
-   const needsYearNavigation = currentYearAttr !== lastYear.toString();
-
-   if (needsYearNavigation) {
-      await navigateBudgetPeriod(page, -1);
-      await expect(page.getByTestId("budget-period-label")).toContainText(lastYear.toString());
+   for (const direction of ["backward", "forward"] as const) {
+      await assertBudgetProgressPersistence(
+         page,
+         incomeCategoryId,
+         expenseCategoryId,
+         currentYearProgress,
+         lastYearProgress,
+         currentMonth,
+         direction
+      );
    }
-
-   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 600, 700, 2000);
-
-   if (needsYearNavigation) {
-      await navigateBudgetPeriod(page, -1);
-      await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 0, 500, 0, 700, 2000);
-      await navigateBudgetPeriod(page, 1);
-   }
-
-   let totalMonthsBack = monthsBack6 + additionalMonths;
-   if (needsYearNavigation) {
-      totalMonthsBack += 1;
-   }
-
-   for (let i = 0; i < totalMonthsBack; i++) {
-      await navigateBudgetPeriod(page, 1);
-   }
-
-   await validateBudgetPeriod(page, incomeCategoryId, expenseCategoryId, 300, 500, 100, 700, 2000);
-
-   // Build expected trend data: [used, rollover] tuples for each month
-   const currentYearIncome: [number, number][] = Array(12)
-      .fill(null)
-      .map((_, i) => {
-         if (i === currentMonth) return [300, 0];
-         if (i === sixMonthsAgoMonth) return [400, 0];
-         return [0, 0];
-      });
-
-   const currentYearExpense: [number, number][] = Array(12)
-      .fill(null)
-      .map((_, i) => {
-         if (i === currentMonth) return [100, 0];
-         return [0, 0];
-      });
-
-   await assertBudgetTrends(page, "Income", currentYearIncome.map(month => month[0]));
-   await assertBudgetTrends(page, "Expenses", currentYearExpense.map(month => month[0]));
-
-   await page.getByTestId("budgets-navigate-back").click();
-   await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", lastYear.toString());
-
-   const lastYearIncome: [number, number][] = Array(12)
-      .fill(null)
-      .map(() => [0, 0]);
-   const lastYearExpense: [number, number][] = Array(12)
-      .fill(null)
-      .map((_, i) => {
-         if (i === oneYearAgoMonth) return [600, 0];
-         return [0, 0];
-      });
-
-   await assertBudgetTrends(page, "Income", lastYearIncome.map(month => month[0]));
-   await assertBudgetTrends(page, "Expenses", lastYearExpense.map(month => month[0]));
 }
