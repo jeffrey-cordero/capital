@@ -12,7 +12,6 @@ import {
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
@@ -47,8 +46,8 @@ const backupEconomyData = {
 /**
  * Cache durations for economy data (24 hours or 5 minutes backup duration)
  */
-const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
-const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
+export const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
+export const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
 
 /**
  * Generates Alpha Vantage API URL with function name and parameters
@@ -67,7 +66,7 @@ const getAlphaVantageUrl = (name: string, params: string = ""): string => {
  * @param {string} indicator - The indicator to fetch
  * @returns {keyof typeof economy.trends} Key for the economy trends data
  */
-const getEconomicIndicatorKey = (indicator: string): keyof typeof economy.trends => {
+export const getEconomicIndicatorKey = (indicator: string): keyof typeof economy.trends => {
    switch (indicator) {
       case "REAL_GDP":
          return "GDP";
@@ -254,7 +253,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
          // Backup the data to a file
          if (process.env.NODE_ENV === "development") {
-            const resourcesPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "resources", "economy.json");
+            const resourcesPath = path.join(__dirname, "..", "resources", "economy.json");
             fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
          }
 

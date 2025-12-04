@@ -16,6 +16,7 @@
     "./dashboard": "./build/dashboard.js",
     "./numerics": "./build/numerics.js",
     "./mocks/user": "./build/mocks/user.js",
+    "./mocks/economy": "./build/mocks/economy.js",
     "./mocks/accounts": "./build/mocks/accounts.js",
     "./mocks/budgets": "./build/mocks/budgets.js",
     "./mocks/transactions": "./build/mocks/transactions.js"
