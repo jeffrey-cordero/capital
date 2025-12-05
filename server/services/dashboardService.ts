@@ -253,7 +253,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
          // Backup the data to a file
          if (process.env.NODE_ENV === "development") {
-            const resourcesPath = path.join(__dirname, "..", "resources", "economy.json");
+            const resourcesPath = path.join(process.cwd(), "resources", "economy.json");
             fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
          }
 

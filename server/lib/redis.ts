@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
  * Redis client with no retry strategy
  */
 const redisClient = new Redis(process.env.REDIS_URL || "redis:6379", {
-   retryStrategy: () => null
+   retryStrategy: (times: number) => Math.min(times * 50, 2000)
 });
 
 /**

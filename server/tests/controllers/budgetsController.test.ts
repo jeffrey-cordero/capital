@@ -20,10 +20,7 @@ import {
    callControllerMethod
 } from "@/tests/utils/controllers";
 
-jest.mock("@/lib/services", () => ({
-   submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
-}));
-
+jest.mock("@/lib/logger");
 jest.mock("@/services/budgetsService");
 
 describe("Budgets Controller", () => {

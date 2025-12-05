@@ -2,16 +2,13 @@ export default {
   preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
   testEnvironment: 'node',
+  testEnvironmentOptions: {
+    experimentalVmModules: true
+  },
   roots: ['<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      useESM: true,
-      tsconfig: {
-        module: 'esnext',
-        isolatedModules: true
-      }
-    }],
+    '^.+\\.ts$': '<rootDir>/tests/transformer.cjs',
   },
   collectCoverageFrom: [
     '**/*.ts',

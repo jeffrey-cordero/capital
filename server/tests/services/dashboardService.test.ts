@@ -2,6 +2,7 @@ import { Economy } from "capital/economy";
 import { createMockEconomyData, createMockIndicatorTrends } from "capital/mocks/economy";
 import { TEST_USER_ID } from "capital/mocks/user";
 import { HTTP_STATUS, ServerResponse } from "capital/server";
+import path from "path";
 
 import * as dashboardService from "@/services/dashboardService";
 import { BACKUP_ECONOMY_DATA_CACHE_DURATION, ECONOMY_DATA_CACHE_DURATION, getEconomicIndicatorKey } from "@/services/dashboardService";
@@ -18,6 +19,7 @@ import {
    assertServiceThrows
 } from "@/tests/utils/services";
 
+jest.mock("fs");
 jest.mock("argon2", () => ({
    hash: jest.fn(),
    verify: jest.fn()
@@ -29,9 +31,10 @@ jest.mock("@/services/accountsService");
 jest.mock("@/services/budgetsService");
 jest.mock("@/services/transactionsService");
 jest.mock("@/services/userService");
-jest.mock("fs");
 
-// Mock global fetch
+/**
+ * Global mock fetch for the external API calls
+ */
 global.fetch = jest.fn() as jest.Mock;
 
 describe("Dashboard Service", () => {
@@ -128,29 +131,64 @@ describe("Dashboard Service", () => {
    };
 
    /**
+	 * Arrange multiple sequential database checks for economy data
+	 *
+	 * @param {Array<'fresh' | 'stale' | 'none'>} checks - Array of check types in order (initial check, mutex double-check, etc.)
+	 */
+   const arrangeDBChecks = (checks: Array<"fresh" | "stale" | "none">): void => {
+      checks.forEach(checkType => {
+         switch (checkType) {
+            case "fresh":
+               arrangeDBFreshData();
+               break;
+            case "stale":
+               arrangeDBStaleData();
+               break;
+            case "none":
+               arrangeDBNoData();
+               break;
+         }
+      });
+   };
+
+   /**
+	 * Default successful response data for dashboard services
+	 */
+   const defaultServiceResponses: Record<string, unknown> = {
+      fetchAccounts: { statusCode: HTTP_STATUS.OK, data: [] },
+      fetchBudgets: { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } },
+      fetchTransactions: { statusCode: HTTP_STATUS.OK, data: [] },
+      fetchUserDetails: { statusCode: HTTP_STATUS.OK, data: { user_id: userId, username: "test", email: "test@test.com" } }
+   };
+
+   /**
+	 * Arrange dashboard services with mix of successful and error responses
+	 *
+	 * @param {string[]} [errorMethods] - Service methods that should throw errors (defaults to empty array)
+	 */
+   const arrangeDashboardServices = (errorMethods: string[] = []): void => {
+      const serviceMap: Record<string, jest.Mocked<any>> = {
+         fetchAccounts: accountsService,
+         fetchBudgets: budgetsService,
+         fetchTransactions: transactionsService,
+         fetchUserDetails: userService
+      };
+
+      Object.entries(serviceMap).forEach(([method, service]) => {
+         if (errorMethods.includes(method)) {
+            const errorMessage = `${method.replace("fetch", "")} error`;
+            arrangeMockRepositoryError(service, method, errorMessage);
+         } else {
+            arrangeMockRepositorySuccess(service, method, defaultServiceResponses[method]);
+         }
+      });
+   };
+
+   /**
 	 * Mock all dashboard service dependencies as successful
 	 */
    const arrangeServiceMocks = (): void => {
-      arrangeMockRepositorySuccess(
-         accountsService,
-         "fetchAccounts",
-         { statusCode: HTTP_STATUS.OK, data: [] }
-      );
-      arrangeMockRepositorySuccess(
-         budgetsService,
-         "fetchBudgets",
-         { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } }
-      );
-      arrangeMockRepositorySuccess(
-         transactionsService,
-         "fetchTransactions",
-         { statusCode: HTTP_STATUS.OK, data: [] }
-      );
-      arrangeMockRepositorySuccess(
-         userService,
-         "fetchUserDetails",
-         { statusCode: HTTP_STATUS.OK, data: { user_id: userId, username: "test", email: "test@test.com" } }
-      );
+      arrangeDashboardServices();
    };
 
    /**
@@ -161,12 +199,11 @@ describe("Dashboard Service", () => {
    const assertEconomyDataStructure = (data: Economy): void => {
       expect(data).toHaveProperty("news");
       expect(data).toHaveProperty("trends");
-      expect(data.trends).toHaveProperty("Stocks");
-      expect(data.trends).toHaveProperty("GDP");
-      expect(data.trends).toHaveProperty("Inflation");
-      expect(data.trends).toHaveProperty("Unemployment");
-      expect(data.trends).toHaveProperty("Treasury Yield");
-      expect(data.trends).toHaveProperty("Federal Interest Rate");
+
+      const requiredTrends = ["Stocks", "GDP", "Inflation", "Unemployment", "Treasury Yield", "Federal Interest Rate"];
+      requiredTrends.forEach(trend => {
+         expect(data.trends).toHaveProperty(trend);
+      });
    };
 
    /**
@@ -190,22 +227,26 @@ describe("Dashboard Service", () => {
 	 * @param {Economy} data - Economy data to update
 	 */
    const assertDBUpdated = (data: Economy): void => {
-      expect(dashboardRepository.updateEconomicData).toHaveBeenCalledWith(
-         expect.any(Date),
-         JSON.stringify(data)
-      );
+      const [[timestamp, jsonData]] = (dashboardRepository.updateEconomicData as jest.Mock).mock.calls;
+      expect(timestamp).toBeInstanceOf(Date);
+      expect(jsonData).toBe(JSON.stringify(data));
    };
 
    /**
-	 * Assert economy data written to filesystem
+	 * Assert economy data written to filesystem with correct path resolution
 	 *
 	 * @param {Economy} data - Economy data to write
 	 */
    const assertFileWritten = (data: Economy): void => {
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-         expect.stringContaining("economy.json"),
-         JSON.stringify(data, null, 3)
-      );
+      const writeCall = (fs.writeFileSync as jest.Mock).mock.calls[0];
+      const filePath = writeCall[0];
+
+      // Ensure - "capital/server/resources/economy.json" is the end of the path
+      expect(filePath).toMatch(/capital\/server\/resources\/economy\.json$/);
+      expect(path.isAbsolute(filePath)).toBe(true);
+
+      // Verify file content
+      expect(writeCall[1]).toBe(JSON.stringify(data, null, 3));
    };
 
    /**
@@ -239,11 +280,30 @@ describe("Dashboard Service", () => {
 	 * @param {unknown} data - Dashboard data to validate
 	 */
    const assertDashboardDataStructure = (data: unknown): void => {
-      expect(data).toHaveProperty("accounts");
-      expect(data).toHaveProperty("budgets");
-      expect(data).toHaveProperty("economy");
-      expect(data).toHaveProperty("transactions");
-      expect(data).toHaveProperty("settings");
+      const requiredFields = ["accounts", "budgets", "economy", "transactions", "settings"];
+      requiredFields.forEach(field => {
+         expect(data).toHaveProperty(field);
+      });
+   };
+
+   /**
+	 * Assert no external API calls were made
+	 */
+   const assertNoExternalAPICalls = (): void => {
+      expect(global.fetch).not.toHaveBeenCalled();
+   };
+
+   /**
+	 * Assert logger error was called
+	 *
+	 * @param {number} [times] - Expected number of calls (optional)
+	 */
+   const assertLoggerError = (times?: number): void => {
+      if (times !== undefined) {
+         expect(logger.logger.error).toHaveBeenCalledTimes(times);
+      } else {
+         expect(logger.logger.error).toHaveBeenCalled();
+      }
    };
 
    beforeEach(async() => {
@@ -271,24 +331,18 @@ describe("Dashboard Service", () => {
          expect(() => getEconomicIndicatorKey("INVALID_INDICATOR")).toThrow("Invalid economic indicator: INVALID_INDICATOR");
       });
 
-      it("should return correct key for REAL_GDP", () => {
-         expect(getEconomicIndicatorKey("REAL_GDP")).toBe("GDP");
-      });
+      const indicatorMappings = [
+         { input: "REAL_GDP", expected: "GDP" },
+         { input: "INFLATION", expected: "Inflation" },
+         { input: "UNEMPLOYMENT", expected: "Unemployment" },
+         { input: "TREASURY_YIELD", expected: "Treasury Yield" },
+         { input: "FEDERAL_FUNDS_RATE", expected: "Federal Interest Rate" }
+      ];
 
-      it("should return correct key for INFLATION", () => {
-         expect(getEconomicIndicatorKey("INFLATION")).toBe("Inflation");
-      });
-
-      it("should return correct key for UNEMPLOYMENT", () => {
-         expect(getEconomicIndicatorKey("UNEMPLOYMENT")).toBe("Unemployment");
-      });
-
-      it("should return correct key for TREASURY_YIELD", () => {
-         expect(getEconomicIndicatorKey("TREASURY_YIELD")).toBe("Treasury Yield");
-      });
-
-      it("should return correct key for FEDERAL_FUNDS_RATE", () => {
-         expect(getEconomicIndicatorKey("FEDERAL_FUNDS_RATE")).toBe("Federal Interest Rate");
+      indicatorMappings.forEach(({ input, expected }) => {
+         it(`should return correct key for ${input}`, () => {
+            expect(getEconomicIndicatorKey(input)).toBe(expected);
+         });
       });
    });
 
@@ -303,7 +357,7 @@ describe("Dashboard Service", () => {
                { module: redis, methods: ["getCacheValue", "setCacheValue"] },
                { module: dashboardRepository, methods: ["getEconomicData", "updateEconomicData"] }
             ]);
-            expect(global.fetch).not.toHaveBeenCalled();
+            assertNoExternalAPICalls();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
@@ -320,7 +374,7 @@ describe("Dashboard Service", () => {
             expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
             assertMethodNotCalled(dashboardRepository, "getEconomicData");
             assertMethodNotCalled(redis, "setCacheValue");
-            expect(global.fetch).not.toHaveBeenCalled();
+            assertNoExternalAPICalls();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, cachedEconomy);
          });
 
@@ -334,33 +388,13 @@ describe("Dashboard Service", () => {
             expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
             assertRepositoryCall(dashboardRepository, "getEconomicData", []);
             assertCacheSet(economyCacheKey, mockEconomy, ECONOMY_DATA_CACHE_DURATION);
-            expect(global.fetch).not.toHaveBeenCalled();
+            assertNoExternalAPICalls();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, mockEconomy);
          });
 
          it("should fetch from APIs when cache miss + stale DB data", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBStaleData();
-            // Double-check after mutex also returns stale
-            arrangeDBStaleData();
-            arrangeAllAPIsSuccess();
-            arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
-
-            const result: ServerResponse = await dashboardService.fetchEconomicalData();
-
-            expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
-            expect(dashboardRepository.getEconomicData).toHaveBeenCalled();
-            assertAllFetchCalls();
-            expect(dashboardRepository.updateEconomicData).toHaveBeenCalled();
-            assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
-            assertEconomyDataStructure(result.data);
-         });
-
-         it("should fetch from APIs when cache miss + no DB data", async() => {
-            arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            // Double-check after mutex also returns no data
-            arrangeDBNoData();
+            arrangeDBChecks(["stale", "stale"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -369,7 +403,23 @@ describe("Dashboard Service", () => {
             expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
             assertRepositoryCall(dashboardRepository, "getEconomicData", []);
             assertAllFetchCalls();
-            expect(dashboardRepository.updateEconomicData).toHaveBeenCalled();
+            assertDBUpdated(result.data);
+            assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
+            assertEconomyDataStructure(result.data);
+         });
+
+         it("should fetch from APIs when cache miss + no DB data", async() => {
+            arrangeMockCacheMiss(redis);
+            arrangeDBChecks(["none", "none"]);
+            arrangeAllAPIsSuccess();
+            arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
+
+            const result: ServerResponse = await dashboardService.fetchEconomicalData();
+
+            expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
+            assertRepositoryCall(dashboardRepository, "getEconomicData", []);
+            assertAllFetchCalls();
+            assertDBUpdated(result.data);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
@@ -378,10 +428,7 @@ describe("Dashboard Service", () => {
       describe("Mutex Behavior", () => {
          it("should only make one API batch call for concurrent requests", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            // First check returns no data
-            arrangeDBNoData();
-            // Set up APIs for first request
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -391,8 +438,7 @@ describe("Dashboard Service", () => {
                dashboardService.fetchEconomicalData()
             ]);
 
-            // Should only be 7 fetch calls (not 14)
-            // Mutex prevents race conditions - both requests complete successfully
+            // Mutex prevents race conditions, both requests complete successfully with only 7 API calls (not 14)
             assertServiceSuccessResponse(result1, HTTP_STATUS.OK, result1.data);
             assertServiceSuccessResponse(result2, HTTP_STATUS.OK, result2.data);
          });
@@ -412,7 +458,7 @@ describe("Dashboard Service", () => {
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
             // Should not make API calls since double-check found fresh data
-            expect(global.fetch).not.toHaveBeenCalled();
+            assertNoExternalAPICalls();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, freshEconomy);
          });
       });
@@ -420,8 +466,7 @@ describe("Dashboard Service", () => {
       describe("API Success Scenarios", () => {
          it("should successfully fetch from all 7 APIs", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData(); // Double-check
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -438,8 +483,7 @@ describe("Dashboard Service", () => {
       describe("Individual API Failures", () => {
          it("should use backup news when news API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchStocksSuccess();
             for (let i = 0; i < 5; i++) {
@@ -449,15 +493,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup stocks when stocks API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchFailure(); // Stocks fails
             for (let i = 0; i < 5; i++) {
@@ -467,15 +510,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup GDP when GDP API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             arrangeFetchFailure(); // GDP fails
@@ -486,15 +528,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup inflation when inflation API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             arrangeFetchIndicatorSuccess(); // GDP succeeds
@@ -506,15 +547,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup unemployment when unemployment API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             arrangeFetchIndicatorSuccess(); // GDP succeeds
@@ -527,15 +567,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup treasury yield when treasury yield API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             for (let i = 0; i < 3; i++) {
@@ -547,15 +586,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup federal rate when federal rate API fails", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             for (let i = 0; i < 4; i++) {
@@ -566,7 +604,7 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
@@ -575,8 +613,7 @@ describe("Dashboard Service", () => {
       describe("Multiple API Failures", () => {
          it("should use backup for 3 indicators when they fail", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             arrangeFetchFailure(); // GDP fails
@@ -588,15 +625,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup when news and stocks fail", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchFailure(); // Stocks fails
             for (let i = 0; i < 5; i++) {
@@ -606,15 +642,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup for alternating failures", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchStocksSuccess();
             arrangeFetchFailure(); // GDP fails
@@ -626,15 +661,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup when all 5 indicators fail", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
             for (let i = 0; i < 5; i++) {
@@ -644,15 +678,14 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
 
          it("should use backup when 6 out of 7 APIs fail", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchFailure(); // Stocks fails
             arrangeFetchFailure(); // GDP fails
@@ -664,7 +697,7 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
@@ -673,8 +706,7 @@ describe("Dashboard Service", () => {
       describe("Complete API Failure", () => {
          it("should return backup data with short cache duration when all APIs fail", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             for (let i = 0; i < 7; i++) {
                arrangeFetchFailure(); // All APIs fail
             }
@@ -682,7 +714,7 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalledTimes(1);
+            assertLoggerError(1);
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
          });
@@ -691,8 +723,7 @@ describe("Dashboard Service", () => {
       describe("Database Operations", () => {
          it("should update DB successfully after API fetch", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -704,8 +735,7 @@ describe("Dashboard Service", () => {
 
          it("should handle DB update failure gracefully", async() => {
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositoryError(dashboardRepository, "updateEconomicData", "DB connection failed");
 
@@ -720,8 +750,7 @@ describe("Dashboard Service", () => {
          it("should write economy.json in development mode", async() => {
             process.env.NODE_ENV = "development";
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -734,8 +763,7 @@ describe("Dashboard Service", () => {
          it("should not write file in non-development mode", async() => {
             process.env.NODE_ENV = "production";
             arrangeMockCacheMiss(redis);
-            arrangeDBNoData();
-            arrangeDBNoData();
+            arrangeDBChecks(["none", "none"]);
             arrangeAllAPIsSuccess();
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
 
@@ -753,7 +781,7 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-            expect(logger.logger.error).toHaveBeenCalled();
+            assertLoggerError();
             expect(redis.setCacheValue).toHaveBeenCalledWith(
                economyCacheKey,
                BACKUP_ECONOMY_DATA_CACHE_DURATION,
@@ -821,7 +849,7 @@ describe("Dashboard Service", () => {
          it("should handle fetchAccounts failure", async() => {
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositoryError(accountsService, "fetchAccounts", "Accounts error");
+            arrangeDashboardServices(["fetchAccounts"]);
 
             await assertServiceThrows(
                () => dashboardService.fetchDashboard(userId),
@@ -832,8 +860,7 @@ describe("Dashboard Service", () => {
          it("should handle fetchBudgets failure", async() => {
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositorySuccess(accountsService, "fetchAccounts", { statusCode: HTTP_STATUS.OK, data: [] });
-            arrangeMockRepositoryError(budgetsService, "fetchBudgets", "Budgets error");
+            arrangeDashboardServices(["fetchBudgets"]);
 
             await assertServiceThrows(
                () => dashboardService.fetchDashboard(userId),
@@ -844,9 +871,7 @@ describe("Dashboard Service", () => {
          it("should handle fetchTransactions failure", async() => {
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositorySuccess(accountsService, "fetchAccounts", { statusCode: HTTP_STATUS.OK, data: [] });
-            arrangeMockRepositorySuccess(budgetsService, "fetchBudgets", { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } });
-            arrangeMockRepositoryError(transactionsService, "fetchTransactions", "Transactions error");
+            arrangeDashboardServices(["fetchTransactions"]);
 
             await assertServiceThrows(
                () => dashboardService.fetchDashboard(userId),
@@ -857,14 +882,11 @@ describe("Dashboard Service", () => {
          it("should handle fetchUserDetails failure", async() => {
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositorySuccess(accountsService, "fetchAccounts", { statusCode: HTTP_STATUS.OK, data: [] });
-            arrangeMockRepositorySuccess(budgetsService, "fetchBudgets", { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } });
-            arrangeMockRepositorySuccess(transactionsService, "fetchTransactions", { statusCode: HTTP_STATUS.OK, data: [] });
-            arrangeMockRepositoryError(userService, "fetchUserDetails", "User details error");
+            arrangeDashboardServices(["fetchUserDetails"]);
 
             await assertServiceThrows(
                () => dashboardService.fetchDashboard(userId),
-               "User details error"
+               "UserDetails error"
             );
          });
       });
@@ -873,8 +895,7 @@ describe("Dashboard Service", () => {
          it("should handle multiple services failing", async() => {
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositoryError(accountsService, "fetchAccounts", "Accounts error");
-            arrangeMockRepositoryError(budgetsService, "fetchBudgets", "Budgets error");
+            arrangeDashboardServices(["fetchAccounts", "fetchBudgets"]);
 
             // Promise.all fails fast, so first error is thrown
             await assertServiceThrows(
@@ -884,13 +905,9 @@ describe("Dashboard Service", () => {
          });
 
          it("should handle all services failing", async() => {
-            // Economy never fails (returns backup), so mock other services to fail
             const mockEconomy: Economy = createMockEconomyData();
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
-            arrangeMockRepositoryError(accountsService, "fetchAccounts", "Accounts error");
-            arrangeMockRepositoryError(budgetsService, "fetchBudgets", "Budgets error");
-            arrangeMockRepositoryError(transactionsService, "fetchTransactions", "Transactions error");
-            arrangeMockRepositoryError(userService, "fetchUserDetails", "User error");
+            arrangeDashboardServices(["fetchAccounts", "fetchBudgets", "fetchTransactions", "fetchUserDetails"]);
 
             // First service failure causes Promise.all to reject
             await assertServiceThrows(
@@ -904,8 +921,7 @@ describe("Dashboard Service", () => {
    describe("Zod Validation Failures", () => {
       it("should use backup data when news API returns invalid schema", async() => {
          arrangeMockCacheMiss(redis);
-         arrangeDBNoData();
-         arrangeDBNoData();
+         arrangeDBChecks(["none", "none"]);
 
          // Mock news to return invalid data (fails Zod validation)
          (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -927,8 +943,7 @@ describe("Dashboard Service", () => {
 
       it("should use backup data when stocks API returns invalid schema", async() => {
          arrangeMockCacheMiss(redis);
-         arrangeDBNoData();
-         arrangeDBNoData();
+         arrangeDBChecks(["none", "none"]);
 
          arrangeFetchNewsSuccess();
          // Mock stocks to return invalid data
@@ -949,8 +964,7 @@ describe("Dashboard Service", () => {
 
       it("should use backup data when indicator API returns invalid schema", async() => {
          arrangeMockCacheMiss(redis);
-         arrangeDBNoData();
-         arrangeDBNoData();
+         arrangeDBChecks(["none", "none"]);
 
          arrangeFetchNewsSuccess();
          arrangeFetchStocksSuccess();
@@ -965,7 +979,7 @@ describe("Dashboard Service", () => {
 
          const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
-         expect(logger.logger.error).toHaveBeenCalled();
+         assertLoggerError();
          assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
          assertEconomyDataStructure(result.data);
       });
