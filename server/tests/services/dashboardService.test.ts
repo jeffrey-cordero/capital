@@ -5,7 +5,7 @@ import { HTTP_STATUS, ServerResponse } from "capital/server";
 import path from "path";
 
 import * as dashboardService from "@/services/dashboardService";
-import { BACKUP_ECONOMY_DATA_CACHE_DURATION, ECONOMY_DATA_CACHE_DURATION, getEconomicIndicatorKey } from "@/services/dashboardService";
+import { BACKUP_ECONOMY_DATA_CACHE_DURATION, ECONOMY_DATA_CACHE_DURATION, getEconomicIndicatorKey, backupEconomyData } from "@/services/dashboardService";
 import {
    arrangeDefaultRedisCacheBehavior,
    arrangeMockCacheHit,
@@ -32,15 +32,14 @@ jest.mock("@/services/budgetsService");
 jest.mock("@/services/transactionsService");
 jest.mock("@/services/userService");
 
-/**
- * Global mock fetch for the external API calls
- */
-global.fetch = jest.fn() as jest.Mock;
-
 describe("Dashboard Service", () => {
+   global.fetch = jest.fn() as jest.Mock;
+
    const userId: string = TEST_USER_ID;
    const economyCacheKey: string = "economy";
+   const totalIndicators: number = 5;
 
+   let fs: typeof import("fs");
    let redis: typeof import("@/lib/redis");
    let logger: typeof import("@/lib/logger");
    let dashboardRepository: typeof import("@/repository/dashboardRepository");
@@ -48,7 +47,6 @@ describe("Dashboard Service", () => {
    let budgetsService: typeof import("@/services/budgetsService");
    let transactionsService: typeof import("@/services/transactionsService");
    let userService: typeof import("@/services/userService");
-   let fs: any;
 
    /**
 	 * Mock successful news API fetch response
@@ -90,17 +88,19 @@ describe("Dashboard Service", () => {
    const arrangeAllAPIsSuccess = (): void => {
       arrangeFetchNewsSuccess();
       arrangeFetchStocksSuccess();
-      for (let i = 0; i < 5; i++) {
+
+      // GDP, Inflation, Unemployment, Treasury Yield, Federal Interest Rate
+      for (let i = 0; i < totalIndicators; i++) {
          arrangeFetchIndicatorSuccess();
       }
    };
 
    /**
-	 * Mock database to return fresh economy data (within 24 hours)
+	 * Mock database to return fresh economy data within 24 hours
 	 */
    const arrangeDBFreshData = (): void => {
-      const freshTime = new Date();
-      const mockEconomy = createMockEconomyData();
+      const freshTime: Date = new Date();
+      const mockEconomy: Economy = createMockEconomyData();
 
       arrangeMockRepositorySuccess(
          dashboardRepository,
@@ -110,11 +110,11 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Mock database to return stale economy data (older than 24 hours)
+	 * Mock database to return stale economy data older than 24 hours
 	 */
    const arrangeDBStaleData = (): void => {
-      const staleTime = new Date(Date.now() - 25 * 60 * 60 * 1000);
-      const mockEconomy = createMockEconomyData();
+      const staleTime: Date = new Date(Date.now() - 25 * 60 * 60 * 1000);
+      const mockEconomy: Economy = createMockEconomyData();
 
       arrangeMockRepositorySuccess(
          dashboardRepository,
@@ -124,9 +124,9 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Mock database to return no economy data
+	 * Mock database to return no economy data to imply the initial external API data insertion
 	 */
-   const arrangeDBNoData = (): void => {
+   const arrangeEmptyDatabase = (): void => {
       arrangeMockRepositorySuccess(dashboardRepository, "getEconomicData", null);
    };
 
@@ -145,20 +145,10 @@ describe("Dashboard Service", () => {
                arrangeDBStaleData();
                break;
             case "none":
-               arrangeDBNoData();
+               arrangeEmptyDatabase();
                break;
          }
       });
-   };
-
-   /**
-	 * Default successful response data for dashboard services
-	 */
-   const defaultServiceResponses: Record<string, unknown> = {
-      fetchAccounts: { statusCode: HTTP_STATUS.OK, data: [] },
-      fetchBudgets: { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } },
-      fetchTransactions: { statusCode: HTTP_STATUS.OK, data: [] },
-      fetchUserDetails: { statusCode: HTTP_STATUS.OK, data: { user_id: userId, username: "test", email: "test@test.com" } }
    };
 
    /**
@@ -167,28 +157,27 @@ describe("Dashboard Service", () => {
 	 * @param {string[]} [errorMethods] - Service methods that should throw errors (defaults to empty array)
 	 */
    const arrangeDashboardServices = (errorMethods: string[] = []): void => {
-      const serviceMap: Record<string, jest.Mocked<any>> = {
+      const services: Record<string, jest.Mocked<any>> = {
          fetchAccounts: accountsService,
          fetchBudgets: budgetsService,
          fetchTransactions: transactionsService,
          fetchUserDetails: userService
       };
+      const defaultServiceResponses: Record<string, unknown> = {
+         fetchAccounts: { statusCode: HTTP_STATUS.OK, data: [] },
+         fetchBudgets: { statusCode: HTTP_STATUS.OK, data: { categories: [], budgets: [] } },
+         fetchTransactions: { statusCode: HTTP_STATUS.OK, data: [] },
+         fetchUserDetails: { statusCode: HTTP_STATUS.OK, data: { user_id: userId, username: "test", email: "test@test.com" } }
+      };
 
-      Object.entries(serviceMap).forEach(([method, service]) => {
+      Object.entries(services).forEach(([method, service]) => {
          if (errorMethods.includes(method)) {
-            const errorMessage = `${method.replace("fetch", "")} error`;
+            const errorMessage: string = `${method.replace("fetch", "")} error`;
             arrangeMockRepositoryError(service, method, errorMessage);
          } else {
             arrangeMockRepositorySuccess(service, method, defaultServiceResponses[method]);
          }
       });
-   };
-
-   /**
-	 * Mock all dashboard service dependencies as successful
-	 */
-   const arrangeServiceMocks = (): void => {
-      arrangeDashboardServices();
    };
 
    /**
@@ -200,8 +189,8 @@ describe("Dashboard Service", () => {
       expect(data).toHaveProperty("news");
       expect(data).toHaveProperty("trends");
 
-      const requiredTrends = ["Stocks", "GDP", "Inflation", "Unemployment", "Treasury Yield", "Federal Interest Rate"];
-      requiredTrends.forEach(trend => {
+      const trendKeys = ["Stocks", "GDP", "Inflation", "Unemployment", "Treasury Yield", "Federal Interest Rate"];
+      trendKeys.forEach((trend: string) => {
          expect(data.trends).toHaveProperty(trend);
       });
    };
@@ -486,7 +475,8 @@ describe("Dashboard Service", () => {
             arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchStocksSuccess();
-            for (let i = 0; i < 5; i++) {
+
+            for (let i = 0; i < totalIndicators; i++) {
                arrangeFetchIndicatorSuccess();
             }
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
@@ -503,7 +493,8 @@ describe("Dashboard Service", () => {
             arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchFailure(); // Stocks fails
-            for (let i = 0; i < 5; i++) {
+
+            for (let i = 0; i < totalIndicators; i++) {
                arrangeFetchIndicatorSuccess();
             }
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
@@ -635,7 +626,8 @@ describe("Dashboard Service", () => {
             arrangeDBChecks(["none", "none"]);
             arrangeFetchFailure(); // News fails
             arrangeFetchFailure(); // Stocks fails
-            for (let i = 0; i < 5; i++) {
+
+            for (let i = 0; i < totalIndicators; i++) {
                arrangeFetchIndicatorSuccess();
             }
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
@@ -666,12 +658,13 @@ describe("Dashboard Service", () => {
             assertEconomyDataStructure(result.data);
          });
 
-         it("should use backup when all 5 indicators fail", async() => {
+         it("should use backup when all indicators fail", async() => {
             arrangeMockCacheMiss(redis);
             arrangeDBChecks(["none", "none"]);
             arrangeFetchNewsSuccess();
             arrangeFetchStocksSuccess();
-            for (let i = 0; i < 5; i++) {
+
+            for (let i = 0; i < totalIndicators; i++) {
                arrangeFetchFailure(); // All indicators fail
             }
             arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
@@ -785,7 +778,7 @@ describe("Dashboard Service", () => {
             expect(redis.setCacheValue).toHaveBeenCalledWith(
                economyCacheKey,
                BACKUP_ECONOMY_DATA_CACHE_DURATION,
-               expect.any(String)
+               JSON.stringify(backupEconomyData)
             );
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
             assertEconomyDataStructure(result.data);
@@ -820,7 +813,7 @@ describe("Dashboard Service", () => {
             arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
 
             // Arrange other services
-            arrangeServiceMocks();
+            arrangeDashboardServices();
 
             const result: ServerResponse = await dashboardService.fetchDashboard(userId);
 
@@ -837,7 +830,7 @@ describe("Dashboard Service", () => {
          it("should handle fetchEconomicalData failure", async() => {
             // fetchEconomicalData never throws - it returns backup data on Redis error
             arrangeMockRepositoryError(redis, "getCacheValue", "Redis error");
-            arrangeServiceMocks();
+            arrangeDashboardServices();
 
             const result: ServerResponse = await dashboardService.fetchDashboard(userId);
 
@@ -929,7 +922,8 @@ describe("Dashboard Service", () => {
          });
          // Rest of APIs succeed
          arrangeFetchStocksSuccess();
-         for (let i = 0; i < 5; i++) {
+
+         for (let i = 0; i < totalIndicators; i++) {
             arrangeFetchIndicatorSuccess();
          }
          arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
@@ -950,7 +944,7 @@ describe("Dashboard Service", () => {
          (global.fetch as jest.Mock).mockResolvedValueOnce({
             json: jest.fn().mockResolvedValue({ invalid: "schema" })
          });
-         for (let i = 0; i < 5; i++) {
+         for (let i = 0; i < totalIndicators; i++) {
             arrangeFetchIndicatorSuccess();
          }
          arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);

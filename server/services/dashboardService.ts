@@ -31,7 +31,7 @@ const mutex = new Mutex();
 /**
  * Backup economy data for fallback during data fetching failures
  */
-const backupEconomyData = {
+export const backupEconomyData = {
    news: economy.news,
    trends: {
       "Stocks": economy.trends.Stocks,
