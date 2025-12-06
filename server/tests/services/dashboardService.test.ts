@@ -70,10 +70,10 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Arranges economy API responses with specified response and Zod validation failures, if any
+	 * Arranges economy API responses with specified response and Zod validation failures
 	 *
-	 * @param {string[]} apiFailures - API names that should fail with response errors, if any
-	 * @param {string[]} zodFailures - API names that should return invalid schemas, if any
+	 * @param {string[]} apiFailures - API names that should fail with response errors
+	 * @param {string[]} zodFailures - API names that should return invalid schemas
 	 */
    const arrangeExternalAPIs = (apiFailures: string[] = [], zodFailures: string[] = []): void => {
       const apiOrder: Array<{ name: string; data: Record<string, any> }> = [
@@ -113,7 +113,7 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Asserts all 7 external API calls were made with correct endpoints and parameters
+	 * Asserts all 7 external API calls were made with the correct parameters
 	 */
    const assertAllAPICalls = (): void => {
       expect(global.fetch).toHaveBeenCalledTimes(7);
@@ -177,7 +177,7 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Asserts economy data inserted into the database was written to filesystem with the
+	 * Asserts the economy data inserted into the database was written to filesystem with the
     * correct path and content
 	 *
 	 * @param {Economy} data - Economy data to validate
@@ -187,30 +187,20 @@ describe("Dashboard Service", () => {
       const [filePath, fileContent] = write;
 
       expect(path.isAbsolute(filePath)).toBe(true);
-      // "capital/server/resources/economy.json" appears at the end of the absolute path
+      // Ensure that "capital/server/resources/economy.json" is the final part of the absolute path
       expect(filePath).toMatch(/capital\/server\/resources\/economy\.json$/);
       expect(fileContent).toBe(JSON.stringify(data, null, 3));
    };
 
    /**
-	 * Asserts Redis cache read was called with correct cache key
+	 * Asserts that the economy data was cached with the correct duration
 	 *
-	 * @param {string} cacheKey - Cache key used for read operation
-	 */
-   const assertCacheRead = (cacheKey: string): void => {
-      expect(redis.getCacheValue).toHaveBeenCalledWith(cacheKey);
-   };
-
-   /**
-	 * Asserts Redis cache update was called with correct parameters
-	 *
-	 * @param {string} cacheKey - Cache key for update operation
 	 * @param {Economy} data - Economy data to cache
-	 * @param {number} duration - Cache expiration duration in seconds
+	 * @param {number} duration - Cache duration in seconds
 	 */
-   const assertCacheUpdate = (cacheKey: string, data: Economy, duration: number): void => {
+   const assertCacheUpdate = (data: Economy, duration: number): void => {
       expect(redis.setCacheValue).toHaveBeenCalledWith(
-         cacheKey,
+         economyCacheKey,
          duration,
          JSON.stringify(data)
       );
@@ -231,23 +221,21 @@ describe("Dashboard Service", () => {
 	 * @param {boolean} requiresExternalAPIs - Whether external APIs were called for data
 	 */
    const assertEconomyCacheMiss = (data: Economy, requiresExternalAPIs: boolean): void => {
-      assertCacheRead(economyCacheKey);
+      expect(redis.getCacheValue).toHaveBeenCalledWith(economyCacheKey);
       assertRepositoryCall(dashboardRepository, "getEconomicData", []);
 
       if (requiresExternalAPIs) {
-         // Missing or stale database data, so we need to call the external APIs
          assertAllAPICalls();
          assertDBUpdated(data);
-         assertCacheUpdate(economyCacheKey, data, ECONOMY_DATA_CACHE_DURATION);
       } else {
-         // Fresh database data, so we cache it and return it immediately
          assertNoExternalAPICalls();
-         assertCacheUpdate(economyCacheKey, data, ECONOMY_DATA_CACHE_DURATION);
       }
+
+      assertCacheUpdate(data, ECONOMY_DATA_CACHE_DURATION);
    };
 
    /**
-	 * Asserts economy data contains all required properties
+	 * Asserts that the economy data contains all required properties
 	 *
 	 * @param {Economy} data - Economy data to validate
 	 */
@@ -262,7 +250,7 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Asserts dashboard data contains all required components
+	 * Asserts that the dashboard data contains all required components
 	 *
 	 * @param {Dashboard} data - Dashboard data to validate
 	 */
@@ -275,9 +263,9 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Arranges dashboard service calls with specified failures, if any
+	 * Arranges the dashboard service calls with specified failures
 	 *
-	 * @param {string[]} errorMethods - Service methods that should throw errors, if any
+	 * @param {string[]} errorMethods - Service methods that should throw errors
 	 */
    const arrangeDashboardServices = (errorMethods: string[] = []): void => {
       const statusCode: number = HTTP_STATUS.OK;
@@ -307,7 +295,7 @@ describe("Dashboard Service", () => {
    };
 
    /**
-	 * Asserts logger error was called with specified criteria
+	 * Asserts that the logger error was called with specified criteria
 	 *
 	 * @param {string | number} [criteria] - Validation criteria (message, count, or undefined for any call)
 	 */
@@ -328,18 +316,21 @@ describe("Dashboard Service", () => {
 	 */
    const assertAPIFailureWithBackup = (result: ServerResponse) : void => {
       assertLoggerError(1);
-      assertCacheUpdate(economyCacheKey, backupEconomyData as unknown as Economy, BACKUP_ECONOMY_DATA_CACHE_DURATION);
+      assertCacheUpdate(backupEconomyData as unknown as Economy, BACKUP_ECONOMY_DATA_CACHE_DURATION);
       assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
    };
 
    beforeEach(async() => {
+      delete process.env.CI;
+      process.env.NODE_ENV = "test";
+
       jest.clearAllMocks();
       global.fetch = jest.fn();
 
       redis = await import("@/lib/redis");
       logger = await import("@/lib/logger");
       dashboardRepository = await import("@/repository/dashboardRepository");
-      // Clear the mock's call history and remove any queued resolved value results to prevent test contamination
+      // Clear the mock's call history to prevent test contamination due to queued resolved value results
       (dashboardRepository.getEconomicData as jest.Mock).mockReset();
       (dashboardRepository.updateEconomicData as jest.Mock).mockReset();
       accountsService = await import("@/services/accountsService");
@@ -349,14 +340,12 @@ describe("Dashboard Service", () => {
       fs = await import("fs");
 
       arrangeDefaultRedisCacheBehavior(redis);
-
-      delete process.env.CI;
-      process.env.NODE_ENV = "test";
    });
 
    describe("getEconomicIndicatorKey", () => {
       it("should throw an error when given an invalid economic indicator", () => {
-         expect(() => getEconomicIndicatorKey("INVALID_INDICATOR")).toThrow("Invalid economic indicator: INVALID_INDICATOR");
+         expect(() => getEconomicIndicatorKey("INVALID_INDICATOR"))
+            .toThrow("Invalid economic indicator: INVALID_INDICATOR");
       });
 
       const indicatorMappings = [
@@ -444,6 +433,7 @@ describe("Dashboard Service", () => {
             const [result1, result2] = await Promise.all([
                dashboardService.fetchEconomicalData(),
                (async() => {
+                  // Simulate a delay between the two requests with an intermediate cache hit
                   await new Promise(resolve => setTimeout(resolve));
                   arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
                   return await dashboardService.fetchEconomicalData();
@@ -455,7 +445,7 @@ describe("Dashboard Service", () => {
             assertServiceSuccessResponse(result2, HTTP_STATUS.OK, result2.data);
          });
 
-         it("should recheck database after acquiring mutex lock and use fresh data if available", async() => {
+         it("should recheck the database after acquiring the mutex lock and use fresh data if available", async() => {
             arrangeMockCacheMiss(redis);
             arrangeDBChecks(["stale", "fresh"]);
 
@@ -479,7 +469,7 @@ describe("Dashboard Service", () => {
          });
       });
 
-      describe("API Failures", () => {
+      describe("API Failure Scenarios", () => {
          const individualAPIs = [
             { name: "news", label: "news" },
             { name: "stocks", label: "stocks" },
@@ -512,16 +502,6 @@ describe("Dashboard Service", () => {
             assertAPIFailureWithBackup(result);
          });
 
-         it("should use backup data when both news and stock APIs fail", async() => {
-            arrangeEmptyStateForAPIFetch();
-            arrangeExternalAPIs(["news", "stocks"]);
-            arrangeMockRepositorySuccess(dashboardRepository, "updateEconomicData", undefined);
-
-            const result: ServerResponse = await dashboardService.fetchEconomicalData();
-
-            assertAPIFailureWithBackup(result);
-         });
-
          it("should use backup data when some APIs fail intermittently", async() => {
             arrangeEmptyStateForAPIFetch();
             arrangeExternalAPIs(["news", "gdp", "unemployment", "federalInterestRate"]);
@@ -539,6 +519,36 @@ describe("Dashboard Service", () => {
 
             const result: ServerResponse = await dashboardService.fetchEconomicalData();
 
+            assertAPIFailureWithBackup(result);
+         });
+
+         it("should use backup data when Redis retrieval fails", async() => {
+            arrangeMockRepositoryError(redis, "getCacheValue", "Redis connection failed");
+
+            const result: ServerResponse = await dashboardService.fetchEconomicalData();
+
+            assertNoExternalAPICalls();
+            assertAPIFailureWithBackup(result);
+         });
+
+         it("should use backup data when database retrieval fails", async() => {
+            arrangeMockCacheMiss(redis);
+            arrangeMockRepositoryError(dashboardRepository, "getEconomicData", "Database retrieval failed");
+
+            const result: ServerResponse = await dashboardService.fetchEconomicalData();
+
+            assertNoExternalAPICalls();
+            assertAPIFailureWithBackup(result);
+         });
+
+         it("should use backup data when database update fails", async() => {
+            arrangeEmptyStateForAPIFetch();
+            arrangeExternalAPIs();
+            arrangeMockRepositoryError(dashboardRepository, "updateEconomicData", "Database update failed");
+
+            const result: ServerResponse = await dashboardService.fetchEconomicalData();
+
+            assertAllAPICalls();
             assertAPIFailureWithBackup(result);
          });
       });
@@ -568,36 +578,6 @@ describe("Dashboard Service", () => {
             assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
          });
       });
-
-      describe("Error Handling", () => {
-         it("should gracefully fall back to backup data when unexpected errors occur", async() => {
-            arrangeMockCacheMiss(redis);
-            arrangeMockRepositoryError(dashboardRepository, "getEconomicData", "Unexpected error");
-
-            const result: ServerResponse = await dashboardService.fetchEconomicalData();
-
-            assertLoggerError();
-            assertCacheUpdate(economyCacheKey, backupEconomyData as unknown as Economy, BACKUP_ECONOMY_DATA_CACHE_DURATION);
-            assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
-         });
-
-         it("should continue functioning when Redis connection fails", async() => {
-            arrangeMockRepositoryError(redis, "getCacheValue", "Redis connection failed");
-
-            const result: ServerResponse = await dashboardService.fetchEconomicalData();
-
-            assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
-         });
-
-         it("should log detailed error information for debugging", async() => {
-            arrangeMockCacheMiss(redis);
-            arrangeMockRepositoryError(dashboardRepository, "getEconomicData", "Test error");
-
-            await dashboardService.fetchEconomicalData();
-
-            assertLoggerError();
-         });
-      });
    });
 
    describe("fetchDashboard", () => {
@@ -621,8 +601,10 @@ describe("Dashboard Service", () => {
 
          const result: ServerResponse = await dashboardService.fetchDashboard(userId);
 
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
+         assertLoggerError();
+         expect(result.data.economy).toEqual(backupEconomyData);
          assertDashboardDataStructure(result.data);
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, result.data);
       });
 
       DASHBOARD_SERVICES.forEach((serviceMethod) => {
@@ -651,15 +633,18 @@ describe("Dashboard Service", () => {
          );
       });
 
-      it("should throw first error when all dashboard services fail", async() => {
+      it("should throw any error when any dashboard service fails", async() => {
          const mockEconomy: Economy = createMockEconomyData();
          arrangeMockCacheHit(redis, JSON.stringify(mockEconomy));
          arrangeDashboardServices(["fetchAccounts", "fetchBudgets", "fetchTransactions", "fetchUserDetails"]);
+         // Simulate the accounts service taking longer to throw an error than the budgets service
+         (accountsService.fetchAccounts as jest.Mock).mockImplementation(() => new Promise(resolve => setTimeout(resolve)));
 
          await assertServiceThrows(
             () => dashboardService.fetchDashboard(userId),
-            "Accounts error"
+            "Budgets error"
          );
+
       });
    });
 
