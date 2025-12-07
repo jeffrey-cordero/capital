@@ -32,10 +32,10 @@ const DEFAULT_VALUES = {
 /**
  * Displays a single news article in a collapsible card
  *
- * @param {{ article: Article }} props - Article card props
+ * @param {{ article: Article; index: number }} props - Article card props
  * @returns {React.ReactNode} The ArticleCard component
  */
-function ArticleCard({ article }: { article: Article }): React.ReactNode {
+function ArticleCard({ article, index }: { article: Article; index: number }): React.ReactNode {
    const theme = useTheme();
    const [expanded, setExpanded] = useState(false);
 
@@ -54,6 +54,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
    return (
       <Card
          data-expanded = { expanded }
+         data-testid = { `news-${index}-container` }
          elevation = { 3 }
          sx = { { margin: "auto", borderRadius: 2, width: "100%", textAlign: "left" } }
       >
@@ -170,6 +171,7 @@ export default function Articles(): React.ReactNode {
             items.map((item: Article, index) => (
                <ArticleCard
                   article = { item }
+                  index = { index }
                   key = { `news-${index}` }
                />
             ))

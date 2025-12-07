@@ -8,7 +8,7 @@ import {
    EXPECTED_DASHBOARD_DATA,
    switchIndicator
 } from "@tests/utils/dashboard/dashboard";
-import { navigateToPath } from "@tests/utils/navigation";
+import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
 
 test.describe("Dashboard Overview", () => {
@@ -293,16 +293,16 @@ test.describe("Dashboard Overview", () => {
 
    test.describe("Sidebar Navigation", () => {
       test("should scroll to economy section when clicking sidebar economy link from dashboard", async({ page }) => {
-         // Click economy link in sidebar
-         await page.getByTestId("sidebar-link-economy").click();
+         // Click economy link in sidebar using helper
+         await clickSidebarLink(page, "sidebar-link-economy");
 
          // Verify economy section is in viewport
          await expect(page.locator("#economy")).toBeInViewport();
       });
 
       test("should scroll to news section when clicking sidebar news link from dashboard", async({ page }) => {
-         // Click news link in sidebar
-         await page.getByTestId("sidebar-link-news").click();
+         // Click news link in sidebar using helper
+         await clickSidebarLink(page, "sidebar-link-news");
 
          // Verify news section is in viewport
          await expect(page.locator("#news")).toBeInViewport();
@@ -312,8 +312,8 @@ test.describe("Dashboard Overview", () => {
          // Navigate to accounts page
          await navigateToPath(page, ACCOUNTS_ROUTE);
 
-         // Click economy link
-         await page.getByTestId("sidebar-link-economy").click();
+         // Click economy link using helper
+         await clickSidebarLink(page, "sidebar-link-economy");
 
          // Verify navigated to dashboard with hash
          await expect(page).toHaveURL(/\/dashboard#economy/);
@@ -326,8 +326,8 @@ test.describe("Dashboard Overview", () => {
          // Navigate to budgets page
          await navigateToPath(page, BUDGETS_ROUTE);
 
-         // Click news link
-         await page.getByTestId("sidebar-link-news").click();
+         // Click news link using helper
+         await clickSidebarLink(page, "sidebar-link-news");
 
          // Verify navigated to dashboard with hash
          await expect(page).toHaveURL(/\/dashboard#news/);

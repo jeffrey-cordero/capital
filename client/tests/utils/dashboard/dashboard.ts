@@ -317,7 +317,10 @@ export async function assertLastUpdated(page: Page, lastUpdated: string): Promis
  * @param {string} indicator - Indicator name to select
  */
 export async function switchIndicator(page: Page, indicator: string): Promise<void> {
-   await page.locator("#option").click();
+   // Find the parent FormControl, then click the visible combobox button
+   const selectInput = page.getByTestId("indicator-select");
+   const formControl = selectInput.locator("..").locator("..");
+   await formControl.getByRole("combobox").click();
    await page.getByRole("option", { name: indicator }).click();
 }
 
@@ -328,7 +331,10 @@ export async function switchIndicator(page: Page, indicator: string): Promise<vo
  * @param {"Year" | "Month"} view - View to select
  */
 export async function switchView(page: Page, view: "Year" | "Month"): Promise<void> {
-   await page.locator("#view").click();
+   // Find the parent FormControl, then click the visible combobox button
+   const selectInput = page.getByTestId("view-select");
+   const formControl = selectInput.locator("..").locator("..");
+   await formControl.getByRole("combobox").click();
    await page.getByRole("option", { name: view }).click();
 }
 

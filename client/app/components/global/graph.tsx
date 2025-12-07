@@ -400,6 +400,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  </InputLabel>
                                  <Select
                                     { ...field }
+                                    inputProps = { { "data-testid": "indicator-select" } }
                                     label = { title }
                                     size = "small"
                                     slotProps = {
@@ -444,6 +445,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                            </InputLabel>
                            <Select
                               { ...field }
+                              inputProps = { { "data-testid": "view-select" } }
                               label = "View"
                               size = "small"
                               slotProps = {
