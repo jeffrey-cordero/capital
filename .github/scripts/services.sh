@@ -12,6 +12,8 @@ start_services() {
 }
 
 stop_services() {
+   echo "Final server logs:"
+   docker compose logs server
    echo "Stopping Docker services..."
    docker compose down -v --remove-orphans
    echo "Services stopped and cleaned up"

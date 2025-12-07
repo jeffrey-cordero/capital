@@ -24,6 +24,7 @@ export default defineConfig({
    use: {
       baseURL: webServer.url,
       trace: "on-first-retry",
+      video: "retain-on-failure",
       actionTimeout: 30000, // 30 seconds for actions like click, fill, etc.
       navigationTimeout: 30000 // 30 seconds for page navigation
    },
