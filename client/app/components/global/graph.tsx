@@ -366,6 +366,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  { isIndicators ? option === "GDP" ? "B" : "%" : "" }
                               </Typography>
                               <Chip
+                                 data-testid = {`${isIndicators ? "indicator" : title}-percent-chip`}
                                  color = { chip as any }
                                  label = { displayPercentage(Number(trend.toFixed(2))) }
                                  size = "small"
@@ -445,16 +446,9 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                            </InputLabel>
                            <Select
                               { ...field }
-                              inputProps = { { "data-testid": "view-select" } }
+                              inputProps = { { id: "view", "data-testid": "view-select" } }
                               label = "View"
                               size = "small"
-                              slotProps = {
-                                 {
-                                    input: {
-                                       id: "view"
-                                    }
-                                 }
-                              }
                               sx = { { height: "2.7rem" } }
                               value = { view }
                               variant = "outlined"
@@ -484,7 +478,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  {
                                     htmlInput: {
                                        min: minDate,
-                                       max: maxDate
+                                       max: maxDate,
+                                       "data-testid": "from-date"
                                     },
                                     inputLabel: {
                                        shrink: true
@@ -517,7 +512,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                               {
                                  htmlInput: {
                                     min: minDate,
-                                    max: maxDate
+                                    max: maxDate,
+                                    "data-testid": "to-date"
                                  },
                                  inputLabel: {
                                     shrink: true

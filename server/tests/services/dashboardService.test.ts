@@ -189,6 +189,12 @@ describe("Dashboard Service", () => {
       expect(path.isAbsolute(filePath)).toBe(true);
       // Ensure that "capital/server/resources/economy.json" is the final part of the absolute path
       expect(filePath).toMatch(/capital\/server\/resources\/economy\.json$/);
+
+      // Validate path structure: base path from import.meta.url -> resources -> economy.json
+      const pathParts: string[] = filePath.split(path.sep);
+      expect(pathParts[pathParts.length - 2]).toBe("resources");
+      expect(pathParts[pathParts.length - 1]).toBe("economy.json");
+
       expect(fileContent).toBe(JSON.stringify(data, null, 3));
    };
 

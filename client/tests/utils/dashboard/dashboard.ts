@@ -1,12 +1,13 @@
-import type { Page, Response } from "@playwright/test";
+import type { Locator, Page, Response } from "@playwright/test";
 import { expect } from "@tests/fixtures";
+import { assertInputVisibility } from "@tests/utils";
+import { updateSelectValue } from "@tests/utils/forms";
 import type { Dashboard } from "capital/dashboard";
 import type { Article, StockIndicator } from "capital/economy";
 import { HTTP_STATUS } from "capital/server";
 
 /**
- * Expected data values from economy.json backup file used in E2E tests
- * These values are based on the static economy data served during test runs
+ * Expected economy data values from backup file for E2E tests
  */
 export const EXPECTED_DASHBOARD_DATA = {
    /** Last updated timestamp for stocks data */
@@ -75,6 +76,27 @@ export const EXPECTED_DASHBOARD_DATA = {
 } as const;
 
 /**
+ * Gets the locator for a specific news article card by index
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {number} index - Index of the news article
+ * @returns {Locator} Locator for the news article card
+ */
+export function getNewsArticleCard(page: Page, index: number): Locator {
+   return page.getByTestId(`news-article-container-${index}`);
+}
+
+/**
+ * Gets the locator for all news article cards
+ *
+ * @param {Page} page - Playwright page instance
+ * @returns {Locator} Locator for all news article cards
+ */
+export function getNewsArticleCards(page: Page): Locator {
+   return page.locator("[data-testid^=\"news-article-container-\"]");
+}
+
+/**
  * Captures the dashboard API response and returns the parsed data
  *
  * @param {Page} page - Playwright page instance
@@ -106,13 +128,13 @@ export async function assertIndicatorInputs(
    page: Page,
    expected: { indicator: string; view: string; from: string; to: string }
 ): Promise<void> {
-   // Assert the select inputs have the correct values
-   await expect(page.locator("#option")).toHaveValue(expected.indicator);
-   await expect(page.locator("#view")).toHaveValue(expected.view);
+   await expect(page.getByTestId("indicator-select")).toBeVisible();
+   await expect(page.getByTestId("indicator-select")).toHaveValue(expected.indicator);
+   await expect(page.getByTestId("view-select")).toBeVisible();
+   await expect(page.getByTestId("view-select")).toHaveValue(expected.view);
 
-   // Assert the date inputs have the correct values
-   await expect(page.locator("#from")).toHaveValue(expected.from);
-   await expect(page.locator("#to")).toHaveValue(expected.to);
+   await assertInputVisibility(page, "from-date", "From", expected.from);
+   await assertInputVisibility(page, "to-date", "To", expected.to);
 }
 
 /**
@@ -135,8 +157,7 @@ export async function assertEmptyTrends(page: Page, type: "accounts" | "budgets"
  * @param {number} index - Index of the article in the list
  */
 export async function assertNewsArticleCard(page: Page, article: Article, index: number): Promise<void> {
-   const articleCards = page.locator("[id=\"news\"] > div[data-expanded]");
-   const card = articleCards.nth(index);
+   const card = getNewsArticleCard(page, index);
 
    // Assert card is visible
    await expect(card).toBeVisible();
@@ -162,14 +183,13 @@ export async function assertNewsArticleCard(page: Page, article: Article, index:
  * @param {number} index - Index of the article in the list
  */
 export async function testNewsArticleExpansion(page: Page, article: Article, index: number): Promise<void> {
-   const articleCards = page.locator("[id=\"news\"] > div[data-expanded]");
-   const card = articleCards.nth(index);
+   const card = getNewsArticleCard(page, index);
 
    // Initially collapsed
    await expect(card).toHaveAttribute("data-expanded", "false");
 
    // Expand the article
-   const expandButton = card.locator("button[aria-label*=\"Expand\"]").or(card.locator("button").filter({ has: page.locator("svg") }).first());
+   const expandButton = page.getByTestId(`news-expand-button-${index}`);
    await expandButton.click();
    await expect(card).toHaveAttribute("data-expanded", "true");
 
@@ -194,11 +214,10 @@ export async function testNewsArticleExpansion(page: Page, article: Article, ind
  * @param {number} index - Index of the article in the list
  */
 export async function testNewsArticleLink(page: Page, article: Article, index: number): Promise<void> {
-   const articleCards = page.locator("[id=\"news\"] > div[data-expanded]");
-   const card = articleCards.nth(index);
+   const card = getNewsArticleCard(page, index);
 
    // Expand the article first
-   const expandButton = card.locator("button[aria-label*=\"Expand\"]").or(card.locator("button").filter({ has: page.locator("svg") }).first());
+   const expandButton = page.getByTestId(`news-expand-button-${index}`);
    await expandButton.click();
 
    // Click the external link
@@ -219,42 +238,30 @@ export async function testNewsArticleLink(page: Page, article: Article, index: n
  * @param {Page} page - Playwright page instance
  * @param {StockIndicator} stock - Stock data from API response
  * @param {"success" | "error" | "default"} expectedChipColor - Expected MUI chip color variant
- * @param {string} cardTitle - Title of the stock card (Top Gainers, Top Losers, Most Active)
+ * @param {string} sectionTestId - Data test ID of the stock section container
+ * @param {number} index - Index of the stock in the list
  */
 export async function assertStockCard(
    page: Page,
    stock: StockIndicator,
    expectedChipColor: "success" | "error" | "default",
-   cardTitle: string
+   sectionTestId: string,
+   index: number
 ): Promise<void> {
-   // Find the stock card section by title
-   const cardSection = page.locator(`text=${cardTitle}`).locator("..").locator("..");
+   const cardSection = page.getByTestId(sectionTestId);
+   const stockContainer = cardSection.getByTestId(`stock-item-${index}`);
 
-   // Find the specific stock ticker link within this section
-   const stockLink = cardSection.getByRole("link", { name: stock.ticker });
+   const stockLink = stockContainer.getByRole("link", { name: stock.ticker });
    await expect(stockLink).toBeVisible();
-
-   // Assert ticker link href
    await expect(stockLink).toHaveAttribute("href", `https://www.google.com/search?q=${stock.ticker}+stock`);
 
-   // Find the parent container of the stock to verify other details
-   const stockContainer = stockLink.locator("../..").locator("..");
-
-   // Assert chip with percentage
    const chipPercent = parseFloat(stock.change_percentage).toFixed(2) + "%";
-   const chipSelector = expectedChipColor === "success"
-      ? ".MuiChip-colorSuccess"
-      : expectedChipColor === "error"
-         ? ".MuiChip-colorError"
-         : ".MuiChip-colorDefault";
+   const chipTestId = `stock-percent-chip-${expectedChipColor}-${index}`;
+   await expect(stockContainer.getByTestId(chipTestId).filter({ hasText: chipPercent })).toBeVisible();
 
-   await expect(stockContainer.locator(chipSelector).filter({ hasText: chipPercent })).toBeVisible();
-
-   // Assert price is displayed
    const priceText = `$${Number(stock.price).toFixed(2)}`;
    await expect(stockContainer.getByText(priceText, { exact: false })).toBeVisible();
 
-   // Assert shares volume is displayed
    await expect(stockContainer.getByText("shares")).toBeVisible();
 }
 
@@ -263,23 +270,25 @@ export async function assertStockCard(
  *
  * @param {Page} page - Playwright page instance
  * @param {StockIndicator} stock - Stock data from API response
- * @param {string} cardTitle - Title of the stock card
+ * @param {string} sectionTestId - Data test ID of the stock section container
+ * @param {number} index - Index of the stock in the list
  */
 export async function testStockLink(
    page: Page,
    stock: StockIndicator,
-   cardTitle: string
+   sectionTestId: string,
+   index: number
 ): Promise<void> {
-   const cardSection = page.locator(`text=${cardTitle}`).locator("..").locator("..");
-   const stockLink = cardSection.getByRole("link", { name: stock.ticker });
+   const cardSection = page.getByTestId(sectionTestId);
+   const stockContainer = cardSection.getByTestId(`stock-item-${index}`);
+   const stockLink = stockContainer.getByRole("link", { name: stock.ticker });
 
    const [newPage] = await Promise.all([
       page.context().waitForEvent("page"),
       stockLink.click()
    ]);
 
-   // Verify the new page URL contains the Google search query
-   await expect(newPage.url()).toContain(`google.com/search?q=${stock.ticker}+stock`);
+   expect(newPage.url()).toContain(`google.com/search?q=${stock.ticker}+stock`);
    await newPage.close();
 }
 
@@ -317,11 +326,7 @@ export async function assertLastUpdated(page: Page, lastUpdated: string): Promis
  * @param {string} indicator - Indicator name to select
  */
 export async function switchIndicator(page: Page, indicator: string): Promise<void> {
-   // Find the parent FormControl, then click the visible combobox button
-   const selectInput = page.getByTestId("indicator-select");
-   const formControl = selectInput.locator("..").locator("..");
-   await formControl.getByRole("combobox").click();
-   await page.getByRole("option", { name: indicator }).click();
+   await updateSelectValue(page, "indicator-select", indicator);
 }
 
 /**
@@ -331,11 +336,7 @@ export async function switchIndicator(page: Page, indicator: string): Promise<vo
  * @param {"Year" | "Month"} view - View to select
  */
 export async function switchView(page: Page, view: "Year" | "Month"): Promise<void> {
-   // Find the parent FormControl, then click the visible combobox button
-   const selectInput = page.getByTestId("view-select");
-   const formControl = selectInput.locator("..").locator("..");
-   await formControl.getByRole("combobox").click();
-   await page.getByRole("option", { name: view }).click();
+   await updateSelectValue(page, "view-select", view);
 }
 
 /**
@@ -356,7 +357,7 @@ export async function assertIndicatorValues(
    await expect(page.locator("text=" + expectedValue).first()).toBeVisible();
 
    // Assert Year view percentage chip
-   await expect(page.locator(".MuiChip-root").filter({ hasText: expectedYearPercentage })).toBeVisible();
+   await expect(page.getByTestId("indicator-percent-chip")).toHaveText(expectedYearPercentage);
 
    // Switch to Month view
    await switchView(page, "Month");
@@ -365,7 +366,7 @@ export async function assertIndicatorValues(
    await expect(page.locator("text=" + expectedValue).first()).toBeVisible();
 
    // Assert Month view percentage chip
-   await expect(page.locator(".MuiChip-root").filter({ hasText: expectedMonthPercentage })).toBeVisible();
+   await expect(page.getByTestId("indicator-percent-chip")).toHaveText(expectedMonthPercentage);
 
    // Switch back to Year view for subsequent tests
    await switchView(page, "Year");
