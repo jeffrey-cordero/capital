@@ -1,6 +1,7 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import { assertComponentIsVisible } from "@tests/utils";
+import { assertNotificationStatus } from "@tests/utils/notifications";
 import { DASHBOARD_ROUTE, VERIFIED_ROUTES } from "@tests/utils/authentication";
 import {
    assertEmptyTrends,
@@ -19,6 +20,7 @@ import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
 import type { Dashboard } from "capital/dashboard";
 import type { Article, StockIndicator, StockTrends } from "capital/economy";
+import { HTTP_STATUS } from "capital/server";
 
 test.describe("Dashboard", () => {
    test.describe("Trends Section", () => {
@@ -156,5 +158,44 @@ test.describe("Dashboard", () => {
             });
          }
       }
+   });
+
+   test.describe("API Failures", () => {
+      const errorMessage: string = "Internal Server Error";
+
+      test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+         await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
+      });
+
+      test("should display error notification and show loading spinner when API fails", async({ page }) => {
+         // Mock the dashboard API to return an internal server error after the initial user assignment
+         await page.route("**/api/v1/dashboard", async(route) => {
+            await route.fulfill({
+               status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+               contentType: "application/json",
+               body: JSON.stringify({
+                  errors: {
+                     server: errorMessage
+                  }
+               })
+            });
+         });
+
+         // Reload the page to trigger the API failure
+         await page.reload();
+
+         // Assert the error notification and infinite loading spinner are visible
+         await assertNotificationStatus(page, errorMessage, "error");
+         const spinner: Locator = page.getByTestId("loading-spinner");
+         await expect(spinner).toBeVisible();
+
+         // After a long timeout, the sections should still be detatched and spinner should still be spinning
+         await page.waitForTimeout(5000);
+         await expect(spinner).toBeVisible();
+
+         for (const section of ["economy", "stocks", "news"] as const) {
+            await page.getByTestId(`${section}-section`).waitFor({ state: "detached" });
+         }
+      });
    });
 });
