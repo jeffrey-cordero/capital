@@ -98,29 +98,29 @@ function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
                                  label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
                                  size = "small"
                               />
-                        </Stack>
-                        <Stack
-                           direction = "column"
-                           sx = { { gap: 1 } }
-                        >
-                           <Typography
-                              data-testid = { `stock-price-${type}-${index}` }
-                              fontWeight = "600"
-                              variant = "body2"
+                           </Stack>
+                           <Stack
+                              direction = "column"
+                              sx = { { gap: 1 } }
                            >
-                              ${ Number(stock.price).toFixed(2) }
-                              { " " }
-                              ({ Number(stock.change_amount) < 0 ? "-" : "+" }
-                              { Math.abs(Number(stock.change_amount)).toFixed(2) })
-                           </Typography>
-                           <Typography
-                              fontWeight = "600"
-                              variant = "body2"
-                           >
-                              { displayVolume(Number(stock.volume)) } shares
-                           </Typography>
+                              <Typography
+                                 data-testid = { `stock-price-${type}-${index}` }
+                                 fontWeight = "600"
+                                 variant = "body2"
+                              >
+                                 ${ Number(stock.price).toFixed(2) }
+                                 { " " }
+                                 ({ Number(stock.change_amount) < 0 ? "-" : "+" }
+                                 { Math.abs(Number(stock.change_amount)).toFixed(2) })
+                              </Typography>
+                              <Typography
+                                 fontWeight = "600"
+                                 variant = "body2"
+                              >
+                                 { displayVolume(Number(stock.volume)) } shares
+                              </Typography>
+                           </Stack>
                         </Stack>
-                     </Stack>
                      );
                   })
                }

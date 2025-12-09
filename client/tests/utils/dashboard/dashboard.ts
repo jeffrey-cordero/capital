@@ -1,9 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "@tests/fixtures";
-import { assertInputVisibility } from "@tests/utils";
-import type { Article, StockIndicator } from "capital/economy";
+import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import type { Dashboard } from "capital/dashboard";
+import type { Article, StockIndicator } from "capital/economy";
 import { HTTP_STATUS } from "capital/server";
+
 import { displayVolume } from "@/lib/display";
 
 /**
@@ -105,16 +106,6 @@ export function getNewsArticleCard(page: Page, index: number): Locator {
 }
 
 /**
- * Gets locators for all news article cards
- *
- * @param {Page} page - Playwright page instance
- * @returns {Locator} All news article cards locator
- */
-export function getNewsArticleCards(page: Page): Locator {
-   return page.locator("[data-testid^=\"news-article-container-\"]");
-}
-
-/**
  * Asserts empty trends display for accounts or budgets
  *
  * @param {Page} page - Playwright page instance
@@ -122,8 +113,7 @@ export function getNewsArticleCards(page: Page): Locator {
  */
 export async function assertEmptyTrends(page: Page, type: "accounts" | "budgets"): Promise<void> {
    const expectedText = type === "accounts" ? "No available accounts" : "No available transactions";
-   await expect(page.getByTestId(`empty-${type}-trends-overview`)).toBeVisible();
-   await expect(page.getByTestId(`empty-${type}-trends-overview`)).toHaveText(expectedText);
+   await assertComponentIsVisible(page, `empty-${type}-trends-overview`, expectedText);
 }
 
 /**
@@ -141,10 +131,10 @@ export async function assertNewsArticleCard(page: Page, article: Article, index:
    const authorInitial = author.charAt(0).toUpperCase();
    const publishDate = new Date(article.published).toLocaleString();
 
-   await expect(card.getByTestId(`news-article-author-avatar-${index}`)).toHaveText(authorInitial);
-   await expect(card.getByTestId(`news-article-author-${index}`)).toHaveText(author);
-   await expect(card.getByTestId(`news-article-publish-date-${index}`)).toHaveText(publishDate);
-   await expect(card.getByTestId(`news-article-title-${index}`)).toHaveText(article.title);
+   await assertComponentIsVisible(page, `news-article-author-avatar-${index}`, authorInitial);
+   await assertComponentIsVisible(page, `news-article-author-${index}`, author);
+   await assertComponentIsVisible(page, `news-article-publish-date-${index}`, publishDate);
+   await assertComponentIsVisible(page, `news-article-title-${index}`, article.title);
 }
 
 /**
@@ -282,8 +272,8 @@ export async function assertLastUpdated(page: Page, lastUpdated: string): Promis
    const [date, time] = lastUpdated.split(" ");
    const formattedTimestamp = new Date(date + " " + time).toLocaleString();
 
-   await expect(page.getByTestId("last-updated-label")).toHaveText("Last updated");
-   await expect(page.getByTestId("last-updated-timestamp")).toHaveText(formattedTimestamp);
+   await assertComponentIsVisible(page, "last-updated-label", "Last updated");
+   await assertComponentIsVisible(page, "last-updated-timestamp", formattedTimestamp);
 }
 
 /**
@@ -344,12 +334,35 @@ export async function assertIndicatorValues(
    expectedYearPercentage: string,
    expectedMonthPercentage: string
 ): Promise<void> {
-   await expect(page.getByTestId("indicator-value")).toContainText(expectedValue);
-   await expect(page.getByTestId("indicator-percent-chip")).toHaveText(expectedYearPercentage);
+   await assertComponentIsVisible(page, "indicator-value", expectedValue);
+   await assertComponentIsVisible(page, "indicator-percent-chip", expectedYearPercentage);
 
    await switchView(page, "Month");
-   await expect(page.getByTestId("indicator-value")).toContainText(expectedValue);
-   await expect(page.getByTestId("indicator-percent-chip")).toHaveText(expectedMonthPercentage);
+   await assertComponentIsVisible(page, "indicator-value", expectedValue);
+   await assertComponentIsVisible(page, "indicator-percent-chip", expectedMonthPercentage);
 
    await switchView(page, "Year");
+}
+
+/**
+ * Asserts complete indicator state including values, percentages, and form inputs
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {string} indicator - Indicator name
+ */
+export async function assertIndicatorState(page: Page, indicator: string): Promise<void> {
+   const indicatorMap: Record<string, keyof typeof EXPECTED_DASHBOARD_DATA.indicators> = {
+      "Federal Interest Rate": "federalInterestRate",
+      "GDP": "gdp",
+      "Inflation": "inflation",
+      "Unemployment": "unemployment",
+      "Treasury Yield": "treasuryYield"
+   };
+
+   const key = indicatorMap[indicator];
+   const data = EXPECTED_DASHBOARD_DATA.indicators[key];
+   const { from, to, value, yearPercent, monthPercent } = data;
+
+   await assertIndicatorValues(page, value, yearPercent, monthPercent);
+   await assertIndicatorInputs(page, { indicator, view: "Year", from, to });
 }

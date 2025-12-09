@@ -1,12 +1,10 @@
-import type { Dashboard } from "capital/dashboard";
-import type { StockTrends } from "capital/economy";
-
+import type { Locator } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
-import { ACCOUNTS_ROUTE, BUDGETS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
+import { assertComponentIsVisible } from "@tests/utils";
+import { DASHBOARD_ROUTE, VERIFIED_ROUTES } from "@tests/utils/authentication";
 import {
    assertEmptyTrends,
-   assertIndicatorInputs,
-   assertIndicatorValues,
+   assertIndicatorState,
    assertLastUpdated,
    assertNewsArticleCard,
    assertNewsArticleExpansion,
@@ -15,38 +13,42 @@ import {
    assertStockLink,
    captureDashboardResponse,
    EXPECTED_DASHBOARD_DATA,
-   getNewsArticleCards,
    switchIndicator
 } from "@tests/utils/dashboard/dashboard";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
 import { setupAssignedUser } from "@tests/utils/user-management";
+import type { Dashboard } from "capital/dashboard";
+import type { Article, StockIndicator, StockTrends } from "capital/economy";
 
-test.describe("Dashboard Overview", () => {
-   test.describe("Initial State - Empty Accounts & Budgets", () => {
+test.describe("Dashboard", () => {
+   test.describe("Trends Section", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true, assignedUser);
       });
 
-      test("should display complete empty accounts state", async({ page }) => {
-         await expect(page.getByTestId("accounts-trends-heading")).toHaveText("Accounts");
-         await expect(page.getByTestId("accounts-net-worth")).toHaveText("$0.00");
-         await assertEmptyTrends(page, "accounts");
-      });
+      const emptyStateTests = [
+         { section: "accounts", heading: "Accounts", subtitle: "$0.00" },
+         { section: "budgets", heading: "Budgets", subtitle: "Income vs. Expenses" }
+      ];
 
-      test("should display complete empty budgets state", async({ page }) => {
-         await expect(page.getByTestId("budgets-trends-heading")).toHaveText("Budgets");
-         await expect(page.getByTestId("budgets-trends-subtitle")).toHaveText("Income vs. Expenses");
-         await assertEmptyTrends(page, "budgets");
-      });
+      for (const { section, heading, subtitle } of emptyStateTests) {
+         test(`should display complete empty ${section} state`, async({ page }) => {
+            await assertComponentIsVisible(page, `${section}-trends-heading`, heading);
+            await assertComponentIsVisible(page, `${section}-trends-subtitle`, subtitle);
+            await assertEmptyTrends(page, section as "accounts" | "budgets");
+         });
+      }
    });
 
    test.describe("Economy Section", () => {
       let dashboard: Dashboard;
+      let stocksTrends: StockTrends;
 
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          const responsePromise = captureDashboardResponse(page);
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
          dashboard = await responsePromise;
+         stocksTrends = dashboard.economy.trends.Stocks as StockTrends;
       });
 
       test.describe("Last Updated Timestamp", () => {
@@ -57,55 +59,15 @@ test.describe("Dashboard Overview", () => {
 
       test.describe("Economic Indicators Graph", () => {
          test("should display initial state with Federal Interest Rate indicator", async({ page }) => {
-            const { federalInterestRate } = EXPECTED_DASHBOARD_DATA.indicators;
-
-            await assertIndicatorInputs(page, {
-               indicator: "Federal Interest Rate",
-               view: "Year",
-               from: federalInterestRate.from,
-               to: federalInterestRate.to
-            });
-
-            await assertIndicatorValues(
-               page,
-               federalInterestRate.value,
-               federalInterestRate.yearPercent,
-               federalInterestRate.monthPercent
-            );
+            await assertIndicatorState(page, "Federal Interest Rate");
          });
 
-         const indicatorSwitchTests = [
-            { name: "GDP", data: EXPECTED_DASHBOARD_DATA.indicators.gdp },
-            { name: "Inflation", data: EXPECTED_DASHBOARD_DATA.indicators.inflation },
-            { name: "Unemployment", data: EXPECTED_DASHBOARD_DATA.indicators.unemployment },
-            { name: "Treasury Yield", data: EXPECTED_DASHBOARD_DATA.indicators.treasuryYield }
-         ];
-
-         for (const { name, data } of indicatorSwitchTests) {
+         for (const name of ["GDP", "Inflation", "Unemployment", "Treasury Yield"]) {
             test(`should switch to ${name} indicator and display correct values`, async({ page }) => {
                await switchIndicator(page, name);
-
-               await assertIndicatorInputs(page, {
-                  indicator: name,
-                  view: "Year",
-                  from: data.from,
-                  to: data.to
-               });
-
-               await assertIndicatorValues(page, data.value, data.yearPercent, data.monthPercent);
+               await assertIndicatorState(page, name);
             });
          }
-
-         test("should display all indicator form inputs correctly", async({ page }) => {
-            await switchIndicator(page, "GDP");
-
-            await assertIndicatorInputs(page, {
-               indicator: "GDP",
-               view: "Year",
-               from: EXPECTED_DASHBOARD_DATA.indicators.gdp.from,
-               to: EXPECTED_DASHBOARD_DATA.indicators.gdp.to
-            });
-         });
       });
 
       test.describe("Stocks", () => {
@@ -116,76 +78,62 @@ test.describe("Dashboard Overview", () => {
          ];
 
          for (const { type, title, dataKey } of stockSectionTests) {
-            test(`should display ${title} with correct data and chip colors`, async({ page }) => {
-               const stocksTrends = dashboard.economy.trends.Stocks as StockTrends;
-               const stocksData = stocksTrends[dataKey];
+            test(`should display ${title} section with correct stock data and chip colors`, async({ page }) => {
+               await assertComponentIsVisible(page, `stocks-${type}-title`, title);
+
+               const stocksData: StockIndicator[] = stocksTrends[dataKey];
                expect(stocksData.length).toBe(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
-               const section = page.getByTestId(`stocks-${type}-container`);
-
-               const stockLinks = section.locator(`[data-testid^='stock-link-${type}-']`);
+               const section: Locator = page.getByTestId(`stocks-${type}-container`);
+               const stockLinks: Locator = section.locator(`[data-testid^='stock-link-${type}-']`);
                await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
-               const chips = section.locator("[data-testid^='stock-percent-chip-']");
+               const chips: Locator = section.locator("[data-testid^='stock-percent-chip-']");
                await expect(chips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
                for (let i = 0; i < stocksData.length; i++) {
-                  const stock = stocksData[i];
+                  const stock: StockIndicator = stocksData[i];
                   await assertStockCard(page, stock, type, i);
                }
             });
          }
 
-         test("should navigate to Google search when clicking a stock ticker link", async({ page }) => {
-            const stocksTrends = dashboard.economy.trends.Stocks as StockTrends;
-            const firstStock = stocksTrends.top_gainers[0];
-            await assertStockLink(page, firstStock, "top-gainers", 0);
-         });
-
-         test("should display stock card titles correctly", async({ page }) => {
-            await expect(page.getByTestId("stocks-top-gainers-title")).toHaveText("Top Gainers");
-            await expect(page.getByTestId("stocks-top-losers-title")).toHaveText("Top Losers");
-            await expect(page.getByTestId("stocks-most-active-title")).toHaveText("Most Active");
+         test("should navigate to a Google search when clicking a top gainer stock ticker", async({ page }) => {
+            await assertStockLink(page, stocksTrends.top_gainers[0], "top-gainers", 0);
          });
       });
    });
 
    test.describe("News Section", () => {
       let dashboard: Dashboard;
+      let newsArticles: Article[];
 
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          const responsePromise = captureDashboardResponse(page);
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
          dashboard = await responsePromise;
+         newsArticles = [...dashboard.economy.news.response.data].reverse().slice(0, 20);
       });
 
-      test("should display news articles", async({ page }) => {
-         const articleCards = getNewsArticleCards(page);
-         const count = await articleCards.count();
-         expect(count).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
-      });
+      test("should display and validate the content of all news articles", async({ page }) => {
+         const totalArticles: number = newsArticles.length;
+         expect(totalArticles).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
 
-      test("should display and validate all news article content", async({ page }) => {
-         const newsArticles = [...dashboard.economy.news.response.data].reverse().slice(0, 20);
-         expect(newsArticles.length).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
-
-         for (let i = 0; i < newsArticles.length; i++) {
+         for (let i = 0; i < totalArticles; i++) {
             await assertNewsArticleCard(page, newsArticles[i], i);
          }
       });
 
-      test("should expand and collapse news articles", async({ page }) => {
-         const firstArticle = [...dashboard.economy.news.response.data].reverse()[0];
-         await assertNewsArticleExpansion(page, firstArticle, 0);
+      test("should expand and collapse the first news article", async({ page }) => {
+         await assertNewsArticleExpansion(page, newsArticles[0], 0);
       });
 
-      test("should navigate to external article link when clicked", async({ page }) => {
-         const firstArticle = [...dashboard.economy.news.response.data].reverse()[0];
-         await assertNewsArticleLink(page, firstArticle, 0);
+      test("should navigate to the first news article external link when clicked", async({ page }) => {
+         await assertNewsArticleLink(page, newsArticles[0], 0);
       });
    });
 
-   test.describe("Sidebar Navigation", () => {
+   test.describe("Sidebar Section", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
       });
@@ -195,25 +143,18 @@ test.describe("Dashboard Overview", () => {
          { section: "news", link: "sidebar-link-news" }
       ];
 
-      for (const { section, link } of sectionScrollTests) {
-         test(`should scroll to ${section} section when clicking sidebar ${section} link from dashboard`, async({ page }) => {
-            await clickSidebarLink(page, link);
-            await expect(page.getByTestId(`${section}-section`)).toBeInViewport();
-         });
-      }
+      for (const route of VERIFIED_ROUTES) {
+         for (const { section, link } of sectionScrollTests) {
+            test(`should navigate to ${route} and scroll to ${section} section when clicking sidebar ${section} link`, async({ page }) => {
+               if (route !== DASHBOARD_ROUTE) {
+                  await navigateToPath(page, route);
+               }
 
-      const navigationTests = [
-         { section: "economy", link: "sidebar-link-economy", fromPage: ACCOUNTS_ROUTE, fromName: "accounts" },
-         { section: "news", link: "sidebar-link-news", fromPage: BUDGETS_ROUTE, fromName: "budgets" }
-      ];
-
-      for (const { section, link, fromPage, fromName } of navigationTests) {
-         test(`should navigate to dashboard and scroll to ${section} from ${fromName} page`, async({ page }) => {
-            await navigateToPath(page, fromPage);
-            await clickSidebarLink(page, link);
-            await expect(page).toHaveURL(new RegExp(`/dashboard#${section}`));
-            await expect(page.getByTestId(`${section}-section`)).toBeInViewport();
-         });
+               await clickSidebarLink(page, link);
+               await expect(page).toHaveURL(new RegExp(`/dashboard#${section}`));
+               await expect(page.getByTestId(`${section}-section`)).toBeInViewport();
+            });
+         }
       }
    });
 });

@@ -221,7 +221,6 @@ export async function assertAccountCard(
    await expect(image).toBeVisible();
 
    let expectedImageSrc: string = "";
-   const imageSrc: string | null = await image.getAttribute("src");
 
    if (expectImageError) {
       // Assert fallback error.svg image (logo in red color) and error message notification
@@ -241,6 +240,7 @@ export async function assertAccountCard(
       }
    }
 
+   const imageSrc: string | null = await image.getAttribute("src");
    expect(imageSrc).toBe(expectedImageSrc);
 }
 
@@ -517,7 +517,7 @@ export async function assertAccountTrends(
    monthlyBalances?: (number | null)[][]
 ): Promise<void> {
    const barChartValues: Locator = page.locator("[data-bar-chart-value]");
-   const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
+   const netWorthElement: Locator = page.getByTestId("accounts-trends-subtitle");
    const expectedFormattedNetWorth: string = displayCurrency(expectedNetWorth);
 
    if (accounts.length === 0) {
