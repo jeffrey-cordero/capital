@@ -358,6 +358,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                         filtered.length > 0 && (
                            <>
                               <Typography
+                                 data-testid = { `${isIndicators ? "indicator" : title}-value` }
                                  sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
                                  variant = "subtitle1"
                               >

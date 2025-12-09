@@ -1,4 +1,5 @@
 import type { Dashboard } from "capital/dashboard";
+import type { StockTrends } from "capital/economy";
 
 import { expect, test } from "@tests/fixtures";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
@@ -7,9 +8,13 @@ import {
    assertIndicatorInputs,
    assertIndicatorValues,
    assertLastUpdated,
+   assertNewsArticleCard,
+   assertNewsArticleExpansion,
+   assertNewsArticleLink,
+   assertStockCard,
+   assertStockLink,
    captureDashboardResponse,
    EXPECTED_DASHBOARD_DATA,
-   getNewsArticleCard,
    getNewsArticleCards,
    switchIndicator
 } from "@tests/utils/dashboard/dashboard";
@@ -23,22 +28,25 @@ test.describe("Dashboard Overview", () => {
       });
 
       test("should display complete empty accounts state", async({ page }) => {
-         await expect(page.getByTestId("accounts-trends-heading")).toBeVisible();
-         await expect(page.getByTestId("accounts-net-worth")).toBeVisible();
+         await expect(page.getByTestId("accounts-trends-heading")).toHaveText("Accounts");
          await expect(page.getByTestId("accounts-net-worth")).toHaveText("$0.00");
          await assertEmptyTrends(page, "accounts");
       });
 
       test("should display complete empty budgets state", async({ page }) => {
-         await expect(page.getByTestId("budgets-trends-heading")).toBeVisible();
-         await expect(page.getByTestId("budgets-trends-subtitle")).toBeVisible();
+         await expect(page.getByTestId("budgets-trends-heading")).toHaveText("Budgets");
+         await expect(page.getByTestId("budgets-trends-subtitle")).toHaveText("Income vs. Expenses");
          await assertEmptyTrends(page, "budgets");
       });
    });
 
    test.describe("Economy Section", () => {
+      let dashboard: Dashboard;
+
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+         const responsePromise = captureDashboardResponse(page);
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
+         dashboard = await responsePromise;
       });
 
       test.describe("Last Updated Timestamp", () => {
@@ -102,13 +110,17 @@ test.describe("Dashboard Overview", () => {
 
       test.describe("Stocks", () => {
          const stockSectionTests = [
-            { type: "top-gainers", title: "Top Gainers", expectedChipColor: "success" },
-            { type: "top-losers", title: "Top Losers", expectedChipColor: "error" },
-            { type: "most-active", title: "Most Active", expectedChipColor: null }
+            { type: "top-gainers", title: "Top Gainers", dataKey: "top_gainers" as const },
+            { type: "top-losers", title: "Top Losers", dataKey: "top_losers" as const },
+            { type: "most-active", title: "Most Active", dataKey: "most_actively_traded" as const }
          ];
 
-         for (const { type, title, expectedChipColor } of stockSectionTests) {
-            test(`should display 20 ${title} with ${expectedChipColor ? expectedChipColor === "success" ? "green" : "red" : "appropriate"} chips`, async({ page }) => {
+         for (const { type, title, dataKey } of stockSectionTests) {
+            test(`should display ${title} with correct data and chip colors`, async({ page }) => {
+               const stocksTrends = dashboard.economy.trends.Stocks as StockTrends;
+               const stocksData = stocksTrends[dataKey];
+               expect(stocksData.length).toBe(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
+
                const section = page.getByTestId(`stocks-${type}-container`);
 
                const stockLinks = section.locator(`[data-testid^='stock-link-${type}-']`);
@@ -117,43 +129,23 @@ test.describe("Dashboard Overview", () => {
                const chips = section.locator("[data-testid^='stock-percent-chip-']");
                await expect(chips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
-               if (expectedChipColor) {
-                  for (let i = 0; i < EXPECTED_DASHBOARD_DATA.stocks.stocksCount; i++) {
-                     const chip = section.locator(`[data-testid^='stock-percent-chip-'][data-chip-color='${expectedChipColor}']`).nth(i);
-                     await expect(chip).toBeVisible();
-                  }
-               } else {
-                  for (let i = 0; i < EXPECTED_DASHBOARD_DATA.stocks.stocksCount; i++) {
-                     const chip = section.locator("[data-testid^='stock-percent-chip-']").nth(i);
-                     const chipColor = await chip.getAttribute("data-chip-color");
-                     expect(["success", "error", "default"]).toContain(chipColor);
-                  }
+               for (let i = 0; i < stocksData.length; i++) {
+                  const stock = stocksData[i];
+                  await assertStockCard(page, stock, type, i);
                }
-
-               await expect(section.getByText("shares").first()).toBeVisible();
             });
          }
 
          test("should navigate to Google search when clicking a stock ticker link", async({ page }) => {
-            const firstStockLink = page.getByTestId("stock-link-top-gainers-0");
-
-            const href = await firstStockLink.getAttribute("href");
-            expect(href).toContain("google.com/search?q=");
-            expect(href).toContain("+stock");
-
-            const [newPage] = await Promise.all([
-               page.context().waitForEvent("page"),
-               firstStockLink.click()
-            ]);
-
-            expect(newPage.url()).toContain("google.com/search");
-            await newPage.close();
+            const stocksTrends = dashboard.economy.trends.Stocks as StockTrends;
+            const firstStock = stocksTrends.top_gainers[0];
+            await assertStockLink(page, firstStock, "top-gainers", 0);
          });
 
          test("should display stock card titles correctly", async({ page }) => {
-            await expect(page.getByText("Top Gainers")).toBeVisible();
-            await expect(page.getByText("Top Losers")).toBeVisible();
-            await expect(page.getByText("Most Active")).toBeVisible();
+            await expect(page.getByTestId("stocks-top-gainers-title")).toHaveText("Top Gainers");
+            await expect(page.getByTestId("stocks-top-losers-title")).toHaveText("Top Losers");
+            await expect(page.getByTestId("stocks-most-active-title")).toHaveText("Most Active");
          });
       });
    });
@@ -164,18 +156,13 @@ test.describe("Dashboard Overview", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          const responsePromise = captureDashboardResponse(page);
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
-
-         const response = await responsePromise;
-         const dashboardData = await response.json();
-         dashboard = dashboardData;
+         dashboard = await responsePromise;
       });
 
       test("should display news articles", async({ page }) => {
          const articleCards = getNewsArticleCards(page);
-
          const count = await articleCards.count();
-         expect(count).toBeGreaterThan(0);
-         expect(count).toBeLessThanOrEqual(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
+         expect(count).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
       });
 
       test("should display and validate all news article content", async({ page }) => {
@@ -183,51 +170,18 @@ test.describe("Dashboard Overview", () => {
          expect(newsArticles.length).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
 
          for (let i = 0; i < newsArticles.length; i++) {
-            const article = newsArticles[i];
-            const card = getNewsArticleCard(page, i);
-
-            await expect(card).toBeVisible();
-
-            const author = article.author || article.domain || "No Author";
-            const authorInitial = author.charAt(0).toUpperCase();
-            const publishDate = new Date(article.published).toLocaleString();
-
-            await expect(card.getByTestId(`news-article-author-avatar-${i}`)).toHaveText(authorInitial);
-            await expect(card.getByTestId(`news-article-author-${i}`)).toHaveText(author);
-            await expect(card.getByTestId(`news-article-publish-date-${i}`)).toHaveText(publishDate);
-            await expect(card.getByTestId(`news-article-title-${i}`)).toHaveText(article.title);
+            await assertNewsArticleCard(page, newsArticles[i], i);
          }
       });
 
       test("should expand and collapse news articles", async({ page }) => {
-         const firstCard = getNewsArticleCard(page, 0);
-
-         await expect(firstCard).toHaveAttribute("data-expanded", "false");
-
-         const expandButton = page.getByTestId("news-article-expand-button-0");
-         await expandButton.click();
-         await expect(firstCard).toHaveAttribute("data-expanded", "true");
-
-         await expect(firstCard.locator("a[target=\"_blank\"]").last()).toBeVisible();
-
-         await expandButton.click();
-         await expect(firstCard).toHaveAttribute("data-expanded", "false");
+         const firstArticle = [...dashboard.economy.news.response.data].reverse()[0];
+         await assertNewsArticleExpansion(page, firstArticle, 0);
       });
 
       test("should navigate to external article link when clicked", async({ page }) => {
-         const firstCard = getNewsArticleCard(page, 0);
-
-         const expandButton = page.getByTestId("news-article-expand-button-0");
-         await expandButton.click();
-
-         const linkButton = firstCard.locator("a[target=\"_blank\"]").last();
-         const [newPage] = await Promise.all([
-            page.context().waitForEvent("page"),
-            linkButton.click()
-         ]);
-
-         expect(newPage.url()).toBeTruthy();
-         await newPage.close();
+         const firstArticle = [...dashboard.economy.news.response.data].reverse()[0];
+         await assertNewsArticleLink(page, firstArticle, 0);
       });
    });
 
@@ -243,54 +197,23 @@ test.describe("Dashboard Overview", () => {
 
       for (const { section, link } of sectionScrollTests) {
          test(`should scroll to ${section} section when clicking sidebar ${section} link from dashboard`, async({ page }) => {
-            // Click link in sidebar using helper
             await clickSidebarLink(page, link);
-
-            // Verify section is in viewport
-            await expect(page.locator(`#${section}`)).toBeInViewport();
+            await expect(page.getByTestId(`${section}-section`)).toBeInViewport();
          });
       }
 
-      test("should navigate to dashboard and scroll to economy from accounts page", async({ page }) => {
-         // Navigate to accounts page
-         await navigateToPath(page, ACCOUNTS_ROUTE);
+      const navigationTests = [
+         { section: "economy", link: "sidebar-link-economy", fromPage: ACCOUNTS_ROUTE, fromName: "accounts" },
+         { section: "news", link: "sidebar-link-news", fromPage: BUDGETS_ROUTE, fromName: "budgets" }
+      ];
 
-         // Click economy link using helper
-         await clickSidebarLink(page, "sidebar-link-economy");
-
-         // Verify navigated to dashboard with hash
-         await expect(page).toHaveURL(/\/dashboard#economy/);
-
-         // Verify economy section is in viewport
-         await expect(page.locator("#economy")).toBeInViewport();
-      });
-
-      test("should navigate to dashboard and scroll to news from budgets page", async({ page }) => {
-         // Navigate to budgets page
-         await navigateToPath(page, BUDGETS_ROUTE);
-
-         // Click news link using helper
-         await clickSidebarLink(page, "sidebar-link-news");
-
-         // Verify navigated to dashboard with hash
-         await expect(page).toHaveURL(/\/dashboard#news/);
-
-         // Verify news section is in viewport
-         await expect(page.locator("#news")).toBeInViewport();
-      });
-
-      test("should display economy and news sections with proper headings", async({ page }) => {
-         // Verify the economy section contains expected elements
-         const economySection = page.locator("#economy");
-         await expect(economySection).toBeVisible();
-
-         // Verify the stocks section is within economy
-         const stocksSection = page.locator("#stocks");
-         await expect(stocksSection).toBeVisible();
-
-         // Verify the news section exists
-         const newsSection = page.locator("#news");
-         await expect(newsSection).toBeVisible();
-      });
+      for (const { section, link, fromPage, fromName } of navigationTests) {
+         test(`should navigate to dashboard and scroll to ${section} from ${fromName} page`, async({ page }) => {
+            await navigateToPath(page, fromPage);
+            await clickSidebarLink(page, link);
+            await expect(page).toHaveURL(new RegExp(`/dashboard#${section}`));
+            await expect(page.getByTestId(`${section}-section`)).toBeInViewport();
+         });
+      }
    });
 });

@@ -54,6 +54,7 @@ function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
       >
          <CardContent>
             <Typography
+               data-testid = { `stocks-${type}-title` }
                sx = { { mb: 2.5, fontWeight: "bold", textAlign: "center" } }
                variant = "h5"
             >
@@ -103,6 +104,7 @@ function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
                            sx = { { gap: 1 } }
                         >
                            <Typography
+                              data-testid = { `stock-price-${type}-${index}` }
                               fontWeight = "600"
                               variant = "body2"
                            >
@@ -139,6 +141,7 @@ function Stocks({ data }: StocksProps): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "stocks-section"
          direction = "column"
          id = "stocks"
          sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
@@ -202,6 +205,7 @@ export default function Economy(): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "economy-section"
          direction = "column"
          id = "economy"
          sx = { { justifyContent: "space-between", mt: 4 } }
@@ -212,6 +216,7 @@ export default function Economy(): React.ReactNode {
          >
             <Box>
                <Typography
+                  data-testid = "last-updated-label"
                   fontWeight = "bold"
                   sx = { { px: 2 } }
                   variant = "subtitle2"
@@ -219,6 +224,7 @@ export default function Economy(): React.ReactNode {
                   Last updated
                </Typography>
                <Typography
+                  data-testid = "last-updated-timestamp"
                   fontWeight = "bold"
                   sx = { { px: 2 } }
                   variant = "subtitle2"

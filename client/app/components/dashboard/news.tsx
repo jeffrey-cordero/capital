@@ -138,6 +138,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
                   { description }
                   <IconButton
                      aria-label = "Read More"
+                     data-testid = { `news-article-link-${index}` }
                      disableRipple = { true }
                      href = { link }
                      size = "small"
@@ -170,6 +171,7 @@ export default function Articles(): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "news-section"
          direction = "column"
          id = "news"
          sx = { { height: "100%", textAlign: "center", justifyContent: "space-between", alignItems: "center", gap: 2 } }
