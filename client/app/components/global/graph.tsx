@@ -366,8 +366,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  { isIndicators ? option === "GDP" ? "B" : "%" : "" }
                               </Typography>
                               <Chip
-                                 data-testid = {`${isIndicators ? "indicator" : title}-percent-chip`}
                                  color = { chip as any }
+                                 data-testid = { `${isIndicators ? "indicator" : title}-percent-chip` }
                                  label = { displayPercentage(Number(trend.toFixed(2))) }
                                  size = "small"
                                  sx = { { mt: "2px !important" } }

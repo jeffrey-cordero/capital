@@ -30,10 +30,12 @@ interface StocksProps {
  *
  * @property {string} title - Card title
  * @property {StockIndicator[]} data - Stock indicators data
+ * @property {string} type - Type identifier for data-testid (e.g., "top-gainers")
  */
 interface TrendProps {
    title: string;
    data: StockIndicator[];
+   type: string;
 }
 
 /**
@@ -42,9 +44,10 @@ interface TrendProps {
  * @param {TrendProps} props - Trend card component props
  * @returns {React.ReactNode} The StockTrendCard component
  */
-function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
+function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
    return (
       <Card
+         data-testid = { `stocks-${type}-container` }
          elevation = { 3 }
          sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 1.5, pb: 0.5 } }
          variant = "elevation"
@@ -61,33 +64,38 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
                spacing = { 2 }
             >
                {
-                  data.map((stock, index) => (
-                     <Stack
-                        direction = "column"
-                        key = { index }
-                     >
+                  data.map((stock, index) => {
+                     const chipColor = getChipColor(parseFloat(stock.change_percentage));
+                     return (
                         <Stack
-                           direction = "row"
-                           sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 0.5 } }
+                           data-testid = { `stock-item-${index}` }
+                           direction = "column"
+                           key = { index }
                         >
-                           <Typography
-                              component = "p"
-                              sx = { { fontWeight: "bold" } }
-                              variant = "h6"
+                           <Stack
+                              direction = "row"
+                              sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 0.5 } }
                            >
-                              <Link
-                                 href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
-                                 target = "_blank"
-                                 underline = "none"
+                              <Typography
+                                 component = "p"
+                                 sx = { { fontWeight: "bold" } }
+                                 variant = "h6"
                               >
-                                 { stock.ticker }
-                              </Link>
-                           </Typography>
-                           <Chip
-                              color = { getChipColor(parseFloat(stock.change_percentage)) as any }
-                              label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
-                              size = "small"
-                           />
+                                 <Link
+                                    data-testid = { `stock-link-${type}-${index}` }
+                                    href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
+                                    target = "_blank"
+                                    underline = "none"
+                                 >
+                                    { stock.ticker }
+                                 </Link>
+                              </Typography>
+                              <Chip
+                                 color = { chipColor as any }
+                                 data-testid = { `stock-percent-chip-${chipColor}-${index}` }
+                                 label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
+                                 size = "small"
+                              />
                         </Stack>
                         <Stack
                            direction = "column"
@@ -110,7 +118,8 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
                            </Typography>
                         </Stack>
                      </Stack>
-                  ))
+                     );
+                  })
                }
             </Stack>
          </CardContent>
@@ -143,18 +152,21 @@ function Stocks({ data }: StocksProps): React.ReactNode {
                <StockTrendCard
                   data = { top_gainers }
                   title = "Top Gainers"
+                  type = "top-gainers"
                />
             </Grid>
             <Grid size = { { xs: 12, sm: 6, md: 4 } }>
                <StockTrendCard
                   data = { top_losers }
                   title = "Top Losers"
+                  type = "top-losers"
                />
             </Grid>
             <Grid size = { { xs: 12, md: 4 } }>
                <StockTrendCard
                   data = { most_actively_traded }
                   title = "Most Active"
+                  type = "most-active"
                />
             </Grid>
          </Grid>

@@ -54,7 +54,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
    return (
       <Card
          data-expanded = { expanded }
-         data-testid = { `news-${index}-container` }
+         data-testid = { `news-article-container-${index}` }
          elevation = { 3 }
          sx = { { margin: "auto", borderRadius: 2, width: "100%", textAlign: "left" } }
       >
@@ -62,6 +62,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
             avatar = {
                <Avatar
                   aria-label = "author"
+                  data-testid = { `news-article-author-avatar-${index}` }
                   sx = { { color: "white", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
                   { authorInitial }
@@ -74,12 +75,16 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
                >
                   <Stack spacing = { 0 }>
                      <Typography
+                        data-testid = { `news-article-author-${index}` }
                         sx = { { fontWeight: "500" } }
                         variant = "subtitle2"
                      >
                         { author }
                      </Typography>
-                     <Typography variant = "caption">
+                     <Typography
+                        data-testid = { `news-article-publish-date-${index}` }
+                        variant = "caption"
+                     >
                         { publishDate }
                      </Typography>
                   </Stack>
@@ -88,6 +93,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
          />
          <CardContent sx = { { py: 0, px: "auto" } }>
             <Typography
+               data-testid = { `news-article-title-${index}` }
                sx = {
                   {
                      display: "-webkit-box",
@@ -107,6 +113,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pt: 1, pb: 1, mt: -2 } }>
             <Expand
+               data-testid = { `news-article-expand-button-${index}` }
                disableRipple = { true }
                expand = { expanded }
                onClick = { toggleExpandedState }
@@ -172,7 +179,7 @@ export default function Articles(): React.ReactNode {
                <ArticleCard
                   article = { item }
                   index = { index }
-                  key = { `news-${index}` }
+                  key = { `news-article-${index}` }
                />
             ))
          }

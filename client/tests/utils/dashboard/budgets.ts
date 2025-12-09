@@ -387,7 +387,7 @@ export async function deleteBudgetCategory(
       const response: Response = await responsePromise;
       expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
       await expect(category).toBeHidden();
-      await page.waitForTimeout(5000);
+      await expect(category).not.toBeAttached();
    } else {
       await cancelButton.click();
 

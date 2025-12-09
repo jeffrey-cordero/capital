@@ -1,10 +1,7 @@
-import type { Locator, Page, Response } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect } from "@tests/fixtures";
 import { assertInputVisibility } from "@tests/utils";
-import { updateSelectValue } from "@tests/utils/forms";
-import type { Dashboard } from "capital/dashboard";
 import type { Article, StockIndicator } from "capital/economy";
-import { HTTP_STATUS } from "capital/server";
 
 /**
  * Expected economy data values from backup file for E2E tests
@@ -12,14 +9,9 @@ import { HTTP_STATUS } from "capital/server";
 export const EXPECTED_DASHBOARD_DATA = {
    /** Last updated timestamp for stocks data */
    lastUpdated: "2025-12-03 16:16:00 US/Eastern",
-   /** Stock data counts */
+   /** Stock data counts (all sections should have the same count) */
    stocks: {
-      /** Number of top gainer stocks displayed */
-      topGainersCount: 20,
-      /** Number of top loser stocks displayed */
-      topLosersCount: 20,
-      /** Number of most active stocks displayed */
-      mostActiveCount: 20
+      stocksCount: 20
    },
    /** Total news articles in the API response */
    newsArticlesCount: 25,
@@ -76,6 +68,29 @@ export const EXPECTED_DASHBOARD_DATA = {
 } as const;
 
 /**
+ * Gets the locator for a specific stock section container
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {"top-gainers" | "top-losers" | "most-active"} type - Stock section type
+ * @returns {Locator} Locator for the stock section container
+ */
+export function getStockSection(page: Page, type: "top-gainers" | "top-losers" | "most-active"): Locator {
+   return page.getByTestId(`stocks-${type}-container`);
+}
+
+/**
+ * Gets the locator for a specific stock item within a section
+ *
+ * @param {Page} page - Playwright page instance
+ * @param {"top-gainers" | "top-losers" | "most-active"} type - Stock section type
+ * @param {number} index - Index of the stock
+ * @returns {Locator} Locator for the stock item
+ */
+export function getStockItem(page: Page, type: "top-gainers" | "top-losers" | "most-active", index: number): Locator {
+   return getStockSection(page, type).getByTestId(`stock-item-${index}`);
+}
+
+/**
  * Gets the locator for a specific news article card by index
  *
  * @param {Page} page - Playwright page instance
@@ -97,24 +112,6 @@ export function getNewsArticleCards(page: Page): Locator {
 }
 
 /**
- * Captures the dashboard API response and returns the parsed data
- *
- * @param {Page} page - Playwright page instance
- * @returns {Promise<Dashboard>} The dashboard data from the API response
- */
-export async function captureDashboardResponse(page: Page): Promise<Dashboard> {
-   const responsePromise = page.waitForResponse((response: Response) => {
-      return response.url().includes("/api/v1/dashboard") && response.request().method() === "GET";
-   });
-
-   const response: Response = await responsePromise;
-   expect(response.status()).toBe(HTTP_STATUS.OK);
-
-   const responseBody = await response.json();
-   return responseBody.data as Dashboard;
-}
-
-/**
  * Asserts the visibility and values of economic indicator form inputs
  *
  * @param {Page} page - Playwright page instance
@@ -128,10 +125,8 @@ export async function assertIndicatorInputs(
    page: Page,
    expected: { indicator: string; view: string; from: string; to: string }
 ): Promise<void> {
-   await expect(page.getByTestId("indicator-select")).toBeVisible();
-   await expect(page.getByTestId("indicator-select")).toHaveValue(expected.indicator);
-   await expect(page.getByTestId("view-select")).toBeVisible();
-   await expect(page.getByTestId("view-select")).toHaveValue(expected.view);
+   await assertInputVisibility(page, "indicator-select", "Indicator", expected.indicator);
+   await assertInputVisibility(page, "view-select", "View", expected.view);
 
    await assertInputVisibility(page, "from-date", "From", expected.from);
    await assertInputVisibility(page, "to-date", "To", expected.to);
@@ -176,20 +171,20 @@ export async function assertNewsArticleCard(page: Page, article: Article, index:
 }
 
 /**
- * Tests expanding and collapsing a news article card
+ * Asserts expanding and collapsing a news article card
  *
  * @param {Page} page - Playwright page instance
  * @param {Article} article - Article data from API response
  * @param {number} index - Index of the article in the list
  */
-export async function testNewsArticleExpansion(page: Page, article: Article, index: number): Promise<void> {
+export async function assertNewsArticleExpansion(page: Page, article: Article, index: number): Promise<void> {
    const card = getNewsArticleCard(page, index);
 
    // Initially collapsed
    await expect(card).toHaveAttribute("data-expanded", "false");
 
    // Expand the article
-   const expandButton = page.getByTestId(`news-expand-button-${index}`);
+   const expandButton = page.getByTestId(`news-article-expand-button-${index}`);
    await expandButton.click();
    await expect(card).toHaveAttribute("data-expanded", "true");
 
@@ -207,17 +202,17 @@ export async function testNewsArticleExpansion(page: Page, article: Article, ind
 }
 
 /**
- * Tests navigating to a news article external link
+ * Asserts navigating to a news article external link
  *
  * @param {Page} page - Playwright page instance
  * @param {Article} article - Article data from API response
  * @param {number} index - Index of the article in the list
  */
-export async function testNewsArticleLink(page: Page, article: Article, index: number): Promise<void> {
+export async function assertNewsArticleLink(page: Page, article: Article, index: number): Promise<void> {
    const card = getNewsArticleCard(page, index);
 
    // Expand the article first
-   const expandButton = page.getByTestId(`news-expand-button-${index}`);
+   const expandButton = page.getByTestId(`news-article-expand-button-${index}`);
    await expandButton.click();
 
    // Click the external link
@@ -238,50 +233,48 @@ export async function testNewsArticleLink(page: Page, article: Article, index: n
  * @param {Page} page - Playwright page instance
  * @param {StockIndicator} stock - Stock data from API response
  * @param {"success" | "error" | "default"} expectedChipColor - Expected MUI chip color variant
- * @param {string} sectionTestId - Data test ID of the stock section container
+ * @param {string} type - Stock section type (top-gainers, top-losers, most-active)
  * @param {number} index - Index of the stock in the list
  */
 export async function assertStockCard(
    page: Page,
    stock: StockIndicator,
    expectedChipColor: "success" | "error" | "default",
-   sectionTestId: string,
+   type: string,
    index: number
 ): Promise<void> {
-   const cardSection = page.getByTestId(sectionTestId);
-   const stockContainer = cardSection.getByTestId(`stock-item-${index}`);
+   const stockItem = getStockItem(page, type as "top-gainers" | "top-losers" | "most-active", index);
 
-   const stockLink = stockContainer.getByRole("link", { name: stock.ticker });
+   const stockLink = stockItem.getByTestId(`stock-link-${type}-${index}`);
    await expect(stockLink).toBeVisible();
    await expect(stockLink).toHaveAttribute("href", `https://www.google.com/search?q=${stock.ticker}+stock`);
 
    const chipPercent = parseFloat(stock.change_percentage).toFixed(2) + "%";
    const chipTestId = `stock-percent-chip-${expectedChipColor}-${index}`;
-   await expect(stockContainer.getByTestId(chipTestId).filter({ hasText: chipPercent })).toBeVisible();
+   await expect(stockItem.getByTestId(chipTestId).filter({ hasText: chipPercent })).toBeVisible();
 
    const priceText = `$${Number(stock.price).toFixed(2)}`;
-   await expect(stockContainer.getByText(priceText, { exact: false })).toBeVisible();
+   await expect(stockItem.getByText(priceText, { exact: false })).toBeVisible();
 
-   await expect(stockContainer.getByText("shares")).toBeVisible();
+   await expect(stockItem.getByText("shares")).toBeVisible();
 }
 
 /**
- * Tests navigating to a stock's Google search link
+ * Asserts navigating to a stock's Google search link
  *
  * @param {Page} page - Playwright page instance
  * @param {StockIndicator} stock - Stock data from API response
- * @param {string} sectionTestId - Data test ID of the stock section container
+ * @param {string} type - Stock section type (top-gainers, top-losers, most-active)
  * @param {number} index - Index of the stock in the list
  */
-export async function testStockLink(
+export async function assertStockLink(
    page: Page,
    stock: StockIndicator,
-   sectionTestId: string,
+   type: string,
    index: number
 ): Promise<void> {
-   const cardSection = page.getByTestId(sectionTestId);
-   const stockContainer = cardSection.getByTestId(`stock-item-${index}`);
-   const stockLink = stockContainer.getByRole("link", { name: stock.ticker });
+   const stockItem = getStockItem(page, type as "top-gainers" | "top-losers" | "most-active", index);
+   const stockLink = stockItem.getByTestId(`stock-link-${type}-${index}`);
 
    const [newPage] = await Promise.all([
       page.context().waitForEvent("page"),
@@ -326,7 +319,9 @@ export async function assertLastUpdated(page: Page, lastUpdated: string): Promis
  * @param {string} indicator - Indicator name to select
  */
 export async function switchIndicator(page: Page, indicator: string): Promise<void> {
-   await updateSelectValue(page, "indicator-select", indicator);
+   const selectCombobox = page.locator("#mui-component-select-option").first();
+   await selectCombobox.click();
+   await page.getByRole("option", { name: indicator, exact: true }).click();
 }
 
 /**
@@ -336,7 +331,9 @@ export async function switchIndicator(page: Page, indicator: string): Promise<vo
  * @param {"Year" | "Month"} view - View to select
  */
 export async function switchView(page: Page, view: "Year" | "Month"): Promise<void> {
-   await updateSelectValue(page, "view-select", view);
+   const selectCombobox = page.locator("#mui-component-select-view").first();
+   await selectCombobox.click();
+   await page.getByRole("option", { name: view, exact: true }).click();
 }
 
 /**

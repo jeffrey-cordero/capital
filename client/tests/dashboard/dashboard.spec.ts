@@ -17,23 +17,18 @@ test.describe("Dashboard Overview", () => {
    test.describe("Initial State - Empty Accounts & Budgets", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, true, true, assignedUser);
-         await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
       });
 
       test("should display complete empty accounts state", async({ page }) => {
-         const accountsSection = page.getByTestId("accounts-trends-container");
-
-         await expect(accountsSection.getByRole("heading", { name: "Accounts", exact: true })).toBeVisible();
+         await expect(page.getByTestId("accounts-trends-heading")).toBeVisible();
          await expect(page.getByTestId("accounts-net-worth")).toBeVisible();
          await expect(page.getByTestId("accounts-net-worth")).toHaveText("$0.00");
          await assertEmptyTrends(page, "accounts");
       });
 
       test("should display complete empty budgets state", async({ page }) => {
-         const budgetSection = page.getByTestId("budgets-trends-container");
-
-         await expect(budgetSection.getByRole("heading", { name: "Budgets", exact: true })).toBeVisible();
-         await expect(budgetSection.getByText("Income vs. Expenses", { exact: true })).toBeVisible();
+         await expect(page.getByTestId("budgets-trends-heading")).toBeVisible();
+         await expect(page.getByTestId("budgets-trends-subtitle")).toBeVisible();
          await assertEmptyTrends(page, "budgets");
       });
    });
@@ -41,7 +36,6 @@ test.describe("Dashboard Overview", () => {
    test.describe("Economy Section", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
-         await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
       });
 
       test.describe("Last Updated Timestamp", () => {
@@ -92,10 +86,14 @@ test.describe("Dashboard Overview", () => {
          }
 
          test("should display all indicator form inputs correctly", async({ page }) => {
-            await expect(page.getByTestId("indicator-select")).toBeVisible();
-            await expect(page.getByTestId("view-select")).toBeVisible();
-            await expect(page.getByTestId("from-date")).toBeVisible();
-            await expect(page.getByTestId("to-date")).toBeVisible();
+            await switchIndicator(page, "GDP");
+
+            await assertIndicatorInputs(page, {
+               indicator: "GDP",
+               view: "Year",
+               from: EXPECTED_DASHBOARD_DATA.indicators.gdp.from,
+               to: EXPECTED_DASHBOARD_DATA.indicators.gdp.to
+            });
          });
       });
 
@@ -104,10 +102,10 @@ test.describe("Dashboard Overview", () => {
             const topGainersSection = page.getByTestId("stocks-top-gainers-container");
 
             const stockLinks = topGainersSection.locator("[data-testid^='stock-link-top-gainers-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.topGainersCount);
+            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             const greenChips = topGainersSection.locator("[data-testid^='stock-percent-chip-success-']");
-            await expect(greenChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.topGainersCount);
+            await expect(greenChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             await expect(topGainersSection.getByText("shares").first()).toBeVisible();
          });
@@ -116,10 +114,10 @@ test.describe("Dashboard Overview", () => {
             const topLosersSection = page.getByTestId("stocks-top-losers-container");
 
             const stockLinks = topLosersSection.locator("[data-testid^='stock-link-top-losers-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.topLosersCount);
+            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             const redChips = topLosersSection.locator("[data-testid^='stock-percent-chip-error-']");
-            await expect(redChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.topLosersCount);
+            await expect(redChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             await expect(topLosersSection.getByText("shares").first()).toBeVisible();
          });
@@ -128,10 +126,10 @@ test.describe("Dashboard Overview", () => {
             const mostActiveSection = page.getByTestId("stocks-most-active-container");
 
             const stockLinks = mostActiveSection.locator("[data-testid^='stock-link-most-active-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.mostActiveCount);
+            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             const allChips = mostActiveSection.locator("[data-testid^='stock-percent-chip-']");
-            await expect(allChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.mostActiveCount);
+            await expect(allChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
             await expect(mostActiveSection.getByText("shares").first()).toBeVisible();
          });
@@ -163,7 +161,6 @@ test.describe("Dashboard Overview", () => {
    test.describe("News Section", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
-         await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
       });
 
       test("should display news articles", async({ page }) => {
@@ -179,7 +176,7 @@ test.describe("Dashboard Overview", () => {
 
          await expect(firstCard).toHaveAttribute("data-expanded", "false");
 
-         const expandButton = page.getByTestId("news-expand-button-0");
+         const expandButton = page.getByTestId("news-article-expand-button-0");
          await expandButton.click();
          await expect(firstCard).toHaveAttribute("data-expanded", "true");
 
@@ -192,7 +189,7 @@ test.describe("Dashboard Overview", () => {
       test("should navigate to external article link when clicked", async({ page }) => {
          const firstCard = getNewsArticleCard(page, 0);
 
-         const expandButton = page.getByTestId("news-expand-button-0");
+         const expandButton = page.getByTestId("news-article-expand-button-0");
          await expandButton.click();
 
          const linkButton = firstCard.locator("a[target=\"_blank\"]").last();
@@ -208,15 +205,15 @@ test.describe("Dashboard Overview", () => {
       test("should display article metadata correctly", async({ page }) => {
          const firstCard = getNewsArticleCard(page, 0);
 
-         await expect(firstCard.getByRole("img", { name: /author/i })).toBeVisible();
-         await expect(firstCard.getByRole("heading")).toBeVisible();
+         await expect(firstCard.getByTestId("news-article-title-0")).toBeVisible();
+         await expect(firstCard.getByTestId("news-article-author-0")).toBeVisible();
+         await expect(firstCard.getByTestId("news-article-publish-date-0")).toBeVisible();
       });
    });
 
    test.describe("Sidebar Navigation", () => {
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
-         await expect(page.getByTestId("accounts-trends-container")).toBeVisible();
       });
 
       const sectionScrollTests = [
