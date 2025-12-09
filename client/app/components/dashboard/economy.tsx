@@ -92,7 +92,7 @@ function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
                                  </Link>
                               </Typography>
                               <Chip
-                                 color = { chipColor as any }
+                                 color = { chipColor }
                                  data-chip-color = { chipColor }
                                  data-testid = { `stock-percent-chip-${chipColor}-${index}` }
                                  label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
