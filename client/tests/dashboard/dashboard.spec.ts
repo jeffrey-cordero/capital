@@ -1,3 +1,5 @@
+import type { Dashboard } from "capital/dashboard";
+
 import { expect, test } from "@tests/fixtures";
 import { ACCOUNTS_ROUTE, BUDGETS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import {
@@ -5,6 +7,7 @@ import {
    assertIndicatorInputs,
    assertIndicatorValues,
    assertLastUpdated,
+   captureDashboardResponse,
    EXPECTED_DASHBOARD_DATA,
    getNewsArticleCard,
    getNewsArticleCards,
@@ -98,41 +101,38 @@ test.describe("Dashboard Overview", () => {
       });
 
       test.describe("Stocks", () => {
-         test("should display 20 Top Gainers with green chips", async({ page }) => {
-            const topGainersSection = page.getByTestId("stocks-top-gainers-container");
+         const stockSectionTests = [
+            { type: "top-gainers", title: "Top Gainers", expectedChipColor: "success" },
+            { type: "top-losers", title: "Top Losers", expectedChipColor: "error" },
+            { type: "most-active", title: "Most Active", expectedChipColor: null }
+         ];
 
-            const stockLinks = topGainersSection.locator("[data-testid^='stock-link-top-gainers-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
+         for (const { type, title, expectedChipColor } of stockSectionTests) {
+            test(`should display 20 ${title} with ${expectedChipColor ? expectedChipColor === "success" ? "green" : "red" : "appropriate"} chips`, async({ page }) => {
+               const section = page.getByTestId(`stocks-${type}-container`);
 
-            const greenChips = topGainersSection.locator("[data-testid^='stock-percent-chip-success-']");
-            await expect(greenChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
+               const stockLinks = section.locator(`[data-testid^='stock-link-${type}-']`);
+               await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
-            await expect(topGainersSection.getByText("shares").first()).toBeVisible();
-         });
+               const chips = section.locator("[data-testid^='stock-percent-chip-']");
+               await expect(chips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
 
-         test("should display 20 Top Losers with red chips", async({ page }) => {
-            const topLosersSection = page.getByTestId("stocks-top-losers-container");
+               if (expectedChipColor) {
+                  for (let i = 0; i < EXPECTED_DASHBOARD_DATA.stocks.stocksCount; i++) {
+                     const chip = section.locator(`[data-testid^='stock-percent-chip-'][data-chip-color='${expectedChipColor}']`).nth(i);
+                     await expect(chip).toBeVisible();
+                  }
+               } else {
+                  for (let i = 0; i < EXPECTED_DASHBOARD_DATA.stocks.stocksCount; i++) {
+                     const chip = section.locator("[data-testid^='stock-percent-chip-']").nth(i);
+                     const chipColor = await chip.getAttribute("data-chip-color");
+                     expect(["success", "error", "default"]).toContain(chipColor);
+                  }
+               }
 
-            const stockLinks = topLosersSection.locator("[data-testid^='stock-link-top-losers-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
-
-            const redChips = topLosersSection.locator("[data-testid^='stock-percent-chip-error-']");
-            await expect(redChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
-
-            await expect(topLosersSection.getByText("shares").first()).toBeVisible();
-         });
-
-         test("should display 20 Most Active stocks with appropriate chip colors", async({ page }) => {
-            const mostActiveSection = page.getByTestId("stocks-most-active-container");
-
-            const stockLinks = mostActiveSection.locator("[data-testid^='stock-link-most-active-']");
-            await expect(stockLinks).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
-
-            const allChips = mostActiveSection.locator("[data-testid^='stock-percent-chip-']");
-            await expect(allChips).toHaveCount(EXPECTED_DASHBOARD_DATA.stocks.stocksCount);
-
-            await expect(mostActiveSection.getByText("shares").first()).toBeVisible();
-         });
+               await expect(section.getByText("shares").first()).toBeVisible();
+            });
+         }
 
          test("should navigate to Google search when clicking a stock ticker link", async({ page }) => {
             const firstStockLink = page.getByTestId("stock-link-top-gainers-0");
@@ -159,8 +159,15 @@ test.describe("Dashboard Overview", () => {
    });
 
    test.describe("News Section", () => {
+      let dashboard: Dashboard;
+
       test.beforeEach(async({ page, usersRegistry, assignedRegistry, assignedUser }) => {
+         const responsePromise = captureDashboardResponse(page);
          await setupAssignedUser(page, usersRegistry, assignedRegistry, DASHBOARD_ROUTE, false, false, assignedUser);
+
+         const response = await responsePromise;
+         const dashboardData = await response.json();
+         dashboard = dashboardData;
       });
 
       test("should display news articles", async({ page }) => {
@@ -169,6 +176,27 @@ test.describe("Dashboard Overview", () => {
          const count = await articleCards.count();
          expect(count).toBeGreaterThan(0);
          expect(count).toBeLessThanOrEqual(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
+      });
+
+      test("should display and validate all news article content", async({ page }) => {
+         const newsArticles = [...dashboard.economy.news.response.data].reverse().slice(0, 20);
+         expect(newsArticles.length).toBe(EXPECTED_DASHBOARD_DATA.newsDisplayedCount);
+
+         for (let i = 0; i < newsArticles.length; i++) {
+            const article = newsArticles[i];
+            const card = getNewsArticleCard(page, i);
+
+            await expect(card).toBeVisible();
+
+            const author = article.author || article.domain || "No Author";
+            const authorInitial = author.charAt(0).toUpperCase();
+            const publishDate = new Date(article.published).toLocaleString();
+
+            await expect(card.getByTestId(`news-article-author-avatar-${i}`)).toHaveText(authorInitial);
+            await expect(card.getByTestId(`news-article-author-${i}`)).toHaveText(author);
+            await expect(card.getByTestId(`news-article-publish-date-${i}`)).toHaveText(publishDate);
+            await expect(card.getByTestId(`news-article-title-${i}`)).toHaveText(article.title);
+         }
       });
 
       test("should expand and collapse news articles", async({ page }) => {
@@ -200,14 +228,6 @@ test.describe("Dashboard Overview", () => {
 
          expect(newPage.url()).toBeTruthy();
          await newPage.close();
-      });
-
-      test("should display article metadata correctly", async({ page }) => {
-         const firstCard = getNewsArticleCard(page, 0);
-
-         await expect(firstCard.getByTestId("news-article-title-0")).toBeVisible();
-         await expect(firstCard.getByTestId("news-article-author-0")).toBeVisible();
-         await expect(firstCard.getByTestId("news-article-publish-date-0")).toBeVisible();
       });
    });
 

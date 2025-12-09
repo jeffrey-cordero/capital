@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator, Page, Response } from "@playwright/test";
 import { expect } from "@tests/fixtures";
 import { assertInputVisibility } from "@tests/utils";
 import type { Article, StockIndicator } from "capital/economy";
@@ -66,6 +66,19 @@ export const EXPECTED_DASHBOARD_DATA = {
       }
    }
 } as const;
+
+/**
+ * Captures the dashboard API response and returns the response promise
+ *
+ * @param {Page} page - Playwright page instance
+ * @returns {Promise<Response>} The response promise from the API
+ */
+export function captureDashboardResponse(page: Page): Promise<Response> {
+   return page.waitForResponse((response: Response) => {
+      return response.url().includes("/api/v1/dashboard") && response.request().method() === "GET";
+   });
+
+}
 
 /**
  * Gets the locator for a specific stock section container
