@@ -132,6 +132,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }): R
             <CardContent sx = { { p: "0 15px" } }>
                <Typography
                   color = "textSecondary"
+                  data-testid = { `news-article-description-${index}` }
                   sx = { { whiteSpace: "pre-wrap" } }
                   variant = "body2"
                >

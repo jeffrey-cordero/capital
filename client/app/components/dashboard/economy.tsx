@@ -114,6 +114,7 @@ function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
                                  { Math.abs(Number(stock.change_amount)).toFixed(2) })
                               </Typography>
                               <Typography
+                                 data-testid = { `stock-volume-${type}-${index}` }
                                  fontWeight = "600"
                                  variant = "body2"
                               >

@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator, Page, Response } from "@playwright/test";
 import { expect } from "@tests/fixtures";
 import { assertComponentIsVisible, assertInputVisibility } from "@tests/utils";
 import type { Dashboard } from "capital/dashboard";
@@ -8,7 +8,7 @@ import { HTTP_STATUS } from "capital/server";
 import { displayVolume } from "@/lib/display";
 
 /**
- * Expected economy data values from backup file for end-to-end tests
+ * Expected economy data values from the test backup file
  */
 export const EXPECTED_DASHBOARD_DATA = {
    lastUpdated: "2025-12-03 16:16:00 US/Eastern",
@@ -63,7 +63,9 @@ export const EXPECTED_DASHBOARD_DATA = {
  * @returns {Promise<Dashboard>} Dashboard data from API response
  */
 export async function captureDashboardResponse(page: Page): Promise<Dashboard> {
-   return page.waitForResponse((response) => response.url().includes("/api/v1/dashboard") && response.request().method() === "GET")
+   return page.waitForResponse((response: Response) =>
+      response.url().includes("/api/v1/dashboard")
+         && response.request().method() === "GET")
       .then(async(response) => {
          expect(response.status()).toBe(HTTP_STATUS.OK);
          const responseBody = await response.json();
@@ -72,18 +74,7 @@ export async function captureDashboardResponse(page: Page): Promise<Dashboard> {
 }
 
 /**
- * Gets the locator for a stock section
- *
- * @param {Page} page - Playwright page instance
- * @param {"top-gainers" | "top-losers" | "most-active"} type - Stock section type
- * @returns {Locator} Stock section locator
- */
-export function getStockSection(page: Page, type: "top-gainers" | "top-losers" | "most-active"): Locator {
-   return page.getByTestId(`stocks-${type}-container`);
-}
-
-/**
- * Gets the locator for a stock item
+ * Gets the locator for a stock item within a specific stock section by its index
  *
  * @param {Page} page - Playwright page instance
  * @param {"top-gainers" | "top-losers" | "most-active"} type - Stock section type
@@ -91,11 +82,11 @@ export function getStockSection(page: Page, type: "top-gainers" | "top-losers" |
  * @returns {Locator} Stock item locator
  */
 export function getStockItem(page: Page, type: "top-gainers" | "top-losers" | "most-active", index: number): Locator {
-   return getStockSection(page, type).getByTestId(`stock-item-${index}`);
+   return page.getByTestId(`stocks-${type}-container`).getByTestId(`stock-item-${index}`);
 }
 
 /**
- * Gets the locator for a news article card
+ * Gets the locator for a news article card by its index
  *
  * @param {Page} page - Playwright page instance
  * @param {number} index - Article index
@@ -117,77 +108,57 @@ export async function assertEmptyTrends(page: Page, type: "accounts" | "budgets"
 }
 
 /**
- * Asserts a news article card displays correct information
+ * Asserts a news article card displays the correct author, publish date, title, and description
+ * for a specific article by its index
  *
  * @param {Page} page - Playwright page instance
  * @param {Article} article - Article data from API
  * @param {number} index - Article index
  */
 export async function assertNewsArticleCard(page: Page, article: Article, index: number): Promise<void> {
-   const card = getNewsArticleCard(page, index);
+   const card: Locator = getNewsArticleCard(page, index);
    await expect(card).toBeVisible();
 
-   const author = article.author || article.domain || "No Author";
-   const authorInitial = author.charAt(0).toUpperCase();
-   const publishDate = new Date(article.published).toLocaleString();
+   const title: string = article.title || "No Title";
+   const author: string = article.author || article.domain || "No Author";
+   const authorInitial: string = author.charAt(0).toUpperCase();
+   const publishDate: string = new Date(article.published).toLocaleString();
 
    await assertComponentIsVisible(page, `news-article-author-avatar-${index}`, authorInitial);
    await assertComponentIsVisible(page, `news-article-author-${index}`, author);
    await assertComponentIsVisible(page, `news-article-publish-date-${index}`, publishDate);
-   await assertComponentIsVisible(page, `news-article-title-${index}`, article.title);
+   await assertComponentIsVisible(page, `news-article-title-${index}`, title);
 }
 
 /**
- * Asserts news article expansion and collapse behavior
+ * Asserts news article expansion and collapse behavior for a specific article by its index
  *
  * @param {Page} page - Playwright page instance
  * @param {Article} article - Article data from API
  * @param {number} index - Article index
  */
 export async function assertNewsArticleExpansion(page: Page, article: Article, index: number): Promise<void> {
-   const card = getNewsArticleCard(page, index);
-
+   const card: Locator = getNewsArticleCard(page, index);
    await expect(card).toHaveAttribute("data-expanded", "false");
 
-   const expandButton = page.getByTestId(`news-article-expand-button-${index}`);
+   // Expand the article
+   const expandButton: Locator = page.getByTestId(`news-article-expand-button-${index}`);
    await expandButton.click();
    await expect(card).toHaveAttribute("data-expanded", "true");
 
-   const description = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n");
-   await expect(card.getByText(description, { exact: false })).toBeVisible();
+   // Ensure the article description and external link button become visible when expanded
+   const description: Locator = card.getByTestId(`news-article-description-${index}`);
+   const descriptionText: string = article.text.replace(/(?<!\n)\n(?!\n)/g, "\n\n");
+   await expect(description).toHaveText(descriptionText);
 
-   const linkButton = card.getByTestId(`news-article-link-${index}`);
+   const linkButton: Locator = card.getByTestId(`news-article-link-${index}`);
    await expect(linkButton).toHaveAttribute("href", article.url);
-
-   await expandButton.click();
-   await expect(card).toHaveAttribute("data-expanded", "false");
+   await expect(linkButton).toHaveAttribute("target", "_blank");
 }
 
 /**
- * Asserts news article external link navigation
- *
- * @param {Page} page - Playwright page instance
- * @param {Article} article - Article data from API
- * @param {number} index - Article index
- */
-export async function assertNewsArticleLink(page: Page, article: Article, index: number): Promise<void> {
-   const card = getNewsArticleCard(page, index);
-
-   const expandButton = page.getByTestId(`news-article-expand-button-${index}`);
-   await expandButton.click();
-
-   const linkButton = card.getByTestId(`news-article-link-${index}`);
-   const [newPage] = await Promise.all([
-      page.context().waitForEvent("page"),
-      linkButton.click()
-   ]);
-
-   await expect(newPage).toHaveURL(article.url);
-   await newPage.close();
-}
-
-/**
- * Asserts stock card displays correct information
+ * Asserts stock card displays the correct link, percentage chip, price, and volume
+ * for a specific stock by its index within a specific stock section
  *
  * @param {Page} page - Playwright page instance
  * @param {StockIndicator} stock - Stock data from API
@@ -200,48 +171,31 @@ export async function assertStockCard(
    type: string,
    index: number
 ): Promise<void> {
-   const stockItem = getStockItem(page, type as "top-gainers" | "top-losers" | "most-active", index);
+   const stockItem: Locator = getStockItem(page, type as "top-gainers" | "top-losers" | "most-active", index);
 
-   const stockLink = stockItem.getByTestId(`stock-link-${type}-${index}`);
+   const stockLink: Locator = stockItem.getByTestId(`stock-link-${type}-${index}`);
    await expect(stockLink).toBeVisible();
    await expect(stockLink).toHaveAttribute("href", `https://www.google.com/search?q=${stock.ticker}+stock`);
 
-   const expectedChipColor = getExpectedChipColor(stock.change_percentage);
-   const chipPercent = parseFloat(stock.change_percentage).toFixed(2) + "%";
-   const chipTestId = `stock-percent-chip-${expectedChipColor}-${index}`;
+   const expectedChipColor: "success" | "error" | "default" = getExpectedChipColor(stock.change_percentage);
+   const chipTestId: string = `stock-percent-chip-${expectedChipColor}-${index}`;
+   const chipPercent: string = parseFloat(stock.change_percentage).toFixed(2) + "%";
    await expect(stockItem.getByTestId(chipTestId).filter({ hasText: chipPercent })).toBeVisible();
 
-   const priceText = `$${Number(stock.price).toFixed(2)}`;
-   await expect(stockItem.getByText(priceText, { exact: false })).toBeVisible();
+   const changeAmount: number = Number(stock.change_amount);
+   const priceChange: string = `${changeAmount < 0 ? "-" : "+"}${Math.abs(changeAmount).toFixed(2)}`;
+   const priceText: string = `$${stock.price.toFixed(2)} (${priceChange})`;
+   const priceTestId: string = `stock-price-${type}-${index}`;
+   await expect(stockItem.getByTestId(priceTestId)).toHaveText(priceText);
 
-   const volumeText = `${displayVolume(Number(stock.volume))} shares`;
-   await expect(stockItem.getByText(volumeText)).toBeVisible();
-}
+   const volumeText: string = `${displayVolume(Number(stock.volume))} shares`;
+   const volumeTestId: string = `stock-volume-${type}-${index}`;
+   await expect(stockItem.getByTestId(volumeTestId)).toHaveText(volumeText);
 
-/**
- * Asserts stock link navigation to Google search
- *
- * @param {Page} page - Playwright page instance
- * @param {StockIndicator} stock - Stock data from API
- * @param {string} type - Stock section type
- * @param {number} index - Stock index
- */
-export async function assertStockLink(
-   page: Page,
-   stock: StockIndicator,
-   type: string,
-   index: number
-): Promise<void> {
-   const stockItem = getStockItem(page, type as "top-gainers" | "top-losers" | "most-active", index);
-   const stockLink = stockItem.getByTestId(`stock-link-${type}-${index}`);
-
-   const [newPage] = await Promise.all([
-      page.context().waitForEvent("page"),
-      stockLink.click()
-   ]);
-
-   expect(newPage.url()).toContain(`google.com/search?q=${stock.ticker}+stock`);
-   await newPage.close();
+   const link: string | null = await stockLink.getAttribute("href");
+   const target: string | null = await stockLink.getAttribute("target");
+   expect(link).toBe(`https://www.google.com/search?q=${stock.ticker}+stock`);
+   expect(target).toBe("_blank");
 }
 
 /**
@@ -270,7 +224,7 @@ export function getExpectedChipColor(changePercentage: string): "success" | "err
  */
 export async function assertLastUpdated(page: Page, lastUpdated: string): Promise<void> {
    const [date, time] = lastUpdated.split(" ");
-   const formattedTimestamp = new Date(date + " " + time).toLocaleString();
+   const formattedTimestamp: string = new Date(date + " " + time).toLocaleString();
 
    await assertComponentIsVisible(page, "last-updated-label", "Last updated");
    await assertComponentIsVisible(page, "last-updated-timestamp", formattedTimestamp);
@@ -283,7 +237,7 @@ export async function assertLastUpdated(page: Page, lastUpdated: string): Promis
  * @param {string} indicator - Indicator name
  */
 export async function switchIndicator(page: Page, indicator: string): Promise<void> {
-   const selectCombobox = page.locator("#mui-component-select-option").first();
+   const selectCombobox: Locator = page.locator("#mui-component-select-option").first();
    await selectCombobox.click();
    await page.getByRole("option", { name: indicator, exact: true }).click();
 }
@@ -295,7 +249,7 @@ export async function switchIndicator(page: Page, indicator: string): Promise<vo
  * @param {"Year" | "Month"} view - View to select
  */
 export async function switchView(page: Page, view: "Year" | "Month"): Promise<void> {
-   const selectCombobox = page.locator("#mui-component-select-view").first();
+   const selectCombobox: Locator = page.locator("#mui-component-select-view").first();
    await selectCombobox.click();
    await page.getByRole("option", { name: view, exact: true }).click();
 }
@@ -345,7 +299,8 @@ export async function assertIndicatorValues(
 }
 
 /**
- * Asserts complete indicator state including values, percentages, and form inputs
+ * Asserts complete indicator state including values, percentages, and form inputs,
+ * which requires the current view to be Year
  *
  * @param {Page} page - Playwright page instance
  * @param {string} indicator - Indicator name

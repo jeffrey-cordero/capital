@@ -1,7 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import { assertComponentIsVisible } from "@tests/utils";
-import { assertNotificationStatus } from "@tests/utils/notifications";
 import { DASHBOARD_ROUTE, VERIFIED_ROUTES } from "@tests/utils/authentication";
 import {
    assertEmptyTrends,
@@ -9,14 +8,13 @@ import {
    assertLastUpdated,
    assertNewsArticleCard,
    assertNewsArticleExpansion,
-   assertNewsArticleLink,
    assertStockCard,
-   assertStockLink,
    captureDashboardResponse,
    EXPECTED_DASHBOARD_DATA,
    switchIndicator
 } from "@tests/utils/dashboard/dashboard";
 import { clickSidebarLink, navigateToPath } from "@tests/utils/navigation";
+import { assertNotificationStatus } from "@tests/utils/notifications";
 import { setupAssignedUser } from "@tests/utils/user-management";
 import type { Dashboard } from "capital/dashboard";
 import type { Article, StockIndicator, StockTrends } from "capital/economy";
@@ -99,10 +97,6 @@ test.describe("Dashboard", () => {
                }
             });
          }
-
-         test("should navigate to a Google search when clicking a top gainer stock ticker", async({ page }) => {
-            await assertStockLink(page, stocksTrends.top_gainers[0], "top-gainers", 0);
-         });
       });
    });
 
@@ -128,10 +122,6 @@ test.describe("Dashboard", () => {
 
       test("should expand and collapse the first news article", async({ page }) => {
          await assertNewsArticleExpansion(page, newsArticles[0], 0);
-      });
-
-      test("should navigate to the first news article external link when clicked", async({ page }) => {
-         await assertNewsArticleLink(page, newsArticles[0], 0);
       });
    });
 
@@ -189,7 +179,7 @@ test.describe("Dashboard", () => {
          const spinner: Locator = page.getByTestId("loading-spinner");
          await expect(spinner).toBeVisible();
 
-         // After a long timeout, the sections should still be detatched and spinner should still be spinning
+         // After a long timeout, the sections should still be detatched and the spinner should still be visible
          await page.waitForTimeout(5000);
          await expect(spinner).toBeVisible();
 

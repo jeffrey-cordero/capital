@@ -8,7 +8,10 @@ import { CircularProgress } from "@mui/material";
 export default function Loading(): React.ReactNode {
    return (
       <div className = "center">
-         <CircularProgress color = "primary" data-testid = "loading-spinner" />
+         <CircularProgress
+            color = "primary"
+            data-testid = "loading-spinner"
+         />
       </div>
    );
 }
