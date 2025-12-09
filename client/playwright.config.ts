@@ -20,13 +20,14 @@ export default defineConfig({
    retries: process.env.CI ? 6 : 0,
    workers: process.env.CI ? 6 : undefined,
    reporter: "html",
-   timeout: 120000, // 120 seconds per test
+   timeout: 120000, // 120 seconds per test,
+   expect: { timeout: 30000 }, // 30 seconds for expect assertions
    use: {
       baseURL: webServer.url,
       trace: "on-first-retry",
       video: "retain-on-failure",
       actionTimeout: 30000, // 30 seconds for actions like click, fill, etc.
-      navigationTimeout: 30000 // 30 seconds for page navigation
+      navigationTimeout: 30000, // 30 seconds for page navigation
    },
    projects: [
       {
