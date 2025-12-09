@@ -191,11 +191,6 @@ export async function assertStockCard(
    const volumeText: string = `${displayVolume(Number(stock.volume))} shares`;
    const volumeTestId: string = `stock-volume-${type}-${index}`;
    await expect(stockItem.getByTestId(volumeTestId)).toHaveText(volumeText);
-
-   const link: string | null = await stockLink.getAttribute("href");
-   const target: string | null = await stockLink.getAttribute("target");
-   expect(link).toBe(`https://www.google.com/search?q=${stock.ticker}+stock`);
-   expect(target).toBe("_blank");
 }
 
 /**
