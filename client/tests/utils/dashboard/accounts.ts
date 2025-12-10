@@ -346,12 +346,19 @@ export async function assertActiveImageStep(page: Page, expectedStep: number): P
  * @param {Page} page - Playwright page instance
  */
 export async function openImageForm(page: Page): Promise<void> {
-   if (!(await page.getByTestId("account-image-button").isVisible())) {
+   const addImageButton: Locator = page.getByTestId("account-image-button");
+   const carouselImage: Locator = page.getByTestId("account-image-carousel-image");
+
+   if (!(await addImageButton.isVisible())) {
       // Open the account form if the image button is not visible
       await openAccountForm(page);
    }
 
-   await page.getByTestId("account-image-button").click();
+   if (!(await carouselImage.isVisible())) {
+      // Open the image carousel if the image is not visible
+      await addImageButton.click();
+   }
+
    await assertImageCarouselVisibility(page, true);
 }
 

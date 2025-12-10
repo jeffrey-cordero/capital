@@ -1,5 +1,4 @@
-import { type Locator, type Page } from "@playwright/test";
-import { assertComponentIsVisible } from "@tests/utils";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { ROOT_ROUTE } from "@tests/utils/authentication";
 
 /**
@@ -38,9 +37,12 @@ export async function openSidebar(page: Page): Promise<void> {
  */
 export async function clickSidebarLink(page: Page, testId: string): Promise<void> {
    await openSidebar(page);
-   await assertComponentIsVisible(page, testId);
-   await page.getByTestId(testId).click();
-   await page.waitForSelector(testId, { state: "hidden" });
+
+   const link: Locator = page.getByTestId(testId);
+   await link.scrollIntoViewIfNeeded();
+   await expect(link).toBeVisible();
+   await link.click({ force: true });
+   await expect(link).toBeHidden();
 }
 
 /**

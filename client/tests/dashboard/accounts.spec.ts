@@ -65,10 +65,11 @@ test.describe("Account Management", () => {
     */
    const testImageValidationMethods = async(page: Page): Promise<void> => {
       for (const method of ["clear", "valid-url", "default-image"] as const) {
-         await assertImageCarouselVisibility(page, true).catch(async() => {
-            // In the case that the image carousel is hidden, open it to avoid arrangement complexity in subsequent test steps
+         const isVisible: boolean = await page.locator("account-image-carousel").isVisible();
+
+         if (!(isVisible)) {
             await openImageForm(page);
-         });
+         }
 
          await assertAndUnblockInvalidImageURL(page, method);
       }
@@ -228,6 +229,7 @@ test.describe("Account Management", () => {
 
                // Close the image form and open it again to assert selection persistence
                await page.keyboard.press("Escape");
+               await assertImageCarouselVisibility(page, false);
                await openImageForm(page);
                await assertImageSelected(page, i, nextExpectedSelection);
             }

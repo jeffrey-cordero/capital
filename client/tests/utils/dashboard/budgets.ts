@@ -299,6 +299,8 @@ export async function updateBudgetCategory(
       // PUT should imply an existing goal entry was meant to be updated
       expect(status).toBe(HTTP_STATUS.NO_CONTENT);
    }
+
+   await expect(page.locator(submitButtonSelector)).toBeHidden();
 }
 
 /**
