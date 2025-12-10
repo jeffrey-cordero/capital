@@ -78,8 +78,8 @@ export async function assertModalIsClosed(page: Page, dataTestId?: string): Prom
 export async function closeModal(page: Page, force: boolean = false, dataTestId: string = "modal"): Promise<void> {
    const modal = page.getByTestId(dataTestId);
 
-   // No modals to close within the current viewport
-   if (await modal.count() === 0) return;
+   // Modal is not visible
+   if (!(await modal.isVisible())) return;
 
    try {
       // Wait until the target modal is fully visible within the current viewport

@@ -13,10 +13,8 @@ import {
 } from "@/tests/utils/controllers";
 import { TEST_TOKENS } from "@/tests/utils/tokens";
 
+jest.mock("@/lib/logger");
 jest.mock("@/services/authenticationService");
-jest.mock("@/lib/services", () => ({
-   submitServiceRequest: require("@/tests/utils/controllers").createMockSubmitServiceRequest()
-}));
 
 describe("Authentication Controller", () => {
    let mockReq: MockRequest;

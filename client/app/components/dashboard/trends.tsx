@@ -314,6 +314,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
             <CardContent sx = { { py: isCard ? 2.5 : 0, px: isCard ? 0.25 : 0, textAlign: isCard ? { xs: "center", lg: "left" } : "center" } }>
                <Box sx = { { px: isCard ? 2.25 : 0, mb: -0.25 } }>
                   <Typography
+                     data-testid = { `${type}-trends-heading` }
                      gutterBottom = { true }
                      sx = { { mb: 0, fontWeight: "600" } }
                      variant = "subtitle2"
@@ -339,7 +340,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                         {
                            type === "accounts" ? (
                               <Typography
-                                 data-testid = "accounts-net-worth"
+                                 data-testid = "accounts-trends-subtitle"
                                  sx = { { fontWeight: "600" } }
                                  variant = "subtitle1"
                               >
@@ -347,6 +348,7 @@ export function Trends({ type, isCard }: TrendProps): React.ReactNode {
                               </Typography>
                            ) : (
                               <Typography
+                                 data-testid = "budgets-trends-subtitle"
                                  sx = { { fontWeight: "600", pb: { xs: 0, lg: 0.7 } } }
                                  variant = "subtitle2"
                               >

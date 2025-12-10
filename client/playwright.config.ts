@@ -17,13 +17,14 @@ export default defineConfig({
    testDir: "tests/",
    fullyParallel: true,
    forbidOnly: !!process.env.CI,
-   retries: process.env.CI ? 6 : 0,
-   workers: process.env.CI ? 6 : undefined,
+   retries: process.env.CI ? 3 : 0,
+   workers: process.env.CI ? 3 : undefined,
    reporter: "html",
-   timeout: 120000, // 120 seconds per test
+   timeout: 120000, // 120 seconds per test,
    use: {
       baseURL: webServer.url,
       trace: "on-first-retry",
+      video: "retain-on-failure",
       actionTimeout: 30000, // 30 seconds for actions like click, fill, etc.
       navigationTimeout: 30000 // 30 seconds for page navigation
    },

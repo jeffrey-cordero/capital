@@ -34,9 +34,9 @@ export function getGraphColor(theme: Theme, value: number): string {
  * Gets semantic chip color for trend indicators
  *
  * @param {number} trend - Trend value to evaluate
- * @returns {string} Color variant name (default, success, or error)
+ * @returns {"default" | "success" | "error"} Chip color variant (default, success, or error)
  */
-export function getChipColor(trend: number): string {
+export function getChipColor(trend: number): "default" | "success" | "error" {
    if (trend === 0) {
       return "default" as const;
    } else if (trend > 0) {

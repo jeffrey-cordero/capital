@@ -221,7 +221,6 @@ export async function assertAccountCard(
    await expect(image).toBeVisible();
 
    let expectedImageSrc: string = "";
-   const imageSrc: string | null = await image.getAttribute("src");
 
    if (expectImageError) {
       // Assert fallback error.svg image (logo in red color) and error message notification
@@ -241,6 +240,7 @@ export async function assertAccountCard(
       }
    }
 
+   const imageSrc: string | null = await image.getAttribute("src");
    expect(imageSrc).toBe(expectedImageSrc);
 }
 
@@ -346,12 +346,19 @@ export async function assertActiveImageStep(page: Page, expectedStep: number): P
  * @param {Page} page - Playwright page instance
  */
 export async function openImageForm(page: Page): Promise<void> {
-   if (!(await page.getByTestId("account-image-button").isVisible())) {
+   const addImageButton: Locator = page.getByTestId("account-image-button");
+   const carouselImage: Locator = page.getByTestId("account-image-carousel-image");
+
+   if (!(await addImageButton.isVisible())) {
       // Open the account form if the image button is not visible
       await openAccountForm(page);
    }
 
-   await page.getByTestId("account-image-button").click();
+   if (!(await carouselImage.isVisible())) {
+      // Open the image carousel if the image is not visible
+      await addImageButton.click();
+   }
+
    await assertImageCarouselVisibility(page, true);
 }
 
@@ -517,7 +524,7 @@ export async function assertAccountTrends(
    monthlyBalances?: (number | null)[][]
 ): Promise<void> {
    const barChartValues: Locator = page.locator("[data-bar-chart-value]");
-   const netWorthElement: Locator = page.getByTestId("accounts-net-worth");
+   const netWorthElement: Locator = page.getByTestId("accounts-trends-subtitle");
    const expectedFormattedNetWorth: string = displayCurrency(expectedNetWorth);
 
    if (accounts.length === 0) {

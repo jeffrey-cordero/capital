@@ -71,6 +71,7 @@ export async function assertPasswordVisibilityToggle(
    testPassword: string = DEFAULT_TEST_PASSWORD
 ): Promise<void> {
    await page.getByTestId(testId).fill(testPassword);
+   await expect(page.getByTestId(testId)).toHaveValue(testPassword);
 
    // Initially the password field should be hidden (type="password")
    await expectPasswordInputType(page, testId, "password");

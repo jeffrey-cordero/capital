@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { assertComponentIsVisible, assertInputVisibility, closeModal } from "@tests/utils";
+import { BUDGETS_ROUTE, DASHBOARD_ROUTE } from "@tests/utils/authentication";
 import { assertValidationErrors, submitForm } from "@tests/utils/forms";
+import { navigateToPath } from "@tests/utils/navigation";
 import { type BudgetCategory, type BudgetType } from "capital/budgets";
 import { HTTP_STATUS } from "capital/server";
 
@@ -297,6 +299,8 @@ export async function updateBudgetCategory(
       // PUT should imply an existing goal entry was meant to be updated
       expect(status).toBe(HTTP_STATUS.NO_CONTENT);
    }
+
+   await expect(page.locator(submitButtonSelector)).toBeHidden();
 }
 
 /**
@@ -385,6 +389,8 @@ export async function deleteBudgetCategory(
       const response: Response = await responsePromise;
       expect(response.status()).toBe(HTTP_STATUS.NO_CONTENT);
       await expect(category).toBeHidden();
+      await expect(category).not.toBeAttached();
+      await page.waitForTimeout(5000);
    } else {
       await cancelButton.click();
 
@@ -779,9 +785,15 @@ export async function assertBudgetTrends(
       const trends: BudgetTrendData = isCurrentYear ? currentYearTrends : lastYearTrends;
       const year: number = isCurrentYear ? currentYear : lastYear;
 
-      await assertBudgetTrendsForYear(page, "Income", trends.Income);
-      await assertBudgetTrendsForYear(page, "Expenses", trends.Expenses);
-      await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", year.toString());
+      const routes = isCurrentYear ? [DASHBOARD_ROUTE, BUDGETS_ROUTE] : [BUDGETS_ROUTE];
+
+      for (const route of routes) {
+         // For the current year, we will also ensure consistency across the dashboard and budgets pages
+         await navigateToPath(page, route);
+         await assertBudgetTrendsForYear(page, "Income", trends.Income);
+         await assertBudgetTrendsForYear(page, "Expenses", trends.Expenses);
+         await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", year.toString());
+      }
 
       if (i + increment !== end) {
          const navigationDirection: string = direction === "backward" ? "back" : "forward";

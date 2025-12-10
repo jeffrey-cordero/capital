@@ -50,7 +50,7 @@ export async function createUser(
 
    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       await navigateToPath(page, REGISTER_ROUTE);
-      await assertComponentIsVisible(page, "submit-button");
+      await assertComponentIsVisible(page, "submit-button", "Register");
 
       const credentials = generateTestCredentials();
 

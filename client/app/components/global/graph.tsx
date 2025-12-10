@@ -358,6 +358,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                         filtered.length > 0 && (
                            <>
                               <Typography
+                                 data-testid = { `${isIndicators ? "indicator" : title}-value` }
                                  sx = { { whiteSpace: "pre-wrap", wordBreak: "break-all", fontWeight: "600" } }
                                  variant = "subtitle1"
                               >
@@ -367,6 +368,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                               </Typography>
                               <Chip
                                  color = { chip as any }
+                                 data-testid = { `${isIndicators ? "indicator" : title}-percent-chip` }
                                  label = { displayPercentage(Number(trend.toFixed(2))) }
                                  size = "small"
                                  sx = { { mt: "2px !important" } }
@@ -400,6 +402,7 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  </InputLabel>
                                  <Select
                                     { ...field }
+                                    inputProps = { { "data-testid": "indicator-select" } }
                                     label = { title }
                                     size = "small"
                                     slotProps = {
@@ -444,15 +447,9 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                            </InputLabel>
                            <Select
                               { ...field }
+                              inputProps = { { id: "view", "data-testid": "view-select" } }
                               label = "View"
                               size = "small"
-                              slotProps = {
-                                 {
-                                    input: {
-                                       id: "view"
-                                    }
-                                 }
-                              }
                               sx = { { height: "2.7rem" } }
                               value = { view }
                               variant = "outlined"
@@ -482,7 +479,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                                  {
                                     htmlInput: {
                                        min: minDate,
-                                       max: maxDate
+                                       max: maxDate,
+                                       "data-testid": "from-date"
                                     },
                                     inputLabel: {
                                        shrink: true
@@ -515,7 +513,8 @@ export default function Graph({ title, isCard, isIndicators, isAverage, data, de
                               {
                                  htmlInput: {
                                     min: minDate,
-                                    max: maxDate
+                                    max: maxDate,
+                                    "data-testid": "to-date"
                                  },
                                  inputLabel: {
                                     shrink: true

@@ -12,7 +12,6 @@ import {
 import { HTTP_STATUS, ServerResponse } from "capital/server";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 import { logger } from "@/lib/logger";
 import { getCacheValue, setCacheValue } from "@/lib/redis";
@@ -32,7 +31,7 @@ const mutex = new Mutex();
 /**
  * Backup economy data for fallback during data fetching failures
  */
-const backupEconomyData = {
+export const backupEconomyData = {
    news: economy.news,
    trends: {
       "Stocks": economy.trends.Stocks,
@@ -47,8 +46,8 @@ const backupEconomyData = {
 /**
  * Cache durations for economy data (24 hours or 5 minutes backup duration)
  */
-const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
-const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
+export const ECONOMY_DATA_CACHE_DURATION = 24 * 60 * 60;
+export const BACKUP_ECONOMY_DATA_CACHE_DURATION = 5 * 60;
 
 /**
  * Generates Alpha Vantage API URL with function name and parameters
@@ -67,7 +66,7 @@ const getAlphaVantageUrl = (name: string, params: string = ""): string => {
  * @param {string} indicator - The indicator to fetch
  * @returns {keyof typeof economy.trends} Key for the economy trends data
  */
-const getEconomicIndicatorKey = (indicator: string): keyof typeof economy.trends => {
+export const getEconomicIndicatorKey = (indicator: string): keyof typeof economy.trends => {
    switch (indicator) {
       case "REAL_GDP":
          return "GDP";
@@ -129,7 +128,7 @@ async function fetchEconomicIndicators(indicator: string): Promise<IndicatorTren
 
    if (!fields.success) {
       // Potential rate limit error or changes in the API structure
-      logger.error("Error fetching economic indicators", response);
+      logger.error(`Error fetching ${indicator.toLowerCase().replace(/_/g, " ")}`);
       console.error(response);
 
       // Use our local backup data for this specific indicator
@@ -218,6 +217,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
          const updates = await dashboardRepository.getEconomicData();
 
          if (updates && new Date(updates.time) > new Date(new Date().getTime() - ECONOMY_DATA_CACHE_DURATION * 1000)) {
+            setCacheValue("economy", ECONOMY_DATA_CACHE_DURATION, JSON.stringify(updates.data));
             return sendServiceResponse(HTTP_STATUS.OK, updates.data);
          }
 
@@ -254,7 +254,7 @@ export async function fetchEconomicalData(): Promise<ServerResponse> {
 
          // Backup the data to a file
          if (process.env.NODE_ENV === "development") {
-            const resourcesPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "resources", "economy.json");
+            const resourcesPath = path.join(process.cwd(), "resources", "economy.json");
             fs.writeFileSync(resourcesPath, JSON.stringify(economy, null, 3));
          }
 

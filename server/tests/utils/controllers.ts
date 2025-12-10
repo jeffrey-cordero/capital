@@ -1,8 +1,7 @@
 import { HTTP_STATUS, ServerResponse } from "capital/server";
-import { RequestHandler, Response } from "express";
+import { RequestHandler } from "express";
 
 import { logger } from "@/lib/logger";
-import { sendErrors, sendSuccess } from "@/lib/response";
 import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
 
 /**
@@ -12,35 +11,6 @@ import { MockNextFunction, MockRequest, MockResponse } from "@/tests/utils/api";
  * @returns {jest.MockedFunction<T>} Mocked function
  */
 export type MockedServiceFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
-
-/**
- * Create a mock submit service request function
- *
- * @returns {jest.Mock} Mock submit service request
- */
-export function createMockSubmitServiceRequest(): jest.Mock {
-   return jest.fn(async(mockRes: MockResponse, callback: () => Promise<ServerResponse>) => {
-      // Ensure error logging is mocked for all service requests
-      logger.error = jest.fn();
-
-      try {
-         const result: ServerResponse = await callback();
-
-         if (result.statusCode === HTTP_STATUS.OK || result.statusCode === HTTP_STATUS.CREATED || result.statusCode === HTTP_STATUS.NO_CONTENT || result.data?.refreshable) {
-            // Success response
-            return sendSuccess(mockRes as Response, result.statusCode, result.data ?? undefined);
-         } else {
-            // Error response
-            return sendErrors(mockRes as Response, result.statusCode, result.errors);
-         }
-      } catch (error: any) {
-         // Log unexpected errors
-         logger.error(error.stack);
-
-         return sendErrors(mockRes as Response, HTTP_STATUS.INTERNAL_SERVER_ERROR, { server: "Internal Server Error" });
-      }
-   });
-}
 
 /**
  * Arrange a mock service function to return a success response

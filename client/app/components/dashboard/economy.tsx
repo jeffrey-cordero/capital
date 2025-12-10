@@ -30,10 +30,12 @@ interface StocksProps {
  *
  * @property {string} title - Card title
  * @property {StockIndicator[]} data - Stock indicators data
+ * @property {string} type - Type identifier for data-testid (e.g., "top-gainers")
  */
 interface TrendProps {
    title: string;
    data: StockIndicator[];
+   type: string;
 }
 
 /**
@@ -42,15 +44,17 @@ interface TrendProps {
  * @param {TrendProps} props - Trend card component props
  * @returns {React.ReactNode} The StockTrendCard component
  */
-function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
+function StockTrendCard({ title, data, type }: TrendProps): React.ReactNode {
    return (
       <Card
+         data-testid = { `stocks-${type}-container` }
          elevation = { 3 }
          sx = { { textAlign: "left", borderRadius: 2, px: 1, pt: 1.5, pb: 0.5 } }
          variant = "elevation"
       >
          <CardContent>
             <Typography
+               data-testid = { `stocks-${type}-title` }
                sx = { { mb: 2.5, fontWeight: "bold", textAlign: "center" } }
                variant = "h5"
             >
@@ -61,56 +65,65 @@ function StockTrendCard({ title, data }: TrendProps): React.ReactNode {
                spacing = { 2 }
             >
                {
-                  data.map((stock, index) => (
-                     <Stack
-                        direction = "column"
-                        key = { index }
-                     >
+                  data.map((stock, index) => {
+                     const chipColor = getChipColor(parseFloat(stock.change_percentage));
+                     return (
                         <Stack
-                           direction = "row"
-                           sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 0.5 } }
-                        >
-                           <Typography
-                              component = "p"
-                              sx = { { fontWeight: "bold" } }
-                              variant = "h6"
-                           >
-                              <Link
-                                 href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
-                                 target = "_blank"
-                                 underline = "none"
-                              >
-                                 { stock.ticker }
-                              </Link>
-                           </Typography>
-                           <Chip
-                              color = { getChipColor(parseFloat(stock.change_percentage)) as any }
-                              label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
-                              size = "small"
-                           />
-                        </Stack>
-                        <Stack
+                           data-testid = { `stock-item-${index}` }
                            direction = "column"
-                           sx = { { gap: 1 } }
+                           key = { index }
                         >
-                           <Typography
-                              fontWeight = "600"
-                              variant = "body2"
+                           <Stack
+                              direction = "row"
+                              sx = { { justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 0.5 } }
                            >
-                              ${ Number(stock.price).toFixed(2) }
-                              { " " }
-                              ({ Number(stock.change_amount) < 0 ? "-" : "+" }
-                              { Math.abs(Number(stock.change_amount)).toFixed(2) })
-                           </Typography>
-                           <Typography
-                              fontWeight = "600"
-                              variant = "body2"
+                              <Typography
+                                 component = "p"
+                                 sx = { { fontWeight: "bold" } }
+                                 variant = "h6"
+                              >
+                                 <Link
+                                    data-testid = { `stock-link-${type}-${index}` }
+                                    href = { `https://www.google.com/search?q=${stock.ticker}+stock` }
+                                    target = "_blank"
+                                    underline = "none"
+                                 >
+                                    { stock.ticker }
+                                 </Link>
+                              </Typography>
+                              <Chip
+                                 color = { chipColor }
+                                 data-chip-color = { chipColor }
+                                 data-testid = { `stock-percent-chip-${chipColor}-${index}` }
+                                 label = { `${parseFloat(stock.change_percentage).toFixed(2)}%` }
+                                 size = "small"
+                              />
+                           </Stack>
+                           <Stack
+                              direction = "column"
+                              sx = { { gap: 1 } }
                            >
-                              { displayVolume(Number(stock.volume)) } shares
-                           </Typography>
+                              <Typography
+                                 data-testid = { `stock-price-${type}-${index}` }
+                                 fontWeight = "600"
+                                 variant = "body2"
+                              >
+                                 ${ Number(stock.price).toFixed(2) }
+                                 { " " }
+                                 ({ Number(stock.change_amount) < 0 ? "-" : "+" }
+                                 { Math.abs(Number(stock.change_amount)).toFixed(2) })
+                              </Typography>
+                              <Typography
+                                 data-testid = { `stock-volume-${type}-${index}` }
+                                 fontWeight = "600"
+                                 variant = "body2"
+                              >
+                                 { displayVolume(Number(stock.volume)) } shares
+                              </Typography>
+                           </Stack>
                         </Stack>
-                     </Stack>
-                  ))
+                     );
+                  })
                }
             </Stack>
          </CardContent>
@@ -129,6 +142,7 @@ function Stocks({ data }: StocksProps): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "stocks-section"
          direction = "column"
          id = "stocks"
          sx = { { textAlign: "center", justifyContent: "center", alignItems: "center" } }
@@ -143,18 +157,21 @@ function Stocks({ data }: StocksProps): React.ReactNode {
                <StockTrendCard
                   data = { top_gainers }
                   title = "Top Gainers"
+                  type = "top-gainers"
                />
             </Grid>
             <Grid size = { { xs: 12, sm: 6, md: 4 } }>
                <StockTrendCard
                   data = { top_losers }
                   title = "Top Losers"
+                  type = "top-losers"
                />
             </Grid>
             <Grid size = { { xs: 12, md: 4 } }>
                <StockTrendCard
                   data = { most_actively_traded }
                   title = "Most Active"
+                  type = "most-active"
                />
             </Grid>
          </Grid>
@@ -189,6 +206,7 @@ export default function Economy(): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "economy-section"
          direction = "column"
          id = "economy"
          sx = { { justifyContent: "space-between", mt: 4 } }
@@ -199,6 +217,7 @@ export default function Economy(): React.ReactNode {
          >
             <Box>
                <Typography
+                  data-testid = "last-updated-label"
                   fontWeight = "bold"
                   sx = { { px: 2 } }
                   variant = "subtitle2"
@@ -206,6 +225,7 @@ export default function Economy(): React.ReactNode {
                   Last updated
                </Typography>
                <Typography
+                  data-testid = "last-updated-timestamp"
                   fontWeight = "bold"
                   sx = { { px: 2 } }
                   variant = "subtitle2"

@@ -32,10 +32,10 @@ const DEFAULT_VALUES = {
 /**
  * Displays a single news article in a collapsible card
  *
- * @param {{ article: Article }} props - Article card props
+ * @param {{ article: Article; index: number }} props - Article card props
  * @returns {React.ReactNode} The ArticleCard component
  */
-function ArticleCard({ article }: { article: Article }): React.ReactNode {
+function ArticleCard({ article, index }: { article: Article; index: number }): React.ReactNode {
    const theme = useTheme();
    const [expanded, setExpanded] = useState(false);
 
@@ -54,6 +54,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
    return (
       <Card
          data-expanded = { expanded }
+         data-testid = { `news-article-container-${index}` }
          elevation = { 3 }
          sx = { { margin: "auto", borderRadius: 2, width: "100%", textAlign: "left" } }
       >
@@ -61,6 +62,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
             avatar = {
                <Avatar
                   aria-label = "author"
+                  data-testid = { `news-article-author-avatar-${index}` }
                   sx = { { color: "white", backgroundColor: "primary.main", fontWeight: "medium" } }
                >
                   { authorInitial }
@@ -73,12 +75,16 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
                >
                   <Stack spacing = { 0 }>
                      <Typography
+                        data-testid = { `news-article-author-${index}` }
                         sx = { { fontWeight: "500" } }
                         variant = "subtitle2"
                      >
                         { author }
                      </Typography>
-                     <Typography variant = "caption">
+                     <Typography
+                        data-testid = { `news-article-publish-date-${index}` }
+                        variant = "caption"
+                     >
                         { publishDate }
                      </Typography>
                   </Stack>
@@ -87,6 +93,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
          />
          <CardContent sx = { { py: 0, px: "auto" } }>
             <Typography
+               data-testid = { `news-article-title-${index}` }
                sx = {
                   {
                      display: "-webkit-box",
@@ -106,6 +113,7 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
          </CardContent>
          <CardActions sx = { { justifyContent: "flex-end", px: 1, pt: 1, pb: 1, mt: -2 } }>
             <Expand
+               data-testid = { `news-article-expand-button-${index}` }
                disableRipple = { true }
                expand = { expanded }
                onClick = { toggleExpandedState }
@@ -124,12 +132,14 @@ function ArticleCard({ article }: { article: Article }): React.ReactNode {
             <CardContent sx = { { p: "0 15px" } }>
                <Typography
                   color = "textSecondary"
+                  data-testid = { `news-article-description-${index}` }
                   sx = { { whiteSpace: "pre-wrap" } }
                   variant = "body2"
                >
                   { description }
                   <IconButton
                      aria-label = "Read More"
+                     data-testid = { `news-article-link-${index}` }
                      disableRipple = { true }
                      href = { link }
                      size = "small"
@@ -162,6 +172,7 @@ export default function Articles(): React.ReactNode {
 
    return (
       <Stack
+         data-testid = "news-section"
          direction = "column"
          id = "news"
          sx = { { height: "100%", textAlign: "center", justifyContent: "space-between", alignItems: "center", gap: 2 } }
@@ -170,7 +181,8 @@ export default function Articles(): React.ReactNode {
             items.map((item: Article, index) => (
                <ArticleCard
                   article = { item }
-                  key = { `news-${index}` }
+                  index = { index }
+                  key = { `news-article-${index}` }
                />
             ))
          }
