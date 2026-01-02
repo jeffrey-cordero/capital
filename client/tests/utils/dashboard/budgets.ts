@@ -730,11 +730,13 @@ export async function assertBudgetPeriodProgress(
  * @param {Page} page - Playwright page instance
  * @param {BudgetType} type - Budget type (`"Income"` or `"Expenses"`)
  * @param {number[]} monthlyTrends - Array of used amounts for 12 months
+ * @param {boolean} isCurrentYear - Whether the year is the current year
  */
 async function assertBudgetTrendsForYear(
    page: Page,
    type: BudgetType,
-   monthlyTrends: number[]
+   monthlyTrends: number[],
+   isCurrentYear: boolean
 ): Promise<void> {
    const currentMonth: number = new Date().getMonth() + 1;
    expect(monthlyTrends.length).toBe(12);
@@ -747,9 +749,9 @@ async function assertBudgetTrendsForYear(
       // Get the bar value from the data attribute for simplicity
       const barValue: string | null = await bar.getAttribute("data-bar-chart-value");
 
-      if (i >= currentMonth) {
-         // Future months should be null
-         expect(barValue).toBe("null");
+      if (isCurrentYear && i >= currentMonth) {
+         // Future months should be $0
+         expect(barValue).toBe("0");
       } else {
          // Current months should show the used value
          expect(barValue).toBe(used.toString());
@@ -790,8 +792,8 @@ export async function assertBudgetTrends(
       for (const route of routes) {
          // For the current year, we will also ensure consistency across the dashboard and budgets pages
          await navigateToPath(page, route);
-         await assertBudgetTrendsForYear(page, "Income", trends.Income);
-         await assertBudgetTrendsForYear(page, "Expenses", trends.Expenses);
+         await assertBudgetTrendsForYear(page, "Income", trends.Income, isCurrentYear);
+         await assertBudgetTrendsForYear(page, "Expenses", trends.Expenses, isCurrentYear);
          await expect(page.getByTestId("budgets-trends-container")).toHaveAttribute("data-year", year.toString());
       }
 
