@@ -59,7 +59,12 @@ const createMockRequest = (options: MockRequestOptions = {}): MockRequest => ({
    body: options.body ?? {},
    params: options.params ?? {},
    query: options.query ?? {},
-   headers: options.headers ?? {},
+   headers: {
+      ...(options.headers?.authorization || options.cookies?.access_token
+         ? { authorization: options.headers?.authorization ?? `Bearer ${options.cookies?.access_token}` }
+         : {}),
+      ...options.headers
+   },
    locals: options.locals ?? {}
 });
 

@@ -14,51 +14,38 @@ export const TOKEN_EXPIRATIONS = {
 } as const;
 
 /**
- * Sets JWT access and refresh tokens in HTTP-only cookies
+ * Generates JWT access and refresh tokens
  *
- * @param {Response} res - Express response object
  * @param {string} user_id - User ID to include in token
  * @param {number} secondsUntilExpire - Seconds until refresh token expires
+ * @returns {{ access_token: string; refresh_token: string }} Signed tokens
  */
-export function configureToken(res: Response, user_id: string, secondsUntilExpire?: number): void {
+export function generateTokens(user_id: string, secondsUntilExpire?: number): { access_token: string; refresh_token: string } {
    const access_token = jwt.sign({ user_id }, process.env.SESSION_SECRET || "", { expiresIn: "60min" });
-   res.cookie("access_token", access_token, {
-      httpOnly: true,
-      sameSite: "none",
-      // Use a long cookie lifetime (1 week) and short JWT expiration (60 minutes) for token refresh simplicity
-      maxAge: TOKEN_EXPIRATIONS.REFRESH_TOKEN,
-      secure: true
-   });
-
    const refresh_token = jwt.sign({ user_id }, process.env.SESSION_SECRET || "", { expiresIn: secondsUntilExpire || "7d" });
-   res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
-      sameSite: "none",
-      // Set the cookie lifetime to the remaining time in seconds or the default refresh token duration (1 week)
-      maxAge: (secondsUntilExpire || TOKEN_EXPIRATIONS.REFRESH_TOKEN),
-      secure: true,
-      path: "/api/v1/authentication/refresh"
-   });
+
+   return { access_token, refresh_token };
 }
 
 /**
- * Clears both access and refresh tokens from HTTP-only cookies
+ * Generates JWT access and refresh tokens
  *
- * @param {Response} res - Express response object
+ * @param {Response} _res - Express response object (unused but kept for signature compatibility)
+ * @param {string} user_id - User ID to include in token
+ * @param {number} secondsUntilExpire - Seconds until refresh token expires
+ * @returns {{ access_token: string; refresh_token: string }} Signed tokens
  */
-export function clearTokens(res: Response): void {
-   res.clearCookie("access_token", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true
-   });
+export function configureToken(_res: Response, user_id: string, secondsUntilExpire?: number): { access_token: string; refresh_token: string } {
+   return generateTokens(user_id, secondsUntilExpire);
+}
 
-   res.clearCookie("refresh_token", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      path: "/api/v1/authentication/refresh"
-   });
+/**
+ * Clears authentication (No-op since switching to JWT in localStorage, but kept for interface consistency)
+ *
+ * @param {Response} _res - Express response object
+ */
+export function clearTokens(_res: Response): void {
+   // JWTs are managed in localStorage on the client side
 }
 
 /**
@@ -72,7 +59,11 @@ export function clearTokens(res: Response): void {
 export function authenticateToken(required: boolean): RequestHandler {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction): void => {
-      const token: string = req.cookies.access_token;
+      // Prioritize Authorization header, fallback to cookies
+      const authHeader = req.headers.authorization;
+      const token: string = authHeader && authHeader.startsWith("Bearer ")
+         ? authHeader.split(" ")[1]
+         : req.cookies.access_token;
 
       if (!token && required) {
          return sendErrors(res, HTTP_STATUS.UNAUTHORIZED);
@@ -125,8 +116,11 @@ export function authenticateToken(required: boolean): RequestHandler {
 export function authenticateRefreshToken(): RequestHandler {
    // eslint-disable-next-line consistent-return
    return (req: Request, res: Response, next: NextFunction) => {
-      // Get the refresh token from the HTTP-only cookie
-      const token: string = req.cookies.refresh_token;
+      // Prioritize Authorization header, fallback to cookies
+      const authHeader = req.headers.authorization;
+      const token: string = authHeader && authHeader.startsWith("Bearer ")
+         ? authHeader.split(" ")[1]
+         : req.cookies.refresh_token;
 
       if (!token) {
          // Missing refresh token, clear both authentication tokens

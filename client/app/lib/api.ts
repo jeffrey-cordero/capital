@@ -22,6 +22,32 @@ const SPECIAL_PATHS = {
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 /**
+ * Token management helpers for localStorage
+ */
+const TOKENS = {
+   ACCESS: "access_token",
+   REFRESH: "refresh_token"
+} as const;
+
+function getAccessToken() {
+   return localStorage.getItem(TOKENS.ACCESS);
+}
+
+function getRefreshToken() {
+   return localStorage.getItem(TOKENS.REFRESH);
+}
+
+function setTokens(access: string, refresh: string) {
+   localStorage.setItem(TOKENS.ACCESS, access);
+   localStorage.setItem(TOKENS.REFRESH, refresh);
+}
+
+function clearTokens() {
+   localStorage.removeItem(TOKENS.ACCESS);
+   localStorage.removeItem(TOKENS.REFRESH);
+}
+
+/**
  * Standard API response structure
  *
  * @template T Expected data type
@@ -60,9 +86,13 @@ export async function sendApiRequest<T>(
    const isUpdatingUserInformation = path === SPECIAL_PATHS.USERS && method !== "POST";
 
    try {
+      const accessToken = getAccessToken();
       const response = await fetch(`${SERVER_URL}/${path}`, {
          method,
-         headers: { "Content-Type": "application/json" },
+         headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {})
+         },
          body: body ? JSON.stringify(body) : undefined,
          credentials: "include"
       });
@@ -73,17 +103,26 @@ export async function sendApiRequest<T>(
          const json: ApiResponse<{ refreshable?: boolean }> = await response.json();
 
          if (json.data?.refreshable && !isRetrying) {
+            const refreshToken = getRefreshToken();
             const refreshResponse = await fetch(`${SERVER_URL}/authentication/refresh`, {
                method: "POST",
+               headers: {
+                  ...(refreshToken ? { "Authorization": `Bearer ${refreshToken}` } : {})
+               },
                credentials: "include"
             });
 
             if (refreshResponse.status === HTTP_STATUS.OK) {
+               const refreshJson: ApiResponse<{ access_token: string; refresh_token: string }> = await refreshResponse.json();
+               if (refreshJson.data?.access_token && refreshJson.data?.refresh_token) {
+                  setTokens(refreshJson.data.access_token, refreshJson.data.refresh_token);
+               }
                // Retry the original request once after a successful refresh attempt
                return sendApiRequest<T>(path, method, body, dispatch, navigate, setError, true);
             }
          }
 
+         clearTokens();
          window.location.pathname = "/login";
          return null;
       } else if (response.status === HTTP_STATUS.REDIRECT) {
@@ -111,9 +150,19 @@ export async function sendApiRequest<T>(
       }
 
       // Handle successful or error responses
-      const json: ApiResponse<T> = await response.json();
+      const json: ApiResponse<T & { access_token?: string; refresh_token?: string }> = await response.json();
 
       if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
+         // If tokens are returned (login or update), store them
+         if (json.data?.access_token && json.data?.refresh_token) {
+            setTokens(json.data.access_token, json.data.refresh_token);
+         }
+
+         // Handle logout explicitly to clear localStorage
+         if (path === "authentication/logout") {
+            clearTokens();
+         }
+
          return json.data as T;
       } else {
          // Error handling for form validation errors

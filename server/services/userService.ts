@@ -128,10 +128,13 @@ export async function createUser(res: Response, user: User): Promise<ServerRespo
       const digest: string = await argon2.hash(fields.data.password);
       const user_id: string = await userRepository.create({ ...fields.data, password: digest });
 
-      // Configure JWT token for authentication purposes
-      configureToken(res, user_id);
+      // Configure JWT token for authentication purposes and return it to the client
+      const tokens = configureToken(res, user_id);
 
-      return sendServiceResponse(HTTP_STATUS.CREATED, { success: true });
+      return sendServiceResponse(HTTP_STATUS.CREATED, {
+         success: true,
+         ...tokens
+      });
    } else {
       // Handle username/email conflicts
       const errors = generateConflictErrors(existingUsers, fields.data.username, fields.data.email);

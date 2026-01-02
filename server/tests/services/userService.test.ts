@@ -108,6 +108,11 @@ describe("User Service", () => {
 
       arrangeDefaultRedisCacheBehavior(redis);
       ({ mockRes } = createMockMiddleware({ locals: { userId: TEST_USER_ID } }));
+
+      (middleware.configureToken as jest.Mock).mockReturnValue({
+         access_token: "mock-access-token",
+         refresh_token: "mock-refresh-token"
+      });
    });
 
    describe("fetchUserDetails", () => {
@@ -221,7 +226,11 @@ describe("User Service", () => {
             },
             userId
          );
-         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.CREATED, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
 
       it("should return validation errors for invalid user data", async() => {

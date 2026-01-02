@@ -58,10 +58,13 @@ export async function authenticateUser(res: Response, username: string, password
          password: "Invalid credentials"
       });
    } else {
-      // On successful authentication, configure a JWT token as a cookie
-      configureToken(res, user.user_id as string);
+      // On successful authentication, configure a JWT token as a cookie and return it to the client
+      const tokens = configureToken(res, user.user_id as string);
 
-      return sendServiceResponse(HTTP_STATUS.OK, { success: true });
+      return sendServiceResponse(HTTP_STATUS.OK, {
+         success: true,
+         ...tokens
+      });
    }
 }
 
@@ -71,16 +74,19 @@ export async function authenticateUser(res: Response, username: string, password
  *
  * @param {Response} res - Express response object
  * @param {string} user_id - User ID from validated refresh token
- * @returns {ServerResponse} A server response of `HTTP_STATUS.OK` with success status
+ * @returns {ServerResponse} A server response of `HTTP_STATUS.OK` with success status and new tokens
  */
 export function refreshToken(res: Response, user_id: string): ServerResponse {
    // Determine the expiration time of the refresh token in seconds
    const secondsUntilExpire: number = Math.max(0, Math.floor((new Date(res.locals.refresh_token_expiration).getTime() - Date.now()) / 1000));
 
    // Rotate both tokens for security purposes
-   configureToken(res, user_id, secondsUntilExpire);
+   const tokens = configureToken(res, user_id, secondsUntilExpire);
 
-   return sendServiceResponse(HTTP_STATUS.OK, { success: true });
+   return sendServiceResponse(HTTP_STATUS.OK, {
+      success: true,
+      ...tokens
+   });
 }
 
 /**

@@ -1,4 +1,4 @@
-import { type Cookie, type Page, type Response, type Route } from "@playwright/test";
+import { type Page, type Response, type Route } from "@playwright/test";
 import { expect, test } from "@tests/fixtures";
 import { assertComponentIsVisible } from "@tests/utils";
 import { createUser, DASHBOARD_ROUTE, LOGIN_ROUTE } from "@tests/utils/authentication";
@@ -75,18 +75,14 @@ test.describe("API Error Handling", () => {
       };
 
       /**
-       * Removes the refresh token from browser cookies while preserving other cookies
+       * Removes the refresh token from localStorage
        *
        * @param {Page} page - Playwright page instance
        */
-      const removeRefreshTokenFromCookies = async(page: Page): Promise<void> => {
-         // Get all of the cookies from the page context
-         const context = page.context();
-         const cookies = await context.cookies();
-
-         // Clear all cookies and re-add all of the cookies except for the refresh token
-         await context.clearCookies();
-         await context.addCookies(cookies.filter((cookie: Cookie) => cookie.name !== "refresh_token"));
+      const removeRefreshTokenFromLocalStorage = async(page: Page): Promise<void> => {
+         await page.evaluate(() => {
+            localStorage.removeItem("refresh_token");
+         });
       };
 
       test.beforeEach(async({ page, usersRegistry }) => {
@@ -116,7 +112,7 @@ test.describe("API Error Handling", () => {
          process.env.PLAYWRIGHT_TEST_ID = "missing_refresh_token";
 
          // Clear the refresh token
-         await removeRefreshTokenFromCookies(page);
+         await removeRefreshTokenFromLocalStorage(page);
 
          // Store the promise for the refresh response
          const refreshPromise = page.waitForResponse("**/api/v1/authentication/refresh");

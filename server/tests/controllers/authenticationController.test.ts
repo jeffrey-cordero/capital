@@ -23,13 +23,14 @@ describe("Authentication Controller", () => {
    let authenticationService: typeof import("@/services/authenticationService");
 
    beforeEach(async() => {
+      jest.clearAllMocks();
       ({ mockReq, mockRes, mockNext } = createMockMiddleware());
       authenticationService = await import("@/services/authenticationService");
    });
 
    describe("GET /authentication", () => {
       it("should return authenticated for valid token", async() => {
-         mockReq.cookies = { access_token: TEST_TOKENS.VALID_ACCESS };
+         mockReq.headers.authorization = `Bearer ${TEST_TOKENS.VALID_ACCESS}`;
          const mockGetAuthentication = arrangeMockServiceSuccess(
             authenticationService,
             "getAuthentication",
@@ -42,14 +43,14 @@ describe("Authentication Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockGetAuthentication,
-            [mockRes, mockReq.cookies.access_token],
+            [mockRes, TEST_TOKENS.VALID_ACCESS],
             HTTP_STATUS.OK,
             { authenticated: true }
          );
       });
 
       it("should return refreshable for expired token", async() => {
-         mockReq.cookies = { access_token: TEST_TOKENS.EXPIRED_ACCESS };
+         mockReq.headers.authorization = `Bearer ${TEST_TOKENS.EXPIRED_ACCESS}`;
          const mockGetAuthentication = arrangeMockServiceSuccess(
             authenticationService,
             "getAuthentication",
@@ -62,14 +63,14 @@ describe("Authentication Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockGetAuthentication,
-            [mockRes, mockReq.cookies.access_token],
+            [mockRes, TEST_TOKENS.EXPIRED_ACCESS],
             HTTP_STATUS.UNAUTHORIZED,
             { refreshable: true }
          );
       });
 
       it("should return unauthenticated for invalid access token", async() => {
-         mockReq.cookies = { access_token: TEST_TOKENS.INVALID_ACCESS };
+         mockReq.headers.authorization = `Bearer ${TEST_TOKENS.INVALID_ACCESS}`;
          const mockGetAuthentication = arrangeMockServiceSuccess(
             authenticationService,
             "getAuthentication",
@@ -82,14 +83,14 @@ describe("Authentication Controller", () => {
          assertControllerSuccessResponse(
             mockRes,
             mockGetAuthentication,
-            [mockRes, mockReq.cookies.access_token],
+            [mockRes, TEST_TOKENS.INVALID_ACCESS],
             HTTP_STATUS.OK,
             { authenticated: false }
          );
       });
 
       it("should return unauthenticated for missing access token in cookies", async() => {
-         mockReq.cookies = {};
+         mockReq.headers.authorization = "";
          const mockGetAuthentication = arrangeMockServiceSuccess(
             authenticationService,
             "getAuthentication",
@@ -109,7 +110,7 @@ describe("Authentication Controller", () => {
       });
 
       it("should return internal server error for service errors", async() => {
-         mockReq.cookies = { access_token: TEST_TOKENS.VALID_ACCESS };
+         mockReq.headers.authorization = `Bearer ${TEST_TOKENS.VALID_ACCESS}`;
          const expectedError = new Error("Database connection failed");
          const mockGetAuthentication = arrangeMockServiceError(authenticationService, "getAuthentication", expectedError);
 
@@ -119,7 +120,7 @@ describe("Authentication Controller", () => {
             mockRes,
             expectedError,
             mockGetAuthentication,
-            [mockRes, mockReq.cookies.access_token],
+            [mockRes, TEST_TOKENS.VALID_ACCESS],
             HTTP_STATUS.INTERNAL_SERVER_ERROR,
             { server: "Internal Server Error" }
          );

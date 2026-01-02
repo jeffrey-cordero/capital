@@ -12,7 +12,12 @@ import * as authenticationService from "@/services/authenticationService";
  * @returns {Promise<Response>} Service response with authentication status
  */
 export const GET = asyncHandler(async(req: Request, res: Response) => {
-   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, req.cookies.access_token));
+   const authHeader = req.headers.authorization;
+   const token: string = authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : req.cookies.access_token;
+
+   return submitServiceRequest(res, async() => authenticationService.getAuthentication(res, token));
 });
 
 /**

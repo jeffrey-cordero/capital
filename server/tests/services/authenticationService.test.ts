@@ -72,6 +72,11 @@ describe("Authentication Service", () => {
 
       ({ mockRes } = createMockMiddleware());
       process.env.SESSION_SECRET = TEST_SECRET;
+
+      (middleware.configureToken as jest.Mock).mockReturnValue({
+         access_token: TEST_TOKENS.VALID_ACCESS,
+         refresh_token: TEST_TOKENS.VALID_REFRESH
+      });
    });
 
    describe("getAuthentication", () => {
@@ -198,7 +203,11 @@ describe("Authentication Service", () => {
 
          assertTokenConfigured(mockUser.user_id!);
          assertArgon2Calls(argon2, hashedPassword, validPassword);
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
 
       it("should return unauthorized for nonexistent username", async() => {
@@ -302,7 +311,11 @@ describe("Authentication Service", () => {
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
          assertTokenConfigured(TEST_USER_ID, expectedSeconds);
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
 
       it("should refresh token with 5 seconds remaining", async() => {
@@ -313,7 +326,11 @@ describe("Authentication Service", () => {
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
          assertTokenConfigured(TEST_USER_ID, expectedSeconds);
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
 
       it("should handle expired refresh token during the refresh request to be configured to 0 seconds for expired refresh tokens", async() => {
@@ -323,7 +340,11 @@ describe("Authentication Service", () => {
          const result: ServerResponse = await callServiceMethodWithMockRes(mockRes, authenticationService, "refreshToken", TEST_USER_ID);
 
          assertTokenConfigured(TEST_USER_ID, 0);
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
 
       it("should configure refresh token with 2 minutes remaining", async() => {
@@ -334,7 +355,11 @@ describe("Authentication Service", () => {
 
          const expectedSeconds = Math.max(0, Math.floor((expirationDate.getTime() - Date.now()) / 1000));
          assertTokenConfigured(TEST_USER_ID, expectedSeconds);
-         assertServiceSuccessResponse(result, HTTP_STATUS.OK, { success: true });
+         assertServiceSuccessResponse(result, HTTP_STATUS.OK, {
+            success: true,
+            access_token: expect.any(String),
+            refresh_token: expect.any(String)
+         });
       });
    });
 
