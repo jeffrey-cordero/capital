@@ -44,6 +44,17 @@ module "security" {
 }
 
 # -----------------------------------------------------------------------------
+# Frontend Module (S3 + CloudFront)
+# -----------------------------------------------------------------------------
+
+module "frontend" {
+  source = "../../modules/frontend"
+
+  project_name = var.project_name
+  region       = var.region
+}
+
+# -----------------------------------------------------------------------------
 # Data Module (RDS + ElastiCache)
 # -----------------------------------------------------------------------------
 
@@ -64,13 +75,39 @@ module "data" {
 module "compute" {
   source = "../../modules/compute"
 
-  # Wait for data resources before creating EC2
-  depends_on = [module.data]
+  # Wait for frontend (CORS) and data (RDS) before creating EC2
+  depends_on = [module.frontend, module.data]
 
-  project_name          = var.project_name
-  instance_type         = var.instance_type
-  instance_profile_name = module.security.instance_profile_name
-  security_group_ids    = [module.security.security_group_id]
-  user_data_path        = "${path.module}/../../modules/compute/scripts/user-data.sh"
-  root_volume_size      = var.root_volume_size
+  project_name               = var.project_name
+  instance_type              = var.instance_type
+  instance_profile_name      = module.security.instance_profile_name
+  security_group_ids         = [module.security.security_group_id]
+  user_data_path             = "${path.module}/../../modules/compute/scripts/user-data.sh"
+  root_volume_size           = var.root_volume_size
+  cloudfront_distribution_id = module.frontend.cloudfront_distribution_id
+  cors_secret_version        = module.frontend.cors_secret_version
+}
+
+# -----------------------------------------------------------------------------
+# Auto-Deploy Frontend (runs after EC2 is ready)
+# -----------------------------------------------------------------------------
+
+resource "null_resource" "deploy_frontend" {
+  depends_on = [module.compute]
+
+  triggers = {
+    ec2_id        = module.compute.instance_id
+    cloudfront_id = module.frontend.cloudfront_distribution_id
+  }
+
+  provisioner "local-exec" {
+    command     = "sleep 90 && ${path.module}/scripts/deploy.sh"
+    working_dir = path.module
+    environment = {
+      EC2_PUBLIC_IP           = module.compute.public_ip
+      S3_BUCKET_NAME          = module.frontend.s3_bucket_name
+      CLOUDFRONT_DOMAIN       = module.frontend.cloudfront_domain
+      CLOUDFRONT_DIST_ID      = module.frontend.cloudfront_distribution_id
+    }
+  }
 }

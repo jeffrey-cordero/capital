@@ -1,14 +1,44 @@
-# Terraform EC2 Deployment Summary (in-progress)
+# Terraform Infrastructure
+
+## Architecture
+
+```mermaid
+graph TD
+    subgraph "Frontend"
+        CF["CloudFront CDN"]
+        S3["S3 Bucket"]
+        CF --> S3
+    end
+    
+    subgraph VPC
+        EC2["EC2 (t3.micro)"]
+        RDS["RDS PostgreSQL"]
+        Redis["ElastiCache Redis"]
+        EC2 -->|5432| RDS
+        EC2 -->|6379| Redis
+    end
+    
+    subgraph "AWS Services"
+        SM["Secrets Manager"]
+        SSM["Session Manager"]
+    end
+    
+    SSM -.-> EC2
+    EC2 --> SM
+```
 
 ## Directory Structure
 
 ```
 aws/
 ├── modules/
-│   ├── compute/scripts/user-data.sh
-│   ├── data/           # RDS + ElastiCache
-│   └── security/policies/iam-policy.json
-└── environments/prod/
+│   ├── compute/     # EC2 instance
+│   ├── data/        # RDS + ElastiCache
+│   ├── frontend/    # S3 + CloudFront
+│   └── security/    # IAM, security groups
+└── environments/
+    └── prod/
+        └── scripts/deploy.sh
 ```
 
 ## Terraform Commands
@@ -47,12 +77,18 @@ terraform destroy
 terraform output
 ```
 
+### Deploy Frontend
+
+```bash
+./scripts/deploy.sh
+```
+
 ## Debugging Commands (SSM)
 
 ### EC2 - Connection
 
 ```bash
-aws ssm start-session --target i-<instance-id> --region us-east-2
+aws ssm start-session --target $(terraform output -raw instance_id) --region us-east-2
 ```
 
 ### PostgreSQL - List Tables
@@ -89,7 +125,7 @@ redis-cli -h ${REDIS_URL%:*} -p ${REDIS_URL#*:} KEYS "*"
 ### Check API
 
 ```bash
-curl http://<instance-public-IP>/api/v1
+curl http://$(terraform output -raw instance_public_ip)/api/v1
 ```
 
 ### Check User-Data Logs

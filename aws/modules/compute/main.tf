@@ -44,6 +44,18 @@ variable "ami_owners" {
   default     = ["099720109477"] # Canonical
 }
 
+variable "cors_secret_version" {
+  description = "Version of the CORS secret - triggers EC2 recreation when changed"
+  type        = string
+  default     = ""
+}
+
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID - triggers EC2 recreation when changed"
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Data Sources
 # -----------------------------------------------------------------------------
@@ -84,7 +96,22 @@ resource "aws_instance" "server" {
   }
 
   tags = {
-   Name    = "${var.project_name}-server"
-   Project = var.project_name
+   Name                     = "${var.project_name}-server"
+   Project                  = var.project_name
+   CloudFrontDistributionID = var.cloudfront_distribution_id
+  }
+
+  # Recreate EC2 when CloudFront changes (ensures fresh CORS secret)
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.cloudfront_trigger
+    ]
+  }
+}
+
+resource "null_resource" "cloudfront_trigger" {
+  triggers = {
+    cloudfront_id        = var.cloudfront_distribution_id
+    cors_secret_version = var.cors_secret_version
   }
 }

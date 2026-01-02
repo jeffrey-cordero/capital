@@ -35,3 +35,24 @@ output "redis_url" {
   description = "ElastiCache Redis URL"
   value       = module.data.redis_url
 }
+
+# Frontend Module Outputs
+output "s3_bucket_name" {
+  description = "S3 bucket name for frontend"
+  value       = module.frontend.s3_bucket_name
+}
+
+output "cloudfront_domain" {
+  description = "CloudFront distribution domain"
+  value       = module.frontend.cloudfront_domain
+}
+
+output "cloudfront_url" {
+  description = "CloudFront distribution URL"
+  value       = module.frontend.cloudfront_url
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for cache invalidation"
+  value       = module.frontend.cloudfront_distribution_id
+}
