@@ -26,6 +26,11 @@ variable "user_data_path" {
   type        = string
 }
 
+variable "subnet_id" {
+  description = "Subnet ID to launch the instance in"
+  type        = string
+}
+
 variable "root_volume_size" {
   description = "Size of root EBS volume in GB"
   type        = number
@@ -84,6 +89,7 @@ resource "aws_instance" "server" {
   instance_type          = var.instance_type
   iam_instance_profile   = var.instance_profile_name
   vpc_security_group_ids = var.security_group_ids
+  subnet_id              = var.subnet_id
 
   user_data = file(var.user_data_path)
 
@@ -96,9 +102,9 @@ resource "aws_instance" "server" {
   }
 
   tags = {
-   Name                     = "${var.project_name}-server"
-   Project                  = var.project_name
-   CloudFrontDistributionID = var.cloudfront_distribution_id
+    Name                     = "${var.project_name}-server"
+    Project                  = var.project_name
+    CloudFrontDistributionID = var.cloudfront_distribution_id
   }
 
   # Recreate EC2 when CloudFront changes (ensures fresh CORS secret)

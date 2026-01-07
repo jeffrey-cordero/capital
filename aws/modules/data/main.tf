@@ -159,7 +159,6 @@ resource "aws_db_instance" "postgres" {
 # -----------------------------------------------------------------------------
 # ElastiCache (Redis)
 # -----------------------------------------------------------------------------
-
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.project_name}-cache-subnet-group"
   subnet_ids = var.subnet_ids

@@ -16,17 +16,14 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-# Get default VPC
-data "aws_vpc" "default" {
-  default = true
-}
+# -----------------------------------------------------------------------------
+# Networking Module (Custom VPC)
+# -----------------------------------------------------------------------------
 
-# Get subnets in default VPC
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
+module "networking" {
+  source = "../../modules/networking"
+
+  project_name = var.project_name
 }
 
 # -----------------------------------------------------------------------------
@@ -38,6 +35,7 @@ module "security" {
 
   project_name   = var.project_name
   region         = var.region
+  vpc_id         = module.networking.vpc_id
   account_id     = data.aws_caller_identity.current.account_id
   secrets_prefix = var.secrets_prefix
   ingress_rules  = var.ingress_rules
@@ -63,8 +61,8 @@ module "data" {
 
   project_name          = var.project_name
   region                = var.region
-  vpc_id                = data.aws_vpc.default.id
-  subnet_ids            = data.aws_subnets.default.ids
+  vpc_id                = module.networking.vpc_id
+  subnet_ids            = module.networking.private_subnet_ids
   ec2_security_group_id = module.security.security_group_id
 }
 
@@ -82,6 +80,7 @@ module "compute" {
   instance_type              = var.instance_type
   instance_profile_name      = module.security.instance_profile_name
   security_group_ids         = [module.security.security_group_id]
+  subnet_id                  = module.networking.public_subnet_id
   user_data_path             = "${path.module}/../../modules/compute/scripts/user-data.sh"
   root_volume_size           = var.root_volume_size
   cloudfront_distribution_id = module.frontend.cloudfront_distribution_id

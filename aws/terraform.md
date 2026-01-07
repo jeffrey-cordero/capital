@@ -4,27 +4,34 @@
 
 ```mermaid
 graph TD
-    subgraph "Frontend"
-        CF["CloudFront CDN"]
-        S3["S3 Bucket"]
-        CF --> S3
-    end
+    User([User Browser]) -->|HTTPS| CF[CloudFront CDN]
+    User -->|HTTP| IGW[Internet Gateway]
     
-    subgraph VPC
-        EC2["EC2 (t3.micro)"]
-        RDS["RDS PostgreSQL"]
-        Redis["ElastiCache Redis"]
+    subgraph "VPC (10.0.0.0/16)"
+        IGW -->|Route Table| PublicSubnet
+        
+        subgraph "Public Subnet (10.0.1.0/24)"
+            EC2["EC2 Application Server"]
+        end
+        
+        subgraph "Private Subnets (10.0.10.0/24, 10.0.11.0/24)"
+            RDS["RDS PostgreSQL"]
+            Redis["ElastiCache Redis"]
+        end
+        
         EC2 -->|5432| RDS
         EC2 -->|6379| Redis
     end
     
-    subgraph "AWS Services"
+    CF -->|OAC| S3["S3 Bucket (Private)"]
+    
+    subgraph "AWS Managed Services"
         SM["Secrets Manager"]
         SSM["Session Manager"]
     end
     
-    SSM -.-> EC2
-    EC2 --> SM
+    SSM -.->|Secure Shell| EC2
+    EC2 -->|Get Secret| SM
 ```
 
 ## Directory Structure
@@ -32,6 +39,7 @@ graph TD
 ```
 aws/
 ├── modules/
+│   ├── networking/  # VPC, Subnets, IGW, Routes
 │   ├── compute/     # EC2 instance
 │   ├── data/        # RDS + ElastiCache
 │   ├── frontend/    # S3 + CloudFront

@@ -20,6 +20,11 @@ variable "secrets_prefix" {
   type        = string
 }
 
+variable "vpc_id" {
+  description = "VPC ID for security group"
+  type        = string
+}
+
 variable "ingress_rules" {
   description = "List of ingress rules for security group"
   type = list(object({
@@ -112,6 +117,7 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-ec2-sg"
   description = "Security group for ${var.project_name} EC2 instance"
+  vpc_id      = var.vpc_id
 
   egress {
    from_port   = 0
