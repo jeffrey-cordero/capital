@@ -29,20 +29,39 @@ const TOKENS = {
    REFRESH: "refresh_token"
 } as const;
 
-function getAccessToken() {
+/**
+ * Retrieves the access token from localStorage
+ *
+ * @returns {string | null} The stored access token or null if not found
+ */
+function getAccessToken(): string | null {
    return localStorage.getItem(TOKENS.ACCESS);
 }
 
-function getRefreshToken() {
+/**
+ * Retrieves the refresh token from localStorage
+ *
+ * @returns {string | null} The stored refresh token or null if not found
+ */
+function getRefreshToken(): string | null {
    return localStorage.getItem(TOKENS.REFRESH);
 }
 
-function setTokens(access: string, refresh: string) {
+/**
+ * Stores both access and refresh tokens in localStorage
+ *
+ * @param {string} access - The new access token
+ * @param {string} refresh - The new refresh token
+ */
+function setTokens(access: string, refresh: string): void {
    localStorage.setItem(TOKENS.ACCESS, access);
    localStorage.setItem(TOKENS.REFRESH, refresh);
 }
 
-function clearTokens() {
+/**
+ * Removes both access and refresh tokens from localStorage
+ */
+function clearTokens(): void {
    localStorage.removeItem(TOKENS.ACCESS);
    localStorage.removeItem(TOKENS.REFRESH);
 }
@@ -114,9 +133,11 @@ export async function sendApiRequest<T>(
 
             if (refreshResponse.status === HTTP_STATUS.OK) {
                const refreshJson: ApiResponse<{ access_token: string; refresh_token: string }> = await refreshResponse.json();
+
                if (refreshJson.data?.access_token && refreshJson.data?.refresh_token) {
                   setTokens(refreshJson.data.access_token, refreshJson.data.refresh_token);
                }
+
                // Retry the original request once after a successful refresh attempt
                return sendApiRequest<T>(path, method, body, dispatch, navigate, setError, true);
             }
@@ -153,13 +174,9 @@ export async function sendApiRequest<T>(
       const json: ApiResponse<T & { access_token?: string; refresh_token?: string }> = await response.json();
 
       if (response.status === HTTP_STATUS.OK || response.status === HTTP_STATUS.CREATED) {
-         // If tokens are returned (login or update), store them
          if (json.data?.access_token && json.data?.refresh_token) {
             setTokens(json.data.access_token, json.data.refresh_token);
-         }
-
-         // Handle logout explicitly to clear localStorage
-         if (path === "authentication/logout") {
+         } else if (path === "authentication/logout") {
             clearTokens();
          }
 

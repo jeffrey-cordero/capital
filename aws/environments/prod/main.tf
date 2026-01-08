@@ -1,5 +1,3 @@
-#-- Production Environment Configuration
-
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -16,15 +14,11 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-#-- Networking Module
-
 module "networking" {
   source = "../../modules/networking"
 
   project_name = var.project_name
 }
-
-#-- Security Module
 
 module "security" {
   source = "../../modules/security"
@@ -37,16 +31,12 @@ module "security" {
   ingress_rules  = var.ingress_rules
 }
 
-#-- Frontend Module
-
 module "frontend" {
   source = "../../modules/frontend"
 
   project_name = var.project_name
   region       = var.region
 }
-
-#-- Data Module
 
 module "data" {
   source = "../../modules/data"
@@ -58,12 +48,10 @@ module "data" {
   ec2_security_group_id = module.security.security_group_id
 }
 
-#-- Compute Module
-
 module "compute" {
   source = "../../modules/compute"
 
-  # Wait for frontend (CORS) and data (RDS) before creating EC2
+  # Wait for the frontend (CORS) and data (RDS) modules before provisioning the EC2 instance
   depends_on = [module.frontend, module.data]
 
   project_name               = var.project_name
@@ -71,13 +59,10 @@ module "compute" {
   instance_profile_name      = module.security.instance_profile_name
   security_group_ids         = [module.security.security_group_id]
   subnet_id                  = module.networking.public_subnet_id
-  user_data_path             = "${path.module}/../../modules/compute/scripts/user-data.sh"
   root_volume_size           = var.root_volume_size
   cloudfront_distribution_id = module.frontend.cloudfront_distribution_id
   cors_secret_version        = module.frontend.cors_secret_version
 }
-
-#-- Auto-Deploy Frontend
 
 resource "null_resource" "deploy_frontend" {
   depends_on = [module.compute]

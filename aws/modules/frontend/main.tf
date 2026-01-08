@@ -1,5 +1,3 @@
-#-- Frontend Module: S3 Static Hosting + CloudFront CDN
-
 variable "project_name" {
   description = "Identifier used as a prefix for all resource names"
   type        = string
@@ -10,11 +8,9 @@ variable "region" {
   type        = string
 }
 
-#-- S3 Bucket (Private, OAC-only Access)
-
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true # Allow deletion even with objects
+  force_destroy = true # Allow deletion even with internal objects to simplify the destruction process
 
   tags = {
     Name    = "${var.project_name}-frontend"
@@ -63,8 +59,6 @@ resource "aws_s3_bucket_policy" "frontend" {
   depends_on = [aws_s3_bucket_public_access_block.frontend]
 }
 
-#-- CloudFront Origin Access Control
-
 resource "aws_cloudfront_origin_access_control" "frontend" {
   name                              = "${var.project_name}-frontend-oac"
   description                       = "OAC for ${var.project_name} frontend S3 bucket"
@@ -72,8 +66,6 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
 }
-
-#-- CloudFront Distribution
 
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
@@ -105,7 +97,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     max_ttl     = 86400
   }
 
-  # SPA error handling - return index.html for 403/404
+  # SPA error handling (index.html for 403/404)
   custom_error_response {
     error_code            = 403
     response_code         = 200
@@ -136,19 +128,15 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 }
 
-#-- CORS Secret Configuration
-
 resource "aws_secretsmanager_secret_version" "cors" {
   secret_id = "prod/capital/cors"
   secret_string = jsonencode({
-    CORS_ALLOWED_ORIGINS = "http://${aws_cloudfront_distribution.frontend.domain_name}" # Match backend code
+    CORS_ALLOWED_ORIGINS = "http://${aws_cloudfront_distribution.frontend.domain_name}"
   })
 
   lifecycle {
     ignore_changes = [version_stages]
   }
 }
-
-#-- Data Sources
 
 data "aws_caller_identity" "current" {}

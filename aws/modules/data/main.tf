@@ -1,5 +1,3 @@
-#-- Data Module: RDS PostgreSQL + ElastiCache Redis
-
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
@@ -61,14 +59,9 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-#-- Data Sources
-
-# Get database password from Secrets Manager
 data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = var.db_password_secret_id
 }
-
-#-- Security Groups
 
 resource "aws_security_group" "rds_sg" {
   name        = "${var.project_name}-rds-sg"
@@ -108,8 +101,6 @@ resource "aws_security_group" "elasticache_sg" {
   }
 }
 
-#-- RDS PostgreSQL
-
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = var.subnet_ids
@@ -141,7 +132,7 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot = true # For PoC - set false for production
   deletion_protection = false
 
-  backup_retention_period = 0 # Disable backups for free tier
+  backup_retention_period = 0 # Disable backups for the free tier
   multi_az                = false
 
   tags = {
@@ -150,7 +141,7 @@ resource "aws_db_instance" "postgres" {
   }
 }
 
-#-- ElastiCache Redis
+# ElastiCache Redis
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.project_name}-cache-subnet-group"
   subnet_ids = var.subnet_ids
@@ -179,8 +170,6 @@ resource "aws_elasticache_cluster" "redis" {
   }
 }
 
-#-- Secrets Manager Endpoint Storage
-
 resource "aws_secretsmanager_secret_version" "database_host" {
   secret_id = "prod/capital/database-host"
   secret_string = jsonencode({
@@ -202,5 +191,3 @@ resource "aws_secretsmanager_secret_version" "redis_url" {
     ignore_changes = [version_stages]
   }
 }
-
-# Schema initialization handled by EC2 user-data (RDS not accessible from local machine)

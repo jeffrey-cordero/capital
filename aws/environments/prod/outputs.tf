@@ -1,4 +1,3 @@
-
 output "instance_id" {
   description = "EC2 instance ID for SSM Session Manager connections"
   value       = module.compute.instance_id

@@ -1,4 +1,3 @@
-
 output "s3_bucket_name" {
   description = "S3 bucket name for frontend asset deployment via AWS CLI"
   value       = aws_s3_bucket.frontend.id

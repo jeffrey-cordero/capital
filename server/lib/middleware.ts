@@ -40,7 +40,7 @@ export function configureToken(_res: Response, user_id: string, secondsUntilExpi
 }
 
 /**
- * Clears authentication (No-op since switching to JWT in localStorage, but kept for interface consistency)
+ * Clears authentication (Not operational since switching to JWT in localStorage, but kept for interface consistency)
  *
  * @param {Response} _res - Express response object
  */

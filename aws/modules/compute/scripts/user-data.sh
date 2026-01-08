@@ -9,7 +9,7 @@ setup_application() {
    SERVER_DIR="$APP_DIR/server"
    REPO_URL="https://github.com/jeffrey-cordero/capital"
 
-   # Install system dependencies
+   # Install all system dependencies
 	apt-get update -y
 	apt-get install -y git curl jq libcap2-bin unzip postgresql-client redis-tools
 
@@ -27,9 +27,10 @@ setup_application() {
       apt-get install -y nodejs
    fi
 
-   # Grant permission to bind to low ports (e.g., 80, 443) without root
+   # Grant permission to bind to lower ports without root privileges (e.g., 80, 443)
    setcap 'cap_net_bind_service=+ep' $(which node)
 
+   # Setup the server environment
    if [ ! -d "$APP_DIR" ]; then
       git clone --branch aws "$REPO_URL" "$APP_DIR"
    else
@@ -37,12 +38,9 @@ setup_application() {
    fi
 
    chown -R $MAIN_USER:$MAIN_USER "$APP_DIR"
-
-   # Install and build steps
    sudo -u $MAIN_USER bash -c "cd $APP_DIR/types && npm install && npm run build"
    sudo -u $MAIN_USER bash -c "cd $APP_DIR/server && npm install && npm run build"
 
-   # Environment and Secrets configuration
    ENV_FILE="$SERVER_DIR/.env"
    cp "$SERVER_DIR/.env.example" "$ENV_FILE"
    printf "\n" >> "$ENV_FILE"
@@ -53,7 +51,6 @@ setup_application() {
       --query 'SecretList[].ARN' \
       --output text)
 
-	# Process each ARN
 	for ARN in $SECRET_ARNS; do
 	  aws secretsmanager get-secret-value \
       --secret-id "$ARN" \
@@ -63,11 +60,11 @@ setup_application() {
 	  jq -r 'to_entries | .[] | "\(.key)=\(.value)"' |
 	  while IFS= read -r line; do
       key=${line%%=*}
-	
-      # Remove existing key (exact match at line start)
+
+      # Remove the existing key-value pair
       sed -i "/^${key}=.*/d" "$ENV_FILE"
-	
-      # Append updated value
+
+      # Append the up-to-date key-value pair
       printf '%s\n' "$line" >> "$ENV_FILE"
 	  done
 	done
@@ -75,21 +72,18 @@ setup_application() {
    chown $MAIN_USER:$MAIN_USER "$ENV_FILE"
    chmod 600 "$ENV_FILE"
 
-   # Initialize database schema if tables don't exist
+   # Initialize database schema if the tables don't exist yet
    source "$ENV_FILE"
-   
+
    if [ -n "$DB_HOST" ] && [ -n "$DB_PASSWORD" ]; then
       SCHEMA_FILE="$APP_DIR/server/schema.sql"
+
       if [ -f "$SCHEMA_FILE" ]; then
          TABLE_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U postgres -d capital -tAc \
             "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='users');" 2>/dev/null || echo "false")
-         
+
          if [ "$TABLE_EXISTS" != "t" ]; then
-            echo "Initializing database schema..."
             PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U postgres -d capital -f "$SCHEMA_FILE"
-            echo "Schema initialized successfully"
-         else
-            echo "Database schema already exists, skipping initialization"
          fi
       fi
    fi
@@ -121,9 +115,9 @@ EOF
    echo "Setup completed successfully at $(date)"
 }
 
-# Ensure the log file exists and has correct permissions
+# Ensure the log file exists and has the correct permissions
 touch /var/log/user-data-build.log
 chmod 644 /var/log/user-data-build.log
 
-# Execute the setup process in background
+# Execute the setup process in background to allow SSH access in the meantime
 setup_application > /var/log/user-data-build.log 2>&1 &

@@ -2,261 +2,103 @@
    "Version": "2012-10-17",
    "Statement": [
       {
-         "Sid": "EC2DescribePermissions",
+         "Sid": "EC2",
          "Effect": "Allow",
          "Action": [
-            "ec2:DescribeVpcs",
-            "ec2:DescribeVpcAttribute",
-            "ec2:DescribeImages",
-            "ec2:DescribeInstances",
-            "ec2:DescribeInstanceTypes",
-            "ec2:DescribeInstanceAttribute",
-            "ec2:DescribeKeyPairs",
-            "ec2:DescribeSecurityGroups",
-            "ec2:DescribeSubnets",
-            "ec2:DescribeRouteTables",
-            "ec2:DescribeInternetGateways",
-            "ec2:DescribeVolumes",
-            "ec2:DescribeNetworkInterfaces",
-            "ec2:DescribeAccountAttributes",
-            "ec2:DescribeAvailabilityZones",
-            "ec2:DescribeTags",
-            "ec2:DescribeInstanceCreditSpecifications"
+            "ec2:*"
          ],
          "Resource": "*"
       },
       {
-         "Sid": "EC2MutatePermissions",
+         "Sid": "IAMRole",
          "Effect": "Allow",
          "Action": [
-            "ec2:RunInstances",
-            "ec2:StartInstances",
-            "ec2:StopInstances",
-            "ec2:TerminateInstances",
-            "ec2:ModifyInstanceAttribute",
-            "ec2:ModifyVpcAttribute",
-            "ec2:ModifySubnetAttribute",
-            "ec2:CreateVpc",
-            "ec2:DeleteVpc",
-            "ec2:CreateSubnet",
-            "ec2:DeleteSubnet",
-            "ec2:CreateRouteTable",
-            "ec2:DeleteRouteTable",
-            "ec2:CreateRoute",
-            "ec2:DeleteRoute",
-            "ec2:AssociateRouteTable",
-            "ec2:DisassociateRouteTable",
-            "ec2:CreateInternetGateway",
-            "ec2:DeleteInternetGateway",
-            "ec2:AttachInternetGateway",
-            "ec2:DetachInternetGateway",
-            "ec2:CreateTags",
-            "ec2:DeleteTags",
-            "ec2:CreateSecurityGroup",
-            "ec2:DeleteSecurityGroup",
-            "ec2:AuthorizeSecurityGroupIngress",
-            "ec2:AuthorizeSecurityGroupEgress",
-            "ec2:RevokeSecurityGroupIngress",
-            "ec2:RevokeSecurityGroupEgress"
-         ],
-         "Resource": "*",
-         "Condition": {
-            "StringEquals": {
-               "aws:RequestTag/Project": "capital"
-            }
-         }
-      },
-      {
-         "Sid": "EC2TaggedResourcePermissions",
-         "Effect": "Allow",
-         "Action": [
-            "ec2:StartInstances",
-            "ec2:StopInstances",
-            "ec2:TerminateInstances",
-            "ec2:ModifyInstanceAttribute",
-            "ec2:ModifyVpcAttribute",
-            "ec2:ModifySubnetAttribute",
-            "ec2:DeleteVpc",
-            "ec2:DeleteSubnet",
-            "ec2:DeleteRouteTable",
-            "ec2:DeleteRoute",
-            "ec2:DisassociateRouteTable",
-            "ec2:DeleteInternetGateway",
-            "ec2:DetachInternetGateway",
-            "ec2:CreateTags",
-            "ec2:DeleteTags",
-            "ec2:DeleteSecurityGroup",
-            "ec2:AuthorizeSecurityGroupIngress",
-            "ec2:AuthorizeSecurityGroupEgress",
-            "ec2:RevokeSecurityGroupIngress",
-            "ec2:RevokeSecurityGroupEgress"
-         ],
-         "Resource": "*",
-         "Condition": {
-            "StringEquals": {
-               "aws:ResourceTag/Project": "capital"
-            }
-         }
-      },
-      {
-         "Sid": "IAMRolePermissions",
-         "Effect": "Allow",
-         "Action": [
-            "iam:CreateRole",
-            "iam:DeleteRole",
-            "iam:GetRole",
-            "iam:ListRolePolicies",
-            "iam:ListAttachedRolePolicies",
-            "iam:ListInstanceProfilesForRole",
-            "iam:AttachRolePolicy",
-            "iam:DetachRolePolicy",
-            "iam:PutRolePolicy",
-            "iam:GetRolePolicy",
-            "iam:DeleteRolePolicy",
-            "iam:TagRole",
-            "iam:UntagRole",
+            "iam:*Role*",
             "iam:PassRole"
          ],
          "Resource": "arn:aws:iam::*:role/capital-*"
       },
       {
-         "Sid": "IAMInstanceProfilePermissions",
+         "Sid": "IAMProfile",
          "Effect": "Allow",
          "Action": [
-            "iam:CreateInstanceProfile",
-            "iam:DeleteInstanceProfile",
-            "iam:GetInstanceProfile",
-            "iam:AddRoleToInstanceProfile",
-            "iam:RemoveRoleFromInstanceProfile"
+            "iam:*InstanceProfile*"
          ],
          "Resource": "arn:aws:iam::*:instance-profile/capital-*"
       },
       {
-         "Sid": "SSMSessionManagerPermissions",
+         "Sid": "SSM",
          "Effect": "Allow",
          "Action": [
-            "ssm:StartSession",
-            "ssm:TerminateSession",
-            "ssm:ResumeSession",
-            "ssm:DescribeSessions",
+            "ssm:*Session*",
             "ssm:GetConnectionStatus"
          ],
-         "Resource": [
-            "arn:aws:ec2:*:*:instance/*",
-            "arn:aws:ssm:*:*:document/SSM-SessionManagerRunShell",
-            "arn:aws:ssm:*:*:session/*"
-         ]
+         "Resource": "*"
       },
       {
-         "Sid": "SecretsManagerPermissions",
+         "Sid": "Secrets",
          "Effect": "Allow",
          "Action": [
-            "secretsmanager:GetSecretValue",
-            "secretsmanager:PutSecretValue",
-            "secretsmanager:DescribeSecret",
-            "secretsmanager:ListSecrets"
+            "secretsmanager:*"
          ],
          "Resource": "arn:aws:secretsmanager:*:*:secret:prod/capital/*"
       },
       {
-         "Sid": "RDSPermissions",
+         "Sid": "SecretsRead",
          "Effect": "Allow",
          "Action": [
-            "rds:CreateDBInstance",
-            "rds:DeleteDBInstance",
-            "rds:DescribeDBInstances",
-            "rds:ModifyDBInstance",
-            "rds:ListTagsForResource",
-            "rds:AddTagsToResource",
-            "rds:RemoveTagsFromResource"
+            "secretsmanager:ListSecrets"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "RDS",
+         "Effect": "Allow",
+         "Action": [
+            "rds:*"
          ],
          "Resource": [
             "arn:aws:rds:*:*:db:capital-*",
+            "arn:aws:rds:*:*:subgrp:capital-*",
             "arn:aws:rds:*:*:og:*",
             "arn:aws:rds:*:*:pg:*"
          ]
       },
       {
-         "Sid": "RDSSubnetGroupPermissions",
+         "Sid": "RDSDescribe",
          "Effect": "Allow",
          "Action": [
-            "rds:CreateDBSubnetGroup",
-            "rds:DeleteDBSubnetGroup",
-            "rds:DescribeDBSubnetGroups",
-            "rds:ListTagsForResource",
-            "rds:AddTagsToResource"
+            "rds:Describe*",
+            "rds:ListTagsForResource"
          ],
-         "Resource": "arn:aws:rds:*:*:subgrp:capital-*"
+         "Resource": "*"
       },
       {
-         "Sid": "ElastiCacheClusterPermissions",
+         "Sid": "ElastiCache",
          "Effect": "Allow",
          "Action": [
-            "elasticache:CreateCacheCluster",
-            "elasticache:DeleteCacheCluster",
-            "elasticache:DescribeCacheClusters",
-            "elasticache:ListTagsForResource",
-            "elasticache:AddTagsToResource",
-            "elasticache:RemoveTagsFromResource"
+            "elasticache:*"
          ],
-         "Resource": "arn:aws:elasticache:*:*:cluster:capital-*"
+         "Resource": [
+            "arn:aws:elasticache:*:*:cluster:capital-*",
+            "arn:aws:elasticache:*:*:subnetgroup:capital-*",
+            "arn:aws:elasticache:*:*:parametergroup:*"
+         ]
       },
       {
-         "Sid": "ElastiCacheSubnetGroupPermissions",
+         "Sid": "ElastiCacheDescribe",
          "Effect": "Allow",
          "Action": [
-            "elasticache:CreateCacheSubnetGroup",
-            "elasticache:DeleteCacheSubnetGroup",
-            "elasticache:DescribeCacheSubnetGroups",
-            "elasticache:ListTagsForResource",
-            "elasticache:AddTagsToResource"
+            "elasticache:Describe*",
+            "elasticache:List*"
          ],
-         "Resource": "arn:aws:elasticache:*:*:subnetgroup:capital-*"
+         "Resource": "*"
       },
       {
-         "Sid": "S3Permissions",
+         "Sid": "S3",
          "Effect": "Allow",
          "Action": [
-            "s3:CreateBucket",
-            "s3:DeleteBucket",
-            "s3:ListBucket",
-            "s3:GetBucketLocation",
-            "s3:GetBucketPolicy",
-            "s3:PutBucketPolicy",
-            "s3:DeleteBucketPolicy",
-            "s3:GetBucketVersioning",
-            "s3:PutBucketVersioning",
-            "s3:GetBucketPublicAccessBlock",
-            "s3:PutBucketPublicAccessBlock",
-            "s3:PutObject",
-            "s3:GetObject",
-            "s3:DeleteObject",
-            "s3:ListBucketVersions",
-            "s3:GetBucketAcl",
-            "s3:PutBucketAcl",
-            "s3:GetBucketCORS",
-            "s3:PutBucketCORS",
-            "s3:GetBucketWebsite",
-            "s3:PutBucketWebsite",
-            "s3:DeleteBucketWebsite",
-            "s3:GetBucketTagging",
-            "s3:PutBucketTagging",
-            "s3:GetBucketOwnershipControls",
-            "s3:PutBucketOwnershipControls",
-            "s3:GetEncryptionConfiguration",
-            "s3:PutEncryptionConfiguration",
-            "s3:GetAccelerateConfiguration",
-            "s3:GetBucketRequestPayment",
-            "s3:GetLifecycleConfiguration",
-            "s3:PutLifecycleConfiguration",
-            "s3:GetReplicationConfiguration",
-            "s3:GetBucketLogging",
-            "s3:PutBucketLogging",
-            "s3:GetBucketNotification",
-            "s3:PutBucketNotification",
-            "s3:GetBucketObjectLockConfiguration",
-            "s3:GetObjectVersion",
-            "s3:DeleteObjectVersion"
+            "s3:*"
          ],
          "Resource": [
             "arn:aws:s3:::capital-*",
@@ -264,43 +106,10 @@
          ]
       },
       {
-         "Sid": "CloudFrontDistributionPermissions",
+         "Sid": "CloudFront",
          "Effect": "Allow",
          "Action": [
-            "cloudfront:CreateDistribution",
-            "cloudfront:DeleteDistribution",
-            "cloudfront:GetDistribution",
-            "cloudfront:GetDistributionConfig",
-            "cloudfront:UpdateDistribution",
-            "cloudfront:TagResource",
-            "cloudfront:UntagResource",
-            "cloudfront:ListTagsForResource",
-            "cloudfront:CreateInvalidation"
-         ],
-         "Resource": "arn:aws:cloudfront::*:distribution/*",
-         "Condition": {
-            "StringEquals": {
-               "aws:ResourceTag/Project": "capital"
-            }
-         }
-      },
-      {
-         "Sid": "CloudFrontReadPermissions",
-         "Effect": "Allow",
-         "Action": [
-            "cloudfront:ListDistributions",
-            "cloudfront:ListOriginAccessControls"
-         ],
-         "Resource": "*"
-      },
-      {
-         "Sid": "CloudFrontOACPermissions",
-         "Effect": "Allow",
-         "Action": [
-            "cloudfront:CreateOriginAccessControl",
-            "cloudfront:DeleteOriginAccessControl",
-            "cloudfront:GetOriginAccessControl",
-            "cloudfront:UpdateOriginAccessControl"
+            "cloudfront:*"
          ],
          "Resource": "*"
       }

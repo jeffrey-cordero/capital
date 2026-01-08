@@ -1,5 +1,3 @@
-#-- Compute Module: EC2 Application Server
-
 variable "project_name" {
   description = "Identifier used as a prefix for all resource names"
   type        = string
@@ -19,11 +17,6 @@ variable "instance_profile_name" {
 variable "security_group_ids" {
   description = "Security group IDs controlling inbound and outbound traffic"
   type        = list(string)
-}
-
-variable "user_data_path" {
-  description = "Absolute path to the bootstrap script executed on instance launch"
-  type        = string
 }
 
 variable "subnet_id" {
@@ -61,8 +54,6 @@ variable "cloudfront_distribution_id" {
   default     = ""
 }
 
-#-- Data Sources
-
 data "aws_ami" "selected" {
   most_recent = true
   owners      = var.ami_owners
@@ -78,18 +69,14 @@ data "aws_ami" "selected" {
   }
 }
 
-#-- EC2 Instance
-
 resource "aws_instance" "server" {
+  monitoring             = false
   ami                    = data.aws_ami.selected.id
   instance_type          = var.instance_type
   iam_instance_profile   = var.instance_profile_name
   vpc_security_group_ids = var.security_group_ids
   subnet_id              = var.subnet_id
-
-  user_data = file(var.user_data_path)
-
-  monitoring = false
+  user_data              = file("${path.module}/scripts/user-data.sh")
 
   root_block_device {
     volume_size           = var.root_volume_size
@@ -103,7 +90,7 @@ resource "aws_instance" "server" {
     CloudFrontDistributionID = var.cloudfront_distribution_id
   }
 
-  # Recreate EC2 when CloudFront changes (ensures fresh CORS secret)
+  # Recreate the EC2 when CloudFront changes to ensure a fresh CORS secret key-value pair
   lifecycle {
     replace_triggered_by = [
       null_resource.cloudfront_trigger

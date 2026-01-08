@@ -1,4 +1,3 @@
-
 output "rds_endpoint" {
   description = "Primary RDS PostgreSQL instance endpoint for application database connections"
   value       = aws_db_instance.postgres.address

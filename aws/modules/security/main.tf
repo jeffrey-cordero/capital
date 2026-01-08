@@ -1,5 +1,3 @@
-#-- Security Module: IAM Roles, Policies, and Security Groups
-
 variable "project_name" {
   description = "Identifier used as a prefix for all resource names"
   type        = string
@@ -51,8 +49,6 @@ variable "ingress_rules" {
     }
   ]
 }
-
-#-- IAM Role for EC2 with SSM and Secrets Manager Access
 
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
@@ -107,8 +103,6 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   name = "${var.project_name}-ec2-ssm-profile"
   role = aws_iam_role.ec2_ssm_role.name
 }
-
-#-- EC2 Security Group
 
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-ec2-sg"

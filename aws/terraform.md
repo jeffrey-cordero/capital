@@ -100,6 +100,12 @@ s3_bucket_name = "capital-frontend-xxxxxxxxxxxx"
 ssm_connect_command = "aws ssm start-session --target i-xxxxxxxxxxxxxxxxx --region us-east-2"
 ```
 
+### Format & Validate
+
+```bash
+$ terraform fmt -recursive && terraform validate
+```
+
 ### Update
 
 ```bash

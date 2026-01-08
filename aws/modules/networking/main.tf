@@ -1,5 +1,3 @@
-#-- Networking Module: VPC, Subnets, and Routing
-
 variable "project_name" {
   description = "Identifier used as a prefix for all resource names"
   type        = string
@@ -23,13 +21,9 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.10.0/24", "10.0.11.0/24"]
 }
 
-#-- Data Sources
-
 data "aws_availability_zones" "available" {
   state = "available"
 }
-
-#-- VPC
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -41,8 +35,6 @@ resource "aws_vpc" "main" {
     Project = var.project_name
   }
 }
-
-#-- Public Subnet and Internet Gateway
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
@@ -84,8 +76,6 @@ resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
-
-#-- Private Subnets
 
 resource "aws_subnet" "private" {
   count             = length(var.private_subnet_cidrs)

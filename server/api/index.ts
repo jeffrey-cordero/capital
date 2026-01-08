@@ -98,7 +98,7 @@ app.use("/api/v1", v1);
 /**
  * Resource Not Found Error Handler
  */
-app.use(function (_: Request, res: Response) {
+app.use(function(_: Request, res: Response) {
    return sendErrors(res, HTTP_STATUS.NOT_FOUND, {
       server: "The requested resource could not be found"
    });
@@ -107,7 +107,7 @@ app.use(function (_: Request, res: Response) {
 /**
  * Global Error Handler
  */
-app.use(function (error: any, _: Request, res: Response) {
+app.use(function(error: any, _: Request, res: Response) {
    logger.error(error.stack || "An unknown error occurred");
 
    return sendErrors(res, error.status || HTTP_STATUS.INTERNAL_SERVER_ERROR, {
