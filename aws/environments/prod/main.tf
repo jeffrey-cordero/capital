@@ -1,4 +1,4 @@
-# Production Environment - Main Configuration
+#-- Production Environment Configuration
 
 terraform {
   required_version = ">= 1.0"
@@ -16,9 +16,7 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-# -----------------------------------------------------------------------------
-# Networking Module (Custom VPC)
-# -----------------------------------------------------------------------------
+#-- Networking Module
 
 module "networking" {
   source = "../../modules/networking"
@@ -26,9 +24,7 @@ module "networking" {
   project_name = var.project_name
 }
 
-# -----------------------------------------------------------------------------
-# Security Module
-# -----------------------------------------------------------------------------
+#-- Security Module
 
 module "security" {
   source = "../../modules/security"
@@ -41,9 +37,7 @@ module "security" {
   ingress_rules  = var.ingress_rules
 }
 
-# -----------------------------------------------------------------------------
-# Frontend Module (S3 + CloudFront)
-# -----------------------------------------------------------------------------
+#-- Frontend Module
 
 module "frontend" {
   source = "../../modules/frontend"
@@ -52,9 +46,7 @@ module "frontend" {
   region       = var.region
 }
 
-# -----------------------------------------------------------------------------
-# Data Module (RDS + ElastiCache)
-# -----------------------------------------------------------------------------
+#-- Data Module
 
 module "data" {
   source = "../../modules/data"
@@ -66,9 +58,7 @@ module "data" {
   ec2_security_group_id = module.security.security_group_id
 }
 
-# -----------------------------------------------------------------------------
-# Compute Module (EC2)
-# -----------------------------------------------------------------------------
+#-- Compute Module
 
 module "compute" {
   source = "../../modules/compute"
@@ -87,9 +77,7 @@ module "compute" {
   cors_secret_version        = module.frontend.cors_secret_version
 }
 
-# -----------------------------------------------------------------------------
-# Auto-Deploy Frontend (runs after EC2 is ready)
-# -----------------------------------------------------------------------------
+#-- Auto-Deploy Frontend
 
 resource "null_resource" "deploy_frontend" {
   depends_on = [module.compute]
@@ -103,10 +91,10 @@ resource "null_resource" "deploy_frontend" {
     command     = "sleep 90 && ${path.module}/scripts/deploy.sh"
     working_dir = path.module
     environment = {
-      EC2_PUBLIC_IP           = module.compute.public_ip
-      S3_BUCKET_NAME          = module.frontend.s3_bucket_name
-      CLOUDFRONT_DOMAIN       = module.frontend.cloudfront_domain
-      CLOUDFRONT_DIST_ID      = module.frontend.cloudfront_distribution_id
+      EC2_PUBLIC_IP      = module.compute.public_ip
+      S3_BUCKET_NAME     = module.frontend.s3_bucket_name
+      CLOUDFRONT_DOMAIN  = module.frontend.cloudfront_domain
+      CLOUDFRONT_DIST_ID = module.frontend.cloudfront_distribution_id
     }
   }
 }

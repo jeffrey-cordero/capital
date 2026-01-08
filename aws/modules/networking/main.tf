@@ -1,39 +1,35 @@
-# Networking Module - VPC, Subnets, and Routing
+#-- Networking Module: VPC, Subnets, and Routing
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Identifier used as a prefix for all resource names"
   type        = string
 }
 
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
+  description = "Primary IPv4 CIDR block for the VPC address space"
   type        = string
   default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidr" {
-  description = "CIDR block for the public subnet"
+  description = "CIDR block for the public subnet hosting internet-facing resources"
   type        = string
   default     = "10.0.1.0/24"
 }
 
 variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets"
+  description = "CIDR blocks for private subnets hosting RDS and ElastiCache"
   type        = list(string)
   default     = ["10.0.10.0/24", "10.0.11.0/24"]
 }
 
-# -----------------------------------------------------------------------------
-# Data Sources
-# -----------------------------------------------------------------------------
+#-- Data Sources
 
 data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# -----------------------------------------------------------------------------
-# VPC
-# -----------------------------------------------------------------------------
+#-- VPC
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -46,9 +42,7 @@ resource "aws_vpc" "main" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Public Subnet & Internet Gateway
-# -----------------------------------------------------------------------------
+#-- Public Subnet and Internet Gateway
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
@@ -91,9 +85,7 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# -----------------------------------------------------------------------------
-# Private Subnets (Private)
-# -----------------------------------------------------------------------------
+#-- Private Subnets
 
 resource "aws_subnet" "private" {
   count             = length(var.private_subnet_cidrs)

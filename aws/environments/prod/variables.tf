@@ -1,37 +1,36 @@
-# Production Environment - Variables
 
 variable "region" {
-  description = "AWS region"
+  description = "AWS region for all infrastructure resources"
   type        = string
   default     = "us-east-2"
 }
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Identifier used as a prefix for all resource names"
   type        = string
   default     = "capital"
 }
 
 variable "instance_type" {
-  description = "EC2 instance type"
+  description = "EC2 instance type defining vCPU and memory allocation"
   type        = string
   default     = "t3.micro"
 }
 
 variable "secrets_prefix" {
-  description = "Prefix for Secrets Manager secrets"
+  description = "Secrets Manager path prefix for environment-specific secrets"
   type        = string
   default     = "prod/capital/"
 }
 
 variable "root_volume_size" {
-  description = "Size of root EBS volume in GB"
+  description = "Root EBS volume size in GB for EC2 instance"
   type        = number
   default     = 8
 }
 
 variable "ingress_rules" {
-  description = "Ingress rules for security group"
+  description = "Security group ingress rules for EC2 instance traffic control"
   type = list(object({
     from_port   = number
     to_port     = number

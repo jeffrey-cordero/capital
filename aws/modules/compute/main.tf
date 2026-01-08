@@ -1,38 +1,38 @@
-# Compute Module - EC2 instance
+#-- Compute Module: EC2 Application Server
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Identifier used as a prefix for all resource names"
   type        = string
 }
 
 variable "instance_type" {
-  description = "EC2 instance type"
+  description = "EC2 instance type defining vCPU and memory allocation"
   type        = string
   default     = "t3.micro"
 }
 
 variable "instance_profile_name" {
-  description = "IAM instance profile name"
+  description = "IAM instance profile granting EC2 permissions for SSM and Secrets Manager"
   type        = string
 }
 
 variable "security_group_ids" {
-  description = "List of security group IDs"
+  description = "Security group IDs controlling inbound and outbound traffic"
   type        = list(string)
 }
 
 variable "user_data_path" {
-  description = "Path to user-data script"
+  description = "Absolute path to the bootstrap script executed on instance launch"
   type        = string
 }
 
 variable "subnet_id" {
-  description = "Subnet ID to launch the instance in"
+  description = "Public subnet ID where the instance will be deployed"
   type        = string
 }
 
 variable "root_volume_size" {
-  description = "Size of root EBS volume in GB"
+  description = "Root EBS volume size in GB for OS and application storage"
   type        = number
   default     = 8
 }
@@ -61,28 +61,24 @@ variable "cloudfront_distribution_id" {
   default     = ""
 }
 
-# -----------------------------------------------------------------------------
-# Data Sources
-# -----------------------------------------------------------------------------
+#-- Data Sources
 
 data "aws_ami" "selected" {
   most_recent = true
   owners      = var.ami_owners
 
   filter {
-   name   = "name"
-   values = [var.ami_filter_name]
+    name   = "name"
+    values = [var.ami_filter_name]
   }
 
   filter {
-   name   = "virtualization-type"
-   values = ["hvm"]
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 }
 
-# -----------------------------------------------------------------------------
-# EC2 Instance
-# -----------------------------------------------------------------------------
+#-- EC2 Instance
 
 resource "aws_instance" "server" {
   ami                    = data.aws_ami.selected.id
@@ -96,9 +92,9 @@ resource "aws_instance" "server" {
   monitoring = false
 
   root_block_device {
-   volume_size           = var.root_volume_size
-   volume_type           = "gp3"
-   delete_on_termination = true
+    volume_size           = var.root_volume_size
+    volume_type           = "gp3"
+    delete_on_termination = true
   }
 
   tags = {
@@ -117,7 +113,7 @@ resource "aws_instance" "server" {
 
 resource "null_resource" "cloudfront_trigger" {
   triggers = {
-    cloudfront_id        = var.cloudfront_distribution_id
+    cloudfront_id       = var.cloudfront_distribution_id
     cors_secret_version = var.cors_secret_version
   }
 }

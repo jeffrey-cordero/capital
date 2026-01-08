@@ -1,22 +1,20 @@
-# Frontend Module - S3 + CloudFront
+#-- Frontend Module: S3 Static Hosting + CloudFront CDN
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Identifier used as a prefix for all resource names"
   type        = string
 }
 
 variable "region" {
-  description = "AWS region"
+  description = "AWS region for S3 bucket regional domain resolution"
   type        = string
 }
 
-# -----------------------------------------------------------------------------
-# S3 Bucket (Private, OAC-only access)
-# -----------------------------------------------------------------------------
+#-- S3 Bucket (Private, OAC-only Access)
 
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true  # Allow deletion even with objects
+  force_destroy = true # Allow deletion even with objects
 
   tags = {
     Name    = "${var.project_name}-frontend"
@@ -46,8 +44,8 @@ resource "aws_s3_bucket_policy" "frontend" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontOAC"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontOAC"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
@@ -65,9 +63,7 @@ resource "aws_s3_bucket_policy" "frontend" {
   depends_on = [aws_s3_bucket_public_access_block.frontend]
 }
 
-# -----------------------------------------------------------------------------
-# CloudFront Origin Access Control
-# -----------------------------------------------------------------------------
+#-- CloudFront Origin Access Control
 
 resource "aws_cloudfront_origin_access_control" "frontend" {
   name                              = "${var.project_name}-frontend-oac"
@@ -77,9 +73,7 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_protocol                  = "sigv4"
 }
 
-# -----------------------------------------------------------------------------
-# CloudFront Distribution
-# -----------------------------------------------------------------------------
+#-- CloudFront Distribution
 
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
@@ -97,7 +91,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "S3Origin"
-    viewer_protocol_policy = "allow-all"  # Allow HTTP for PoC
+    viewer_protocol_policy = "allow-all" # Allow HTTP for PoC
 
     forwarded_values {
       query_string = false
@@ -142,14 +136,12 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Update CORS Secret with CloudFront Domain
-# -----------------------------------------------------------------------------
+#-- CORS Secret Configuration
 
 resource "aws_secretsmanager_secret_version" "cors" {
   secret_id = "prod/capital/cors"
   secret_string = jsonencode({
-    CORS_ALLOWED_ORIGINS = "http://${aws_cloudfront_distribution.frontend.domain_name}"  # Match backend code
+    CORS_ALLOWED_ORIGINS = "http://${aws_cloudfront_distribution.frontend.domain_name}" # Match backend code
   })
 
   lifecycle {
@@ -157,8 +149,6 @@ resource "aws_secretsmanager_secret_version" "cors" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Data Sources
-# -----------------------------------------------------------------------------
+#-- Data Sources
 
 data "aws_caller_identity" "current" {}

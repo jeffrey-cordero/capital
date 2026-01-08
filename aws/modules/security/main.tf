@@ -1,38 +1,38 @@
-# Security Module - IAM roles, policies, and security groups
+#-- Security Module: IAM Roles, Policies, and Security Groups
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Identifier used as a prefix for all resource names"
   type        = string
 }
 
 variable "region" {
-  description = "AWS region"
+  description = "AWS region for resource ARN construction"
   type        = string
 }
 
 variable "account_id" {
-  description = "AWS account ID"
+  description = "AWS account ID for IAM policy ARN construction"
   type        = string
 }
 
 variable "secrets_prefix" {
-  description = "Prefix for Secrets Manager secrets (e.g., prod/capital/)"
+  description = "Secrets Manager path prefix for scoped IAM permissions"
   type        = string
 }
 
 variable "vpc_id" {
-  description = "VPC ID for security group"
+  description = "VPC identifier for security group association"
   type        = string
 }
 
 variable "ingress_rules" {
   description = "List of ingress rules for security group"
   type = list(object({
-   from_port   = number
-   to_port     = number
-   protocol    = string
-   cidr_blocks = list(string)
-   description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+    description = string
   }))
   default = [
     {
@@ -52,18 +52,16 @@ variable "ingress_rules" {
   ]
 }
 
-# -----------------------------------------------------------------------------
-# IAM Role for EC2 with SSM and Secrets Manager access
-# -----------------------------------------------------------------------------
+#-- IAM Role for EC2 with SSM and Secrets Manager Access
 
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
-   effect = "Allow"
-   principals {
+    effect = "Allow"
+    principals {
       type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
-   }
-   actions = ["sts:AssumeRole"]
+    }
+    actions = ["sts:AssumeRole"]
   }
 }
 
@@ -72,7 +70,7 @@ resource "aws_iam_role" "ec2_ssm_role" {
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 
   tags = {
-   Project = var.project_name
+    Project = var.project_name
   }
 }
 
@@ -86,13 +84,13 @@ resource "aws_iam_role_policy" "secrets_read_policy" {
   role = aws_iam_role.ec2_ssm_role.id
 
   policy = jsonencode({
-   Version = "2012-10-17"
-   Statement = [
+    Version = "2012-10-17"
+    Statement = [
       {
         Effect = "Allow"
         Action = [
-         "secretsmanager:GetSecretValue",
-         "secretsmanager:DescribeSecret"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
         Resource = "arn:aws:secretsmanager:${var.region}:${var.account_id}:secret:${var.secrets_prefix}*"
       },
@@ -110,9 +108,7 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   role = aws_iam_role.ec2_ssm_role.name
 }
 
-# -----------------------------------------------------------------------------
-# Security Group
-# -----------------------------------------------------------------------------
+#-- EC2 Security Group
 
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-ec2-sg"
@@ -120,26 +116,26 @@ resource "aws_security_group" "ec2_sg" {
   vpc_id      = var.vpc_id
 
   egress {
-   from_port   = 0
-   to_port     = 0
-   protocol    = "-1"
-   cidr_blocks = ["0.0.0.0/0"]
-   description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
   }
 
   dynamic "ingress" {
-   for_each = var.ingress_rules
-   content {
+    for_each = var.ingress_rules
+    content {
       from_port   = ingress.value.from_port
       to_port     = ingress.value.to_port
       protocol    = ingress.value.protocol
       cidr_blocks = ingress.value.cidr_blocks
       description = ingress.value.description
-   }
+    }
   }
 
   tags = {
-   Name    = "${var.project_name}-ec2-sg"
-   Project = var.project_name
+    Name    = "${var.project_name}-ec2-sg"
+    Project = var.project_name
   }
 }
