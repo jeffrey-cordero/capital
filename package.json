@@ -22,7 +22,7 @@
     "typecheck:types": "npm --prefix types run typecheck",
     "typecheck:all": "concurrently \"npm run typecheck:client\" \"npm run typecheck:server\" \"npm run typecheck:types\"",
     "test:server": "npm --prefix server run test",
-    "test:client": "npm --prefix client run test:e2e",
+    "test:client": "npm --prefix client run test",
     "test:all": "concurrently \"npm --prefix server run test\" \"npm --prefix client run test:e2e\""
   },
   "dependencies": {
